@@ -14,7 +14,10 @@
         v-show="open"
         ref="root"
         class="ui-dialog"
-        :class="[`ui-dialog--${position}`, { 'ui-dialog--open': open }]"
+        :class="[
+          `ui-dialog--${position}`,
+          { 'ui-dialog--open': open, 'ui-dialog--edge': isEdgePanel },
+        ]"
         :style="rootStyle"
         :data-ui-theme="themeScope"
         :data-state="isClosing ? 'closing' : 'open'"
@@ -151,11 +154,18 @@
 </template>
 
 <script lang="ts">
+import type { InjectionKey } from 'vue'
 import type { UiPartValue } from '../../classes'
 import type { MotionPhase } from '../../motion/types'
 
+/** @internal Set by Drawer: a `top` or `bottom` panel spans that edge and slides in from it. */
+export const edgePanelKey: InjectionKey<boolean> = Symbol('vael-ui-edge-panel')
+
 export type DialogSize = 'sm' | 'md' | 'lg'
-/** `top`/`bottom`/`left`/`right` anchor the panel to that viewport edge and slide instead of scale. */
+/**
+ * `left`/`right` are panels on that edge that slide in from it; `top`/`bottom` place the card near
+ * that edge (a Drawer's are edge panels too).
+ */
 export type DialogPosition = 'center' | 'top' | 'bottom' | 'left' | 'right'
 
 /** Exported so `useDialogService`'s `openDialog()` can forward the same options without duplicating them. */
@@ -188,7 +198,8 @@ export interface DialogProps {
    */
   modal?: boolean
   /**
-   * `true` removes edge padding; `top`/`bottom` panels sit flush to the viewport edge instead of floating.
+   * `true` removes edge padding: a `top`/`bottom` Dialog sits flush to the viewport edge instead of
+   * floating (a Drawer's always does).
    * @default false
    */
   flush?: boolean
@@ -418,6 +429,12 @@ const descriptionId = useId()
 
 // STRUCTURAL: inlined for zero-CSS functionality; align-items/justify-content non-interpolable, padding/size animate instead.
 const isSidePosition = computed(() => props.position === 'left' || props.position === 'right')
+// A Drawer's top or bottom panel; dialogs opened inside it are their own.
+const edgeSheet = inject(edgePanelKey, false)
+provide(edgePanelKey, false)
+const isEdgePanel = computed(
+  () => edgeSheet && (props.position === 'top' || props.position === 'bottom'),
+)
 // Its stacking place, kept while it leaves: dropping it mid-exit slid a closing dialog under the one
 // beneath. It also keeps the style below from changing at close, which in Vapor would hide a
 // force-mount (v-show) dialog at once: Vapor marks it hidden before the leave, not after.
@@ -446,7 +463,8 @@ const rootStyle = computed<Record<string, string | number | undefined>>(() => ({
         : 'center',
   justifyContent:
     props.position === 'left' ? 'flex-start' : props.position === 'right' ? 'flex-end' : 'center',
-  padding: maximized.value || isSidePosition.value || props.flush ? '0' : '1rem',
+  padding:
+    maximized.value || isSidePosition.value || isEdgePanel.value || props.flush ? '0' : '1rem',
   pointerEvents: props.modal ? undefined : 'none', // Non-modal: let clicks pass to page behind.
 }))
 const overlayStyle = {
@@ -492,17 +510,18 @@ const DRAWER_FADE = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-e
 type Look = { initial: Record<string, MotionValues>; exit: Record<string, MotionValues> }
 /** Each position's built-in look: where the panel comes from, and leaves back to. */
 function builtInLook(): Look {
-  if (props.position === 'left' || props.position === 'right') {
-    const x = props.position === 'left' ? '-100%' : '100%'
+  if (isSidePosition.value || isEdgePanel.value) {
+    const axis = isSidePosition.value ? 'x' : 'y'
+    const to = props.position === 'left' || props.position === 'top' ? '-100%' : '100%'
     return {
       initial: {
-        panel: { x: { value: x, ...DRAWER } },
+        panel: { [axis]: { value: to, ...DRAWER } },
         overlay: { opacity: { value: 0, ...DRAWER_FADE } },
       },
       exit: {
         // Off screen, the drawer curve's slow end is never seen and it flings: it leaves on a spring
         // from rest, the backdrop with it.
-        panel: { x: { value: x, spring: FLING_SPRING } },
+        panel: { [axis]: { value: to, spring: FLING_SPRING } },
         overlay: { opacity: { value: 0, spring: FLING_SPRING } },
       },
     }

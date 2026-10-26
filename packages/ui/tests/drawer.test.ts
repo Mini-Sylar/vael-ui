@@ -47,19 +47,20 @@ test('modal=false renders no overlay, does not lock scroll, does not steal focus
   await expect.element(screen.getByTestId('pinned-state')).toHaveTextContent('closed')
 })
 
-test('Drawer passes flush through, so a bottom drawer sits on the viewport edge', async () => {
+test('a bottom drawer sits on the viewport edge, with or without flush', async () => {
   const { h } = await import('vue')
   const { default: Drawer } = await import('../src/components/Drawer/Drawer.vue')
   await render({
     render: () => [
       h(Drawer, { open: true, side: 'bottom', title: 'Flush', flush: true }),
-      h(Drawer, { open: true, side: 'bottom', title: 'Floating', modal: false }),
+      h(Drawer, { open: true, side: 'bottom', title: 'Plain', modal: false }),
     ],
   })
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-dialog-panel').length).toBe(2))
-  const [flush, floating] = [...document.querySelectorAll<HTMLElement>('.ui-dialog-panel')]
-  expect(flush!.getBoundingClientRect().bottom).toBeCloseTo(window.innerHeight, 0)
-  expect(floating!.getBoundingClientRect().bottom).toBeLessThan(window.innerHeight - 8)
+  for (const panel of document.querySelectorAll<HTMLElement>('.ui-dialog-panel'))
+    await vi.waitFor(() =>
+      expect(panel.getBoundingClientRect().bottom).toBeCloseTo(window.innerHeight, 0),
+    )
 })
 
 test('Drawer forwards the overlay as overlayEl', async () => {
@@ -121,7 +122,10 @@ test('a drawer leaves on a spring from rest, its backdrop on the same curve', as
   await userEvent.keyboard('{Escape}')
   await vi.waitFor(() => expect(timingOf(panel, 'translate')).toMatch(/^\d+ms linear\(/))
   // Below a straight line at its first sample: it starts from rest, it isn't thrown.
-  const [, value, at] = /linear\(0[^,]*, ([\d.]+) ([\d.]+)%/.exec(timingOf(panel, 'translate'))!
-  expect(Number(value) / (Number(at) / 100)).toBeLessThan(1)
+  // WebKit leaves out each stop's place when they're evenly spaced: then it's its index.
+  const stops = /linear\(([^)]*)\)/.exec(timingOf(panel, 'translate'))![1]!.split(',')
+  const [value, at] = stops[1]!.trim().split(' ')
+  const share = at ? Number.parseFloat(at) / 100 : 1 / (stops.length - 1)
+  expect(Number(value) / share).toBeLessThan(1)
   expect(timingOf(overlay, 'opacity')).toBe(timingOf(panel, 'translate'))
 })

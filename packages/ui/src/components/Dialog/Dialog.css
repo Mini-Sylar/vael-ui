@@ -185,6 +185,27 @@
   .ui-dialog[data-contained].ui-dialog--right .ui-dialog-panel--lg {
     inline-size: min(38rem, 90%);
   }
+  /* A Drawer's top or bottom panel: edge to edge, square where it meets its edge. */
+  .ui-dialog--edge .ui-dialog-panel {
+    inline-size: 100%;
+  }
+  .ui-dialog--edge.ui-dialog--top .ui-dialog-panel {
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+  }
+  .ui-dialog--edge.ui-dialog--bottom .ui-dialog-panel {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+  .ui-dialog:not([data-contained]).ui-dialog--edge .ui-dialog-panel {
+    padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
+  }
+  .ui-dialog:not([data-contained]).ui-dialog--edge.ui-dialog--top .ui-dialog-panel {
+    padding-block-start: env(safe-area-inset-top, 0px);
+  }
+  .ui-dialog:not([data-contained]).ui-dialog--edge.ui-dialog--bottom .ui-dialog-panel {
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+  }
   .ui-dialog--left .ui-dialog-panel {
     border-start-start-radius: 0;
     border-end-start-radius: 0;

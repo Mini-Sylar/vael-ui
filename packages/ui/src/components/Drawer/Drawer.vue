@@ -53,13 +53,16 @@ export interface DrawerProps extends Omit<DialogProps, 'position'> {
   focus trap, scroll lock), just a narrower API that can't be pointed at
   `position="center"` — that's a plain dialog, not a drawer. -->
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue'
-import Dialog from '../Dialog/Dialog.vue'
+import { computed, provide, useTemplateRef } from 'vue'
+import Dialog, { edgePanelKey } from '../Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
 import { useMotionStyle } from '../../motion/context'
 import type { DialogMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
+
+// Every side is an edge: top and bottom span theirs and slide in from it, as left and right do.
+provide(edgePanelKey, true)
 
 /** Whether the drawer is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
