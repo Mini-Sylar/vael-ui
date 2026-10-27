@@ -19,9 +19,24 @@ test('cold open waits for the delay; leave hides after the grace period', async 
   const screen = await render(TooltipFixture)
   const trigger = screen.getByTestId('trigger-a')
 
+  // When the pointer came in and when the tooltip appeared, both stamped in the page: the hover
+  // command's own round trip can outlast the 120ms delay on a busy runner, so a check after it
+  // can't tell a wait from none.
+  let entered = 0
+  let shown = 0
+  trigger.element().addEventListener('pointerover', () => (entered ||= performance.now()), {
+    capture: true,
+  })
+  const watch = new MutationObserver(() => {
+    if (!shown && document.querySelector('[data-testid="tip-a"]')) shown = performance.now()
+  })
+  watch.observe(document.body, { childList: true, subtree: true })
   await trigger.hover()
-  expect(document.querySelector('[data-testid="tip-a"]')).toBeNull()
   await expect.element(screen.getByTestId('tip-a')).toBeVisible()
+  watch.disconnect()
+  expect(entered).toBeGreaterThan(0)
+  // The open delay, less a little timer slack.
+  expect(shown - entered).toBeGreaterThanOrEqual(110)
 
   await vi.waitFor(() => {
     expect(trigger.element().getAttribute('aria-describedby')).toBeTruthy()
