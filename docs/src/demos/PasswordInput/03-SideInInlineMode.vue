@@ -9,6 +9,7 @@
       <div class="example">
         <span class="example-label">side="bottom" (default)</span>
         <PasswordInput
+          style="max-inline-size: 16rem"
           v-model="sideBottom"
           :rules="DEFAULT_RULES"
           hint-placement="inline"
@@ -20,6 +21,7 @@
       <div class="example">
         <span class="example-label">side="top"</span>
         <PasswordInput
+          style="max-inline-size: 16rem"
           v-model="sideTop"
           :rules="DEFAULT_RULES"
           hint-placement="inline"
@@ -31,6 +33,7 @@
       <div class="example">
         <span class="example-label">side="left"</span>
         <PasswordInput
+          style="max-inline-size: 30rem"
           v-model="sideLeft"
           :rules="DEFAULT_RULES"
           hint-placement="inline"
@@ -42,6 +45,7 @@
       <div class="example">
         <span class="example-label">side="right"</span>
         <PasswordInput
+          style="max-inline-size: 30rem"
           v-model="sideRight"
           :rules="DEFAULT_RULES"
           hint-placement="inline"

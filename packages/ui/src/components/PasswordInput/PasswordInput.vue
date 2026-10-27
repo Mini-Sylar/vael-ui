@@ -113,6 +113,7 @@
     :align="align"
     :side-offset="sideOffset"
     :align-offset="alignOffset"
+    :panel-width="panelWidth"
     :force-mount="forceMount"
     :before-close="beforeClose"
     :teleport-to="teleportTo"
@@ -156,6 +157,7 @@
      matching how InputNumber itself duplicates its stepper button markup across
      stepperPosition's 'end'/'split' branches instead of abstracting a single-use helper. -->
 <script lang="ts">
+import type { PanelWidth } from '../../composables/panelWidth'
 import type { UiPartValue } from '../../classes'
 import type { PopoverAlign, PopoverSide } from '../Popover/Popover.vue'
 
@@ -241,6 +243,11 @@ const rawProps = withDefaults(
     sideOffset?: number
     /** Shifts the hint popover along the alignment axis, in pixels. Popover mode only. */
     alignOffset?: number
+    /**
+     * The hint popover's width: `'trigger'` for at least the input's width, or a width in px or any
+     * CSS length (`'20rem'`). Unset, it fits its rules, up to 16rem. Popover mode only.
+     */
+    panelWidth?: PanelWidth
     /** Teleport target for the hint popover: a CSS selector or element. Popover mode only. */
     teleportTo?: string | HTMLElement
     /** Keeps the hint popover mounted (toggled with `v-show`) and skips the built-in transition.

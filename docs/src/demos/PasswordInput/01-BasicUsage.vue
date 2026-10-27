@@ -6,6 +6,7 @@
       while it's focused, without moving anything else on the page.
     </p>
     <PasswordInput
+      style="max-inline-size: 16rem"
       v-model="basic"
       :rules="DEFAULT_RULES"
       placeholder="Password"

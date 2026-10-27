@@ -10,6 +10,7 @@
       <div class="example">
         <span class="example-label">align="start" (default)</span>
         <PasswordInput
+          style="max-inline-size: 20rem"
           v-model="alignStart"
           :ui="{ root: 'wide-field' }"
           :rules="DEFAULT_RULES"
@@ -22,6 +23,7 @@
       <div class="example">
         <span class="example-label">align="center"</span>
         <PasswordInput
+          style="max-inline-size: 20rem"
           v-model="alignCenter"
           :ui="{ root: 'wide-field' }"
           :rules="DEFAULT_RULES"
@@ -34,6 +36,7 @@
       <div class="example">
         <span class="example-label">align="end"</span>
         <PasswordInput
+          style="max-inline-size: 20rem"
           v-model="alignEnd"
           :ui="{ root: 'wide-field' }"
           :rules="DEFAULT_RULES"

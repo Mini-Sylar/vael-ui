@@ -7,6 +7,7 @@
       writes them inline.
     </p>
     <PasswordInput
+      style="max-inline-size: 16rem"
       v-model="custom"
       hint-placement="inline"
       :rules="customRules"

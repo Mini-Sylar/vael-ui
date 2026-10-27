@@ -7,6 +7,7 @@ import { h } from 'vue'
 import type { Component } from 'vue'
 import Combobox from '../src/components/Combobox/Combobox.vue'
 import DatePicker from '../src/components/DatePicker/DatePicker.vue'
+import PasswordInput from '../src/components/PasswordInput/PasswordInput.vue'
 import Select from '../src/components/Select/Select.vue'
 import TreeSelect from '../src/components/TreeSelect/TreeSelect.vue'
 import type { PanelWidth } from '../src/composables/panelWidth'
@@ -78,4 +79,34 @@ test('a set width wider than the screen still fits it', async () => {
   expect(await panelWidth(Select as Component, options, 5000)).toBeLessThanOrEqual(
     window.innerWidth,
   )
+})
+
+const rules = [
+  { label: 'At least 8 characters', test: (v: string) => v.length >= 8 },
+  { label: 'A number', test: (v: string) => /\d/.test(v) },
+]
+
+async function hintWidth(width?: PanelWidth) {
+  const screen = await render(() =>
+    h('div', { style: 'width: 480px' }, [
+      h(PasswordInput as Component, { rules, panelWidth: width }),
+    ]),
+  )
+  ;(screen.container.querySelector('input') as HTMLInputElement).focus()
+  const panel = () => document.querySelector<HTMLElement>('.ui-password-input-hint--popover')
+  await vi.waitFor(() => expect(panel()).toBeTruthy())
+  await new Promise((r) => setTimeout(r, 400))
+  return panel()!.getBoundingClientRect().width
+}
+
+test('PasswordInput: unset, the hint fits its rules, no wider than 16rem', async () => {
+  expect(await hintWidth()).toBeLessThanOrEqual(256)
+})
+
+test("PasswordInput: 'trigger' makes the hint at least the input's width", async () => {
+  expect(await hintWidth('trigger')).toBeGreaterThanOrEqual(400)
+})
+
+test('PasswordInput: a set width is the hint width', async () => {
+  expect(await hintWidth('20rem')).toBeCloseTo(320, 0)
 })

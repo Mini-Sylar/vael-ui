@@ -19,6 +19,8 @@
     inline-size: max-content;
     /* Wraps instead of running off a narrow screen; 1rem matches the edge padding. */
     max-inline-size: calc(100vw - 1rem);
+    /* Set inline on a popover that matches its trigger's width; one opened inside doesn't inherit it. */
+    --ui-anchor-inline-size: initial;
   }
   .ui-popover-panel {
     position: relative;
@@ -27,6 +29,8 @@
     color: var(--ui-text);
     box-shadow: var(--ui-panel-shadow);
     overflow: hidden;
+    /* `panelWidth: 'trigger'`. */
+    min-inline-size: var(--ui-anchor-inline-size, auto);
   }
   .ui-popover-body {
     padding: 1rem;

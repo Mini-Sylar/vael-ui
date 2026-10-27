@@ -41,7 +41,7 @@
           ref="panel"
           data-ui-presence
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelWidthStyle(props.panelWidth), panelPart.style]"
           v-bind="panelAttrs"
         >
           <div class="ui-popover-body" :style="bodyStyle" v-scroll-mask="scrollFade">
@@ -83,6 +83,8 @@
 </template>
 
 <script lang="ts">
+import { panelWidthStyle } from '../../composables/panelWidth'
+import type { PanelWidth } from '../../composables/panelWidth'
 import type { Placement, Side } from '@floating-ui/dom'
 import type { MotionPhase } from '../../motion/types'
 import type { Align } from '../../composables/useFloatingPosition'
@@ -105,6 +107,11 @@ export interface PopoverProps {
   sideOffset?: number
   /** Shifts the panel along the alignment axis, in pixels. @default 0 */
   alignOffset?: number
+  /**
+   * The panel's width: `'trigger'` for at least its trigger's width, or a width in px or any CSS
+   * length (`'20rem'`). Unset, it fits its content.
+   */
+  panelWidth?: PanelWidth
   /** Escape key closes the panel. @default true */
   closeOnEsc?: boolean
   /** Clicking outside the panel closes it. @default true */
@@ -456,6 +463,7 @@ const {
   align: () => props.align,
   sideOffset: () => props.sideOffset,
   alignOffset: () => props.alignOffset,
+  matchReferenceWidth: () => props.panelWidth === 'trigger',
   closeOnEsc: () => props.closeOnEsc,
   closeOnOutside: () => props.closeOnOutside,
   beforeClose: () => props.beforeClose,

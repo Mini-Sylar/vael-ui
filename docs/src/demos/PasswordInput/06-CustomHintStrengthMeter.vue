@@ -6,6 +6,7 @@
       <code>Progress</code> bar reads <code>results</code> to show the password's strength.
     </p>
     <PasswordInput
+      style="max-inline-size: 16rem"
       v-model="strength"
       :rules="rules"
       hint-placement="inline"
