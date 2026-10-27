@@ -29,7 +29,10 @@ export interface GroupDropDetails {
 }
 
 export interface UseSortableGroupOptions {
-  /** Splice `value` out of the array named by `from.groupId`, into `to.groupId`. */
+  /**
+   * Splice the item at `from.index` out of the array named by `from.groupId`, in at `to.index` of
+   * `to.groupId`'s. `value` is the item's key from a Sortable, but its position from `v-draggable`.
+   */
   onTransfer: (value: string | number, from: GroupDropPosition, to: GroupDropPosition) => void
   /** Vetoes a cross-container move — e.g. a WIP limit on the target column. */
   canDrop?: (details: GroupDropDetails) => boolean

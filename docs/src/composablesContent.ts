@@ -1300,7 +1300,7 @@ const shown = useTween(total, { duration: 600, easing: 'out' })`,
         name: 'onTransfer',
         type: '(value, from: GroupDropPosition, to: GroupDropPosition) => void',
         description:
-          "Moves the item between your arrays. It fires once, on a committed drop into another list: remove `value` from the array for `from.groupId` and insert it into the array for `to.groupId`. Required. It belongs to the group, not to each list, because a move between lists isn't either list's decision.",
+          "Moves the item between your arrays. It fires once, on a committed drop into another list: take the item at `from.index` out of the array for `from.groupId`, and insert it at `to.index` in the array for `to.groupId`. Use the indexes: `value` is the item's key from a `Sortable`, but its position from `v-draggable`, which has no keys. Required. It belongs to the group, not to each list, because a move between lists isn't either list's decision.",
       },
       {
         name: 'canDrop',
