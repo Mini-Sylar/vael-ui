@@ -226,6 +226,8 @@ function indicatorProps(variant: 'background' | 'underline' = 'background') {
   return {
     class: cx(indicatorPart.value.class, `ui-tabs-indicator--${variant}`),
     style: indicator.style.value,
+    // Decoration: nothing for a screen reader, and not content a scrolling row scrolls to.
+    'aria-hidden': 'true' as const,
   }
 }
 

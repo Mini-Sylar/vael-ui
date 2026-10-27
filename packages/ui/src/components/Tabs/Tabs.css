@@ -17,6 +17,11 @@
   .ui-tabs:not(.ui-tabs--vertical)::-webkit-scrollbar {
     display: none;
   }
+  /* A row that fits shows a spring's overshoot past its ends; only a row that scrolls clips. Set once
+     Tabs has measured, so a long row rendered on the server never spills out before then. */
+  .ui-tabs[data-indicator-placed]:not(.ui-tabs--vertical):not(.scroll-fade-x) {
+    overflow-x: visible;
+  }
 
   .ui-tabs--vertical {
     flex-direction: column;
