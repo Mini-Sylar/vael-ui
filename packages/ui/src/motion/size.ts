@@ -98,8 +98,12 @@ export function followSize(
   // Marked, so what leaves inside it is clipped to it (leaveInPlace).
   el.setAttribute('data-ui-size', '')
   timings.set(el, timing)
-  let last = measure()
-  let target = last
+  // No box at all (display: none, or not laid out yet): its size is unknown, not 0. The first one
+  // it shows is where it starts, not a resize from nothing: a panel opening the first time doesn't
+  // grow from a sliver. An empty box that's there (a list with no rows yet) still grows.
+  const sized = (): Box | undefined => (el.getClientRects().length ? measure() : undefined)
+  let last = sized()
+  let target = last ?? { width: 0, height: 0 }
   let running: Animation | undefined
   // While the width moves, each child holds the width it lands at (the box clips what isn't
   // revealed yet), so text keeps its final wrap instead of re-wrapping every frame.
@@ -170,7 +174,7 @@ export function followSize(
       .then(() => {
         if (waiting !== run) return
         waiting = undefined
-        if (!running && el.isConnected) last = measure()
+        if (!running && el.isConnected) last = sized()
       })
   }
 
@@ -202,9 +206,11 @@ export function followSize(
       }
       running = undefined
     }
-    const box = measure()
-    const widthMoved = !changed && !close(box.width, last.width)
+    const box = sized()
+    const before = last
     last = box
+    if (!box || !before || !showing) return
+    const widthMoved = !changed && !close(box.width, before.width)
     if (widthMoved || prefersReducedMotion() || pageHidden() || motionOffAt(el)) return
     if (close(box.height, showing.height) && close(box.width, showing.width)) return
     play(showing, box)
@@ -216,7 +222,7 @@ export function followSize(
     if (entries.some((entry) => entry.target !== el)) return sync()
     const traveling = trip()
     if (traveling) return afterTrip(traveling)
-    if (!running && el.isConnected) last = measure()
+    if (!running && el.isConnected) last = sized()
   })
   const watchChildren = () => {
     sizes.disconnect()
