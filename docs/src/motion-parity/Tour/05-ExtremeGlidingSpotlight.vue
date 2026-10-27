@@ -14,12 +14,12 @@
     </div>
     <div class="glide-app">
       <div class="glide-bar">
-        <Avatar id="glide-avatar" name="Ama Mensah" />
-        <Button id="glide-new" size="sm">New project</Button>
+        <Avatar id="spot-avatar" name="Ama Mensah" />
+        <Button id="spot-new" size="sm">New project</Button>
       </div>
       <Card
-        id="glide-card"
-        class="glide-card"
+        id="spot-card"
+        class="spot-card"
         title="Weekly report"
         description="Sales, signups and churn for the last seven days."
       />
@@ -50,21 +50,21 @@ const open = shallowRef(false)
 const step = shallowRef(0)
 const steps: TourStep[] = [
   {
-    target: '#glide-avatar',
+    target: '#spot-avatar',
     title: 'Your profile',
     description: 'Change your photo, name and notification settings.',
     spotlightPadding: 4,
     spotlightRadius: 999,
   },
   {
-    target: '#glide-new',
+    target: '#spot-new',
     title: 'Start something',
     description: 'Projects hold your reports, files and the people you share them with.',
     spotlightPadding: 4,
     spotlightRadius: 8,
   },
   {
-    target: '#glide-card',
+    target: '#spot-card',
     side: 'top',
     title: 'Your weekly report',
     description: 'It refreshes every Monday morning.',
@@ -124,7 +124,7 @@ const ring = computed<AnimateDirectiveValue>(() => ({
   align-items: center;
   justify-content: space-between;
 }
-.glide-card {
+.spot-card {
   justify-self: end;
   max-inline-size: 16rem;
 }
