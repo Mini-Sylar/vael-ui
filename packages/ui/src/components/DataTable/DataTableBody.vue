@@ -224,6 +224,7 @@
 
   <TransitionGroup
     v-else
+    ref="rowsGroup"
     tag="tbody"
     :role="roles.group"
     v-bind="rowsTransition"
@@ -362,7 +363,8 @@ import Checkbox from '../Checkbox/Checkbox.vue'
 import Radio from '../Radio/Radio.vue'
 import Button from '../Button/Button.vue'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
-import { computed, TransitionGroup } from 'vue'
+import { computed, nextTick, TransitionGroup, useTemplateRef, watch } from 'vue'
+import { prefersReducedMotion } from '../../composables/dom'
 import type { ComponentPublicInstance } from 'vue'
 import type { VirtualRow } from '../../composables/useVirtualizer'
 import { useMessages, dataTableMessages } from '../../messages'
@@ -484,6 +486,40 @@ const rowSwap = computed<{ keys: Set<string>; swap: boolean }>((previous) => {
   return { keys, swap: !kept && (previous?.keys.size ?? 0) > 0 }
 })
 const rowFade = computed(() => rowCss.value && !rowSwap.value.swap)
+
+// Rows coming and going slide the rest; the table's box eases its height with them, on their
+// timing. Otherwise a group folding left its rows hanging past a box that had already shrunk
+// (clipped), and one unfolding opened an empty band under rows still sliding down. A swap snaps.
+const rowsGroup = useTemplateRef<ComponentPublicInstance>('rowsGroup')
+let heightRun: Animation | undefined
+watch(
+  () => props.tableRowEntries,
+  () => {
+    // The scroll strip: it clips the rows (the table's box follows its height).
+    const table = (rowsGroup.value?.$el as HTMLElement | undefined)?.closest<HTMLElement>(
+      '.ui-datatable-scroll-x',
+    )
+    if (!table || !rowFade.value || prefersReducedMotion()) return
+    // Where it shows now, mid-ease included.
+    const from = table.getBoundingClientRect().height
+    void nextTick(() => {
+      heightRun?.cancel()
+      heightRun = undefined
+      const to = table.getBoundingClientRect().height
+      if (Math.abs(to - from) < 0.5) return
+      // The rows' own move timing, read off the same tokens.
+      const style = getComputedStyle(table)
+      const raw = style.getPropertyValue('--ui-duration-enter').trim()
+      const duration = raw.endsWith('ms') ? Number.parseFloat(raw) : Number.parseFloat(raw) * 1000
+      if (!(duration > 0)) return
+      heightRun = table.animate([{ blockSize: `${from}px` }, { blockSize: `${to}px` }], {
+        duration,
+        easing: style.getPropertyValue('--ui-ease-in-out').trim() || 'ease-in-out',
+      })
+    })
+  },
+  { flush: 'pre' },
+)
 
 // Yours plays through the motion system, the built-in look through CSS; past the limit, neither.
 // On a swap your old rows go at once, as they'd leave in the table's flow and stack above the new
