@@ -56,8 +56,8 @@
   <Teleport :to="teleportTo">
     <Transition name="ui-select" appear v-bind="panelTransition">
       <div
-        v-if="forceMount || open"
-        v-show="open"
+        v-if="forceMount || shown"
+        v-show="shown"
         ref="positioner"
         :class="positionerPart.class"
         :style="[positionerStyle, { zIndex }, positionerPart.style]"
@@ -421,8 +421,21 @@ const loadSelectButton = () => import('../SelectButton/SelectButton.vue')
 const TimeField = defineAsyncComponent(loadTimeField)
 // The calendar is drawn only in the open panel, so it loads apart from the field: while the browser
 // is idle after mount, or as the pointer or focus reaches the field, whichever comes first.
-const loadCalendar = () => import('../Calendar/Calendar.vue')
-const Calendar = defineAsyncComponent(loadCalendar)
+const Calendar = defineAsyncComponent(() => import('../Calendar/Calendar.vue'))
+// Through the component's own loader: once it has loaded, a calendar renders as it's mounted, not a
+// tick later, so the panel never comes in empty.
+const calendarLoader = Calendar as unknown as {
+  __asyncLoader: () => Promise<unknown>
+  __asyncResolved?: unknown
+}
+const calendarReady = shallowRef(!!calendarLoader.__asyncResolved)
+function loadCalendar(): Promise<void> {
+  return calendarLoader.__asyncLoader().then(
+    () => void (calendarReady.value = true),
+    // Opens anyway: a panel that never opened would be worse than one without its calendar.
+    () => void (calendarReady.value = true),
+  )
+}
 const prefetchCalendar = () => {
   if (!rawProps.timeOnly) void loadCalendar()
 }
@@ -723,8 +736,22 @@ const themedUi = useThemedUi(
 )
 const themeScope = inject(themeScopeKey, undefined)
 
+// Opened before the calendar has loaded (the first open, often), the panel waits for it and comes
+// in with it, so its entrance plays on the whole panel rather than on an empty one.
+const shown = computed({
+  get: () => open.value && (timeOnlyEffective.value || calendarReady.value),
+  set: (value: boolean) => (open.value = value),
+})
+watch(
+  open,
+  (isOpen) => {
+    if (isOpen && !calendarReady.value && !timeOnlyEffective.value) void loadCalendar()
+  },
+  { immediate: true },
+)
+
 const { positionerStyle, placement, transformOrigin, isClosing, close, cancelClose, layerIndex } =
-  usePopover(open, {
+  usePopover(shown, {
     triggerEl: el,
     positionerEl,
     side: () => props.side,
