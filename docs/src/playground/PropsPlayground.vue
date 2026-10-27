@@ -1192,7 +1192,9 @@ const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
 // `false`/`true` could never show the box actually disappearing.
 // FileUpload's `capture`: `true` opens the camera, so it starts unset too.
 // Select/Combobox's `virtualize`: unset means automatic (on past 100 items), `true` forces it.
-const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter', 'capture', 'virtualize'])
+// Button's `pressed`: any value, `false` too, makes the button a toggle, so a click in the stage
+// left it switched on with the pressed tint. Off is no toggle at all.
+const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter', 'capture', 'virtualize', 'pressed'])
 
 function setBooleanControl(name: string, checked: boolean) {
   values[name] = !checked && BOOLEAN_UNSET_WHEN_OFF.has(name) ? undefined : checked
