@@ -12,6 +12,8 @@ export interface UiDefaults {
   loaderType?: LoaderSource
   indicator?: IndicatorMode
   haptics?: boolean | HapticOptions
+  /** From the provider's `motion`: whether a picked value crossfades into its field. */
+  valueSwap?: boolean
   /** The app's spring, from a provider's `{ spring }` or its style's: what components that run their
    * own spring in script (a tree's folds, an accordion's height) open on when nothing nearer sets one. */
   spring?: { damping?: number; response?: number }

@@ -44,7 +44,7 @@
             v-if="!multiple || display === 'text'"
             :class="isEmpty && 'ui-select-placeholder'"
             :value="isEmpty ? (placeholder ?? '') : displayLabel"
-            :motion="!!props.motion"
+            :motion="!!props.motion && valueSwap()"
           />
           <span v-else-if="isEmpty && display === 'count'" class="ui-select-placeholder">{{
             placeholder
@@ -254,6 +254,7 @@
 </template>
 
 <script lang="ts">
+import { useValueSwap } from '../../composables/valueSwap'
 import { panelWidthStyle } from '../../composables/panelWidth'
 import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
@@ -466,6 +467,7 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
+const valueSwap = useValueSwap(() => props.motion)
 
 const emit = defineEmits<{
   /** Fires before the panel closes; `details.cancel()` keeps it open. */

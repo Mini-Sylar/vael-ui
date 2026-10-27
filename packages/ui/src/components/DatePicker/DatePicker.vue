@@ -7,6 +7,7 @@
     :size="props.size"
     :disabled="isDisabled"
     :invalid="isInvalid || typedInvalid"
+    :animated="!!props.motion && valueSwap()"
     role="combobox"
     aria-haspopup="dialog"
     :aria-expanded="open"
@@ -179,6 +180,8 @@
 </template>
 
 <script lang="ts">
+import { useValueSwap } from '../../composables/valueSwap'
+import { inputPickedKey } from '../../composables/inputPicked'
 import { panelWidthStyle } from '../../composables/panelWidth'
 import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
@@ -203,6 +206,7 @@ import {
   inject,
   nextTick,
   onMounted,
+  provide,
   shallowRef,
   useAttrs,
   useId,
@@ -408,6 +412,7 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md', motion: true, locale: undefined })
+const valueSwap = useValueSwap(() => props.motion)
 
 // The time row's parts load only for a picker that shows time, fetched as it's set up, long before
 // the panel opens. A ref on an async component reaches the inner one once it's loaded.
@@ -539,6 +544,9 @@ const parser = () => loadDateText().then((module) => (dateText = module))
 // An entry that didn't read as an available date: the value stays, the field shows invalid.
 const typedInvalid = shallowRef(false)
 const inputText = computed(() => draft.value ?? displayValue.value)
+// A date picked from the calendar crossfades in, as Select's label does, focused too; what you type
+// stays plain until it's committed.
+provide(inputPickedKey, () => draft.value === null)
 function readOne(text: string): Date | null {
   const { parseDateText, isDateUnavailable } = dateText!
   const date = parseDateText(text, {

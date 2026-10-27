@@ -33,6 +33,7 @@ const SHARED_MODULES = new Set([
 const PER_BUILD_MODULES = new Set([
   'composables/useLazySortable',
   'composables/panelWidth',
+  'composables/valueSwap',
   'composables/useFocusableScroller',
   'composables/selectGroups',
   'composables/useRememberedSelection',

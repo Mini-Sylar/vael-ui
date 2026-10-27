@@ -13,7 +13,7 @@
     :size="props.size"
     :disabled="disabled"
     :invalid="isInvalid"
-    :animated="!!props.motion && !multiple"
+    :animated="!!props.motion && valueSwap() && !multiple"
     role="combobox"
     aria-haspopup="listbox"
     :aria-expanded="open"
@@ -246,6 +246,7 @@
 </template>
 
 <script lang="ts">
+import { useValueSwap } from '../../composables/valueSwap'
 import { panelWidthStyle } from '../../composables/panelWidth'
 import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
@@ -500,6 +501,7 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
+const valueSwap = useValueSwap(() => props.motion)
 
 const emit = defineEmits<{
   /** Fires before the panel closes; `details.cancel()` keeps it open. */

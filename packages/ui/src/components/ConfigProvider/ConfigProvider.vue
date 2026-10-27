@@ -74,7 +74,9 @@ const props = withDefaults(
     /** Motion for everything inside. `false` makes every component change instantly, e.g. for
      * screenshot tests: panels still open and close and toasts still leave. `{ spring }` puts
      * drawers, sheets, toasts, sliding indicators and AnimatedNumber on one spring (below 1,
-     * damping overshoots); crossfades such as AnimatedText keep their own timing. A full style
+     * damping overshoots); crossfades such as AnimatedText keep their own timing. `{ valueSwap:
+     * false }` shows a picked value in Select, Combobox, TreeSelect, CascadeSelect and DatePicker
+     * without its crossfade. A full style
      * (`{ version: 1, … }`) sets how every role and component moves, defined once. A component's own `motion` wins. */
     motion?: boolean | MotionOptions | MotionStyle
     /** Animation for every loader inside: Loader, Button's loading state, list loading rows,
@@ -159,6 +161,9 @@ const defaults = computed<UiDefaults>(() => {
   }
   if (props.indicator) own.indicator = props.indicator
   if (props.haptics !== undefined) own.haptics = props.haptics
+  // `{ valueSwap: false }` alone (no style) reaches the fields inside too.
+  if (typeof props.motion === 'object' && typeof props.motion.valueSwap === 'boolean')
+    own.valueSwap = props.motion.valueSwap
   const locale = validLocale(props.locale ?? toValue(props.i18n?.locale))
   if (locale) own.locale = locale
   return { ...parentDefaults?.value, ...own }

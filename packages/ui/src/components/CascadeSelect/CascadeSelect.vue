@@ -107,7 +107,7 @@
                   v-if="!multiple"
                   :class="isEmpty && 'ui-cascade-select-placeholder'"
                   :value="isEmpty ? (placeholder ?? '') : (selectedItem?.label ?? '')"
-                  :motion="!!props.motion"
+                  :motion="!!props.motion && valueSwap()"
                 />
                 <span
                   v-else-if="isEmpty && display !== 'chip'"
@@ -280,6 +280,7 @@ export type CascadeSelectFilter<T> =
     V extends string | number | (string | number)[] | null = string | number | null
   "
 >
+import { useValueSwap } from '../../composables/valueSwap'
 import type { BeforeClose, CascadeSelectMotion } from '../../motion/types'
 import type { PopoverCloseReason } from '../../composables/usePopover'
 import './CascadeSelect.css'
@@ -444,6 +445,7 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
+const valueSwap = useValueSwap(() => props.motion)
 
 const emit = defineEmits<{
   /** Fires before the panel closes, with the reason; `details.cancel()` keeps it open. */

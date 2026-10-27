@@ -704,20 +704,29 @@ type WithChips<M> = M extends boolean
       chips?: ChipsMotion
     }
 
+type WithValueSwap<M> = M extends boolean
+  ? M
+  : M & {
+      /** The picked value crossfades into the field. `false` shows it plainly. @default true */
+      valueSwap?: boolean
+    }
+
 /** Select's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SelectPart = 'positioner' | 'panel'
-/** Select's panel: values or hooks for its parts, like Popover's. `chips` moves the chips. */
-export type SelectMotion<N extends string = string> = WithChips<
-  ComponentMotion<{ parts: SelectPart; overlay: true }, N>
+/** Select's panel: values or hooks for its parts, like Popover's. `chips` moves the chips;
+ * `valueSwap: false` shows a picked value without its crossfade. */
+export type SelectMotion<N extends string = string> = WithValueSwap<
+  WithChips<ComponentMotion<{ parts: SelectPart; overlay: true }, N>>
 >
 /** Combobox's panel: values or hooks for its parts, like Popover's. `chips` moves the chips. */
 export type ComboboxMotion<N extends string = string> = SelectMotion<N>
-/** CascadeSelect's menu, like Menu's. `chips` moves the chips. */
-export type CascadeSelectMotion<N extends string = string> = WithChips<MenuMotion<N>>
-/** DatePicker's panel: values or hooks for its parts, like Popover's. */
-export type DatePickerMotion<N extends string = string> = ComponentMotion<
-  { parts: SelectPart; overlay: true },
-  N
+/** CascadeSelect's menu, like Menu's. `chips` moves the chips; `valueSwap: false` shows a
+ * picked value without its crossfade. */
+export type CascadeSelectMotion<N extends string = string> = WithValueSwap<WithChips<MenuMotion<N>>>
+/** DatePicker's panel: values or hooks for its parts, like Popover's. `valueSwap: false` shows a
+ * picked date without its crossfade. */
+export type DatePickerMotion<N extends string = string> = WithValueSwap<
+  ComponentMotion<{ parts: SelectPart; overlay: true }, N>
 >
 /** TreeSelect's panel: values or hooks for its parts, like Popover's. */
 export type TreeSelectMotion<N extends string = string> = DatePickerMotion<N>
@@ -1120,6 +1129,9 @@ export interface MotionStyle {
   version: 1
   /** Every component's spring inside: a name (`'bouncy'`) or `{ damping, response }`. */
   spring?: Spring | SpringName
+  /** A picked value crossfades into its field (Select, Combobox, TreeSelect, CascadeSelect,
+   * DatePicker). `false` shows it plainly. @default true */
+  valueSwap?: boolean
   /** Your animation library behind vael-ui's values, for components inside. Code only, never data. */
   engine?: MotionEngine
   filters?: Record<string, MotionFilter>

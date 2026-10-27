@@ -87,7 +87,7 @@ const COMPONENTS = [
 // Every component key in MotionStyle, so a style for one is never dropped as unknown.
 type ComponentKey = Exclude<
   keyof MotionStyle,
-  'version' | 'spring' | 'engine' | 'filters' | 'presets' | (typeof ROLES)[number]
+  'version' | 'spring' | 'engine' | 'filters' | 'presets' | 'valueSwap' | (typeof ROLES)[number]
 >
 type Unlisted = Exclude<ComponentKey, (typeof COMPONENTS)[number]>
 const everyComponent: [Unlisted] extends [never] ? true : Unlisted = true
@@ -446,6 +446,9 @@ export const parseMotionStyle: ParseMotionStyle = (input) => {
           }
         }
         style.presets = presets
+      } else if (key === 'valueSwap') {
+        if (typeof raw === 'boolean') style.valueSwap = raw
+        else issues.push('valueSwap: expected true or false')
       } else if ((ROLES as readonly string[]).includes(key)) {
         const parsed = role(key as (typeof ROLES)[number], raw, issues)
         if (parsed) style[key] = parsed

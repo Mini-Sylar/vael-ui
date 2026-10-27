@@ -10,6 +10,9 @@ export type { SpringName } from './springNames'
 export interface MotionOptions {
   /** Drawers, sheets, toasts, sliding indicators and AnimatedNumber follow this spring: a name (`'bouncy'`) or `{ damping, response }`. */
   spring?: IndicatorSpring | SpringName
+  /** A picked value crossfades into its field (Select, Combobox, TreeSelect, CascadeSelect,
+   * DatePicker). `false` shows it plainly. @default true */
+  valueSwap?: boolean
 }
 
 /** The drawer's spring: critically damped, so a flick never bounces past where it rests. */
