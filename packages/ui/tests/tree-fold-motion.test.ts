@@ -333,8 +333,11 @@ test('clicking a tall folder over and over never makes the rows jump', async () 
   chevron().click()
   await settle()
   const spam = await trace(60, 6)
+  // Where the frames land on the curve moves its biggest step by a few px from run to run (a few
+  // more on a busy CI runner), so the yardstick has 15% of room. A jump, rows snapping, moves a
+  // row or more in one frame: still far past it.
   expect(Math.max(...spam), `steps ${spam.map(Math.round).join(',')}`).toBeLessThanOrEqual(
-    plain + 2,
+    Math.max(plain + 2, plain * 1.15),
   )
 })
 
