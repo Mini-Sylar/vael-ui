@@ -186,6 +186,13 @@ function slide(
   const sized = html && (Math.abs(sx - 1) >= 0.01 || Math.abs(sy - 1) >= 0.01)
   // Its real size, as Vue Starport moves a component: what's in it reflows on the way instead of
   // being stretched. Clipped to it meanwhile. An SVG has no size to set: it scales.
+  // Its slot keeps its final size meanwhile: the size it travels at is taken back off its end
+  // margins, so a grid column or a flex row sized by its content doesn't grow and shift.
+  const own = sized ? getComputedStyle(el) : undefined
+  const slot = (edge: 'marginRight' | 'marginLeft' | 'marginBottom', size: number, final: number) =>
+    `${(Number.parseFloat(own![edge]) || 0) + final - size}px`
+  // The inline end: right, or left right to left.
+  const end = own?.direction === 'rtl' ? 'marginLeft' : 'marginRight'
   const frames: Keyframe[] = sized
     ? [
         {
@@ -193,12 +200,16 @@ function slide(
           // In its own pixels: a scaled container scales what it's given.
           width: cssSize(el, from.width / kx, 'width'),
           height: cssSize(el, from.height / ky, 'height'),
+          [end]: slot(end, from.width / kx, to.width / kx),
+          marginBottom: slot('marginBottom', from.height / ky, to.height / ky),
           overflow: 'clip',
         },
         {
           translate: '0px 0px',
           width: cssSize(el, to.width / kx, 'width'),
           height: cssSize(el, to.height / ky, 'height'),
+          [end]: slot(end, 0, 0),
+          marginBottom: slot('marginBottom', 0, 0),
           overflow: 'clip',
         },
       ]
