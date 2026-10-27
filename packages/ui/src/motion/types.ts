@@ -266,7 +266,7 @@ export type MotionStep<N extends string = string> = MotionTiming & {
 export type StaggerFrom = 'end' | 'center' | 'edges'
 
 /**
- * Elements one after another: `true` spaces them by the stagger token (40ms) in page order;
+ * Elements one after another: `true` spaces them by the stagger token (40 ms) in page order;
  * `'end'`, `'center'` or `'edges'` start the wave there instead (across a grid, `'center'` and
  * `'edges'` go by where each sits: from the middle cell, or from the corners). A number is the
  * seconds between them; a function gives each its own start: `(index, count) => seconds`.
@@ -1247,7 +1247,7 @@ export interface UseMotionReturn<N extends string = string> {
 /**
  * Your own `v-animate` presets by name, so they autocomplete and work as modifiers
  * (`v-animate.wiggle`). Add them where you declare your app's types:
- * `declare module 'vael-ui' { interface MotionPresets { wiggle: true } }`.
+ * `import 'vael-ui/motion'` then `declare module 'vael-ui/motion' { interface MotionPresets { wiggle: true } }`.
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- filled in by your app
 export interface MotionPresets {}
