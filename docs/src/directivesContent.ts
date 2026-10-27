@@ -317,7 +317,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
         name: 'axis',
         type: "'x' | 'y'",
         description:
-          "The axis items reorder along: `'y'` for a column, `'x'` for a row. Default `'y'`.",
+          "The axis items reorder along: `'y'` for a column, `'x'` for a row. Default `'y'`. When the items wrap onto more lines (a card grid), they reorder in reading order and make room slot by slot, on either axis.",
       },
       {
         name: 'handle',

@@ -4,6 +4,8 @@ import { createSpring } from '../motion/useSpringValue'
 import type { SpringHandle } from '../motion/useSpringValue'
 import { createSettler } from './sortableSettle'
 import type { Point } from './sortableSettle'
+import { measureGrid, nearestSlot, slotAt, slotOffset, translateOf, wraps } from './sortableGrid'
+import type { GridLayout } from './sortableGrid'
 import {
   autoScrollAt,
   contentOffset,
@@ -168,7 +170,8 @@ export const SHIFT_SPRING = { damping: 1, response: 0.32 }
 export const DROP_SPRING = { damping: 1, response: 0.28 }
 
 export type SortableSource = 'pointer' | 'keyboard'
-/** `'y'` reorders a column of rows; `'x'` reorders a row of items (table columns, tabs). */
+/** `'y'` reorders a column of rows; `'x'` reorders a row of items (table columns, tabs). A list
+ * whose items wrap onto more lines (a card grid) reorders in reading order on either. */
 export type SortableAxis = 'y' | 'x'
 
 export interface UseSortableOptions {
@@ -270,11 +273,27 @@ export interface UseSortableOptions {
 }
 
 /** Internal contract between `useSortable()` and a `useSortableGroup()` coordinator — not for direct use. */
+/**
+ * The rows of these lists are about to be placed by the drag engine: `v-animate` layout slides in
+ * them stand down until the engine's own glides have started.
+ */
+export function holdLayout(...lists: (HTMLElement | null)[]): void {
+  const held = lists.filter((list): list is HTMLElement => !!list)
+  for (const list of held) list.setAttribute('data-sortable-placing', '')
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      for (const list of held) list.removeAttribute('data-sortable-placing')
+    }),
+  )
+}
+
 export interface GroupMemberBinding {
   container: () => HTMLElement | null
   rows: () => readonly FlatSortableRow[]
   getElement: (value: string | number) => HTMLElement | null
   axis: () => SortableAxis
+  /** Its slots, measured now, when its items wrap (a card grid); null for a single line. */
+  grid: () => GridLayout | null
   labelOf: (value: string | number) => string
   reducedMotion: () => boolean
   draggedValue: () => string | number | null
@@ -462,6 +481,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let source: SortableSource = 'pointer'
   let isGroupHost = true
   let ownGroupId: string | number | null = null
+  // A wrapping list, measured at grab: rows shift slot to slot in reading order, in both axes, and
+  // a shift is counted in slots, not px.
+  let grid: GridLayout | null = null
+  let slotOf = new Map<string | number, number>()
 
   function rows(): readonly FlatSortableRow[] {
     return toValue(options.rows)
@@ -488,6 +511,48 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
   function container(): HTMLElement | null {
     return toValue(options.container) ?? null
+  }
+  /** Its items run onto more lines now: a card grid. */
+  function wrapping(): boolean {
+    if (nested()) return false
+    return wraps(
+      rows().map((row) => options.getElement(row.value)),
+      axis(),
+    )
+  }
+  function measureOwnGrid(): GridLayout | null {
+    const list = container()
+    if (!list || !wrapping()) return null
+    return measureGrid(
+      rows().map((row) => options.getElement(row.value)),
+      list,
+    )
+  }
+  /** A row's shift (px, or slots in a grid) as an offset on screen. */
+  function shiftPoint(value: string | number, shift: number): Point {
+    if (grid) return slotOffset(grid.slots, slotOf.get(value) ?? 0, shift)
+    return alongOffset(shift)
+  }
+  function shiftTranslate(value: string | number, shift: number): string {
+    return grid ? translateOf(shiftPoint(value, shift)) : translateFor(shift)
+  }
+  /** How far the dragged row's placeholder moves to show it at `insertionIndex`. */
+  function grabbedOffset(insertionIndex: number): number {
+    if (grid) return insertionIndex - sourceSlot
+    return resolveGrabbedOffset(bands, sourceSlot, insertionIndex, rowGap)
+  }
+  /** The dragged row's centre, `dx`/`dy` from where it was grabbed, relative to the list now. */
+  function gridCentre(layout: GridLayout, dx: number, dy: number): Point {
+    const home = slotAt(layout.slots, sourceSlot)
+    const at = container()?.getBoundingClientRect()
+    return {
+      x: home.x + home.w / 2 + dx + layout.origin.x - (at?.left ?? layout.origin.x),
+      y: home.y + home.h / 2 + dy + layout.origin.y - (at?.top ?? layout.origin.y),
+    }
+  }
+  /** What one slot of room is: the dragged block's size, or one cell of a grid. */
+  function shiftUnit(): number {
+    return grid ? 1 : blockHeight + rowGap
   }
   /** The element's extent along the active axis. */
   function bandOf(el: HTMLElement | null): SortableBand {
@@ -523,7 +588,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (!spring) {
       const el = options.getElement(value)
       spring = createSpring(0, toValue(options.spring) ?? SHIFT_SPRING, (offset) => {
-        if (el) el.style.translate = translateFor(offset)
+        if (el) el.style.translate = shiftTranslate(value, offset)
       })
       springs.set(value, spring)
     }
@@ -537,6 +602,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
    * comment for why `value` alone can't be trusted past the reorder. */
   function captureShiftVelocities(): Map<HTMLElement, number> {
     const velocities = new Map<HTMLElement, number>()
+    // A grid's shifts run in slots, not px: its rows land from a standstill.
+    if (grid) return velocities
     for (const [value, spring] of springs) {
       const el = options.getElement(value)
       if (el) velocities.set(el, spring.velocity)
@@ -618,6 +685,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     // adjacent in the DOM, unlike `remaining`'s own first two when the
     // dragged item originally sat between them (their gap would then include
     // its whole size, overshooting every other row's shift).
+    grid = measureOwnGrid()
+    slotOf = new Map(all.map((row, index) => [row.value, index]))
     rowGap = 0
     if (all.length >= 2) {
       const first = bandOf(options.getElement(all[0]!.value))
@@ -626,6 +695,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     }
 
     source = from
+    // A drag starts in its own list: whatever the last one left it as (a card that went to
+    // another list leaves it a non-host), this list opens the gaps now.
+    isGroupHost = true
     activeValue.value = value
     isGrabbed.value = true
     sourceFrom = {
@@ -662,7 +734,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const shifts = resolveRowShifts(
       bands,
       insertionIndex ?? sourceSlot,
-      insertionIndex === null ? 0 : blockHeight + rowGap,
+      insertionIndex === null ? 0 : shiftUnit(),
     )
     for (const [rowValue, shift] of shifts) {
       const spring = springFor(rowValue)
@@ -677,11 +749,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (!el) return
     if (!grabbedSpring) {
       grabbedSpring = createSpring(0, toValue(options.spring) ?? SHIFT_SPRING, (offset) => {
-        el.style.translate = translateFor(offset)
+        el.style.translate = shiftTranslate(grabbed, offset)
       })
     }
-    const offset =
-      insertionIndex === null ? 0 : resolveGrabbedOffset(bands, sourceSlot, insertionIndex, rowGap)
+    const offset = insertionIndex === null ? 0 : grabbedOffset(insertionIndex)
     if (instant) grabbedSpring.jump(offset)
     else grabbedSpring.set(offset)
   }
@@ -709,7 +780,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     dropPosition.value = at
 
     const instant = !animate || reducedMotion()
-    const shifts = resolveRowShifts(bands, insertionIndex, blockHeight + rowGap)
+    const shifts = resolveRowShifts(bands, insertionIndex, shiftUnit())
     for (const [value, shift] of shifts) {
       const spring = springFor(value)
       if (instant) spring.jump(shift)
@@ -727,10 +798,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (!el) return
     if (!grabbedSpring) {
       grabbedSpring = createSpring(0, toValue(options.spring) ?? SHIFT_SPRING, (offset) => {
-        el.style.translate = translateFor(offset)
+        el.style.translate = shiftTranslate(grabbed, offset)
       })
     }
-    const offset = resolveGrabbedOffset(bands, sourceSlot, insertionIndex, rowGap)
+    const offset = grabbedOffset(insertionIndex)
     if (instant) grabbedSpring.jump(offset)
     else grabbedSpring.set(offset)
   }
@@ -765,9 +836,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const glidesHome = !landsHome && !!el && source === 'pointer'
     if (el && glidesHome) {
       // Both axes: a grouped drag carries the row sideways too, and that part of the way back
-      // glides like the rest instead of snapping. Measured where it is now, lifted preview or
-      // not, then put back in the flow before its rest position is read.
-      const current = el.getBoundingClientRect()
+      // glides like the rest instead of snapping. Measured where it shows now: the floating copy
+      // when there is one (the row itself waited in its place), then put back in the flow
+      // before its rest position is read.
+      const current = (previewEl ?? el).getBoundingClientRect()
       reveal(el)
       el.style.translate = ''
       const rest = el.getBoundingClientRect()
@@ -783,7 +855,12 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     for (const [rowValue, spring] of springs) {
       const rowEl = options.getElement(rowValue)
       if (rowEl && rowEl !== el)
-        settler.glide(rowEl, rowValue, alongOffset(spring.value), alongVelocity(spring.velocity))
+        settler.glide(
+          rowEl,
+          rowValue,
+          shiftPoint(rowValue, spring.value),
+          grid ? { x: 0, y: 0 } : alongVelocity(spring.velocity),
+        )
       spring.destroy()
     }
     springs.clear()
@@ -800,7 +877,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const before = new Map<string | number, number>()
     for (const row of remaining) before.set(row.value, bandOf(options.getElement(row.value)).start)
     change()
-    if (reducedMotion()) return
+    // A grid's rows don't move as the row lifts out: the slots were measured with it in place.
+    if (reducedMotion() || grid) return
     for (const row of remaining) {
       const delta = before.get(row.value)! - bandOf(options.getElement(row.value)).start
       if (Math.abs(delta) < 0.5) continue
@@ -917,7 +995,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       at.depth === sourceFrom.depth
     ) {
       const el = options.getElement(value)
-      if (source === 'pointer' && el?.style.translate) await revert()
+      // Carried away: the row itself, or the copy that floated for it.
+      if (source === 'pointer' && (el?.style.translate || previewEl)) await revert()
       else finish()
       return
     }
@@ -973,6 +1052,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const releaseVelocity = velocity
     const shiftVelocities = captureShiftVelocities()
 
+    holdLayout(container())
     options.onCommit(value, at)
 
     const animate = !reducedMotion()
@@ -1028,6 +1108,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     dropPosition.value = null
     bands = []
     remaining = []
+    grid = null
   }
 
   /** Full, instant stop — resets the dragged element's translate outright, no
@@ -1122,7 +1203,11 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let roomSpring: SpringHandle | null = null
   function makeRoom(size: number, instant = false) {
     const el = container()
-    if (!el || (!roomSpring && size === 0)) return
+    // A grid has room to spare on its last line, or makes a line for it: padding at its inline end
+    // would take a column away instead.
+    // Mid-drag, as measured at the grab: the lifted row floats off its line by now.
+    const isGrid = activeValue.value != null ? !!grid : wrapping()
+    if (!el || (!roomSpring && (size === 0 || isGrid))) return
     const side = axis() === 'x' ? 'paddingInlineEnd' : 'paddingBlockEnd'
     if (!roomSpring) {
       const base = parseFloat(getComputedStyle(el)[side]) || 0
@@ -1395,6 +1480,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     // that's on screen: past the list's end the pointer keeps it scrolling, and the row waits at the
     // edge, where it'll land.
     const x = axis() === 'x'
+    const free = !!options.group || !!grid
     const list = (options.group ? options.group.__hostContainer() : null) ?? container()
     let along = x ? event.clientX - grabOffsetX : event.clientY - grabOffsetY
     if (list && toValue(options.restrictToList)) {
@@ -1403,9 +1489,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       along = Math.min(Math.max(along, start), Math.max(start, end - size))
     }
     if (x) previewEl.style.insetInlineStart = `${along}px`
-    else if (options.group) previewEl.style.insetInlineStart = `${event.clientX - grabOffsetX}px`
+    else if (free) previewEl.style.insetInlineStart = `${event.clientX - grabOffsetX}px`
     if (!x) previewEl.style.insetBlockStart = `${along}px`
-    else if (options.group) previewEl.style.insetBlockStart = `${event.clientY - grabOffsetY}px`
+    else if (free) previewEl.style.insetBlockStart = `${event.clientY - grabOffsetY}px`
   }
 
   /** Direct repositioning for a keyboard-driven move — no pointer to follow. */
@@ -1608,11 +1694,13 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       // is, in both dimensions, even before it lifts out of this list —
       // otherwise it reads as stuck on the sort axis right up until the
       // moment it crosses into a sibling column.
-      dragEl.style.translate = options.group
-        ? axis() === 'x'
-          ? `${dx + shift}px ${dy}px`
-          : `${dx}px ${dy + shift}px`
-        : translateFor(along)
+      // A grid's row follows it both ways too.
+      dragEl.style.translate =
+        options.group || grid
+          ? axis() === 'x'
+            ? `${dx + shift}px ${dy}px`
+            : `${dx}px ${dy + shift}px`
+          : translateFor(along)
     }
 
     if (options.group) {
@@ -1670,7 +1758,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     }
     // The dragged block's centre, not the pointer: a tall card grabbed near its top would otherwise
     // have to travel most of its own height past the next row before anything opened for it.
-    currentIndex = resolveInsertionIndex(bands, pointer - grabAlong + blockHeight / 2)
+    // In a grid, the slot nearest that centre, in both axes.
+    currentIndex = grid
+      ? nearestSlot(grid.slots, gridCentre(grid, dx, dy), grid.slots.length)
+      : resolveInsertionIndex(bands, pointer - grabAlong + blockHeight / 2)
     applyTarget(currentIndex, nested() ? across : 0)
     say('move')
   }
@@ -1871,6 +1962,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       labelOf,
       reducedMotion,
       draggedValue: () => activeValue.value,
+      grid: measureOwnGrid,
       draggedBlockSize: () => blockHeight + rowGap,
       sourceSlot: () => sourceSlot,
       previewRect: () => previewEl?.getBoundingClientRect() ?? null,

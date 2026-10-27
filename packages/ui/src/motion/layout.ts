@@ -32,6 +32,15 @@ function closeness(near: Element | null, el: Element): number {
   return 0
 }
 
+// Where it shows: a row being dragged waits hidden in its place while a copy floats under the
+// pointer, so a trip starting from it starts from the copy (Sortable and v-draggable mark both).
+function shownBox(el: Element): DOMRect {
+  const copy = el.hasAttribute('data-sortable-source')
+    ? document.querySelector('[data-sortable-preview]')
+    : null
+  return (copy ?? el).getBoundingClientRect()
+}
+
 // Boxes read as the owner starts to re-render: by the time one leaves, the same flush may have
 // moved it (a row inserted above). Dropped once the flush is over.
 const painted = new WeakMap<Element, DOMRect>()
@@ -51,7 +60,7 @@ function watchOwner(el: Element, owner: ComponentInternalInstance) {
     watched.set(owner, set)
     onBeforeUpdate(() => {
       for (const each of set)
-        if (each.isConnected) painted.set(each, each.getBoundingClientRect())
+        if (each.isConnected) painted.set(each, shownBox(each))
         else set.delete(each)
       queueMicrotask(() => set.forEach((each) => painted.delete(each)))
     }, owner)
@@ -80,7 +89,7 @@ export function notePaintedSiblings(el: Element): void {
   for (const each of set) {
     if (!each.isConnected) set.delete(each)
     else if (!painted.has(each)) {
-      painted.set(each, each.getBoundingClientRect())
+      painted.set(each, shownBox(each))
       noted.add(each)
     }
   }
@@ -88,7 +97,7 @@ export function notePaintedSiblings(el: Element): void {
 
 /** Leaving: where it was, for whoever arrives next under the same id. */
 export function rememberLayout(el: Element, id: string): void {
-  const box = painted.get(el) ?? el.getBoundingClientRect()
+  const box = painted.get(el) ?? shownBox(el)
   // Ids that left and never came back: dropped, so one id per item can't grow this for good.
   for (const [key, list] of boxes) {
     const kept = list.filter(fresh)
@@ -365,7 +374,13 @@ function relayout(parent: Element, members: Set<Element>) {
     if (!last || !place || (Math.abs(last.x - place.x) < 0.5 && Math.abs(last.y - place.y) < 0.5))
       return
     for (const run of runs[i]!) run.cancel()
-    if (reduced || motionOffAt(el)) return movedOf.get(el)?.()
+    // A drag list placing its own rows glides them itself: a slide here would move them twice.
+    if (
+      reduced ||
+      motionOffAt(el) ||
+      el.closest('[data-sortable-placing], [data-sortable-settling]')
+    )
+      return movedOf.get(el)?.()
     // From where it showed: its resting offset of its own that went with the move included.
     const jumped = ownLast && own ? { x: ownLast.x - own.x, y: ownLast.y - own.y } : { x: 0, y: 0 }
     const offset = {
@@ -388,7 +403,11 @@ export function followLayout(
 ): () => void {
   // Inside a component's panel, measured against the panel: content in a slot moves with the row
   // around it (a filtered option), not within its own parent.
-  const parent = el.parentElement?.closest('[data-ui-presence]') ?? el.parentElement
+  let parent = el.parentElement?.closest('[data-ui-presence]') ?? el.parentElement
+  // A wrapper with no box (`display: contents`, a ContextMenu trigger) doesn't place it: what
+  // holds the wrapper does, and that's where its siblings come and go.
+  while (parent?.parentElement && getComputedStyle(parent).display === 'contents')
+    parent = parent.parentElement
   if (!parent) return () => {}
   placeOf.set(el, placeIn(el, parent))
   ownOf.set(el, ownShift(el))

@@ -1,6 +1,12 @@
 import { nextTick, toValue } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
-import { SHIFT_SPRING, resolveInsertionIndex, resolveRowShifts, useSortable } from './useSortable'
+import {
+  SHIFT_SPRING,
+  holdLayout,
+  resolveInsertionIndex,
+  resolveRowShifts,
+  useSortable,
+} from './useSortable'
 import type {
   GroupMemberBinding,
   SortableAxis,
@@ -14,6 +20,8 @@ import type { SpringHandle } from '../motion/useSpringValue'
 import { contentOffset, findScrollParent, scrollIntoReach } from './sortableAutoScroll'
 import type { Point } from './sortableSettle'
 import { prefersReducedMotion } from './dom'
+import { nearestSlot, slotAt, slotOffset, translateOf } from './sortableGrid'
+import type { GridLayout } from './sortableGrid'
 
 /** Where a dragged value sits, or would land, within one member list. */
 export interface GroupDropPosition {
@@ -176,8 +184,12 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
   let ghostScrollEl: HTMLElement | null = null
   let ghostOffsetAtFreeze = 0
 
+  // A host whose items wrap (a card grid): the gap opens slot to slot in reading order.
+  let ghostGrid: GridLayout | null = null
+
   function freezeBands(binding: GroupMemberBinding) {
     const axis = binding.axis()
+    ghostGrid = binding.grid()
     ghostScrollEl = findScrollParent(binding.container(), axis)
     ghostOffsetAtFreeze = contentOffset(ghostScrollEl, axis)
     ghostBands = binding.rows().map((row) => {
@@ -193,17 +205,22 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
   function driveGhost(hostBinding: GroupMemberBinding, insertionIndex: number, blockSize: number) {
     const instant = reducedMotion()
     const axis = hostBinding.axis()
+    const layout = ghostGrid
     const shifts = resolveRowShifts(
       ghostBands.map((band) => ({ value: band.value, wasBelowSource: false })),
       insertionIndex,
-      blockSize,
+      layout ? 1 : blockSize,
     )
     for (const [value, shift] of shifts) {
       let spring = ghostSprings.get(value)
       if (!spring) {
+        const home = ghostBands.findIndex((band) => band.value === value)
         spring = createSpring(0, SHIFT_SPRING, (offset) => {
           const el = hostBinding.getElement(value)
-          if (el) el.style.translate = translateFor(offset, axis)
+          if (!el) return
+          el.style.translate = layout
+            ? translateOf(slotOffset(layout.slots, home, offset))
+            : translateFor(offset, axis)
         })
         ghostSprings.set(value, spring)
       }
@@ -223,6 +240,7 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     }
     ghostSprings = new Map()
     ghostBands = []
+    ghostGrid = null
   }
 
   function positionPreviewAtGap(
@@ -233,6 +251,11 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     const containerRect = hostBinding.container()?.getBoundingClientRect()
     if (!containerRect) return
     const axis = hostBinding.axis()
+    if (ghostGrid) {
+      const slot = slotAt(ghostGrid.slots, insertionIndex)
+      originBinding.setPreviewPosition(containerRect.top + slot.y, containerRect.left + slot.x)
+      return
+    }
     const band = ghostBands[insertionIndex]
     const last = ghostBands[ghostBands.length - 1]
     const along = band ? band.start : last ? last.start + last.size : 0
@@ -270,6 +293,7 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     currentHostId = null
     currentIndex = 0
     ghostBands = []
+    ghostGrid = null
     ghostSprings = new Map()
     sessionSource = 'pointer'
   }
@@ -314,10 +338,22 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
       : axis === 'x'
         ? point.x
         : point.y
-    currentIndex = resolveInsertionIndex(
-      ghostBands,
-      along + contentOffset(ghostScrollEl, axis) - ghostOffsetAtFreeze,
-    )
+    const list = hostBinding.container()?.getBoundingClientRect()
+    currentIndex =
+      ghostGrid && list
+        ? // The slot, of every one plus one past the end, nearest the preview's centre.
+          nearestSlot(
+            ghostGrid.slots,
+            {
+              x: (preview ? preview.left + preview.width / 2 : point.x) - list.left,
+              y: (preview ? preview.top + preview.height / 2 : point.y) - list.top,
+            },
+            ghostGrid.slots.length + 1,
+          )
+        : resolveInsertionIndex(
+            ghostBands,
+            along + contentOffset(ghostScrollEl, axis) - ghostOffsetAtFreeze,
+          )
     driveGhost(hostBinding, currentIndex, origin.draggedBlockSize())
   }
 
@@ -390,7 +426,8 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     for (const [rowValue, spring] of ghostSprings) {
       const el = dest.getElement(rowValue)
       if (el) {
-        destGhostVelocities.set(el, spring.velocity)
+        // A grid's ghost shifts run in slots, not px: its rows land from a standstill.
+        if (!ghostGrid) destGhostVelocities.set(el, spring.velocity)
         // Otherwise the leftover shift is still there when `destAfter` reads
         // this row's real position below, cancelling out of the FLIP delta
         // and stranding it at its mid-hover offset instead of its true slot.
@@ -406,6 +443,7 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     // The row takes over the room its new list made for it, in the same frame, so neither moves.
     dest.makeRoom(0, true)
     const leaving = origin.draggedBlockSize()
+    holdLayout(origin.container(), dest.container())
     options.onTransfer(value, from, to)
     resetSession()
 

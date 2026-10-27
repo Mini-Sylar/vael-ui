@@ -119,6 +119,13 @@ export function createSettler(options: {
     row.onFrame = undefined
     done?.(row.el)
   }
+  // The settler moves this row: a `v-animate` layout slide on it stands down meanwhile.
+  function hold(el: HTMLElement) {
+    el.setAttribute('data-sortable-settling', '')
+  }
+  function release(row: SettlingRow) {
+    row.el.removeAttribute('data-sortable-settling')
+  }
   function land(row: SettlingRow) {
     if (!row.lifted) return
     row.el.style.position = row.lifted.position
@@ -136,10 +143,12 @@ export function createSettler(options: {
         const el = typeof key === 'symbol' ? null : options.getElement(row.value)
         if (!el) {
           rows.delete(key)
+          release(row)
           rest(row)
           continue
         }
         row.el = el
+        hold(el)
       }
       const natural = naturalOf(row.el)
       // The slot moved under the row: hold the row where it is on screen and glide from there.
@@ -176,6 +185,7 @@ export function createSettler(options: {
     }
     report(moving)
     if (!moving && now >= watchUntil) {
+      for (const row of rows.values()) release(row)
       rows.clear()
       return
     }
@@ -215,6 +225,7 @@ export function createSettler(options: {
         return
       }
       lift(row)
+      hold(el)
       el.style.translate = translateFor(offset)
       row.onFrame?.(el)
       rows.set(value, row)
@@ -223,6 +234,7 @@ export function createSettler(options: {
       schedule()
     },
     watch(el, value) {
+      hold(el)
       if (!rows.has(value))
         rows.set(value, {
           el,
@@ -241,6 +253,7 @@ export function createSettler(options: {
       frame = 0
       for (const row of rows.values()) {
         land(row)
+        release(row)
         rest(row)
       }
       rows.clear()

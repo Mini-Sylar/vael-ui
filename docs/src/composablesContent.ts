@@ -1125,7 +1125,8 @@ const shown = useTween(total, { duration: 600, easing: 'out' })`,
       {
         name: 'axis',
         type: "MaybeRefOrGetter<'y' | 'x'>",
-        description: "The axis rows reorder along. Default `'y'`. Nesting only works on `'y'`.",
+        description:
+          "The axis rows reorder along. Default `'y'`. Nesting only works on `'y'`. Rows that wrap onto more lines (a card grid) reorder in reading order, slot by slot.",
       },
       {
         name: 'nested',
