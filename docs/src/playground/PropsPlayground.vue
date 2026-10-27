@@ -432,13 +432,16 @@
               <code>{{ changeHint.name }}</code> <RichText :text="changeHint.text" />
             </p>
           </Transition>
-          <p v-if="name === 'Loader'" class="playground-drag-hint playground-note">
-            ConfigProvider's <code>loader-type</code> sets every loader in an app at once, the ones
-            inside buttons, lists and toasts too.
+          <!-- The note, then its action on a line of its own, not run into the sentence. -->
+          <div v-if="name === 'Loader'" class="playground-drag-hint playground-note">
+            <p>
+              ConfigProvider's <code>loader-type</code> sets every loader in an app at once, the
+              ones inside buttons, lists and toasts too.
+            </p>
             <Button variant="link" size="sm" @click="docsSettings?.showSetting('loader')">
               Show me how
             </Button>
-          </p>
+          </div>
           <span
             v-if="next"
             class="pg-handle"
@@ -2331,6 +2334,13 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
 
 .playground-note {
   pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.playground-note p {
+  margin: 0;
 }
 
 .pg-change-hint :deep(code),
