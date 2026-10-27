@@ -4,6 +4,8 @@
     z-index: var(--ui-z-popover, 55);
     /* Shrink-to-fit; floating-ui requirement. */
     inline-size: max-content;
+    /* Set inline on a menu that matches its trigger's width; a submenu inside it doesn't inherit it. */
+    --ui-anchor-inline-size: initial;
   }
   .ui-menu-panel {
     position: relative;
@@ -15,6 +17,7 @@
     box-shadow: var(--ui-panel-shadow);
     /* Clips body to panel corners. */
     overflow: hidden;
+    min-inline-size: var(--ui-anchor-inline-size, auto);
   }
   .ui-menu-header,
   .ui-menu-footer {

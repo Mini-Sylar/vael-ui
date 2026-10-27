@@ -286,6 +286,11 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
   /** Caps the panel's height in pixels; the item list scrolls past it. Unset, only the viewport limits it. */
   maxPanelHeight?: number
   /**
+   * Makes the panel at least as wide as its trigger, as a select's is; longer rows still widen it.
+   * Submenus keep their own width. @default false
+   */
+  matchTriggerWidth?: boolean
+  /**
    * Row path to reveal on open, as each row's `value` (or `label`): every submenu along it opens and
    * its last row takes focus instead of the first, e.g. to show the current selection.
    */
@@ -530,6 +535,7 @@ const {
   closeOnOutside: () => props.closeOnOutside,
   beforeClose: () => props.beforeClose,
   maxHeightCap: () => props.maxPanelHeight,
+  matchReferenceWidth: () => props.matchTriggerWidth,
   onOpenChange: (value, details) => emit('open-change', value, details),
 })
 

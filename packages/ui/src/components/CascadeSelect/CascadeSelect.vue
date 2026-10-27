@@ -9,6 +9,7 @@
       :align="align"
       :side-offset="sideOffset"
       :align-offset="alignOffset"
+      match-trigger-width
       :close-on-esc="closeOnEsc"
       :close-on-outside="closeOnOutside"
       :before-close="beforeClose"
