@@ -19,14 +19,17 @@
           label="Brand color"
         >
           <template #trigger="{ color, open: isOpen }">
+            <!-- GSAP turns the face, not the button: the panel is placed against the button, and
+                 a tween written straight onto it would drag the panel through every frame. -->
             <button
-              ref="orb"
               type="button"
               class="orb"
               :style="{ '--orb': color }"
               :aria-expanded="isOpen"
               aria-label="Brand color"
-            />
+            >
+              <span ref="orb" class="orb-face" />
+            </button>
           </template>
           <template #preset="{ selected }">
             <svg
@@ -76,7 +79,7 @@ const brand = shallowRef(presets[0])
 const open = shallowRef(false)
 const recent = shallowRef<string[]>([])
 const page = useTemplateRef<HTMLElement>('page')
-const orb = useTemplateRef<HTMLButtonElement>('orb')
+const orb = useTemplateRef<HTMLElement>('orb')
 const recentEl = useTemplateRef<HTMLElement>('recentEl')
 
 // The page's custom properties tween to the new brand, so buttons, logo and hero shift together.
@@ -134,11 +137,18 @@ watch(open, (value) => {
   padding: 0;
   border: 0;
   border-radius: 9999px;
+  background: none;
+  cursor: pointer;
+}
+.orb-face {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: inherit;
   background: conic-gradient(from 0deg, var(--orb), #fff 50%, var(--orb));
   box-shadow:
     0 0 0 2px var(--ui-surface),
     0 0 0 3px var(--orb);
-  cursor: pointer;
 }
 .orb:focus-visible {
   outline: 2px solid var(--ui-primary);
