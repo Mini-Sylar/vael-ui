@@ -53,3 +53,45 @@ test('back from a wide detail into the third column, from where the detail was',
   // Its cell never moves.
   for (const left of cells) expect(left).toBeCloseTo(cellLeft, 0)
 })
+
+test('with layout: true too, it starts the trip at the size it left at, never its own for a frame', async () => {
+  const open = shallowRef(true)
+  const screen = await render(() =>
+    h('div', { style: 'position: relative; width: 600px' }, [
+      h(
+        'div',
+        { style: 'display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px' },
+        [0, 1, 2].map((i) =>
+          h('div', { class: `cell cell-${i}`, style: 'height: 60px' }, [
+            i === 2 && !open.value
+              ? withDirectives(h('button', { class: 'card', style: 'width: 100%; height: 100%' }), [
+                  [vAnimate, { layoutId: 'card', layout: true, duration: 400, easing: 'linear' }],
+                ])
+              : null,
+          ]),
+        ),
+      ),
+      open.value
+        ? withDirectives(
+            h('div', {
+              class: 'detail',
+              style: 'position: absolute; inset: 0 0 auto 0; height: 140px',
+            }),
+            [[vAnimate, { layoutId: 'card', duration: 400, easing: 'linear' }]],
+          )
+        : null,
+    ]),
+  )
+  await new Promise((r) => setTimeout(r, 300))
+  const detail = screen.container.querySelector('.detail')!.getBoundingClientRect()
+  open.value = false
+  const widths: number[] = []
+  for (let i = 0; i < 6; i++) {
+    await new Promise(requestAnimationFrame)
+    const card = screen.container.querySelector('.card')
+    if (card) widths.push(card.getBoundingClientRect().width)
+  }
+  // Shrinking from the detail's width all the way: no frame at its own small size first.
+  expect(widths[0]!).toBeGreaterThan(detail.width * 0.8)
+  for (let i = 1; i < widths.length; i++) expect(widths[i]!).toBeLessThanOrEqual(widths[i - 1]! + 1)
+})

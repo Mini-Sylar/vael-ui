@@ -3,6 +3,7 @@ import { pageHidden, prefersReducedMotion } from '../composables/dom'
 import { motionOffAt } from './styleHolder'
 import { resolveTiming } from './timing'
 import type { MotionTiming } from './types'
+import { LAYOUT_ID } from './ids'
 
 const SIZE_ID = 'ui-size'
 
@@ -147,9 +148,37 @@ export function followSize(
     )
   }
 
+  // A `layoutId` trip resizes the element itself, from the size it left at: that trip owns its size,
+  // so a change seen meanwhile isn't new content. Once it lands, its size there is the last one.
+  const trip = () =>
+    el
+      .getAnimations()
+      .find(
+        (run) =>
+          run.id === LAYOUT_ID &&
+          run.playState !== 'finished' &&
+          (run.effect as KeyframeEffect | null)
+            ?.getKeyframes()
+            .some((k) => 'width' in k || 'height' in k),
+      )
+  let waiting: Animation | undefined
+  function afterTrip(run: Animation) {
+    if (waiting === run) return
+    waiting = run
+    void run.finished
+      .catch(() => {})
+      .then(() => {
+        if (waiting !== run) return
+        waiting = undefined
+        if (!running && el.isConnected) last = measure()
+      })
+  }
+
   function sync(changed = false) {
     // Parked off the page (KeepAlive): it measures nothing; it comes back the size it was.
     if (!el.isConnected) return
+    const traveling = trip()
+    if (traveling) return afterTrip(traveling)
     // What's on screen: mid-animation, the animated size; otherwise the last size we saw (the
     // observers run after the DOM changed, so the box already measures its new size).
     const showing = running ? measure() : last
@@ -185,6 +214,8 @@ export function followSize(
   // check doesn't replay it.
   const sizes = new ResizeObserver((entries) => {
     if (entries.some((entry) => entry.target !== el)) return sync()
+    const traveling = trip()
+    if (traveling) return afterTrip(traveling)
     if (!running && el.isConnected) last = measure()
   })
   const watchChildren = () => {

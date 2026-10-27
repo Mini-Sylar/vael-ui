@@ -7,6 +7,7 @@ import { pageHidden, prefersReducedMotion } from '../composables/dom'
 import { cssSize, sizeTimingOf } from './size'
 import { resolveTiming, track } from './timing'
 import type { ElementHookContext, MotionResult, MotionTiming, MotionValues } from './types'
+import { LAYOUT_ID } from './ids'
 import { runHook } from './hook'
 import { isTimed } from './playable'
 import { motionOffAt } from './styleHolder'
@@ -146,8 +147,6 @@ function raiseWhile(el: Element, run: Animation) {
   }
   run.finished.then(lower, lower)
 }
-
-const LAYOUT_ID = 'ui-layout'
 
 /** From `from` to where it is (`to`), as a transform that ends at none. */
 // Its `delay` (seconds), held where it was until then.
