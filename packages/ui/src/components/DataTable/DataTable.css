@@ -453,6 +453,12 @@
   .ui-datatable-row-move {
     transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
   }
+  /* A sliding row covers what it slides over. Rows arriving under it (a group opening) show as it
+     moves off them, as an expanded row's content does, instead of both rows' text showing through
+     each other. No specificity: a row's own background (a group header's, yours) still wins. */
+  :where(.ui-datatable-row-move) {
+    background-color: var(--ui-surface);
+  }
   /* TransitionGroup's `css` prop doesn't gate move; only a missing transition here does. */
   .ui-datatable-tbody[data-motion='off'] .ui-datatable-row-move {
     transition: none;

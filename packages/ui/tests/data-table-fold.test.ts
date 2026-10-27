@@ -53,3 +53,31 @@ test('a group folding and unfolding keeps its last row inside the table', async 
   // And open again: no empty band under rows sliding down, and nothing past the edge.
   expect(await watchEdge(() => (data.value = all))).toBeLessThan(2)
 })
+
+test('rows sliding over rows that just arrived cover them, not show through them', async () => {
+  const data = shallowRef(all.filter((row) => row.id === 0 || row.id > 3))
+  render(
+    () =>
+      h(
+        DataTable as Component,
+        { data: data.value, rowKey: (row: { id: number }) => row.id, 'aria-label': 'People' },
+        {
+          columns: ({ Column }: { Column: Component }) => [
+            h(Column, { field: 'name', label: 'Name' }),
+          ],
+        },
+      ),
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  await new Promise((r) => setTimeout(r, 300))
+  data.value = all
+  let sliding = 0
+  for (let frame = 0; frame < 20; frame++) {
+    await new Promise(requestAnimationFrame)
+    for (const row of document.querySelectorAll<HTMLElement>('.ui-datatable-row-move')) {
+      sliding++
+      expect(getComputedStyle(row).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    }
+  }
+  expect(sliding).toBeGreaterThan(0)
+})
