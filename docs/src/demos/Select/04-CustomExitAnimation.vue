@@ -6,7 +6,7 @@
       motion-v spring, and Select waits for the exit before removing the panel. Picking an item,
       pressing Escape, clicking outside and clicking the trigger again all close it the same way.
     </p>
-    <Field label="Destination">
+    <Field style="max-inline-size: 16rem" label="Destination">
       <Select
         v-model="springValue"
         :items="countries"

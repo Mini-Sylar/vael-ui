@@ -73,7 +73,7 @@
           aria-modal="false"
           :aria-label="messages.datePicker.chooseDate"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelWidthStyle(props.panelWidth), panelPart.style]"
           v-bind="panelAttrs"
         >
           <Calendar
@@ -179,6 +179,8 @@
 </template>
 
 <script lang="ts">
+import { panelWidthStyle } from '../../composables/panelWidth'
+import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
 
@@ -307,6 +309,12 @@ const rawProps = withDefaults(
     sideOffset?: number
     /** Shifts the panel along the alignment axis, in pixels. @default 0 */
     alignOffset?: number
+    /**
+     * The panel's width. Unset, it is the calendar's own; `'trigger'` makes it at least the field's
+     * width, and a width in px or any CSS length (`'20rem'`) sets it. The calendar fills it and its
+     * days grow.
+     */
+    panelWidth?: PanelWidth
     /** Escape key closes the panel. @default true */
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. @default true */
@@ -716,7 +724,7 @@ const { positionerStyle, placement, transformOrigin, isClosing, close, cancelClo
     sideOffset: () => props.sideOffset,
     alignOffset: () => props.alignOffset,
     // Calendar grid width is content-driven, not trigger-width-dependent like Select/TreeSelect.
-    matchReferenceWidth: false,
+    matchReferenceWidth: () => props.panelWidth === 'trigger',
     closeOnEsc: () => props.closeOnEsc,
     closeOnOutside: () => props.closeOnOutside,
     beforeClose: () => props.beforeClose,

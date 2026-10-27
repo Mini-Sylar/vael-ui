@@ -1,6 +1,11 @@
 @layer ui-components {
   /* CascadeSelect: panel is a Menu instance. */
   /* Trigger fills row like Input. */
+  /* At least the field's width, up to a cap: on a long field a wider panel only puts the next
+     level further from the row that opens it. */
+  .ui-menu-panel.ui-cascade-select-panel {
+    min-inline-size: min(var(--ui-anchor-inline-size, 0px), 16rem);
+  }
   .ui-cascade-select .ui-menu-trigger {
     display: flex;
     inline-size: 100%;

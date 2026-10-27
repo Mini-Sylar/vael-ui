@@ -32,6 +32,7 @@ const SHARED_MODULES = new Set([
 // Stateless helpers each build may bundle on its own.
 const PER_BUILD_MODULES = new Set([
   'composables/useLazySortable',
+  'composables/panelWidth',
   'composables/useFocusableScroller',
   'composables/selectGroups',
   'composables/useRememberedSelection',

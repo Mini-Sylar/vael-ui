@@ -9,6 +9,7 @@
       into “+N”.
     </p>
     <Combobox
+      style="max-inline-size: 24rem"
       v-model="targetMarkets"
       :items="countries"
       multiple

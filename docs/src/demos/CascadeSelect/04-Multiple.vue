@@ -6,7 +6,7 @@
       keeps the panel open, so you can move on to another country. <code>maxLabels</code>,
       <code>display</code> and <code>clearable</code> work as they do on Select.
     </p>
-    <Field label="Office cities">
+    <Field style="max-inline-size: 24rem" label="Office cities">
       <CascadeSelect
         v-model="cities"
         :items="geography"

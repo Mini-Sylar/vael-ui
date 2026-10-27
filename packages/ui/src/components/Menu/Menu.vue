@@ -29,7 +29,12 @@
         <div
           ref="panel"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
+          :style="[
+            { transformOrigin },
+            panelMaxHeightStyle,
+            panelWidthStyle(panelWidth),
+            panelPart.style,
+          ]"
           :data-level="level"
           data-ui-presence
           v-bind="panelAttrs"
@@ -195,6 +200,8 @@
 
 <script lang="ts">
 import type { Component, InjectionKey } from 'vue'
+import { panelWidthStyle } from '../../composables/panelWidth'
+import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
 import type { UiPartValue } from '../../classes'
@@ -286,10 +293,11 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
   /** Caps the panel's height in pixels; the item list scrolls past it. Unset, only the viewport limits it. */
   maxPanelHeight?: number
   /**
-   * Makes the panel at least as wide as its trigger, as a select's is; longer rows still widen it.
-   * Submenus keep their own width. @default false
+   * The panel's width: `'trigger'` for at least its trigger's width, as a select's is (longer rows
+   * still widen it), or a width in px or any CSS length (`'20rem'`). Unset, it fits its rows.
+   * Submenus keep their own width.
    */
-  matchTriggerWidth?: boolean
+  panelWidth?: PanelWidth
   /**
    * Row path to reveal on open, as each row's `value` (or `label`): every submenu along it opens and
    * its last row takes focus instead of the first, e.g. to show the current selection.
@@ -535,7 +543,7 @@ const {
   closeOnOutside: () => props.closeOnOutside,
   beforeClose: () => props.beforeClose,
   maxHeightCap: () => props.maxPanelHeight,
-  matchReferenceWidth: () => props.matchTriggerWidth,
+  matchReferenceWidth: () => props.panelWidth === 'trigger',
   onOpenChange: (value, details) => emit('open-change', value, details),
 })
 

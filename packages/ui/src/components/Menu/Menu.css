@@ -104,6 +104,9 @@
   }
   .ui-menu-item-label {
     flex: 1;
+    /* In a panel of a set width, a long word wraps instead of running out of it. */
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
   }
   .ui-menu-item-shortcut {
     margin-inline-start: 1.5rem;

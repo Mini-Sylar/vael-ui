@@ -129,7 +129,12 @@
           ref="panel"
           data-ui-presence
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
+          :style="[
+            { transformOrigin },
+            panelMaxHeightStyle,
+            panelWidthStyle(props.panelWidth),
+            panelPart.style,
+          ]"
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
@@ -241,6 +246,8 @@
 </template>
 
 <script lang="ts">
+import { panelWidthStyle } from '../../composables/panelWidth'
+import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
 import type {
@@ -430,6 +437,11 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
+    /**
+     * The panel's width. `'trigger'` matches the field (at least 12rem); a width in px or any CSS
+     * length (`'20rem'`) sets it. @default 'trigger'
+     */
+    panelWidth?: PanelWidth
     /**
      * How it moves. `false` skips all of it: the panel opening, the list easing to its new height as
      * you search, the clear button and the chips. An object moves the panel your way, like

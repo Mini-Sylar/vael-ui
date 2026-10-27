@@ -6,7 +6,7 @@
       <code>#value</code> slot replaces the trigger’s label with a breadcrumb:
       <code>path</code> holds each level’s <code>value</code>, mapped back to labels here.
     </p>
-    <Field label="City">
+    <Field style="max-inline-size: 16rem" label="City">
       <CascadeSelect v-model="city2" :items="geographyWithDisabled" placeholder="Pick a city">
         <template #value="{ selected, path: p }">
           <span v-if="selected">{{ pathLabels(p).join(' / ') }}</span>

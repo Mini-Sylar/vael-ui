@@ -6,7 +6,7 @@
       can remove one without opening the panel. <code>maxLabels</code> folds the rest into a “+N”
       chip. <code>display</code> can show a comma-separated list or a count instead of chips.
     </p>
-    <Field label="Target markets">
+    <Field style="max-inline-size: 24rem" label="Target markets">
       <Select
         v-model="targetMarkets"
         :items="countries"

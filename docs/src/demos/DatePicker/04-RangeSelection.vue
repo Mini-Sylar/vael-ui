@@ -6,6 +6,7 @@
       click, because there’s a second date to pick.
     </p>
     <DatePicker
+      style="max-inline-size: 20rem"
       v-model="rangeValue"
       :locale="currentLocale"
       selection-mode="range"

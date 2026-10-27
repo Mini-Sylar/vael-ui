@@ -13,7 +13,7 @@
       and fires again only after <code>items</code> grows, so scrolling can't request a slow page
       twice. Scroll far enough and the list passes 100 items, where Select virtualizes on its own.
     </p>
-    <Field label="Invoice">
+    <Field style="max-inline-size: 16rem" label="Invoice">
       <Select
         v-model="pagedValue"
         :items="pagedItems"

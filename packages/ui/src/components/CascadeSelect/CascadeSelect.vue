@@ -9,7 +9,7 @@
       :align="align"
       :side-offset="sideOffset"
       :align-offset="alignOffset"
-      match-trigger-width
+      :panel-width="panelWidth ?? 'trigger'"
       :close-on-esc="closeOnEsc"
       :close-on-outside="closeOnOutside"
       :before-close="beforeClose"
@@ -283,6 +283,7 @@ export type CascadeSelectFilter<T> =
 import type { BeforeClose, CascadeSelectMotion } from '../../motion/types'
 import type { PopoverCloseReason } from '../../composables/usePopover'
 import './CascadeSelect.css'
+import type { PanelWidth } from '../../composables/panelWidth'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
@@ -359,6 +360,13 @@ const rawProps = withDefaults(
     sideOffset?: number
     /** Shifts the panel along the alignment axis, in pixels. @default 0 */
     alignOffset?: number
+    /**
+     * The first level's width. Unset, it fits its rows and is at least as wide as the field, up to
+     * 16rem, so the next level opens close by. `'trigger'` makes it at least the field's full
+     * width; a width in px or any CSS length (`'20rem'`) sets it. The levels opening beside it keep
+     * their own width.
+     */
+    panelWidth?: PanelWidth
     /** Escape key closes the panel. @default true */
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. @default true */
@@ -868,9 +876,16 @@ const controlLabelledBy = computed(() => {
 const cx = useClassMerge()
 // The panel is teleported, so motion off is marked on it for the CSS that follows it (Menu.css).
 const panelUi = computed<UiPartValue | undefined>(() => {
-  if (props.motion) return themedUi()?.panel
   const { class: panelClass, style } = splitUiPart(themedUi()?.panel)
-  return { class: cx('ui-motion-off', panelClass), style }
+  return {
+    class: cx(
+      !props.motion && 'ui-motion-off',
+      // Unset width: the field's, only up to a cap.
+      props.panelWidth == null && 'ui-cascade-select-panel',
+      panelClass,
+    ),
+    style,
+  }
 })
 const themedUi = useThemedUi(
   (theme) => theme.cascadeSelect,

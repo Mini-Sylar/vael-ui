@@ -102,7 +102,12 @@
           ref="panel"
           data-ui-presence
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
+          :style="[
+            { transformOrigin },
+            panelMaxHeightStyle,
+            panelWidthStyle(props.panelWidth),
+            panelPart.style,
+          ]"
           :data-motion="props.motion ? undefined : 'off'"
           v-bind="panelAttrs"
         >
@@ -162,6 +167,8 @@
 </template>
 
 <script lang="ts">
+import { panelWidthStyle } from '../../composables/panelWidth'
+import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
 import type { TreeNode, TreeSelectionMode } from '../Tree/Tree.vue'
@@ -305,6 +312,11 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
+    /**
+     * The panel's width. `'trigger'` matches the field (at least 18rem, room for nested rows); a
+     * width in px or any CSS length (`'20rem'`) sets it. @default 'trigger'
+     */
+    panelWidth?: PanelWidth
     /**
      * `false` skips all built-in motion: the panel opening, rows, the chevron, the list easing to a
      * new height, and the clear button. An object moves the panel your way, like Popover's: values

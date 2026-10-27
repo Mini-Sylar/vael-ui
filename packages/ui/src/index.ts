@@ -129,6 +129,7 @@ export type {
 } from './components/Popover/Popover.vue'
 export { default as PopoverHost } from './components/PopoverHost/PopoverHost.vue'
 export { default as Menu } from './components/Menu/Menu.vue'
+export type { PanelWidth } from './composables/panelWidth'
 export type {
   MenuAlign,
   MenuEntry,

@@ -6,6 +6,7 @@
       month stays in view. The arrows move both months together, and on a narrow screen they stack.
     </p>
     <DatePicker
+      style="max-inline-size: 20rem"
       v-model="rangeValue"
       :locale="currentLocale"
       selection-mode="range"

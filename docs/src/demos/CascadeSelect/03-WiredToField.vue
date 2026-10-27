@@ -5,7 +5,12 @@
       Like every control, CascadeSelect works alone and generates its own id. Inside a Field, it
       gets the label, description, error and required state with no extra code.
     </p>
-    <Field label="Destination" description="Where should we ship your order?" :required="true">
+    <Field
+      style="max-inline-size: 16rem"
+      label="Destination"
+      description="Where should we ship your order?"
+      :required="true"
+    >
       <CascadeSelect
         v-model="city3"
         :items="geography"

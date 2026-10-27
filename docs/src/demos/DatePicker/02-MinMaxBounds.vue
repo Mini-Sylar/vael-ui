@@ -6,6 +6,7 @@
       <code>disabled-dates</code> function disables weekends.
     </p>
     <DatePicker
+      style="max-inline-size: 16rem"
       v-model="boundedValue"
       :locale="currentLocale"
       :min-date="minDate"

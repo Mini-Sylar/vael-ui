@@ -5,7 +5,12 @@
       Like every other control, TreeSelect works alone or inside a Field, which adds the label,
       description and required state. <code>disabled</code> locks it.
     </p>
-    <Field label="Project entry point" description="Read-only for this demo" :required="true">
+    <Field
+      style="max-inline-size: 16rem"
+      label="Project entry point"
+      description="Read-only for this demo"
+      :required="true"
+    >
       <TreeSelect
         :items="fileTree"
         model-value="index.html"

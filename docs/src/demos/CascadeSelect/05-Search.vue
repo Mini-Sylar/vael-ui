@@ -8,7 +8,7 @@
       picks the first.
     </p>
     <div class="row">
-      <Field label="City">
+      <Field style="inline-size: 16rem" label="City">
         <CascadeSelect v-model="city" :items="geography" filter placeholder="Pick a city" />
       </Field>
       <output class="panel-text">{{ city ?? '(none)' }}</output>

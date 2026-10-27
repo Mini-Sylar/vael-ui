@@ -6,6 +6,7 @@
       description and error.
     </p>
     <Field
+      style="max-inline-size: 16rem"
       label="Departure date"
       description="Required for one-way bookings"
       :required="true"
