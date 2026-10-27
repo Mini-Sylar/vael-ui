@@ -10,6 +10,8 @@ export interface DirectiveContent {
   value: MetaRow[]
   /** Only shown when non-empty. */
   modifiers?: MetaRow[]
+  /** Shown after the examples: what needs more than a row in a table. */
+  sections?: { id: string; title: string; body: string; code?: string }[]
 }
 
 export const directivesContent: Record<string, DirectiveContent> = {
@@ -18,6 +20,27 @@ export const directivesContent: Record<string, DirectiveContent> = {
     description:
       "Animates any element: in as it mounts, out as it leaves, to a new look when its values change, and to its new place when layout moves it. It plays on the same motion system as the components, so a ConfigProvider's spring, `motion: false` and reduced motion apply to it too. The Motion section covers it in depth, with examples for each case. It comes from `vael-ui/motion`; in a Vapor component, import `vAnimateVapor` from there instead (as `vAnimate`, or write `v-animate-vapor`).",
     installNames: ['vAnimate'],
+    sections: [
+      {
+        id: 'names',
+        title: 'Names',
+        body: "The word after the colon, as in `v-animate:rows`, is a name. An element on its own doesn't need one. Name elements when they belong together: elements under one name that come in at the same time are one group, so `stagger` plays them one after another. Inside a vael-ui component, such as a Dialog, its `motion.targets.rows` sets how the elements named `rows` move, and they come and go with the component. `after: 'rows'` lets another element wait for them, and pages under one name can wait for each other with `swap: 'wait'`.",
+        code: `<!-- On its own: no name. -->
+<p v-animate.rise>Saved</p>
+
+<!-- One group: they come in one after another. -->
+<li
+  v-for="row in rows"
+  :key="row.id"
+  v-animate:rows.rise="{ stagger: true }"
+>…</li>
+
+<!-- In a component: they move with the dialog. -->
+<Dialog :motion="{ targets: { rows: { initial: { y: 6 } } } }">
+  <li v-for="row in rows" :key="row.id" v-animate:rows>…</li>
+</Dialog>`,
+      },
+    ],
     value: [
       {
         name: 'string',
@@ -59,7 +82,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
         name: 'stagger',
         type: "boolean | 'end' | 'center' | 'edges' | number | ((index, count) => number)",
         description:
-          "Elements that share a name (`v-animate:rows`) come in one after another, in page order. `true` spaces them by the stagger token (40ms); `'end'`, `'center'` or `'edges'` start the wave there. A number is the seconds between them; a function gives each its own start.",
+          "Elements that share a name (`v-animate:rows`) come in one after another, in page order. `true` spaces them by the stagger token (40 ms); `'end'`, `'center'` or `'edges'` start the wave there. A number is the seconds between them; a function gives each its own start.",
       },
       {
         name: 'after',
@@ -136,7 +159,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
         name: ':name',
         type: '—',
         description:
-          'Names the element, as `v-animate:rows`: elements that share a name stagger together, `after` can wait for it, and inside a component it marks one of the targets its `motion` animates.',
+          "Names the element, as `v-animate:rows`: elements that share a name stagger together, `after` can wait for it, inside a component it marks one of the targets its `motion` animates, and pages under one name can wait for each other with `swap: 'wait'`. An element on its own needs no name.",
       },
       {
         name: '.size',

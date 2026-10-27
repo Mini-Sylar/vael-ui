@@ -20,6 +20,7 @@ export const GUIDE_ROUTES = [
 // The Motion section's own pages, then the guide that covers the contract in full.
 export const MOTION_ROUTES = [
   { routeName: 'motion-overview', labelKey: 'motionDocs.nav.overview' },
+  { routeName: 'motion-options', labelKey: 'motionDocs.nav.options' },
   { routeName: 'motion-start', labelKey: 'motionDocs.chapters.start.title' },
   { routeName: 'motion-elements', labelKey: 'motionDocs.chapters.elements.title' },
   { routeName: 'motion-states', labelKey: 'motionDocs.chapters.states.title' },
@@ -35,15 +36,18 @@ export const MOTION_ROUTES = [
   { routeName: 'motion-showpieces', labelKey: 'motionDocs.nav.showpieces' },
   { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
 ] as const
+// Composables (`use…`) hold state in a component; utilities are plain functions you call anywhere.
 const MOTION_COMPOSABLES = [
-  'springEasing',
   'useSpringValue',
   'useTween',
   'useScrollProgress',
-  'settled',
   'useHoverIndicator',
   'useTabIndicator',
 ]
+const MOTION_UTILITIES = ['springEasing', 'settled']
+
+// The directives that move things, listed in Motion's sidebar too.
+const MOTION_DIRECTIVES = ['vAnimate', 'vHoverIndicator', 'vDraggable']
 
 export type DocsMode = 'components' | 'composables' | 'motion'
 export interface DocsNavItem {
@@ -91,8 +95,19 @@ export function navSections(mode: DocsMode, t: (key: string) => string): DocsNav
         items: MOTION_ROUTES.map((g) => ({ label: t(g.labelKey), value: guideValue(g.routeName) })),
       },
       {
+        label: t('nav.directives'),
+        items: MOTION_DIRECTIVES.map((name) => ({
+          label: directivesContent[name]!.label,
+          value: directiveValue(name),
+        })),
+      },
+      {
         label: t('nav.composables'),
         items: MOTION_COMPOSABLES.map((name) => ({ label: name, value: composableValue(name) })),
+      },
+      {
+        label: t('composablesTaxonomy.utilities'),
+        items: MOTION_UTILITIES.map((name) => ({ label: name, value: composableValue(name) })),
       },
     ]
   }

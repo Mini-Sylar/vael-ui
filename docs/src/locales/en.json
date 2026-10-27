@@ -616,8 +616,9 @@
       "engines": "Your own engine",
       "types": "TypeScript",
       "back": "Back to components",
-      "blocks": "Blocks",
-      "showpieces": "Side by side"
+      "blocks": "Examples",
+      "showpieces": "Side by side",
+      "options": "All options"
     },
     "mode": {
       "components": "Every component, by kind",
@@ -778,6 +779,16 @@
           "title": "In and out",
           "body": "<code>initial</code> sets where the element comes in from. When Vue removes it, it leaves the way it came, faster and quieter, unless you give it an <code>exit</code>. Inside a component that closes, such as a dialog or a menu, it leaves with the panel instead. For the usual entrances, pick one by name: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> or <code>.blur</code>. Add a spring the same way, as in <code>v-animate.pop.bouncy</code>, and tune it with a value: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
+        "names": {
+          "title": "Names",
+          "body": "The word after the colon, as in <code>v-animate:rows</code>, is a name. An element on its own doesn't need one. You name elements when they belong together:",
+          "items": [
+            "Elements under one name that come in at the same time are one group, so <code>stagger</code> plays them one after another.",
+            "Inside a vael-ui component, such as a Dialog, its <code>motion.targets.rows</code> sets how the elements named <code>rows</code> move, and they come and go with the component.",
+            "<code>after: 'rows'</code> lets another element wait for them.",
+            "Pages under one name can wait for each other with <code>swap: 'wait'</code>."
+          ]
+        },
         "show": {
           "title": "Shown and hidden",
           "body": "Beside <code>v-show</code>, <code>v-animate</code> plays its exit when the element is hidden and its entrance when it's shown again, as it does for <code>v-if</code>."
@@ -785,6 +796,10 @@
         "scroll": {
           "title": "When it scrolls into view",
           "body": "<code>when: 'visible'</code> waits until the element is on screen, then plays once. Elements that share a name, such as <code>v-animate:tiles</code>, play in page order, one after another with a <code>stagger</code>. <code>stagger: true</code> spaces them by the stagger token; <code>'end'</code>, <code>'center'</code> or <code>'edges'</code> start the wave there instead. In a grid, <code>'center'</code> and <code>'edges'</code> go by where each element sits: the wave starts from the middle cell, or from the corners."
+        },
+        "grid": {
+          "title": "Across a grid",
+          "body": "Elements under one name that come in together stagger by where each sits. In a grid, <code>stagger: 'center'</code> starts from the middle cell and spreads outward, and <code>'edges'</code> starts from the corners and closes in. In a single row or column, they go in page order."
         },
         "inView": {
           "title": "While it's in view",
@@ -813,6 +828,10 @@
         "animate": {
           "title": "Hold a look",
           "body": "<code>animate</code> sets a look the element holds while it's on the page. Change it, and the element animates there from wherever it is, on a spring unless you set a <code>duration</code>: <code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>. With keyframe arrays, <code>progress</code> (0 to 1) holds them at one point instead of playing them, so a swipe or a scroll can scrub them. With a <code>spring</code>, they follow it with a short lag."
+        },
+        "values": {
+          "title": "What you can animate",
+          "body": "Besides <code>x</code>, <code>y</code>, <code>scale</code>, <code>rotate</code>, the 3D turns and <code>opacity</code>, a look can hold any CSS property that animates: a <code>color</code>, a <code>filter</code> such as a blur, a <code>clipPath</code> for a wipe, and your own custom properties. A plain number means px, or degrees for <code>rotate</code>. Move things with transforms and opacity; keep colors, blur and clips for small touches."
         },
         "turn": {
           "title": "Turn in 3D",
@@ -848,7 +867,7 @@
         "intro": "Components also animate while they're on screen, such as on a press, a failed check or a panel opening. Lists animate items as they come and go.",
         "press": {
           "title": "Press and hover",
-          "body": "<code>states</code> animates a part while the component is in a state. A plain value holds while the state is on: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> shrinks a button while you press it. Any element takes the same looks through <code>v-animate</code>: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>."
+          "body": "<code>states</code> animates a part while the component is in a state. A plain value holds while the state is on: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> shrinks a button while you press it. Any element takes the same looks through <code>v-animate</code>: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>. The states every component and element has: <code>hover</code> (a mouse only, never a tap), <code>active</code> (pressed by a pointer, Space or Enter) and <code>focus</code> (focus anywhere inside it). Components add their own, such as <code>invalid</code>, <code>checked</code>, <code>open</code> or <code>disabled</code>, listed on each component's page, and <code>v-animate</code> adds <code>inView</code>."
         },
         "shake": {
           "title": "A failed check",
@@ -890,6 +909,10 @@
           "title": "Grow from any element",
           "body": "Give <code>morph</code> an object whose <code>from</code> returns an element, such as the row you clicked: <code>morph: {'{'} from: () => row, hide: false {'}'}</code>. <code>hide: false</code> keeps the row on screen while the dialog is open."
         },
+        "surface": {
+          "title": "A gooey popover",
+          "body": "<code>surface</code> draws a layer of shapes behind a Popover: a pill on its trigger and a blob that moves with the panel, both in the panel's color. Give the layer one of your style's <code>filters</code>, such as a goo, and the shapes melt into each other while the text stays sharp."
+        },
         "recede": {
           "title": "Move the page with it",
           "body": "<code>linked</code> moves other elements while a Dialog, Drawer or BottomSheet is open, such as a page that recedes behind a drawer. Each entry names an element and how it looks while the overlay is open."
@@ -912,7 +935,7 @@
         "intro": "Inside a dialog or a popover, your own elements can join its motion. You name them, then time them against each other and against the panel.",
         "after": {
           "title": "One after another",
-          "body": "Name your elements in <code>targets</code>, and mark them with the slot's <code>target('name')</code> or with <code>v-animate:name</code>. <code>after: 'summary:60%'</code> starts the rows when the summary is 60% of the way in. Elements with no component around them can wait on each other too, when they appear together: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>."
+          "body": "Name your elements in <code>targets</code>, and mark them with the slot's <code>target('name')</code> or with <code>v-animate:name</code>. <code>after: 'summary:60%'</code> starts the rows when the summary is 60% of the way in. Elements with no component around them can wait on each other too, when they appear together: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>. Rows a component renders from data can't take a mark: give their name a <code>select</code> instead, such as <code>targets: {'{'} rows: {'{'} select: 'tr' {'}'} {'}'}</code>."
         },
         "moments": {
           "title": "Moments",
@@ -969,7 +992,7 @@
         },
         "hooks": {
           "title": "Your own animation",
-          "body": "Give an element <code>enter</code> or <code>leave</code> to animate it with GSAP or motion instead of its values. Return the animation: vael-ui waits for it before the callbacks, and stops it if the element leaves first. The hook gets the element and <code>{'{'} signal, reducedMotion, index {'}'}</code>."
+          "body": "Give an element <code>enter</code> or <code>leave</code> to animate it with GSAP or motion instead of its values. Return the animation: vael-ui waits for it before the callbacks, and stops it if the element leaves first. The hook gets the element and <code>{'{'} signal, reducedMotion, index {'}'}</code>. Under reduced motion your hooks don't run. Set <code>reducedMotion: 'run'</code> to run them anyway, and check <code>reducedMotion</code> in the context to drop movement."
         }
       },
       "styles": {
@@ -977,11 +1000,26 @@
         "intro": "A motion style is one object on <code>ConfigProvider</code> that sets how your whole app moves: by role, by component, and with presets for your own elements.",
         "style": {
           "title": "One object for the app",
-          "body": "A style has <code>version: 1</code>, a <code>spring</code>, and keys by role (<code>overlay</code>, <code>list</code>, <code>press</code>, <code>reveal</code>, <code>content</code>) or by component (<code>dialog</code>, <code>toaster</code>). A component's own <code>motion</code> overrides it."
+          "body": "A style is one object on <code>ConfigProvider</code>: <code>version: 1</code>, a <code>spring</code> for everything inside, and keys by role or by component. For each component, its own <code>motion</code> wins, then its key in the style, then its role, then its built-in look. The roles:",
+          "items": [
+            "<code>overlay</code>: Dialog, Drawer, BottomSheet, Popover, Menu, Tooltip, and the panels of Select, Combobox, DatePicker and TreeSelect",
+            "<code>list</code>: Toaster, Timeline, FileUpload, SpeedDial, DataTable rows, CommandPalette rows, Breadcrumb and AvatarGroup",
+            "<code>press</code>: what a press and a hover do to a Button",
+            "<code>reveal</code>: content that comes and goes on its own, such as a Message",
+            "<code>content</code>: your elements inside a component, its <code>targets</code>"
+          ]
+        },
+        "components": {
+          "title": "By component",
+          "body": "Every component with a <code>motion</code> prop has a key in the style, named after it: <code>dialog</code>, <code>drawer</code>, <code>toaster</code>, <code>button</code>, <code>select</code> and the rest. A key takes what that component's <code>motion</code> takes, so one style can restyle every dialog in the app, give drawers their own spring and shake every failed toast. In code, a key can carry hooks too; a style read from data can't."
         },
         "presets": {
           "title": "Presets",
-          "body": "<code>presets</code> names looks you can use with <code>v-animate.rise</code> anywhere inside the provider, so your elements move the way your components do."
+          "body": "<code>presets</code> are your own entrances by name. Each works anywhere inside the provider as a modifier, <code>v-animate.wiggle</code>, or as a value, <code>v-animate=\"'wiggle'\"</code>. A preset holds what <code>v-animate</code> takes: <code>initial</code>, <code>exit</code>, timing, <code>stagger</code>, even <code>states</code>. Give one a built-in name, such as <code>rise</code> or <code>pop</code>, to change that entrance inside the provider. List your names in <code>MotionPresets</code>, and they autocomplete and a typo fails the type check."
+        },
+        "filters": {
+          "title": "Filters",
+          "body": "<code>filters</code> names SVG filters that <code>ConfigProvider</code> puts on the page, so any element inside can use one with <code>filter: url(#name)</code>. A goo, <code>{'{'} blur: 8, contrast: [18, -7] {'}'}</code>, melts shapes into each other where they meet."
         },
         "parse": {
           "title": "A style from outside your code",
@@ -1005,7 +1043,7 @@
         },
         "open": {
           "title": "Open on load",
-          "body": "An overlay that's open when the page loads renders open, without animating. A component's <code>initial</code> never plays on hydration, and a list's <code>appear: true</code> skips the items the server rendered. A component that's shown from its first render, such as a Message, just shows; it plays its entrance when it comes later."
+          "body": "An overlay that's open when the page loads renders open, without animating. A component's <code>initial</code> never plays on hydration, and a list's <code>appear: true</code> skips the items the server rendered. A component that's shown from its first render, such as a Message, shows as it is; it plays its entrance when it comes later."
         },
         "setup": {
           "title": "Nuxt and Vite",
@@ -1014,7 +1052,7 @@
       }
     },
     "blocks": {
-      "title": "Blocks",
+      "title": "Examples",
       "intro": "Complete pieces of interface, each built from a few vael-ui components and their motion. Copy one into your app and adapt it.",
       "comingTitle": "More on the way",
       "comingBody": "Blocks will get their own site, blocks.vael-ui.dev. These are the first.",
@@ -1078,6 +1116,25 @@
       "with": "With {engine}",
       "vael": "With vael-ui motion",
       "none": "No vael-ui version yet."
+    },
+    "options": {
+      "title": "All options",
+      "intro": "Every option in the motion guide, grouped by what it's for, with the sections that show it.",
+      "filter": "Filter options",
+      "empty": "No option matches.",
+      "groups": {
+        "timing": "Timing and turning it off",
+        "presence": "Coming and going",
+        "moving": "Moving",
+        "states": "States",
+        "together": "Several elements together",
+        "overlays": "Overlays",
+        "values": "Values and keyframes",
+        "callbacks": "Callbacks",
+        "code": "From your code",
+        "app": "Your app's motion",
+        "other": "Other"
+      }
     }
   },
   "recipes": {

@@ -42,7 +42,7 @@ import {
   guideValue,
   routeFor,
 } from '../docsNav'
-import { MOTION_CHAPTERS } from '../motionChapters'
+import { MOTION_CHAPTERS, SECTION_OPTIONS } from '../motionChapters'
 import { BLOCKS } from '../motionBlocks'
 
 export type ApiKind = 'props' | 'events' | 'slots' | 'exposed' | 'parameters' | 'returns'
@@ -488,7 +488,11 @@ export async function loadDeepEntries(t: Translate): Promise<PaletteEntry[]> {
         to: { name: chapter.routeName, hash: `#${section.id}` },
         text: plain(htmlText(t(`motionDocs.chapters.${chapter.id}.${section.id}.body`))),
         // Its id as words too: `inView` is found by "in view".
-        keywords: [section.id.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase()],
+        // Its id as words, and the options it teaches: `morph` finds Grow from the trigger.
+        keywords: [
+          section.id.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase(),
+          ...(SECTION_OPTIONS[`${chapter.id}.${section.id}`] ?? []),
+        ],
         icon: PhHash,
         boost: 4,
         group: t('motionDocs.nav.motion'),

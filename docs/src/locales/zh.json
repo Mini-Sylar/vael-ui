@@ -616,8 +616,9 @@
       "engines": "自定义引擎",
       "types": "TypeScript",
       "back": "返回组件",
-      "blocks": "区块",
-      "showpieces": "并排对比"
+      "blocks": "示例",
+      "showpieces": "并排对比",
+      "options": "所有选项"
     },
     "mode": {
       "components": "按类别列出所有组件",
@@ -778,6 +779,16 @@
           "title": "进入与离开",
           "body": "<code>initial</code> 指定元素从哪里进入。Vue 移除它时，它会沿原路离开，更快也更轻，除非你给它一个 <code>exit</code>。在会关闭的组件里，比如对话框或菜单，它会随面板一起离开。 常用的入场可以直接写名字：<code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code> 或 <code>.blur</code>。弹簧也这样加，比如 <code>v-animate.pop.bouncy</code>，再用一个值来微调：<code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
         },
+        "names": {
+          "title": "名称",
+          "body": "冒号后面的词（如 <code>v-animate:rows</code>）是名称。单独的元素不需要名称。当元素属于同一组时才给它们命名：",
+          "items": [
+            "同一名称下同时进入的元素是一组，<code>stagger</code> 会让它们依次进入。",
+            "在 vael-ui 组件（例如 Dialog）里，它的 <code>motion.targets.rows</code> 决定名为 <code>rows</code> 的元素如何运动，它们随组件一起出现和离开。",
+            "<code>after: 'rows'</code> 让另一个元素等待它们。",
+            "同一名称下的页面可以用 <code>swap: 'wait'</code> 互相等待。"
+          ]
+        },
         "show": {
           "title": "显示与隐藏",
           "body": "与 <code>v-show</code> 一起使用时，<code>v-animate</code> 会在元素隐藏时播放离场，再次显示时播放入场，和 <code>v-if</code> 一样。"
@@ -785,6 +796,10 @@
         "scroll": {
           "title": "滚动到视野中时",
           "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序以 <code>stagger</code> 间隔依次播放。 <code>stagger: true</code> 按 stagger 令牌的间隔排开；<code>'end'</code>、<code>'center'</code> 或 <code>'edges'</code> 会让这一波从那里开始。 在网格中，<code>'center'</code> 和 <code>'edges'</code> 按每个元素实际所在的位置计算：波从中间的单元格或四角开始。"
+        },
+        "grid": {
+          "title": "跨越网格",
+          "body": "同一名称下一起进入的元素会按各自所在的位置依次出现。在网格中，<code>stagger: 'center'</code> 从中间的单元格开始向外扩散，<code>'edges'</code> 从四角开始向内收拢。只有一行或一列时，按页面顺序进行。"
         },
         "inView": {
           "title": "在视野中时",
@@ -813,6 +828,10 @@
         "animate": {
           "title": "保持一种外观",
           "body": "<code>animate</code> 设置元素在页面上时一直保持的外观。修改它，元素就会从当前状态动画过去；除非你指定 <code>duration</code>，否则使用弹簧：<code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>。使用关键帧数组时，<code>progress</code>（0 到 1）会把它们停在某个位置，而不是播放它们，这样滑动或滚动就能拖动它们。配上 <code>spring</code>，它们会稍有延迟地跟上。"
+        },
+        "values": {
+          "title": "可以动画的属性",
+          "body": "除了 <code>x</code>、<code>y</code>、<code>scale</code>、<code>rotate</code>、3D 旋转和 <code>opacity</code>，外观可以包含任何可动画的 CSS 属性：<code>color</code>、模糊之类的 <code>filter</code>、用于擦除效果的 <code>clipPath</code>，以及你自己的自定义属性。纯数字表示 px，<code>rotate</code> 中表示度。移动请用 transform 和不透明度；颜色、模糊和裁剪只用于细微点缀。"
         },
         "turn": {
           "title": "3D 翻转",
@@ -848,7 +867,7 @@
         "intro": "组件在屏幕上时也会动，例如按下、校验失败或面板展开。列表会在条目进出时为它们添加动画。",
         "press": {
           "title": "按下与悬停",
-          "body": "<code>states</code> 会在组件处于某个状态时为部件添加动画。普通值在状态开启期间一直保持：<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> 会在你按住按钮时把它缩小。 任何元素都可以通过 <code>v-animate</code> 使用同样的状态：<code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>。"
+          "body": "<code>states</code> 会在组件处于某个状态时为部件添加动画。普通值在状态开启期间一直保持：<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> 会在你按住按钮时把它缩小。 任何元素都可以通过 <code>v-animate</code> 使用同样的状态：<code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>。 所有组件和元素都有的状态：<code>hover</code>（仅鼠标，点按不会触发）、<code>active</code>（用指针、空格或 Enter 按下）和 <code>focus</code>（内部任意位置获得焦点）。组件还有自己的状态，例如 <code>invalid</code>、<code>checked</code>、<code>open</code> 或 <code>disabled</code>，列在各自页面上；<code>v-animate</code> 还有 <code>inView</code>。"
         },
         "shake": {
           "title": "校验失败",
@@ -890,6 +909,10 @@
           "title": "从任意元素展开",
           "body": "给 <code>morph</code> 一个对象，其 <code>from</code> 返回一个元素，比如你点击的那一行：<code>morph: {'{'} from: () => row, hide: false {'}'}</code>。<code>hide: false</code> 让这一行在对话框打开时仍然可见。"
         },
+        "surface": {
+          "title": "融合效果的 Popover",
+          "body": "<code>surface</code> 在 Popover 后面绘制一层形状：触发器上的胶囊和随面板移动的色块，都使用面板的颜色。给这一层加上样式中的某个 <code>filters</code>（例如 goo），形状就会融合在一起，而文字保持清晰。"
+        },
         "recede": {
           "title": "带动页面",
           "body": "<code>linked</code> 会在 Dialog、Drawer 或 BottomSheet 打开时移动其他元素，比如让页面在抽屉后方向后退去。每一项指定一个元素，以及它在浮层打开时的样子。"
@@ -912,7 +935,7 @@
         "intro": "在对话框或弹出框里，你自己的元素也能加入它的动效。先给它们命名，再安排它们彼此之间以及与面板的时间关系。",
         "after": {
           "title": "依次进行",
-          "body": "在 <code>targets</code> 中为元素命名，并用插槽提供的 <code>target('name')</code> 或 <code>v-animate:name</code> 标记它们。<code>after: 'summary:60%'</code> 会在摘要进入到 60% 时开始播放各行。 没有被组件包裹的元素，在一起出现时也可以互相等待：<code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>。"
+          "body": "在 <code>targets</code> 中为元素命名，并用插槽提供的 <code>target('name')</code> 或 <code>v-animate:name</code> 标记它们。<code>after: 'summary:60%'</code> 会在摘要进入到 60% 时开始播放各行。 没有被组件包裹的元素，在一起出现时也可以互相等待：<code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>。 组件根据数据渲染的行无法打标记：请改为给它们的名称设置 <code>select</code>，例如 <code>targets: {'{'} rows: {'{'} select: 'tr' {'}'} {'}'}</code>。"
         },
         "moments": {
           "title": "时间点",
@@ -969,7 +992,7 @@
         },
         "hooks": {
           "title": "你自己的动画",
-          "body": "给元素加上 <code>enter</code> 或 <code>leave</code>，就能用 GSAP 或 motion 代替它的值来做动画。请返回该动画：vael-ui 会等它播放完再运行回调，元素提前离开时会停止它。钩子会收到元素和 <code>{'{'} signal, reducedMotion, index {'}'}</code>。"
+          "body": "给元素加上 <code>enter</code> 或 <code>leave</code>，就能用 GSAP 或 motion 代替它的值来做动画。请返回该动画：vael-ui 会等它播放完再运行回调，元素提前离开时会停止它。钩子会收到元素和 <code>{'{'} signal, reducedMotion, index {'}'}</code>。 减少动效时，你的钩子不会运行。设置 <code>reducedMotion: 'run'</code> 可让它们照常运行，并在上下文中检查 <code>reducedMotion</code> 以去掉位移。"
         }
       },
       "styles": {
@@ -977,11 +1000,26 @@
         "intro": "动效风格是 <code>ConfigProvider</code> 上的一个对象，决定整个应用如何运动：按角色、按组件，还可以为你自己的元素设置预设。",
         "style": {
           "title": "整个应用一个对象",
-          "body": "风格包含 <code>version: 1</code>、一个 <code>spring</code>，以及按角色（<code>overlay</code>、<code>list</code>、<code>press</code>、<code>reveal</code>、<code>content</code>）或按组件（<code>dialog</code>、<code>toaster</code>）划分的键。组件自己的 <code>motion</code> 会覆盖它。"
+          "body": "样式是 <code>ConfigProvider</code> 上的一个对象：<code>version: 1</code>、作用于其中一切的 <code>spring</code>，以及按角色或按组件的键。对每个组件，依次以它自己的 <code>motion</code>、样式中它的键、它的角色、它的内置外观为准。角色如下：",
+          "items": [
+            "<code>overlay</code>：Dialog、Drawer、BottomSheet、Popover、Menu、Tooltip，以及 Select、Combobox、DatePicker、TreeSelect 的面板",
+            "<code>list</code>：Toaster、Timeline、FileUpload、SpeedDial、DataTable 的行、CommandPalette 的行、Breadcrumb 和 AvatarGroup",
+            "<code>press</code>：按下和悬停时 Button 的变化",
+            "<code>reveal</code>：自行出现和离开的内容，例如 Message",
+            "<code>content</code>：组件内你的元素，即它的 <code>targets</code>"
+          ]
+        },
+        "components": {
+          "title": "按组件",
+          "body": "每个带 <code>motion</code> 属性的组件在样式中都有以其命名的键：<code>dialog</code>、<code>drawer</code>、<code>toaster</code>、<code>button</code>、<code>select</code> 等。键接受该组件 <code>motion</code> 所接受的内容，因此一个样式就能统一修改应用中所有对话框、给抽屉设置独立的弹簧，并让每个失败的 toast 抖动。在代码中键还可以带钩子；从数据读取的样式则不行。"
         },
         "presets": {
           "title": "预设",
-          "body": "<code>presets</code> 为外观命名，在 provider 内的任何地方都能通过 <code>v-animate.rise</code> 使用，让你的元素和组件以同样的方式运动。"
+          "body": "<code>presets</code> 是你自己命名的入场效果。每个都能在 provider 内任意位置作为修饰符 <code>v-animate.wiggle</code> 或作为值 <code>v-animate=\"'wiggle'\"</code> 使用。预设可以包含 <code>v-animate</code> 接受的内容：<code>initial</code>、<code>exit</code>、时间、<code>stagger</code>，甚至 <code>states</code>。使用内置名称（如 <code>rise</code> 或 <code>pop</code>）即可在 provider 内替换该入场效果。把你的名称写进 <code>MotionPresets</code>，就能自动补全，拼错时类型检查会失败。"
+        },
+        "filters": {
+          "title": "滤镜",
+          "body": "<code>filters</code> 为 <code>ConfigProvider</code> 放到页面上的 SVG 滤镜命名，其中的任何元素都能用 <code>filter: url(#名称)</code> 使用它。goo（<code>{'{'} blur: 8, contrast: [18, -7] {'}'}</code>）会让形状在相接处融在一起。"
         },
         "parse": {
           "title": "来自代码之外的风格",
@@ -1014,7 +1052,7 @@
       }
     },
     "blocks": {
-      "title": "区块",
+      "title": "示例",
       "intro": "完整的界面片段，每个都由几个 vael-ui 组件和它们的动效组成。复制到你的应用里，再按需修改。",
       "comingTitle": "更多即将到来",
       "comingBody": "区块将拥有自己的站点 blocks.vael-ui.dev。这里是第一批。",
@@ -1078,6 +1116,25 @@
       "with": "使用 {engine}",
       "vael": "使用 vael-ui 动效",
       "none": "暂无 vael-ui 版本。"
+    },
+    "options": {
+      "title": "所有选项",
+      "intro": "动效指南中的每个选项，按用途分组，并附上讲解它的章节。",
+      "filter": "筛选选项",
+      "empty": "没有匹配的选项。",
+      "groups": {
+        "timing": "时间与关闭",
+        "presence": "出现与离开",
+        "moving": "移动",
+        "states": "状态",
+        "together": "多个元素一起",
+        "overlays": "浮层",
+        "values": "数值与关键帧",
+        "callbacks": "回调",
+        "code": "在代码中",
+        "app": "应用的整体动效",
+        "other": "其他"
+      }
     }
   },
   "recipes": {

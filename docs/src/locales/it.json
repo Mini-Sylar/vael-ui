@@ -616,8 +616,9 @@
       "engines": "Il tuo motore",
       "types": "TypeScript",
       "back": "Torna ai componenti",
-      "blocks": "Blocchi",
-      "showpieces": "Fianco a fianco"
+      "blocks": "Esempi",
+      "showpieces": "Fianco a fianco",
+      "options": "Tutte le opzioni"
     },
     "mode": {
       "components": "Ogni componente, per tipo",
@@ -778,6 +779,16 @@
           "title": "Dentro e fuori",
           "body": "<code>initial</code> indica da dove entra l'elemento. Quando Vue lo rimuove, esce da dove è venuto, più veloce e più discreto, a meno che tu non gli dia un <code>exit</code>. Dentro un componente che si chiude, come una finestra di dialogo o un menu, se ne va invece insieme al pannello. Per le entrate più comuni, scegline una per nome: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> o <code>.blur</code>. Aggiungi una molla allo stesso modo, come in <code>v-animate.pop.bouncy</code>, e regolala con un valore: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
+        "names": {
+          "title": "Nomi",
+          "body": "La parola dopo i due punti, come in <code>v-animate:rows</code>, è un nome. Un elemento da solo non ne ha bisogno. Dai un nome agli elementi quando vanno insieme:",
+          "items": [
+            "Gli elementi con lo stesso nome che entrano insieme sono un gruppo, quindi <code>stagger</code> li fa entrare uno dopo l'altro.",
+            "Dentro un componente vael-ui, come un Dialog, il suo <code>motion.targets.rows</code> decide come si muovono gli elementi chiamati <code>rows</code>, che entrano ed escono con il componente.",
+            "<code>after: 'rows'</code> fa aspettare un altro elemento dopo di loro.",
+            "Le pagine con lo stesso nome possono aspettarsi a vicenda con <code>swap: 'wait'</code>."
+          ]
+        },
         "show": {
           "title": "Mostrato e nascosto",
           "body": "Accanto a <code>v-show</code>, <code>v-animate</code> riproduce la sua uscita quando l'elemento viene nascosto e la sua entrata quando torna visibile, come con <code>v-if</code>."
@@ -785,6 +796,10 @@
         "scroll": {
           "title": "Quando entra nella vista",
           "body": "<code>when: 'visible'</code> aspetta che l'elemento sia sullo schermo, poi parte una volta. Gli elementi che condividono un nome, come <code>v-animate:tiles</code>, partono nell'ordine della pagina, uno dopo l'altro con uno <code>stagger</code>. <code>stagger: true</code> li distanzia secondo il token di stagger; <code>'end'</code>, <code>'center'</code> o <code>'edges'</code> fanno partire l'onda da lì. In una griglia, <code>'center'</code> ed <code>'edges'</code> seguono la posizione di ogni elemento: l'onda parte dalla cella centrale o dagli angoli."
+        },
+        "grid": {
+          "title": "Su una griglia",
+          "body": "Gli elementi con lo stesso nome che entrano insieme si scaglionano in base a dove si trova ciascuno. In una griglia, <code>stagger: 'center'</code> parte dalla cella centrale e si allarga verso l'esterno, e <code>'edges'</code> parte dagli angoli e si chiude verso l'interno. In una sola riga o colonna seguono l'ordine della pagina."
         },
         "inView": {
           "title": "Finché è visibile",
@@ -813,6 +828,10 @@
         "animate": {
           "title": "Mantieni un aspetto",
           "body": "<code>animate</code> imposta un aspetto che l'elemento mantiene finché è nella pagina. Cambialo e l'elemento ci arriva animandosi da dove si trova, con una molla a meno che tu non imposti una <code>duration</code>: <code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>. Con array di keyframe, <code>progress</code> (da 0 a 1) li ferma in un punto invece di riprodurli, così uno swipe o uno scroll può farli scorrere. Con una <code>spring</code>, lo seguono con un breve ritardo."
+        },
+        "values": {
+          "title": "Cosa si può animare",
+          "body": "Oltre a <code>x</code>, <code>y</code>, <code>scale</code>, <code>rotate</code>, le rotazioni 3D e <code>opacity</code>, un aspetto può contenere qualsiasi proprietà CSS animabile: un <code>color</code>, un <code>filter</code> come una sfocatura, un <code>clipPath</code> per una tendina e le tue custom properties. Un numero semplice vale px, o gradi per <code>rotate</code>. Sposta le cose con transform e opacità; tieni colori, sfocature e ritagli per piccoli tocchi."
         },
         "turn": {
           "title": "Girare in 3D",
@@ -848,7 +867,7 @@
         "intro": "I componenti si animano anche mentre sono sullo schermo, come a una pressione, a un controllo fallito o a un pannello che si apre. Le liste animano gli elementi quando entrano ed escono.",
         "press": {
           "title": "Pressione e hover",
-          "body": "<code>states</code> anima una parte finché il componente è in uno stato. Un valore semplice resta finché lo stato è attivo: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> rimpicciolisce un pulsante mentre lo premi. Qualsiasi elemento accetta gli stessi stati con <code>v-animate</code>: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>."
+          "body": "<code>states</code> anima una parte finché il componente è in uno stato. Un valore semplice resta finché lo stato è attivo: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> rimpicciolisce un pulsante mentre lo premi. Qualsiasi elemento accetta gli stessi stati con <code>v-animate</code>: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>. Gli stati che ogni componente ed elemento ha: <code>hover</code> (solo col mouse, mai con un tocco), <code>active</code> (premuto con un puntatore, Spazio o Invio) e <code>focus</code> (il focus ovunque al suo interno). I componenti aggiungono i propri, come <code>invalid</code>, <code>checked</code>, <code>open</code> o <code>disabled</code>, elencati nella pagina di ciascuno, e <code>v-animate</code> aggiunge <code>inView</code>."
         },
         "shake": {
           "title": "Un controllo fallito",
@@ -890,6 +909,10 @@
           "title": "Cresci da qualsiasi elemento",
           "body": "Passa a <code>morph</code> un oggetto il cui <code>from</code> restituisce un elemento, come la riga cliccata: <code>morph: {'{'} from: () => row, hide: false {'}'}</code>. <code>hide: false</code> tiene visibile la riga mentre la finestra di dialogo è aperta."
         },
+        "surface": {
+          "title": "Un popover liquido",
+          "body": "<code>surface</code> disegna uno strato di forme dietro un Popover: una pillola sul trigger e una macchia che si muove con il pannello, entrambe del colore del pannello. Dai allo strato uno dei <code>filters</code> del tuo stile, come un goo, e le forme si fondono mentre il testo resta nitido."
+        },
         "recede": {
           "title": "Sposta la pagina con sé",
           "body": "<code>linked</code> sposta altri elementi mentre un Dialog, Drawer o BottomSheet è aperto, come una pagina che arretra dietro un drawer. Ogni voce indica un elemento e il suo aspetto mentre l'overlay è aperto."
@@ -912,7 +935,7 @@
         "intro": "Dentro un dialog o un popover, i tuoi elementi possono unirsi al suo movimento. Dai loro un nome, poi li sincronizzi tra loro e con il pannello.",
         "after": {
           "title": "Uno dopo l'altro",
-          "body": "Dai un nome ai tuoi elementi in <code>targets</code> e segnali con <code>target('name')</code> dello slot, o con <code>v-animate:name</code>. <code>after: 'summary:60%'</code> avvia le righe quando il riepilogo è entrato al 60%. Anche gli elementi senza un componente intorno possono aspettarsi a vicenda, quando compaiono insieme: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>."
+          "body": "Dai un nome ai tuoi elementi in <code>targets</code> e segnali con <code>target('name')</code> dello slot, o con <code>v-animate:name</code>. <code>after: 'summary:60%'</code> avvia le righe quando il riepilogo è entrato al 60%. Anche gli elementi senza un componente intorno possono aspettarsi a vicenda, quando compaiono insieme: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>. Le righe che un componente disegna dai dati non possono avere un segno: dai invece al loro nome un <code>select</code>, come <code>targets: {'{'} rows: {'{'} select: 'tr' {'}'} {'}'}</code>."
         },
         "moments": {
           "title": "Momenti",
@@ -969,7 +992,7 @@
         },
         "hooks": {
           "title": "La tua animazione",
-          "body": "Dai a un elemento <code>enter</code> o <code>leave</code> per animarlo con GSAP o motion invece che con i suoi valori. Restituisci l'animazione: vael-ui la aspetta prima delle callback e la ferma se l'elemento se ne va prima. L'hook riceve l'elemento e <code>{'{'} signal, reducedMotion, index {'}'}</code>."
+          "body": "Dai a un elemento <code>enter</code> o <code>leave</code> per animarlo con GSAP o motion invece che con i suoi valori. Restituisci l'animazione: vael-ui la aspetta prima delle callback e la ferma se l'elemento se ne va prima. L'hook riceve l'elemento e <code>{'{'} signal, reducedMotion, index {'}'}</code>. Con il movimento ridotto i tuoi hook non vengono eseguiti. Imposta <code>reducedMotion: 'run'</code> per eseguirli comunque, e controlla <code>reducedMotion</code> nel contesto per togliere il movimento."
         }
       },
       "styles": {
@@ -977,11 +1000,26 @@
         "intro": "Uno stile di movimento è un oggetto su <code>ConfigProvider</code> che stabilisce come si muove tutta la tua app: per ruolo, per componente e con preset per i tuoi elementi.",
         "style": {
           "title": "Un oggetto per l'app",
-          "body": "Uno stile ha <code>version: 1</code>, una <code>spring</code> e chiavi per ruolo (<code>overlay</code>, <code>list</code>, <code>press</code>, <code>reveal</code>, <code>content</code>) o per componente (<code>dialog</code>, <code>toaster</code>). La <code>motion</code> propria di un componente lo sostituisce."
+          "body": "Uno stile è un oggetto su <code>ConfigProvider</code>: <code>version: 1</code>, una <code>spring</code> per tutto ciò che contiene e chiavi per ruolo o per componente. Per ogni componente vince il suo <code>motion</code>, poi la sua chiave nello stile, poi il suo ruolo, poi l'aspetto integrato. I ruoli:",
+          "items": [
+            "<code>overlay</code>: Dialog, Drawer, BottomSheet, Popover, Menu, Tooltip e i pannelli di Select, Combobox, DatePicker e TreeSelect",
+            "<code>list</code>: Toaster, Timeline, FileUpload, SpeedDial, righe di DataTable, righe di CommandPalette, Breadcrumb e AvatarGroup",
+            "<code>press</code>: cosa fanno pressione e hover su un Button",
+            "<code>reveal</code>: contenuto che va e viene da solo, come un Message",
+            "<code>content</code>: i tuoi elementi dentro un componente, i suoi <code>targets</code>"
+          ]
+        },
+        "components": {
+          "title": "Per componente",
+          "body": "Ogni componente con una prop <code>motion</code> ha una sua chiave nello stile, con il suo nome: <code>dialog</code>, <code>drawer</code>, <code>toaster</code>, <code>button</code>, <code>select</code> e gli altri. Una chiave accetta ciò che accetta il <code>motion</code> del componente, quindi uno stile può ridisegnare tutte le finestre di dialogo dell'app, dare ai drawer una molla propria e scuotere ogni toast fallito. Nel codice una chiave può portare anche hook; uno stile letto da dati no."
         },
         "presets": {
           "title": "Preset",
-          "body": "<code>presets</code> dà un nome ad aspetti che puoi usare con <code>v-animate.rise</code> ovunque dentro il provider, così i tuoi elementi si muovono come i tuoi componenti."
+          "body": "<code>presets</code> sono le tue entrate per nome. Ognuna funziona ovunque dentro il provider come modificatore, <code>v-animate.wiggle</code>, o come valore, <code>v-animate=\"'wiggle'\"</code>. Un preset contiene ciò che accetta <code>v-animate</code>: <code>initial</code>, <code>exit</code>, timing, <code>stagger</code>, persino <code>states</code>. Dagli un nome integrato, come <code>rise</code> o <code>pop</code>, per cambiare quell'entrata dentro il provider. Elenca i tuoi nomi in <code>MotionPresets</code>: si completano da soli e un errore di battitura non supera il controllo dei tipi."
+        },
+        "filters": {
+          "title": "Filtri",
+          "body": "<code>filters</code> dà un nome a filtri SVG che <code>ConfigProvider</code> mette nella pagina, così qualsiasi elemento al suo interno può usarne uno con <code>filter: url(#nome)</code>. Un goo, <code>{'{'} blur: 8, contrast: [18, -7] {'}'}</code>, fonde le forme dove si toccano."
         },
         "parse": {
           "title": "Uno stile da fuori il tuo codice",
@@ -1005,7 +1043,7 @@
         },
         "open": {
           "title": "Aperto al caricamento",
-          "body": "Un overlay aperto quando la pagina si carica viene renderizzato aperto, senza animazione. L'<code>initial</code> di un componente non parte mai durante l'idratazione, e l'<code>appear: true</code> di una lista salta gli elementi renderizzati dal server. Un componente mostrato dal primo render, come un Message, semplicemente appare; riproduce la sua entrata quando arriva più tardi."
+          "body": "Un overlay aperto quando la pagina si carica viene renderizzato aperto, senza animazione. L'<code>initial</code> di un componente non parte mai durante l'idratazione, e l'<code>appear: true</code> di una lista salta gli elementi renderizzati dal server. Un componente mostrato dal primo render, come un Message, appare così com'è; riproduce la sua entrata quando arriva più tardi."
         },
         "setup": {
           "title": "Nuxt e Vite",
@@ -1014,7 +1052,7 @@
       }
     },
     "blocks": {
-      "title": "Blocchi",
+      "title": "Esempi",
       "intro": "Pezzi interi di interfaccia, ognuno fatto con pochi componenti vael-ui e il loro movimento. Copiane uno nella tua app e adattalo.",
       "comingTitle": "Altri in arrivo",
       "comingBody": "I blocchi avranno un sito tutto loro, blocks.vael-ui.dev. Questi sono i primi.",
@@ -1078,6 +1116,25 @@
       "with": "Con {engine}",
       "vael": "Con il movimento di vael-ui",
       "none": "Ancora nessuna versione vael-ui."
+    },
+    "options": {
+      "title": "Tutte le opzioni",
+      "intro": "Ogni opzione della guida al movimento, raggruppata per scopo, con le sezioni che la mostrano.",
+      "filter": "Filtra le opzioni",
+      "empty": "Nessuna opzione corrisponde.",
+      "groups": {
+        "timing": "Timing e disattivazione",
+        "presence": "Entrare e uscire",
+        "moving": "Muoversi",
+        "states": "Stati",
+        "together": "Più elementi insieme",
+        "overlays": "Overlay",
+        "values": "Valori e keyframe",
+        "callbacks": "Callback",
+        "code": "Dal tuo codice",
+        "app": "Il movimento della tua app",
+        "other": "Altre"
+      }
     }
   },
   "recipes": {

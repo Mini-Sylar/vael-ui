@@ -2,8 +2,20 @@
   <section class="demo">
     <h3>Pages</h3>
     <div class="row">
-      <SelectButton v-model="page" :items="PAGES" aria-label="Page" size="sm" />
-      <SelectButton v-model="swap" :items="SWAPS" aria-label="Swap" size="sm" />
+      <SelectButton
+        v-model="page"
+        :items="PAGES"
+        :allow-empty="false"
+        aria-label="Page"
+        size="sm"
+      />
+      <SelectButton
+        v-model="swap"
+        :items="SWAPS"
+        :allow-empty="false"
+        aria-label="Swap"
+        size="sm"
+      />
     </div>
     <div class="stage">
       <!-- A new root for each page under one name, as RouterView renders a route. -->

@@ -74,9 +74,16 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/motion/MotionShowcase.vue'),
   },
   {
-    path: '/motion/blocks',
+    path: '/motion/examples',
     name: 'motion-blocks',
     component: () => import('./pages/motion/MotionBlocks.vue'),
+  },
+  // Its old address, from before it was called Examples.
+  { path: '/motion/blocks', redirect: '/motion/examples' },
+  {
+    path: '/motion/options',
+    name: 'motion-options',
+    component: () => import('./pages/motion/MotionOptions.vue'),
   },
   {
     path: '/motion/types',

@@ -35,7 +35,7 @@ const CHROME = [
 ]
 
 // Galleries of live demos whose code renders in the browser: nothing for a model to read.
-const SKIP = new Set(['/motion/blocks', '/motion/side-by-side'])
+const SKIP = new Set(['/motion/examples', '/motion/blocks', '/motion/side-by-side'])
 
 const fence = (code, lang) => `\`\`\`${lang}\n${code.trim()}\n\`\`\``
 const importLine = (names) =>

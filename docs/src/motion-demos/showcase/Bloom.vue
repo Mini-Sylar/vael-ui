@@ -115,8 +115,13 @@ const overlap = computed(() => -(trigger.value?.el?.offsetHeight ?? 36))
   --ui-indicator-bg: var(--ui-muted);
 }
 .grid :deep(.item) {
-  flex-direction: column;
   block-size: 4.5rem;
+}
+/* The icon over its text, both centred: they share the button's label. */
+.grid :deep(.item .ui-button-label) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 0.25rem;
 }
 /* The highlight is the hover; the button's own fill would double it. */

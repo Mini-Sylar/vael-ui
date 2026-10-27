@@ -100,6 +100,8 @@ export function scoreTerm(term: string, entry: SearchEntry): number {
 function scoreWord(term: string, entry: SearchEntry): number {
   const label = entry.label.toLowerCase()
   if (label === term) return 100
+  // A keyword named exactly, such as an option a guide section teaches: `morph` finds the section.
+  if (entry.keywords?.some((keyword) => keyword.toLowerCase() === term)) return 92
   if (label.startsWith(term)) return 90 - Math.min(10, (label.length - term.length) / 2)
   const labelWords = words(entry.label)
   if (labelWords.some((word) => word.startsWith(term))) return 80

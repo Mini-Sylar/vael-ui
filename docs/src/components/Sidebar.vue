@@ -26,11 +26,7 @@
     <div ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
       <span ref="sidebarIndicator" class="sidebar-indicator" aria-hidden="true" />
       <!-- A new mode's list slides in the way you went; the old one leaves the other way. -->
-      <div
-        :key="sidebarMode"
-        v-animate="swap(sidebarMode)"
-        :class="{ 'sidebar-over': sidebarMode !== 'components' }"
-      >
+      <div :key="sidebarMode" v-animate:sidebar="swap()">
         <MenuList :items="navItems" :active="activeValue" :aria-label="t('nav.sidebarNav')">
           <template #item="{ item }">
             <component
@@ -74,11 +70,7 @@
       </button>
     </div>
     <div ref="mobileScrollEl" class="sidebar-scroll sidebar-scroll--mobile">
-      <div
-        :key="sidebarMode"
-        v-animate="swap(sidebarMode)"
-        :class="{ 'sidebar-over': sidebarMode !== 'components' }"
-      >
+      <div :key="sidebarMode" v-animate:sidebar-mobile="swap()">
         <MenuList
           :items="navItems"
           :active="activeValue"
@@ -155,34 +147,38 @@ const route = useRoute()
 const router = useRouter()
 
 // The page you're on picks the list: every Motion page shows Motion's, a component, directive
-// or guide shows the components. A motion composable opened from the Motion list keeps that list.
+// or guide shows the components. A composable or directive opened from the Motion list keeps it.
 function modeFor(routeName: unknown, current: DocsMode): DocsMode | null {
   if (MOTION_ROUTES.some((g) => g.routeName === routeName)) return 'motion'
   if (routeName === 'composable') return current === 'motion' ? 'motion' : 'composables'
-  if (
-    routeName === 'component' ||
-    routeName === 'directive' ||
-    GUIDE_ROUTES.some((g) => g.routeName === routeName)
-  )
+  if (routeName === 'directive') return current === 'motion' ? 'motion' : 'components'
+  if (routeName === 'component' || GUIDE_ROUTES.some((g) => g.routeName === routeName))
     return 'components'
   return null
 }
 // The first render follows the route alone, as the prerendered page did, so hydration never
 // swaps the list. Browsing in the tab keeps the mode in this ref; a reload starts from the route.
 const sidebarMode = shallowRef<DocsMode>(modeFor(route.name, 'components') ?? 'components')
-// A mode switch is a push, like drilling into a page: Motion and Composables slide in over the
-// components from the right edge as the components fall back a third and fade; back reverses it.
-// One spring for both, so they move as one. Never on the first render: no page loads moving.
+// A mode switch moves the way the switcher reads: a mode further along comes in from the right,
+// one before it from the left. The old list goes first (`swap: 'wait'`), so two never overlap.
+// Never on the first render: no page loads moving.
+const ORDER: DocsMode[] = ['components', 'composables', 'motion']
 const switched = shallowRef(false)
-watch(sidebarMode, () => (switched.value = true))
-const swap = (mode: DocsMode) => {
-  const away = mode === 'components' ? { x: '-30%', opacity: 0 } : { x: '100%' }
-  return {
-    initial: switched.value ? away : undefined,
-    exit: away,
-    spring: { damping: 1, response: 0.4 },
-  }
-}
+let step = 1
+watch(sidebarMode, (now, before) => {
+  switched.value = true
+  step = ORDER.indexOf(now) > ORDER.indexOf(before) ? 1 : -1
+})
+// Read as each plays, so the leaving list goes the way of this switch, not the last one. It
+// leaves faster than the next comes in, so the next follows straight on.
+const LEAVE = { duration: 100, easing: 'out' }
+const swap = () => ({
+  initial: switched.value ? () => ({ opacity: 0, x: 16 * step }) : undefined,
+  exit: () => ({ opacity: { value: 0, ...LEAVE }, x: { value: -16 * step, ...LEAVE } }),
+  duration: 200,
+  easing: 'out',
+  swap: 'wait' as const,
+})
 
 // In the components' sidebar, the Motion row is marked like a link: it opens its own section.
 const leavesSection = (value: unknown) =>
@@ -426,9 +422,6 @@ watch(
 }
 
 /* The list pushed in covers the one under it, in the sidebar's own colour. */
-.sidebar-over {
-  background: color-mix(in oklch, var(--ui-muted) 40%, var(--ui-surface));
-}
 
 .sidebar-indicator {
   position: absolute;

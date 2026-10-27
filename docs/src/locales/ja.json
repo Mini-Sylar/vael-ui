@@ -616,8 +616,9 @@
       "engines": "独自のエンジン",
       "types": "TypeScript",
       "back": "コンポーネントに戻る",
-      "blocks": "ブロック",
-      "showpieces": "並べて比較"
+      "blocks": "サンプル",
+      "showpieces": "並べて比較",
+      "options": "すべてのオプション"
     },
     "mode": {
       "components": "すべてのコンポーネントを種類別に",
@@ -778,6 +779,16 @@
           "title": "登場と退場",
           "body": "<code>initial</code> は要素が入ってくる起点を決めます。Vue が要素を取り除くと、<code>exit</code> を指定しない限り、来た道をより速く、控えめに戻っていきます。ダイアログやメニューなど閉じるコンポーネントの中では、代わりにパネルと一緒に消えます。 よく使う登場は名前で選べます: <code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code>、<code>.blur</code>。スプリングも同じように <code>v-animate.pop.bouncy</code> と付けられ、値で調整できます: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
         },
+        "names": {
+          "title": "名前",
+          "body": "<code>v-animate:rows</code> のコロンの後の語は名前です。単独の要素には必要ありません。要素どうしがまとまって動くときに名前を付けます：",
+          "items": [
+            "同じ名前で同時に入ってくる要素は 1 つのグループになり、<code>stagger</code> で順番に入ってきます。",
+            "Dialog などの vael-ui コンポーネントの中では、その <code>motion.targets.rows</code> で <code>rows</code> という名前の要素の動きを決められ、コンポーネントと一緒に出入りします。",
+            "<code>after: 'rows'</code> で、別の要素がそれらを待ちます。",
+            "同じ名前のページは <code>swap: 'wait'</code> で互いを待てます。"
+          ]
+        },
         "show": {
           "title": "表示と非表示",
           "body": "<code>v-show</code> と一緒に使うと、<code>v-animate</code> は要素が隠れるときに退場を、再び表示されるときに登場を再生します。<code>v-if</code> と同じです。"
@@ -785,6 +796,10 @@
         "scroll": {
           "title": "スクロールで画面に入ったとき",
           "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番で、<code>stagger</code> の間隔を空けてひとつずつ再生されます。 <code>stagger: true</code> は stagger トークンの間隔で並べます。<code>'end'</code>、<code>'center'</code>、<code>'edges'</code> を指定すると、波がそこから始まります。 グリッドでは、<code>'center'</code> と <code>'edges'</code> は各要素の実際の位置に従います。波は中央のセル、または角から始まります。"
+        },
+        "grid": {
+          "title": "グリッド全体に",
+          "body": "同じ名前で一緒に入ってくる要素は、それぞれの位置に応じて時間差で現れます。グリッドでは、<code>stagger: 'center'</code> は中央のセルから外側へ広がり、<code>'edges'</code> は四隅から内側へ進みます。1 行や 1 列だけのときは、ページ上の順番どおりです。"
         },
         "inView": {
           "title": "画面に入っている間",
@@ -813,6 +828,10 @@
         "animate": {
           "title": "見た目を保つ",
           "body": "<code>animate</code> は、要素がページにある間ずっと保つ見た目を決めます。値を変えると、要素は今の位置からそこへアニメーションします。<code>duration</code> を指定しなければスプリングで動きます。例：<code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>。キーフレームの配列では、<code>progress</code>（0 から 1）が再生する代わりにキーフレームをある位置に止めるので、スワイプやスクロールに合わせて動かせます。<code>spring</code> を指定すると、少し遅れて追従します。"
+        },
+        "values": {
+          "title": "アニメーションできるもの",
+          "body": "<code>x</code>、<code>y</code>、<code>scale</code>、<code>rotate</code>、3D 回転、<code>opacity</code> のほか、アニメーション可能な CSS プロパティならどれでも使えます：<code>color</code>、ぼかしなどの <code>filter</code>、ワイプ用の <code>clipPath</code>、独自のカスタムプロパティ。単なる数値は px、<code>rotate</code> では度です。移動は transform と opacity で行い、色・ぼかし・クリップは小さな演出に留めます。"
         },
         "turn": {
           "title": "3D で回す",
@@ -848,7 +867,7 @@
         "intro": "コンポーネントは画面に表示されている間も、押したとき、チェックに失敗したとき、パネルが開くときなどにアニメーションします。リストは項目の出入りに合わせてアニメーションします。",
         "press": {
           "title": "押下とホバー",
-          "body": "<code>states</code> は、コンポーネントがある状態にある間、パーツをアニメーションさせます。単一の値は状態がオンの間ずっと保たれます。<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> は押している間ボタンを縮めます。 どの要素でも <code>v-animate</code> で同じ状態を使えます: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>。"
+          "body": "<code>states</code> は、コンポーネントがある状態にある間、パーツをアニメーションさせます。単一の値は状態がオンの間ずっと保たれます。<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> は押している間ボタンを縮めます。 どの要素でも <code>v-animate</code> で同じ状態を使えます: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>。 すべてのコンポーネントと要素にある状態：<code>hover</code>（マウスのみ。タップでは付きません）、<code>active</code>（ポインター、Space、Enter で押下）、<code>focus</code>（内側のどこかにフォーカス）。コンポーネントは <code>invalid</code>、<code>checked</code>、<code>open</code>、<code>disabled</code> など独自の状態を持ち、各ページに一覧があります。<code>v-animate</code> には <code>inView</code> もあります。"
         },
         "shake": {
           "title": "チェックの失敗",
@@ -890,6 +909,10 @@
           "title": "任意の要素から広がる",
           "body": "<code>morph</code> には、<code>from</code> が要素を返すオブジェクトを渡します。たとえばクリックした行です：<code>morph: {'{'} from: () => row, hide: false {'}'}</code>。<code>hide: false</code> にすると、ダイアログが開いている間も行は表示されたままです。"
         },
+        "surface": {
+          "title": "溶け合う Popover",
+          "body": "<code>surface</code> は Popover の背後に形のレイヤーを描きます。トリガー上のピルと、パネルと一緒に動くブロブで、どちらもパネルの色です。レイヤーにスタイルの <code>filters</code>（goo など）を付けると、テキストはくっきりしたまま形が溶け合います。"
+        },
         "recede": {
           "title": "ページを一緒に動かす",
           "body": "<code>linked</code> は、Dialog、Drawer、BottomSheet が開いている間、ほかの要素を動かします。ドロワーの後ろでページが奥へ下がる、といった動きです。各エントリーには要素と、オーバーレイが開いている間の見た目を指定します。"
@@ -912,7 +935,7 @@
         "intro": "ダイアログやポップオーバーの中では、自分の要素もそのモーションに加われます。要素に名前を付け、要素同士やパネルに合わせてタイミングを決めます。",
         "after": {
           "title": "順番に",
-          "body": "<code>targets</code> で要素に名前を付け、スロットの <code>target('name')</code> か <code>v-animate:name</code> で印を付けます。<code>after: 'summary:60%'</code> は、サマリーが 60% 入ったところで行を動かし始めます。 コンポーネントの外にある要素どうしも、一緒に表示されるなら互いを待てます: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>。"
+          "body": "<code>targets</code> で要素に名前を付け、スロットの <code>target('name')</code> か <code>v-animate:name</code> で印を付けます。<code>after: 'summary:60%'</code> は、サマリーが 60% 入ったところで行を動かし始めます。 コンポーネントの外にある要素どうしも、一緒に表示されるなら互いを待てます: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>。 コンポーネントがデータから描画する行には印を付けられません。代わりに名前に <code>select</code> を指定します：<code>targets: {'{'} rows: {'{'} select: 'tr' {'}'} {'}'}</code>。"
         },
         "moments": {
           "title": "タイミング",
@@ -969,7 +992,7 @@
         },
         "hooks": {
           "title": "自分のアニメーション",
-          "body": "要素に <code>enter</code> や <code>leave</code> を渡すと、値の代わりに GSAP や motion でアニメーションできます。アニメーションを返してください。vael-ui はコールバックの前にそれを待ち、先に要素がなくなれば止めます。フックは要素と <code>{'{'} signal, reducedMotion, index {'}'}</code> を受け取ります。"
+          "body": "要素に <code>enter</code> や <code>leave</code> を渡すと、値の代わりに GSAP や motion でアニメーションできます。アニメーションを返してください。vael-ui はコールバックの前にそれを待ち、先に要素がなくなれば止めます。フックは要素と <code>{'{'} signal, reducedMotion, index {'}'}</code> を受け取ります。 モーション軽減の設定ではフックは実行されません。それでも実行するには <code>reducedMotion: 'run'</code> を指定し、コンテキストの <code>reducedMotion</code> を見て動きを省いてください。"
         }
       },
       "styles": {
@@ -977,11 +1000,26 @@
         "intro": "モーションスタイルは <code>ConfigProvider</code> に渡すひとつのオブジェクトで、アプリ全体の動きを決めます。ロール別、コンポーネント別に設定でき、自分の要素用のプリセットも持てます。",
         "style": {
           "title": "アプリにひとつのオブジェクト",
-          "body": "スタイルには <code>version: 1</code>、<code>spring</code>、そしてロール別（<code>overlay</code>、<code>list</code>、<code>press</code>、<code>reveal</code>、<code>content</code>）またはコンポーネント別（<code>dialog</code>、<code>toaster</code>）のキーがあります。コンポーネント自身の <code>motion</code> がそれを上書きします。"
+          "body": "スタイルは <code>ConfigProvider</code> に渡す 1 つのオブジェクトです。<code>version: 1</code>、内側すべてに効く <code>spring</code>、そしてロール別またはコンポーネント別のキーを持ちます。各コンポーネントでは、自身の <code>motion</code>、スタイル内のそのキー、そのロール、組み込みの見た目の順に優先されます。ロールは次のとおりです：",
+          "items": [
+            "<code>overlay</code>：Dialog、Drawer、BottomSheet、Popover、Menu、Tooltip、および Select、Combobox、DatePicker、TreeSelect のパネル",
+            "<code>list</code>：Toaster、Timeline、FileUpload、SpeedDial、DataTable の行、CommandPalette の行、Breadcrumb、AvatarGroup",
+            "<code>press</code>：Button の押下とホバーの動き",
+            "<code>reveal</code>：Message のように自ら出入りするコンテンツ",
+            "<code>content</code>：コンポーネント内のあなたの要素（その <code>targets</code>）"
+          ]
+        },
+        "components": {
+          "title": "コンポーネント別",
+          "body": "<code>motion</code> プロップを持つコンポーネントには、それぞれ同じ名前のキーがスタイルにあります：<code>dialog</code>、<code>drawer</code>、<code>toaster</code>、<code>button</code>、<code>select</code> など。キーはそのコンポーネントの <code>motion</code> と同じものを受け取るので、1 つのスタイルでアプリ中のダイアログをまとめて変え、Drawer に独自のばねを与え、失敗したトーストをすべて揺らせます。コードではキーにフックも書けますが、データから読み込むスタイルでは書けません。"
         },
         "presets": {
           "title": "プリセット",
-          "body": "<code>presets</code> は見た目に名前を付けます。プロバイダーの中ならどこでも <code>v-animate.rise</code> で使えるので、自分の要素もコンポーネントと同じように動きます。"
+          "body": "<code>presets</code> は名前付きの独自の登場アニメーションです。プロバイダーの内側ならどこでも、修飾子 <code>v-animate.wiggle</code> または値 <code>v-animate=\"'wiggle'\"</code> として使えます。プリセットには <code>v-animate</code> が受け取るもの（<code>initial</code>、<code>exit</code>、タイミング、<code>stagger</code>、さらに <code>states</code>）を入れられます。<code>rise</code> や <code>pop</code> など組み込みの名前を付けると、プロバイダー内でその登場を置き換えます。名前を <code>MotionPresets</code> に登録すると補完が効き、タイプミスは型チェックで失敗します。"
+        },
+        "filters": {
+          "title": "フィルター",
+          "body": "<code>filters</code> は <code>ConfigProvider</code> がページに置く SVG フィルターに名前を付けます。内側の要素は <code>filter: url(#名前)</code> で使えます。goo（<code>{'{'} blur: 8, contrast: [18, -7] {'}'}</code>）は、形が触れ合う所で溶け合わせます。"
         },
         "parse": {
           "title": "コードの外から来るスタイル",
@@ -1014,7 +1052,7 @@
       }
     },
     "blocks": {
-      "title": "ブロック",
+      "title": "サンプル",
       "intro": "vael-ui のいくつかのコンポーネントとそのモーションで作った、完成した UI の部品です。アプリにコピーして調整してください。",
       "comingTitle": "今後も追加予定",
       "comingBody": "ブロックは専用のサイト blocks.vael-ui.dev に移る予定です。ここにあるのはその最初のものです。",
@@ -1078,6 +1116,25 @@
       "with": "{engine} で作成",
       "vael": "vael-ui のモーションで作成",
       "none": "vael-ui 版はまだありません。"
+    },
+    "options": {
+      "title": "すべてのオプション",
+      "intro": "モーションガイドのすべてのオプションを用途ごとにまとめ、それを説明するセクションとともに並べています。",
+      "filter": "オプションを絞り込む",
+      "empty": "一致するオプションはありません。",
+      "groups": {
+        "timing": "タイミングとオフ",
+        "presence": "登場と退場",
+        "moving": "移動",
+        "states": "状態",
+        "together": "複数の要素をまとめて",
+        "overlays": "オーバーレイ",
+        "values": "値とキーフレーム",
+        "callbacks": "コールバック",
+        "code": "コードから",
+        "app": "アプリ全体のモーション",
+        "other": "その他"
+      }
     }
   },
   "recipes": {

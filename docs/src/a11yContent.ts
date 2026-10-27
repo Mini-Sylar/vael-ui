@@ -1131,7 +1131,7 @@ export const a11yContent: Record<string, A11yInfo> = {
     ],
     notes: [
       'Each header is a `<button>` with `aria-expanded` and `aria-controls`, inside an `<h3>`. Set `headingLevel` to match your page outline.',
-      'Each panel has `role="region"` and `aria-labelledby` pointing at its header. A closed panel is `aria-hidden` and `inert`, but stays mounted.',
+      'Each panel has `role="region"` and `aria-labelledby` pointing at its header. A closed panel stays mounted as `hidden="until-found"`: out of the tab order and the accessibility tree, but the browser\'s find reaches it and opens its section. Where a browser has no `until-found`, it is `aria-hidden` and `inert` instead.',
       'A disabled item has a native `disabled` button, so Tab and the arrow keys skip it.',
       "The arrow keys move only between this Accordion's own headers, so a nested Accordion keeps its own. With `collapsible` set to `false`, the last open section stays open.",
     ],
@@ -1145,7 +1145,7 @@ export const a11yContent: Record<string, A11yInfo> = {
       'Put a `<button>` in the `#trigger` slot. The first `button`, `[role="button"]` or `a[href]` in it gets `aria-expanded` and `aria-controls`.',
       'Keyboard support comes from the element you put in the slot. The wrapper around it only listens for clicks.',
       'With `disabled`, the trigger gets `aria-disabled="true"` and clicks do nothing.',
-      'The panel has `role="region"`, named by the trigger. A closed panel is `aria-hidden` and `inert`, but stays mounted.',
+      'The panel has `role="region"`, named by the trigger. A closed panel stays mounted as `hidden="until-found"`: out of the tab order and the accessibility tree, but the browser\'s find reaches it and opens it. Where a browser has no `until-found`, it is `aria-hidden` and `inert` instead.',
     ],
   },
   Separator: {

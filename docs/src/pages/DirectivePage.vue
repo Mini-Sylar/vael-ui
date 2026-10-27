@@ -17,6 +17,12 @@
       <CodeBlock lang="vue" :code="exampleCode" />
     </section>
 
+    <section v-for="extra in content.sections" :id="extra.id" :key="extra.id" class="section">
+      <h2>{{ extra.title }}</h2>
+      <p><RichText :text="extra.body" /></p>
+      <CodeBlock v-if="extra.code" lang="vue" :code="extra.code" />
+    </section>
+
     <MetaTable id="value" :title="t('directive.value')" :rows="content.value" empty-text="" />
     <MetaTable
       v-if="content.modifiers?.length"
