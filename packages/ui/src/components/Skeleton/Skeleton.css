@@ -26,6 +26,70 @@
     visibility: hidden;
   }
 
+  /* `loading`: your content, drawn as bones of itself. Its own box (a card's border and
+     background) stays; its text and media are hidden, and the bones are drawn over them. */
+  .ui-skeleton-group {
+    position: relative;
+  }
+  .ui-skeleton-bones {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-skeleton-bones[data-leaving] {
+    opacity: 0;
+  }
+  .ui-skeleton-bone {
+    position: absolute;
+  }
+  /* Hidden, keeping its place, over your own colours: a layered !important wins over them. */
+  .ui-skeleton-group[data-loading] .ui-skeleton-group-content,
+  .ui-skeleton-group[data-loading] .ui-skeleton-group-content * {
+    color: transparent !important;
+    text-shadow: none !important;
+    caret-color: transparent !important;
+  }
+  /* The blocks a bone stands in for (Skeleton's BLOCKS): hidden, keeping their place. */
+  .ui-skeleton-group[data-loading]
+    .ui-skeleton-group-content
+    :is(
+      img,
+      svg,
+      video,
+      canvas,
+      picture,
+      iframe,
+      [role='img'],
+      button,
+      input,
+      select,
+      textarea,
+      [data-skeleton-block],
+      .ui-badge,
+      .ui-tag,
+      .ui-chip,
+      .ui-avatar,
+      .ui-kbd,
+      .ui-switch,
+      .ui-checkbox,
+      .ui-radio,
+      .ui-progress,
+      .ui-rating
+    ) {
+    visibility: hidden !important;
+  }
+  .ui-skeleton-group[data-loading] .ui-skeleton-group-content ::placeholder {
+    color: transparent !important;
+  }
+  /* Coming in: the text and media fade to their own colours while the bones fade out. */
+  .ui-skeleton-group[data-revealing] .ui-skeleton-group-content,
+  .ui-skeleton-group[data-revealing] .ui-skeleton-group-content * {
+    transition:
+      color var(--ui-duration-enter) var(--ui-ease-out),
+      opacity var(--ui-duration-enter) var(--ui-ease-out) !important;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .ui-skeleton--animated {
       animation-duration: calc(var(--ui-duration-pulse) * 2);
