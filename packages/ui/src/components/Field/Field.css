@@ -290,6 +290,13 @@
     inset: 0;
     border: 0;
   }
+  /* Flush with the cell, a whole number of pixels wide, as the button's own box is. */
+  @supports (inline-size: round(100%, 1px)) {
+    :is(.ui-field-prepend, .ui-field-append) > .ui-button::before {
+      inset-inline-end: auto;
+      inline-size: round(100%, 1px);
+    }
+  }
   :is(.ui-field-prepend, .ui-field-append) > :is([data-ui-frame], button, .ui-button) {
     align-self: stretch;
     block-size: auto;

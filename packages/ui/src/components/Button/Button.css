@@ -35,6 +35,17 @@
       border-color var(--ui-duration-press) ease;
   }
 
+  /* A label rarely comes to a whole number of pixels, and while the press scales a box of a
+     fractional width, its edge spreads into the next pixel, so the end of every release looked a
+     pixel wider before it settled. A box a whole number of pixels wide (within half a pixel,
+     as the page rounds it at rest anyway) only ever moves its edge inward. */
+  @supports (inline-size: round(calc(100% + 2px), 1px)) {
+    .ui-button::before {
+      inset-inline-end: auto;
+      inline-size: round(calc(100% + 2px), 1px);
+    }
+  }
+
   /* Sizes land on whole pixels, and the box on an even number of them, so a 1em icon or a label
      sits on the pixel grid at any root font size. Off the grid, the press scale can't keep the
      sub-pixel phase of what it moves, and an icon visibly jumps as the press starts and ends.
@@ -214,6 +225,13 @@
   }
   .ui-button-hold:dir(rtl) {
     clip-path: inset(0 0 0 100%);
+  }
+  /* Whole pixels wide, as the box it fills (see `.ui-button::before`). */
+  @supports (inline-size: round(calc(100% + 2px), 1px)) {
+    .ui-button-hold {
+      inset-inline-end: auto;
+      inline-size: round(calc(100% + 2px), 1px);
+    }
   }
   .ui-button[data-hold='holding'] .ui-button-hold,
   .ui-button[data-hold='done'] .ui-button-hold {
