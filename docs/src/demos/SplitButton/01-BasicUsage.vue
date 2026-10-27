@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Basic usage: main click vs. chevron dropdown</h3>
+    <h3>Basic usage: the main action and the menu</h3>
     <div class="row">
       <SplitButton :items="saveItems" @click="onSave" @select="onSaveOption">Save</SplitButton>
       <output class="panel-text">{{ lastAction }}</output>

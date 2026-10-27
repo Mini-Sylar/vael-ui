@@ -1,6 +1,7 @@
 import { computed, shallowRef, toValue, watch } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import type { ElRef } from './dom'
+import { inlineKey, isRtl } from './dom'
 
 export type SliderOrientation = 'horizontal' | 'vertical'
 
@@ -21,6 +22,9 @@ export interface UseSliderOptions {
 export interface UseSliderReturn {
   /** True for the entire span of a pointer drag — from pointerdown to release. */
   isDragging: Ref<boolean>
+  /** True for a moment while a drag moves a thumb, so it follows the pointer at once; a key, a
+   * press on the track or a value set from outside glides. */
+  isInstant: Ref<boolean>
   /** Index of the thumb currently captured by a pointer drag; `null` when idle. */
   activeThumb: Ref<number | null>
   /** Bind to the root element's `:style`. Two 0–1 fraction custom properties (`--ui-slider-p0`/`--ui-slider-p1`, p1 only meaningful in range mode) — the SOLE Vue-managed style location. Thumbs and the fill carry no inline style of their own; CSS `translate`/`inset` calc reads these off the root, so an imperative spring library may still own a thumb's transform directly if a consumer wants to override the default feel. */
@@ -70,7 +74,18 @@ export function useSlider(
     return Math.min(hi, Math.max(lo, clean))
   }
 
-  function setValue(index: number, raw: number) {
+  // A drag follows the pointer at once; a jump (a key, a press on the track, a value from
+  // outside) glides there.
+  const isInstant = shallowRef(false)
+  let instantFrame = 0
+  function setValue(index: number, raw: number, instant = false) {
+    if (instant) {
+      isInstant.value = true
+      cancelAnimationFrame(instantFrame)
+      instantFrame = requestAnimationFrame(() => {
+        instantFrame = requestAnimationFrame(() => (isInstant.value = false))
+      })
+    }
     const next = clampToStep(raw)
     if (isRange()) {
       const [v0, v1] = model.value as [number, number]
@@ -104,10 +119,11 @@ export function useSlider(
     const rect = track.getBoundingClientRect()
     const lo = min()
     const hi = max()
+    // Right to left, a horizontal slider starts at its right edge.
     const fraction =
       orientation() === 'vertical'
         ? 1 - (event.clientY - rect.top) / rect.height
-        : (event.clientX - rect.left) / rect.width
+        : (isRtl(track) ? rect.right - event.clientX : event.clientX - rect.left) / rect.width
     const clamped = Math.min(1, Math.max(0, fraction))
     return lo + clamped * (hi - lo)
   }
@@ -145,7 +161,7 @@ export function useSlider(
   function onPointerMove(event: PointerEvent) {
     if (!isDragging.value || activeThumb.value === null) return
     if (capturedPointerId !== null && event.pointerId !== capturedPointerId) return
-    setValue(activeThumb.value, valueFromPointer(event))
+    setValue(activeThumb.value, valueFromPointer(event), true)
   }
 
   function endDrag(event: PointerEvent) {
@@ -182,7 +198,12 @@ export function useSlider(
   function onThumbKeydown(index: number, event: KeyboardEvent) {
     if (isDisabled()) return
     const s = step()
-    switch (event.key) {
+    // Right to left, a horizontal slider runs from the right: the arrows follow it.
+    const key =
+      orientation() === 'horizontal'
+        ? inlineKey(event.key, event.currentTarget as Element)
+        : event.key
+    switch (key) {
       case 'ArrowRight':
       case 'ArrowUp':
         event.preventDefault()
@@ -216,6 +237,7 @@ export function useSlider(
 
   return {
     isDragging,
+    isInstant,
     activeThumb,
     rootStyle,
     onThumbPointerdown,

@@ -10,6 +10,9 @@
     border-radius: var(--ui-select-button-radius);
     background: var(--ui-muted);
     overflow: hidden;
+    /* Never narrower than its options: overflow: hidden alone lets a grid or flex column shrink it
+       and clip the last one. */
+    min-inline-size: max-content;
   }
   .ui-select-button-option {
     position: relative;
@@ -74,6 +77,20 @@
       opacity: 0;
     }
   }
+  /* Server-rendered, before the indicator is measured: the selected option draws its look. */
+  .ui-select-button:not([data-indicator-placed])
+    .ui-select-button-option:has(.ui-select-button-input[type='radio'])[data-checked]::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset-block: var(--ui-select-button-gap);
+    inset-inline: 0;
+    border-radius: calc(var(--ui-select-button-radius) - var(--ui-select-button-gap));
+    background: var(--ui-surface);
+    box-shadow:
+      0 1px 1px rgb(0 0 0 / 0.06),
+      0 1px 3px rgb(0 0 0 / 0.08);
+  }
   .ui-select-button[data-invalid] {
     border-color: var(--ui-danger);
   }
@@ -90,5 +107,11 @@
     .ui-select-button-indicator {
       transition: none;
     }
+  }
+
+  /* Hover and focus: a lighter pill sliding under the options, beneath the selected one. */
+  .ui-select-button-hover {
+    border-radius: calc(var(--ui-select-button-radius) - var(--ui-select-button-gap));
+    background: color-mix(in oklch, var(--ui-surface) 55%, transparent);
   }
 }

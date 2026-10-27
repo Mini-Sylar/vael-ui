@@ -8,6 +8,13 @@
     @keydown="onKeydown"
     v-bind="attrs"
   >
+    <div
+      ref="hoverEl"
+      class="ui-indicator ui-toolbar-hover"
+      :class="orientation !== 'vertical' && 'ui-indicator--inline'"
+      :style="hoverStyle"
+      aria-hidden="true"
+    />
     <div v-if="slots.start || slots.default" :class="groupPart.class" :style="groupPart.style">
       <slot name="start" />
       <slot />
@@ -28,7 +35,7 @@
             data-toolbar-ellipsis
             :class="overflowTriggerPart.class"
             :style="overflowTriggerPart.style"
-            :aria-label="overflowLabel"
+            :aria-label="overflowLabel ?? messages.toolbar.more"
           >
             <span class="ui-toolbar-overflow-label">&hellip;</span>
           </button>
@@ -41,12 +48,19 @@
 <!-- role="toolbar"; heterogeneous slot content with roving tabindex; three groups (start/center/end) handle overflow ellipsis placement -->
 <script setup lang="ts">
 import './Toolbar.css'
+import '../shared/indicator.css'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useToolbar } from '../../composables/useToolbar'
+import { useMessages, toolbarMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import { useIndicatorMotion } from '../../composables/useIndicatorMotion'
+import type { ToolbarMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -62,8 +76,11 @@ const props = withDefaults(
     overflowLabel?: string
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; group: UiPartValue; overflowTrigger: UiPartValue }>
+    /** How it moves: its appearance, control by control (`{ initial: { item: { opacity: 0, y: 4 } }, stagger: 0.03 }`), over `root`, `item` (each control in a group) and the hover `indicator`. `spring` retimes the indicator; `move` hands its moves to your own animation. `false` turns its own animation off. */
+    motion?: ToolbarMotion
   }>(),
-  { orientation: 'horizontal', overflowLabel: 'More' },
+  // `motion`: absent must read as unset, not `false` (Vue's boolean casting would turn it off).
+  { orientation: 'horizontal', overflowLabel: undefined, motion: undefined },
 )
 
 defineSlots<{
@@ -78,7 +95,32 @@ defineSlots<{
 }>()
 
 const slots = useSlots()
+const messages = useMessages({ toolbar: toolbarMessages })
 const list = useTemplateRef<HTMLElement>('list')
+// The hover and keyboard highlight slides between the toolbar's ghost and text buttons.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const indicatorMotion = useIndicatorMotion({
+  name: 'Toolbar',
+  motion: () => props.motion,
+  indicator: () => hoverEl.value,
+  parts: () => parts(),
+})
+const { style: hoverStyle } = useHoverIndicator(list, {
+  itemSelector: '.ui-button:is(.ui-button--ghost, .ui-button--text)',
+  scope: '[role="toolbar"]',
+  orientation: () => (props.orientation === 'vertical' ? 'vertical' : 'horizontal'),
+  indicatorEl: hoverEl,
+  indicator: indicatorMotion.spring,
+  motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
+})
+const parts = useStateMotion({
+  key: 'toolbar',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => list.value,
+  selectors: { root: '.ui-toolbar', item: '.ui-toolbar-group > *', indicator: '.ui-toolbar-hover' },
+  states: () => ({}),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.toolbar,
@@ -122,5 +164,11 @@ watch(collapsedItems, buildOverflowItems, { immediate: true })
 defineExpose({
   /** Root element. */
   el: list,
+  /** The hover and keyboard highlight, sliding between buttons. Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

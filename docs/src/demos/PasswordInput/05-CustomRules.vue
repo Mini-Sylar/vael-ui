@@ -2,11 +2,12 @@
   <section class="demo">
     <h3>Custom rules</h3>
     <p class="note">
-      <code>rules</code> is just <code>{'{'} label, test(value) {'}'}</code> pairs — derive them
-      from whatever already validates the value (a Zod/Valibot schema's own checks, here just
-      inlined for the demo).
+      <code>rules</code> is a list of <code>{'{'} label, test(value) {'}'}</code> objects. Build
+      them from whatever already validates the value, such as a Zod or Valibot schema; this demo
+      writes them inline.
     </p>
     <PasswordInput
+      style="max-inline-size: 16rem"
       v-model="custom"
       hint-placement="inline"
       :rules="customRules"

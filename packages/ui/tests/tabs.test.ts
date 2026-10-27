@@ -109,3 +109,53 @@ test('exposed panelProps() returns matching tabpanel attributes', async () => {
     }),
   )
 })
+
+test('useTabs keeps object items apart, matching each tab by position', async () => {
+  const { defineComponent, h, shallowRef, useTemplateRef } = await import('vue')
+  const { useTabs } = await import('../src/composables/useTabs')
+  const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+  const active = shallowRef(items[1]!)
+  const Strip = defineComponent({
+    setup() {
+      const listEl = useTemplateRef<HTMLElement>('list')
+      const { onKeydown, focused } = useTabs(active, { items, listEl })
+      return () =>
+        h(
+          'div',
+          { ref: 'list', role: 'tablist', onKeydown },
+          items.map((item) =>
+            h(
+              'button',
+              {
+                role: 'tab',
+                // What binding the item itself produces: the same string for every object.
+                'data-tab-value': String(item),
+                tabindex: item === focused.value ? 0 : -1,
+                onClick: () => (active.value = item),
+              },
+              item.id,
+            ),
+          ),
+        )
+    },
+  })
+  const screen = await render(Strip)
+  screen.container.querySelectorAll<HTMLElement>('[role="tab"]')[1]!.focus()
+  await userEvent.keyboard('{ArrowRight}')
+  await vi.waitFor(() => expect(active.value.id).toBe('c'))
+  // Focus follows the selection to its own tab, not the first tab with the same string.
+  await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('c'))
+})
+
+test('mounting Tabs gives Vue no invalid watch source', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    await render(TabsFixture)
+    const invalid = warn.mock.calls.filter((args) =>
+      String(args[0]).includes('Invalid watch source'),
+    )
+    expect(invalid).toEqual([])
+  } finally {
+    warn.mockRestore()
+  }
+})

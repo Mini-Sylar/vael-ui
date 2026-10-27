@@ -9,10 +9,12 @@
       :align="align"
       :side-offset="sideOffset"
       :align-offset="alignOffset"
+      :panel-width="panelWidth ?? 'trigger'"
       :close-on-esc="closeOnEsc"
       :close-on-outside="closeOnOutside"
       :before-close="beforeClose"
       :force-mount="forceMount"
+      :motion="menuMotion"
       :teleport-to="teleportTo"
       :scroll-fade="scrollFade"
       :ui="{
@@ -29,6 +31,10 @@
         <div v-if="filter !== undefined" :class="filterPart.class" :style="filterPart.style">
           <Input
             ref="filterInputRef"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            enterkeyhint="enter"
             v-model="query"
             :placeholder="filterPlaceholder"
             size="sm"
@@ -38,7 +44,8 @@
           >
             <template #start>
               <svg
-                class="ui-cascade-select-search-icon"
+                :class="filterIconPart.class"
+                :style="filterIconPart.style"
                 viewBox="0 0 16 16"
                 width="14"
                 height="14"
@@ -58,68 +65,95 @@
         </div>
       </template>
       <template #trigger="{ open: menuOpen }">
+        <!-- A menu button (Menu sets its popup state); the clear button sits beside it, not in it. -->
         <div
-          :id="fieldControl.id"
           ref="triggerEl"
           :data-ui-frame="props.size"
-          role="combobox"
-          v-bind="restAttrs"
           :class="triggerClass"
           :style="[triggerStyle, attrs.style as never]"
-          :tabindex="isDisabled ? -1 : 0"
-          :aria-disabled="isDisabled || undefined"
+          tabindex="-1"
           :data-state="menuOpen ? 'open' : 'closed'"
           :data-invalid="isInvalid || undefined"
           :data-placeholder="isEmpty || undefined"
-          :aria-describedby="fieldControl.describedBy()"
-          :aria-labelledby="
-            (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
-          "
-          :aria-invalid="isInvalid || undefined"
-          :aria-required="fieldControl.required() || undefined"
           @click="onTriggerClick"
-          @keydown="onTriggerKeydown"
-          @focus="onTriggerFocus"
-          @blur="onTriggerBlur"
+          @focus="focusControl"
         >
-          <span :class="valuePart.class" :style="valuePart.style">
-            <slot name="value" :selected="selectedForSlot" :path="pathForSlot">
-              <span v-if="isEmpty" class="ui-cascade-select-placeholder">{{ placeholder }}</span>
-              <template v-else-if="!multiple">{{ selectedItem?.label }}</template>
-              <span v-else-if="display === 'text'">{{ displayLabel }}</span>
-              <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
-              <TransitionGroup
-                v-else
-                name="ui-chip-item"
-                @leave-cancelled="resetLeaveStyles"
-                tag="span"
-                class="ui-cascade-select-chips"
-                :css="props.motionCss"
-                :data-motion="props.motionCss ? undefined : 'off'"
-                @enter="chipEnterHook"
-                @leave="chipLeaveHook"
-              >
-                <Chip
-                  v-for="match in visibleChips"
-                  :key="match.item.value"
-                  :label="match.item.label"
-                  removable
-                  :disabled="isDisabled"
-                  @remove="removeChip(match.item)"
+          <span v-if="ownLabel" :id="ownLabelId" hidden>{{ ownLabel }}</span>
+          <!-- Start and end sit outside the button, so they don't join its accessible name. -->
+          <span v-if="$slots.start" :class="startPart.class" :style="startPart.style"
+            ><slot name="start"
+          /></span>
+          <div
+            :id="controlId"
+            ref="controlEl"
+            class="ui-cascade-select-control"
+            role="button"
+            data-menu-trigger
+            v-bind="restAttrs"
+            :tabindex="isDisabled ? -1 : 0"
+            :aria-disabled="isDisabled || undefined"
+            :aria-describedby="fieldControl.describedBy()"
+            :aria-labelledby="controlLabelledBy"
+            :aria-invalid="isInvalid || undefined"
+            :aria-required="fieldControl.required() || undefined"
+            @keydown="onTriggerKeydown"
+            @focus="onTriggerFocus"
+            @blur="onTriggerBlur"
+          >
+            <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
+              <slot name="value" :selected="selectedForSlot" :path="pathForSlot">
+                <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
+                <LazyAnimatedText
+                  v-if="!multiple"
+                  :class="isEmpty && 'ui-cascade-select-placeholder'"
+                  :value="isEmpty ? (placeholder ?? '') : (selectedItem?.label ?? '')"
+                  :motion="!!props.motion && valueSwap()"
                 />
                 <span
-                  v-if="hiddenChipCount > 0"
-                  key="__overflow"
-                  class="ui-chip ui-chip--md ui-cascade-select-chip--overflow"
+                  v-else-if="isEmpty && display !== 'chip'"
+                  class="ui-cascade-select-placeholder"
+                  >{{ placeholder }}</span
                 >
-                  +{{ hiddenChipCount }}
-                </span>
-              </TransitionGroup>
-            </slot>
-          </span>
+                <span v-else-if="display === 'text'">{{ displayLabel }}</span>
+                <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
+                <!-- The chips group stays mounted when the last chip goes, so it leaves like the others;
+                     the placeholder slides in behind it. -->
+                <template v-else>
+                  <TransitionGroup
+                    v-bind="chipsTransition"
+                    :data-motion="props.motion ? undefined : 'off'"
+                    tag="span"
+                    class="ui-cascade-select-chips"
+                  >
+                    <Chip
+                      v-for="match in visibleChips"
+                      :key="match.item.value"
+                      :label="match.item.label"
+                      removable
+                      :disabled="isDisabled"
+                      @remove="removeChip(match.item)"
+                    />
+                    <span
+                      v-if="hiddenChipCount > 0"
+                      key="__overflow"
+                      class="ui-chip ui-chip--md ui-cascade-select-chip--overflow"
+                    >
+                      +{{ hiddenChipCount }}
+                    </span>
+                  </TransitionGroup>
+                  <span v-if="isEmpty" class="ui-cascade-select-placeholder">{{
+                    placeholder
+                  }}</span>
+                </template>
+              </slot>
+            </span>
+          </div>
+          <span v-if="$slots.end" :class="endPart.class" :style="endPart.style"
+            ><slot name="end"
+          /></span>
           <Transition
             name="ui-clear"
-            :css="props.motionCss"
+            :css="!!props.motion"
             @enter="measureClearSpace"
             @leave="startClearLeave"
             @leave-cancelled="resetLeaveStyles"
@@ -127,7 +161,8 @@
             <button
               v-if="clearable && !isEmpty && !isDisabled"
               type="button"
-              class="ui-cascade-select-clear"
+              :class="clearPart.class"
+              :style="clearPart.style"
               :aria-label="messages.cascadeSelect.clear"
               @click.stop="onClear"
               @mousedown.stop.prevent
@@ -143,7 +178,8 @@
             </button>
           </Transition>
           <svg
-            class="ui-cascade-select-chevron"
+            :class="chevronPart.class"
+            :style="chevronPart.style"
             viewBox="0 0 16 16"
             width="14"
             height="14"
@@ -244,29 +280,33 @@ export type CascadeSelectFilter<T> =
     V extends string | number | (string | number)[] | null = string | number | null
   "
 >
+import { useValueSwap } from '../../composables/valueSwap'
+import type { BeforeClose, CascadeSelectMotion } from '../../motion/types'
+import type { PopoverCloseReason } from '../../composables/usePopover'
 import './CascadeSelect.css'
+import type { PanelWidth } from '../../composables/panelWidth'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/clear-transition.css'
-import {
-  collapseLeavingChip,
-  measureClearSpace,
-  resetLeaveStyles,
-  startClearLeave,
-} from '../../composables/dom'
+import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
+import { useChipRowWidth } from '../../composables/useChipRowWidth'
+import { useChipTransition } from '../../composables/useChipTransition'
 import '../shared/chip.css'
-import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, provide, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Menu from '../Menu/Menu.vue'
-import Chip from '../Chip/Chip.vue'
+import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
+import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 import Input from '../Input/Input.vue'
 import { normalizeText } from '../../composables/normalizeText'
 import { useEasedHeight } from '../../composables/useEasedHeight'
 import type { MenuAlign, MenuItemData, MenuSide } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
-import { useUiMessages } from '../../messages'
+import { useMessages, cascadeSelectMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -321,13 +361,20 @@ const rawProps = withDefaults(
     sideOffset?: number
     /** Shifts the panel along the alignment axis, in pixels. @default 0 */
     alignOffset?: number
+    /**
+     * The first level's width. Unset, it fits its rows and is at least as wide as the field, up to
+     * 16rem, so the next level opens close by. `'trigger'` makes it at least the field's full
+     * width; a width in px or any CSS length (`'20rem'`) sets it. The levels opening beside it keep
+     * their own width.
+     */
+    panelWidth?: PanelWidth
     /** Escape key closes the panel. @default true */
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` to finish closing. */
-    beforeClose?: (done: () => void) => void
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
@@ -343,11 +390,14 @@ const rawProps = withDefaults(
      * @default true
      */
     scrollFade?: boolean
-    /** `false` skips the built-in motion: the menu easing to its new height as you search, the clear
-     * button, and chip transitions, which you can animate via `@chip-enter`/`@chip-leave`.
+    /**
+     * How it moves. `false` skips all of it: the menu opening and easing to its new height as you
+     * search, the clear button and the chips. An object moves the menu your way, like
+     * Menu's: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. `chips` does
+     * the same for the chips (`{ chips: { initial: { chip: { opacity: 0, y: 4 } } } }`).
      * @default true
      */
-    motionCss?: boolean
+    motion?: CascadeSelectMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
@@ -357,6 +407,16 @@ const rawProps = withDefaults(
       header: UiPartValue
       filter: UiPartValue
       footer: UiPartValue
+      /** Wraps the `#start` slot, before the value. */
+      start: UiPartValue
+      /** Wraps the `#end` slot, before the clear button and chevron. */
+      end: UiPartValue
+      /** The clear button. */
+      clear: UiPartValue
+      /** The chevron at the end of the trigger. */
+      chevron: UiPartValue
+      /** The search icon at the start of the filter box. */
+      filterIcon: UiPartValue
     }>
   }>(),
   {
@@ -380,11 +440,12 @@ const rawProps = withDefaults(
     filter: undefined,
     filterPlaceholder: 'Search...',
     scrollFade: true,
-    motionCss: undefined,
+    motion: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
+const valueSwap = useValueSwap(() => props.motion)
 
 const emit = defineEmits<{
   /** Fires before the panel closes, with the reason; `details.cancel()` keeps it open. */
@@ -393,22 +454,26 @@ const emit = defineEmits<{
   change: [value: V]
   /** Fires when a leaf is picked or unpicked, with the item and its root-to-leaf path. */
   select: [item: T, path: CascadeSelectPath]
-  /** Replaces the chip enter transition when `motionCss` is `false`; call `done()` when finished. */
-  'chip-enter': [el: Element, done: () => void]
-  /** Same as `@chip-enter`, for a chip's removal. */
-  'chip-leave': [el: Element, done: () => void]
 }>()
 
-const chipEnterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
-)
-const chipLeaveHook = computed(() =>
-  props.motionCss
-    ? collapseLeavingChip
-    : (el: Element, done: () => void) => emit('chip-leave', el, done),
+// The menu's motion: yours without `chips`, which the chips row reads.
+const menuMotion = computed(() => {
+  if (typeof props.motion !== 'object') return props.motion
+  const { chips: _chips, ...menu } = props.motion
+  return menu
+})
+const chipsTransition = useChipTransition(
+  () => rawProps.motion,
+  () => !!props.motion,
+  'cascadeSelect',
+  'CascadeSelect',
 )
 
 defineSlots<{
+  /** Content at the start of the trigger, such as an icon, before the value. */
+  start(): unknown
+  /** Content before the built-in clear button and chevron. */
+  end(): unknown
   /** Custom trigger content; receives the selected leaf and its path, or arrays of both. */
   value(props: {
     selected: V extends unknown[] ? T[] : T | null
@@ -657,6 +722,13 @@ function onOpenChange(value: boolean, details: PopoverOpenChangeDetails) {
 }
 
 const filterInputRef = useTemplateRef<{ inputEl: HTMLInputElement | null }>('filterInputRef')
+const valueEl = useTemplateRef<HTMLElement>('valueEl')
+useChipRowWidth({
+  row: () => valueEl.value,
+  empty: () => isEmpty.value,
+  active: () => props.multiple && props.display === 'chip' && !!props.motion,
+  placeholder: '.ui-cascade-select-placeholder',
+})
 function rows(): HTMLElement[] {
   const list = menuRef.value?.listEl
   if (!list) return []
@@ -704,7 +776,7 @@ function onRowsKeydown(event: KeyboardEvent) {
   }
 }
 
-// Trigger is a div (role="combobox"), not a real <button> — a click that
+// Trigger is a div (role="button"), not a real <button> — a click that
 // bubbles up still reaches Menu's own wrapping span (which toggles), so this
 // only needs to swallow the click while disabled; opening itself is Menu's job.
 function onTriggerClick(event: MouseEvent) {
@@ -733,8 +805,17 @@ function onTriggerBlur(event: FocusEvent) {
 
 function onTriggerKeydown(event: KeyboardEvent) {
   try {
-    // A chip's remove button keeps its own Enter/Space.
-    if (isDisabled.value || open.value || event.target !== event.currentTarget) return
+    if (isDisabled.value || event.target !== event.currentTarget) return
+    // Chips' remove buttons are pointer-only, so the keyboard removes the last chip, as in Combobox.
+    if ((event.key === 'Backspace' || event.key === 'Delete') && props.multiple) {
+      const last = props.display === 'chip' ? selectedMatches.value.at(-1) : undefined
+      if (last) {
+        event.preventDefault()
+        removeChip(last.item)
+      }
+      return
+    }
+    if (open.value) return
     // No native <button> to auto-activate on Enter/Space anymore; drive `open` directly.
     if (
       event.key === 'ArrowDown' ||
@@ -753,31 +834,60 @@ function onTriggerKeydown(event: KeyboardEvent) {
 function onClear(event: MouseEvent) {
   event.preventDefault()
   commit(props.multiple ? [] : null)
+  // The clear button goes with the value, so focus goes back to the trigger.
+  controlEl.value?.focus()
 }
 
-const messages = useUiMessages()
+const messages = useMessages({ cascadeSelect: cascadeSelectMessages })
 const fieldControl = useFieldControl({
   filled: () => (props.multiple ? !isEmpty.value : model.value != null),
+  frame: { el: () => triggerEl.value, size: () => props.size },
 })
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(model, () => root.value)
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
+const controlEl = useTemplateRef<HTMLElement>('controlEl')
+function focusControl() {
+  controlEl.value?.focus()
+}
+provide(chipFocusFallbackKey, () => controlEl.value)
 const menuRef = useTemplateRef<ComponentExposed<typeof Menu>>('menuRef')
 
 const attrs = useAttrs()
 const forward = useForwardedListener(attrs)
+// Your `aria-label` names it through a hidden copy (below): on the button it would replace the value.
 const restAttrs = computed(() =>
-  omitAttrs(attrs, ['class', 'style', 'onClick', 'onKeydown', 'onFocus', 'onBlur']),
+  omitAttrs(attrs, ['class', 'style', 'onClick', 'onKeydown', 'onFocus', 'onBlur', 'aria-label']),
 )
+const controlId = computed(() => (attrs.id as string | undefined) ?? fieldControl.id)
+// A button is named by its label, so the label leads and its own text (the value) follows. Your
+// `aria-label` takes the label's place, through a hidden copy, so the value still follows it.
+const ownLabel = computed(() => attrs['aria-label'] as string | undefined)
+const ownLabelId = useId()
+const controlLabelledBy = computed(() => {
+  const label =
+    (attrs['aria-labelledby'] as string | undefined) ??
+    fieldControl.labelledBy() ??
+    (ownLabel.value ? ownLabelId : undefined)
+  return label ? `${label} ${controlId.value}` : undefined
+})
 
 const cx = useClassMerge()
-// The panel is teleported, so motion-css off is marked on it for the CSS that follows it (Menu.css).
+// The panel is teleported, so motion off is marked on it for the CSS that follows it (Menu.css).
 const panelUi = computed<UiPartValue | undefined>(() => {
-  if (props.motionCss) return themedUi()?.panel
   const { class: panelClass, style } = splitUiPart(themedUi()?.panel)
-  return { class: cx('ui-motion-off', panelClass), style }
+  return {
+    class: cx(
+      !props.motion && 'ui-motion-off',
+      // Unset width: the field's, only up to a cap.
+      props.panelWidth == null && 'ui-cascade-select-panel',
+      panelClass,
+    ),
+    style,
+  }
 })
 const themedUi = useThemedUi(
   (theme) => theme.cascadeSelect,
@@ -796,13 +906,22 @@ const triggerClass = computed(() =>
 const triggerStyle = computed(() => triggerSplit.value.style)
 const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-cascade-select-value'))
 const filterPart = computed(() => resolveUiPart(cx, themedUi()?.filter, 'ui-cascade-select-filter'))
+const startPart = computed(() => resolveUiPart(cx, themedUi()?.start, 'ui-cascade-select-start'))
+const endPart = computed(() => resolveUiPart(cx, themedUi()?.end, 'ui-cascade-select-end'))
+const clearPart = computed(() => resolveUiPart(cx, themedUi()?.clear, 'ui-cascade-select-clear'))
+const chevronPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.chevron, 'ui-cascade-select-chevron'),
+)
+const filterIconPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.filterIcon, 'ui-cascade-select-search-icon'),
+)
 
 // After menuRef exists: the watcher reads it straight away.
 // Searching eases the menu to its new height, the same as Select's and Combobox's lists.
 useEasedHeight({
   el: () => menuRef.value?.listEl,
   source: [query, () => props.items],
-  enabled: () => props.motionCss && props.filter !== undefined,
+  enabled: () => props.motion && props.filter !== undefined,
 })
 watch(
   () => menuRef.value?.positionerEl,
@@ -819,7 +938,7 @@ watch(open, (isOpen) => {
 defineExpose({
   /** Root element. */
   el: root,
-  /** Trigger element. */
+  /** Trigger element: the frame around the button and its clear button. Focusing it focuses the button. */
   triggerEl,
   /** Panel element (null while closed). */
   panelEl: computed(() => menuRef.value?.panelEl ?? null),

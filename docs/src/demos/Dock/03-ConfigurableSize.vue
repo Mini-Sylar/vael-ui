@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Configurable size and falloff range</h3>
+    <h3>Size and magnification range</h3>
     <p class="note">
-      Larger <code>max-size</code>, tighter <code>range</code>, magnification concentrates on fewer
-      neighbors instead of spreading gently across the whole row.
+      A larger <code>max-size</code> and a smaller <code>range</code> focus the magnification on
+      fewer neighbors instead of spreading it across the whole row.
     </p>
     <div class="row">
       <Dock

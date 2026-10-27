@@ -1,8 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Field-wrapped, required with validation</h3>
-    <p class="note">Same "standalone-or-Field" contract as every other control here.</p>
+    <h3>Inside a Field, required, with validation</h3>
+    <p class="note">
+      Like every control, DatePicker works alone or inside a Field, which adds the label,
+      description and error.
+    </p>
     <Field
+      style="max-inline-size: 16rem"
       label="Departure date"
       description="Required for one-way bookings"
       :required="true"

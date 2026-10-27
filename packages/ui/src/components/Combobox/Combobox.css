@@ -43,6 +43,11 @@
   .ui-input-start:has(> .ui-combobox-chips:empty:only-child) {
     display: none;
   }
+  /* Beside your own start content, an empty chips wrapper takes no room, so the text keeps its
+     place after an icon. A chip still leaving keeps it, so the last one's exit still plays. */
+  .ui-combobox-chips:empty {
+    display: none;
+  }
   /* Once every chip is on its way out, the slot's gap to the text (Input's 0.5rem) closes with
      them, so the text doesn't jump when the empty slot is dropped. */
   .ui-input-start:has(> .ui-combobox-chips:only-child) {

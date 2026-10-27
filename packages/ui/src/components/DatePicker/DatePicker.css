@@ -4,11 +4,43 @@
     padding: 0;
     /* Never wider than the screen, so several months stack on a phone instead of overflowing. */
     max-inline-size: calc(100vw - 1rem);
+    /* Set only with `panelWidth: 'trigger'`. */
+    min-inline-size: var(--ui-anchor-inline-size, auto);
   }
+  /* The calendar fills the panel: a wider panel (`ui.panel`) gets bigger days, not empty space. */
+  .ui-date-picker-panel .ui-calendar-root {
+    display: flex;
+    inline-size: auto;
+  }
+  .ui-date-picker-panel .ui-calendar-pane {
+    flex: 1 1 auto;
+  }
+  /* The calendar button: out of the tab order, ArrowDown opens the panel from the input. */
   .ui-date-picker-icon {
     display: inline-grid;
     place-items: center;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    margin-inline-end: -0.25rem;
+    padding: 0;
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: none;
     color: var(--ui-text-muted);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-date-picker-icon:hover:not(:disabled) {
+      background: var(--ui-muted);
+      color: var(--ui-text);
+    }
+  }
+  .ui-date-picker-icon:disabled {
+    cursor: not-allowed;
   }
   .ui-date-picker-time {
     display: flex;

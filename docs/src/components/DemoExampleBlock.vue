@@ -3,8 +3,12 @@
     <h3 v-if="showTitle && next" :id="anchor" class="demo-heading">
       <a :href="`#${anchor}`">{{ example.title }}</a>
     </h3>
+    <p v-if="example.note && next" class="demo-note"><RichText :text="example.note" /></p>
     <div class="demo-card">
-      <h3 v-if="showTitle && !next" class="demo-title">{{ example.title }}</h3>
+      <h3 v-if="showTitle && !next" :id="anchor" class="demo-title">{{ example.title }}</h3>
+      <p v-if="example.note && !next" class="demo-note demo-note--card">
+        <RichText :text="example.note" />
+      </p>
       <div v-if="!next" class="demo-toolbar">
         <SelectButton v-model="view" size="sm" :items="viewItems" :allow-empty="false" />
         <SelectButton
@@ -61,6 +65,7 @@ import { useI18n } from 'vue-i18n'
 import { Button, Collapsible, SelectButton } from 'vael-ui'
 import { PhCaretDown, PhCode } from '@phosphor-icons/vue'
 import CodeBlock from './CodeBlock.vue'
+import RichText from './RichText.vue'
 import { layoutNext as next } from '../layoutNext'
 import { defaultVariant, type DemoVariant } from '../preferences'
 import type { DemoExample } from './DemoFrame.vue'
@@ -130,6 +135,19 @@ const code = computed(() =>
   border-radius: var(--docs-radius);
   overflow: hidden;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.demo-note {
+  margin: 0 0 0.75rem;
+  max-inline-size: 70ch;
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.demo-note--card {
+  margin: 0;
+  padding: 0.5rem 1rem 0.75rem;
 }
 
 .demo-title {
@@ -248,8 +266,9 @@ const code = computed(() =>
 }
 
 .demo-code-trigger:active {
+  /* A button's box is its own layer (vael-ui 0.5): colour it through these variables. */
   transform: none;
-  background: var(--ui-muted-hover);
+  --ui-button-bg: var(--ui-muted-hover);
 }
 
 .demo-code-chevron {

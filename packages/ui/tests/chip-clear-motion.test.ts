@@ -1,10 +1,11 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef } from 'vue'
 import Select from '../src/components/Select/Select.vue'
 import Combobox from '../src/components/Combobox/Combobox.vue'
+import CascadeSelect from '../src/components/CascadeSelect/CascadeSelect.vue'
 
 // Real transitions: these tests watch the motion itself, frame by frame.
 const global = { stubs: { transition: false, 'transition-group': false } }
@@ -170,3 +171,75 @@ test('Combobox: when its last chip leaves, the text slides over and does not jum
   // The frame the empty chip slot is dropped: the text stays where the slide left it.
   expect(Math.abs(rows[goneAt]![0] - rows[goneAt - 1]![0])).toBeLessThan(1)
 })
+
+const cascadeItems = [
+  {
+    label: 'Ghana',
+    value: 'gh',
+    children: [
+      { label: 'Accra', value: 'acc' },
+      { label: 'Kumasi', value: 'kum' },
+      { label: 'Tamale', value: 'tam' },
+    ],
+  },
+]
+const chipHosts = [
+  ['Select', Select, items],
+  ['Combobox', Combobox, items],
+  ['CascadeSelect', CascadeSelect, cascadeItems],
+] as const
+
+function renderChips(component: unknown, list: unknown, motion: unknown) {
+  const model = shallowRef(['acc', 'kum'])
+  return render(
+    () =>
+      h(component as never, {
+        items: list,
+        multiple: true,
+        motion,
+        modelValue: model.value,
+        'onUpdate:modelValue': (v: string[]) => (model.value = v),
+        style: 'width: 360px',
+      }),
+    { global },
+  )
+}
+
+for (const [name, component, list] of chipHosts) {
+  test(`${name}: motion hooks get each chip as \`chip\`, and a chip waits for its leave`, async () => {
+    const left: HTMLElement[] = []
+    const screen = await renderChips(component, list, {
+      chips: {
+        leave: ({ chip }: { chip: HTMLElement }) => {
+          left.push(chip)
+          return chip.animate([{ opacity: 1 }, { opacity: 0 }], 300)
+        },
+      },
+    })
+    const chips = () => screen.container.querySelectorAll('.ui-chip:not(.ui-select-chip--overflow)')
+    await vi.waitFor(() => expect(chips()).toHaveLength(2))
+    const first = chips()[0] as HTMLElement
+    first.querySelector<HTMLElement>('.ui-chip-remove')!.click()
+    await vi.waitFor(() => expect(left).toEqual([first]))
+    expect(first.isConnected).toBe(true)
+    await vi.waitFor(() => expect(first.isConnected).toBe(false), { timeout: 1000 })
+  })
+
+  test(`${name}: motion values for \`chip\` play on the motion system; \`false\` removes at once`, async () => {
+    const screen = await renderChips(component, list, { chips: { exit: { chip: { opacity: 0 } } } })
+    const chip = () => screen.container.querySelector<HTMLElement>('.ui-chip')!
+    await vi.waitFor(() => expect(chip()).not.toBeNull())
+    const first = chip()
+    first.querySelector<HTMLElement>('.ui-chip-remove')!.click()
+    await vi.waitFor(() => expect(first.getAnimations().length).toBeGreaterThan(0))
+    // Not the built-in CSS collapse.
+    expect(first.classList.contains('ui-chip-item-leave-active')).toBe(false)
+    screen.unmount()
+
+    const off = await renderChips(component, list, false)
+    const offChip = off.container.querySelector<HTMLElement>('.ui-chip')!
+    offChip.querySelector<HTMLElement>('.ui-chip-remove')!.click()
+    await nextTick()
+    expect(offChip.isConnected).toBe(false)
+  })
+}

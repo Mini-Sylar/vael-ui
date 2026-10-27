@@ -15,7 +15,8 @@
       ref="scrollXEl"
       class="ui-datatable-scroll-x"
       :data-frozen="frozenColumns > 0 || undefined"
-      :role="scrollHeight ? 'table' : undefined"
+      :role="scrollHeight ? (selectable ? 'grid' : 'table') : undefined"
+      :aria-multiselectable="(scrollHeight && multiselectable) || undefined"
       :aria-busy="(scrollHeight && loading) || undefined"
     >
       <template v-if="scrollHeight">
@@ -69,6 +70,12 @@
               <template #expansion="{ row }"><slot name="expansion" :row="row" /></template>
             </DataTableBody>
           </table>
+          <div
+            ref="hoverEl"
+            class="ui-indicator ui-datatable-hover"
+            :style="hoverStyle"
+            aria-hidden="true"
+          />
         </div>
       </template>
 
@@ -76,6 +83,8 @@
         v-else
         :class="tablePart().class"
         :style="tablePart().style"
+        :role="selectable ? 'grid' : undefined"
+        :aria-multiselectable="multiselectable || undefined"
         :aria-busy="loading || undefined"
       >
         <DataTableHead ref="headComponent" v-bind="headProps" />
@@ -85,6 +94,13 @@
           <template #expansion="{ row }"><slot name="expansion" :row="row" /></template>
         </DataTableBody>
       </table>
+      <div
+        v-if="!scrollHeight"
+        ref="hoverEl"
+        class="ui-indicator ui-datatable-hover"
+        :style="hoverStyle"
+        aria-hidden="true"
+      />
     </div>
 
     <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
@@ -99,7 +115,11 @@
 
     <!-- Always mounted: a live region created on demand isn't reliably read out. -->
     <span class="ui-datatable-status" role="status" aria-live="polite">{{
-      loading ? messages.dataTable.loading : ''
+      loading ? messages.dataTable.loading : announcement
+    }}</span>
+    <!-- Each row checkbox reads this, then its row's first cell. -->
+    <span v-if="selectColumnRendered" :id="selectLabelId" hidden>{{
+      messages.dataTable.selectRow
     }}</span>
 
     <!-- display:none keeps Column children mounted for registration without rendering them -->
@@ -112,8 +132,11 @@
 <!-- Columns register via provide/inject. Tests must disable VTU's transition-group stub. -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import './DataTable.css'
+import '../shared/indicator.css'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   nextTick,
@@ -131,14 +154,14 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import { useSlotPresence } from '../../composables/dom'
+import { inlineKey, useSlotPresence } from '../../composables/dom'
 import { useEventListener } from '@vueuse/core'
 import ColumnImpl from '../Column.vue'
 import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
 import { provideDataTableContext } from '../../composables/useDataTableContext'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { useVirtualizer } from '../../composables/useVirtualizer'
-import { useLazySortable } from '../../composables/useLazySortable'
+import { loadColumnFollow, useLazySortable } from '../../composables/useLazySortable'
 import type { SortableDropDetails } from '../../composables/useSortable'
 import DataTableHead from './DataTableHead.vue'
 import DataTableBody from './DataTableBody.vue'
@@ -146,9 +169,12 @@ import type { TableRowEntry } from './DataTableBody.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useMessages, dataTableMessages, sortableMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { DataTableMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -193,8 +219,13 @@ const rawProps = withDefaults(
     total?: number
     /** Renders only the visible rows. Requires `scrollHeight`. `itemSize` fixes the row height. */
     virtualize?: boolean | { itemSize?: number; overscan?: number; estimateSize?: number }
-    /** Plays the built-in row and column-drag transitions. `false` hands rows to `@row-enter`/`@row-leave`. @default true */
-    motionCss?: boolean
+    /**
+     * Plays the built-in row and column-drag transitions; `false` changes them at once. An object
+     * animates the rows your way: values for the `row` part, or `enter` / `leave` hooks for your
+     * own library. Past 150 rows, changes are instant either way.
+     * @default true
+     */
+    motion?: DataTableMotion
     /** Lets you drag column headers to reorder them. Pair with `v-model:columnOrder`. @default false */
     reorderableColumns?: boolean
     /** When a reorderable column's drag grip shows: `'always'`, or only on hover and focus (`'hover'`). @default 'always' */
@@ -215,6 +246,8 @@ const rawProps = withDefaults(
       thead: UiPartValue
       th: UiPartValue
       sortButton: UiPartValue
+      /** The sort direction chevron inside a sortable header. */
+      sortChevron: UiPartValue
       grip: UiPartValue
       resizeHandle: UiPartValue
       tbody: UiPartValue
@@ -222,6 +255,8 @@ const rawProps = withDefaults(
       td: UiPartValue
       expansionRow: UiPartValue
       expansionContent: UiPartValue
+      /** The chevron on a row's expand button. */
+      expandChevron: UiPartValue
       footer: UiPartValue
     }>
   }>(),
@@ -237,7 +272,7 @@ const rawProps = withDefaults(
     scrollFade: true,
     manualSort: false,
     lazy: false,
-    motionCss: undefined,
+    motion: undefined,
     reorderableColumns: false,
     columnGripVisibility: 'always',
     canDrop: undefined,
@@ -246,7 +281,7 @@ const rawProps = withDefaults(
     touchDragDelay: 150,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 const emit = defineEmits<{
   /** Fires when the selection changes, with the resolved row objects (not raw keys). */
@@ -259,10 +294,6 @@ const emit = defineEmits<{
   'reach-start': []
   /** Fires when a column drag commits, with the new `field` order. */
   'column-reorder': [order: (keyof T)[]]
-  /** Fires when a row enters. Call `done()` when finished; set `motionCss` to `false` to own the animation. */
-  'row-enter': [el: Element, done: () => void]
-  /** Fires when a row leaves. Call `done()` when finished, as with `@row-enter`. */
-  'row-leave': [el: Element, done: () => void]
   /** Fires when `beforeDrop` throws or rejects during a column reorder, after DataTable reverts the move. */
   'drop-error': [error: unknown, details: SortableDropDetails]
 }>()
@@ -316,11 +347,13 @@ function resortColumnsByDom() {
 onMounted(resortColumnsByDom)
 onUpdated(resortColumnsByDom)
 
-const messages = useUiMessages()
+const messages = useMessages({ dataTable: dataTableMessages, sortable: sortableMessages })
 
 const selectColumnRendered = computed(() => props.selectable && props.selectionMode === 'checkbox')
 const selectableRows = computed(() => props.selectable && props.selectionMode === 'row')
 const expansionColumnRendered = computed(() => hasSlot('expansion') && !stacked.value)
+// Selectable rows carry aria-selected, which only a grid allows.
+const multiselectable = computed(() => props.selectable && !props.single)
 const colCount = computed(() => {
   let count = columns.value.length
   if (selectColumnRendered.value) count++
@@ -448,15 +481,23 @@ function isExpanded(row: T): boolean {
 }
 // Row keys can hold characters an id can't, so ids come from a per-key counter.
 const tableId = useId()
-const expansionIds = new Map<string | number, string>()
-function expansionId(row: T): string {
+const rowIdIndex = new Map<string | number, number>()
+function rowIdSuffix(row: T): number {
   const key = getRowKey(row)
-  let id = expansionIds.get(key)
-  if (!id) {
-    id = `${tableId}-expansion-${expansionIds.size}`
-    expansionIds.set(key, id)
+  let index = rowIdIndex.get(key)
+  if (index === undefined) {
+    index = rowIdIndex.size
+    rowIdIndex.set(key, index)
   }
-  return id
+  return index
+}
+function expansionId(row: T): string {
+  return `${tableId}-expansion-${rowIdSuffix(row)}`
+}
+const selectLabelId = `${tableId}-select-label`
+// The row's first cell, which names its checkbox.
+function rowLabelId(row: T): string {
+  return `${tableId}-label-${rowIdSuffix(row)}`
 }
 function toggleExpand(row: T) {
   const key = getRowKey(row)
@@ -751,6 +792,96 @@ function onResizePointerup(event: PointerEvent) {
 }
 onBeforeUnmount(stopResize)
 
+// Read politely through the status region: keyboard resizes and column moves.
+const announcement = ref('')
+function columnLabel(col: RegisteredColumn<T>): string {
+  return col.label ?? String(col.field)
+}
+// Widths for the resize handles' aria-valuenow, until a resize sets its own.
+const measuredWidths = shallowReactive(new Map<RegisteredColumn<T>, number>())
+function measureColumnWidths() {
+  for (const col of orderedColumns.value) {
+    if (!isColumnResizable(col) || resizedColumns.has(toRaw(col))) continue
+    const th = headerElement(col.field as string | number)
+    if (!th) continue
+    const width = Math.round(th.getBoundingClientRect().width)
+    if (measuredWidths.get(toRaw(col)) !== width) measuredWidths.set(toRaw(col), width)
+  }
+}
+function columnWidthNow(col: RegisteredColumn<T>): number | undefined {
+  const width = resizedWidths.get(toRaw(col)) ?? measuredWidths.get(toRaw(col))
+  return width === undefined ? undefined : Math.round(width)
+}
+const KEYBOARD_RESIZE_STEP = 16 // px, as Resizable
+function onResizeKeydown(col: RegisteredColumn<T>, event: KeyboardEvent) {
+  if (event.altKey) return
+  const handle = event.currentTarget as HTMLElement
+  // Right to left the handle sits on the left edge, so ArrowLeft grows the column.
+  const key = inlineKey(event.key, handle)
+  const step =
+    key === 'ArrowRight' ? KEYBOARD_RESIZE_STEP : key === 'ArrowLeft' ? -KEYBOARD_RESIZE_STEP : 0
+  if (!step) return
+  event.preventDefault()
+  const th = handle.closest('th')
+  if (!th) return
+  const start = resizedWidths.get(toRaw(col)) ?? th.getBoundingClientRect().width
+  const width = Math.max(MIN_COLUMN_WIDTH, Math.round(start + step))
+  setColumnWidth(col, width)
+  announcement.value = messages.value.dataTable.columnWidth
+    .replace('{label}', columnLabel(col))
+    .replace('{width}', String(width))
+}
+
+// Alt + ArrowLeft / ArrowRight moves a reorderable column one place, from its header.
+async function onHeaderKeydown(col: RegisteredColumn<T>, event: KeyboardEvent) {
+  if (!event.altKey || event.ctrlKey || event.metaKey || !isColumnReorderable(col)) return
+  const th = event.currentTarget as HTMLElement
+  const key = inlineKey(event.key, th)
+  const step = key === 'ArrowRight' ? 1 : key === 'ArrowLeft' ? -1 : 0
+  if (!step) return
+  event.preventDefault()
+  const columnsNow = orderedColumns.value
+  const from = columnsNow.indexOf(col)
+  const to = from + step
+  const target = columnsNow[to]
+  if (from === -1 || !target || !isColumnReorderable(target)) return
+  const value = col.field as string | number
+  const details: SortableDropDetails = {
+    value,
+    from: { parentValue: null, index: from, depth: 0 },
+    to: { parentValue: null, index: to, depth: 0 },
+  }
+  if (props.canDrop && !props.canDrop(details)) return
+  if (props.beforeDrop) {
+    try {
+      if (!(await props.beforeDrop(details))) return
+    } catch (error) {
+      emit('drop-error', error, details)
+      return
+    }
+  }
+  const focused = document.activeElement as HTMLElement | null
+  commitColumnMove(value, to)
+  announcement.value = messages.value.sortable.moved
+    .replace('{label}', columnLabel(col))
+    .replace('{position}', String(to + 1))
+    .replace('{total}', String(columnsNow.length))
+  // Moving the header can drop focus; it stays where it was.
+  await nextTick()
+  if (focused?.isConnected && document.activeElement !== focused)
+    focused.focus({ preventScroll: true })
+}
+function commitColumnMove(value: string | number, toIndex: number) {
+  const current = orderedColumns.value.map((column) => column.field)
+  const from = current.indexOf(value as keyof T)
+  if (from === -1) return
+  const next = [...current]
+  const [moved] = next.splice(from, 1)
+  next.splice(Math.min(Math.max(toIndex, 0), next.length), 0, moved!)
+  columnOrder.value = next
+  emit('column-reorder', next)
+}
+
 const UTILITY_COLUMN_WIDTH = 44 // px, matches the 2.75rem select/expand cells
 const leadingFixedWidth = computed(() => {
   let width = 0
@@ -850,6 +981,7 @@ onMounted(() => {
   resizeObserver = new ResizeObserver(() => {
     recomputeFrozenOffsets()
     recomputeHeaderHeight()
+    measureColumnWidths()
   })
   syncHeaderObserver()
 })
@@ -881,6 +1013,22 @@ onBeforeUnmount(() => bodyResizeObserver?.disconnect())
 // Echoes of our own writes are skipped, or a stale one would undo momentum scrolling.
 const headScrollEl = useTemplateRef<HTMLElement>('headScrollEl')
 const scrollXEl = useTemplateRef<HTMLElement>('scrollXEl')
+
+// The row hover slides between body rows, inside whichever box scrolls the body; a table nested in
+// an expanded row has its own. Not in the stacked card layout.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(
+  computed(() => (props.scrollHeight ? bodyScrollEl.value : scrollXEl.value) ?? null),
+  {
+    itemSelector:
+      '.ui-datatable-tbody > .ui-datatable-tr:not(.ui-datatable-tr--expansion, .ui-datatable-tr--spacer):not(:has(> .ui-datatable-td--loading, > .ui-datatable-td--empty))',
+    scope: '.ui-datatable-scroll-y, .ui-datatable-scroll-x',
+    scroller: true,
+    enabled: () => !stacked.value,
+    motion: () => props.motion,
+    indicatorEl: hoverEl,
+  },
+)
 // Each strip that can scroll takes a tab stop only while it holds nothing focusable.
 useFocusableScroller(scrollXEl)
 useFocusableScroller(headScrollEl)
@@ -951,7 +1099,7 @@ const {
     previewMode: () => props.previewMode,
     touchDragDelay: () => props.touchDragDelay,
     disabled: () => !props.reorderableColumns,
-    motionCss: () => props.motionCss,
+    motion: () => props.motion,
     canDrop: (details) => {
       // A pinned column can't be displaced, whatever the consumer's canDrop says.
       const target = orderedColumns.value[details.to.index]
@@ -960,69 +1108,27 @@ const {
     },
     beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
     onDropError: (error, details) => emit('drop-error', error, details),
-    onCommit: (value, to) => {
-      const current = orderedColumns.value.map((column) => column.field)
-      const from = current.indexOf(value as keyof T)
-      if (from === -1) return
-      const next = [...current]
-      const [moved] = next.splice(from, 1)
-      next.splice(Math.min(Math.max(to.index, 0), next.length), 0, moved!)
-      columnOrder.value = next
-      emit('column-reorder', next)
-    },
+    onCommit: (value, to) => commitColumnMove(value, to.index),
   },
   () => props.reorderableColumns,
 )
 
-// useSortable only moves header cells. Each frame this copies their shift onto the
-// body cells, and moves the dragged column's cells with the preview.
-let columnFollowFrame = 0
-let lastDraggedColumn: string | null = null
-function bodyCellsFor(field: string): HTMLElement[] {
-  return Array.from(
-    root.value?.querySelectorAll<HTMLElement>(
-      `.ui-datatable-tbody .ui-datatable-td[data-column-field="${CSS.escape(field)}"]`,
-    ) ?? [],
-  )
-}
-function translateX(el: HTMLElement): number {
-  return parseFloat(el.style.translate) || 0
-}
-function followColumnDrag() {
-  columnFollowFrame = 0
-  const head = headComponent.value?.rowEl
-  if (!head) return
-  const dragging = draggingColumn.value == null ? null : String(draggingColumn.value)
-  if (dragging !== null) lastDraggedColumn = dragging
-  let moving = dragging !== null
-  for (const th of head.querySelectorAll<HTMLElement>('[data-column-field]')) {
-    const field = th.dataset.columnField!
-    const cells = bodyCellsFor(field)
-    let shift = th.style.translate
-    if (field === dragging && cells.length > 0) {
-      // Clone mode floats a copy; element mode lifts the header itself.
-      const preview = document.querySelector<HTMLElement>('[data-sortable-preview]') ?? th
-      const cellLeft = cells[0]!.getBoundingClientRect().left - translateX(cells[0]!)
-      const dx = preview.getBoundingClientRect().left - cellLeft
-      shift = Math.abs(dx) < 0.5 ? '' : `${dx}px 0`
-    }
-    if (shift) moving = true
-    // Lifted for the whole drag, and after the drop until the cells settle back.
-    const lifted = field === lastDraggedColumn && (field === dragging || shift !== '')
-    for (const cell of cells) {
-      cell.style.translate = shift
-      cell.toggleAttribute('data-column-dragging', lifted)
-    }
-  }
-  if (moving) columnFollowFrame = requestAnimationFrame(followColumnDrag)
-  else lastDraggedColumn = null
-}
+// useSortable only moves header cells; the body cells follow them (columnFollow.ts, fetched with
+// reorderable columns, before any drag).
+if (rawProps.reorderableColumns) void loadColumnFollow()
+let columnFollow: { start: () => void; stop: () => void } | undefined
 watch(draggingColumn, (value) => {
-  if (value != null && !columnFollowFrame) {
-    columnFollowFrame = requestAnimationFrame(followColumnDrag)
-  }
+  if (value == null) return
+  void loadColumnFollow().then((module) => {
+    columnFollow ??= module.createColumnFollow(
+      () => root.value,
+      () => headComponent.value?.rowEl,
+      () => (draggingColumn.value == null ? null : String(draggingColumn.value)),
+    )
+    columnFollow.start()
+  })
 })
-onBeforeUnmount(() => cancelAnimationFrame(columnFollowFrame))
+onBeforeUnmount(() => columnFollow?.stop())
 
 const headProps = computed(() => ({
   split: !!props.scrollHeight,
@@ -1042,6 +1148,10 @@ const headProps = computed(() => ({
   onToggleSelectAll: toggleSelectAll,
   onToggleSort: toggleSort,
   onResizePointerdown,
+  onResizeKeydown,
+  onResizeFocus: measureColumnWidths,
+  columnWidthNow,
+  onHeaderKeydown,
   isColumnReorderable,
   columnGripVisibility: props.columnGripVisibility,
   draggingColumn: draggingColumn.value,
@@ -1051,23 +1161,35 @@ const headProps = computed(() => ({
     thead: themedUi()?.thead,
     th: themedUi()?.th,
     sortButton: themedUi()?.sortButton,
+    sortChevron: themedUi()?.sortChevron,
     grip: themedUi()?.grip,
     resizeHandle: themedUi()?.resizeHandle,
   },
 }))
-// Outside bodyProps, so a recompute there doesn't hand the body new identities.
-function onRowEnter(el: Element, done: () => void) {
-  emit('row-enter', el, done)
-}
-function onRowLeave(el: Element, done: () => void) {
-  emit('row-leave', el, done)
-}
+// Yours (an object, or a shared style): rows come and go on the motion system, kept in the table's
+// flow as they leave. Otherwise the built-in CSS look.
+const motionStyle = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' ||
+    motionStyle?.value?.dataTable ||
+    motionStyle?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'dataTable',
+        part: 'row',
+        name: 'DataTable',
+        look: { opacity: 0 },
+        leaving: 'hold',
+        arranged: true,
+      })
+    : undefined
 const bodyUi = computed(() => ({
   tbody: themedUi()?.tbody,
   tr: themedUi()?.tr,
   td: themedUi()?.td,
   expansionRow: themedUi()?.expansionRow,
   expansionContent: themedUi()?.expansionContent,
+  expandChevron: themedUi()?.expandChevron,
 }))
 const bodyProps = computed(() => ({
   split: !!props.scrollHeight,
@@ -1098,13 +1220,14 @@ const bodyProps = computed(() => ({
   onRowFocus,
   onRowKeydown,
   expansionId,
+  rowLabelId,
+  selectLabelId,
   onToggleSelect: toggleSelect,
   onToggleExpand: toggleExpand,
   onRowClick,
-  motionCss: props.motionCss,
+  motion: !!props.motion,
   rowMotionReady: rowMotionReady.value,
-  onRowEnter,
-  onRowLeave,
+  rowTransition: listMotion?.transition as Record<string, unknown> | undefined,
   ui: bodyUi.value,
 }))
 
@@ -1145,5 +1268,7 @@ const root = useTemplateRef<HTMLElement>('root')
 defineExpose({
   /** Root element. */
   el: root,
+  /** The hover and keyboard highlight, sliding between body rows. With `motion: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
 })
 </script>

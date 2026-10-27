@@ -1,37 +1,54 @@
 <template>
+  <!-- The clear button sits beside the combobox, not in it; a press on the frame focuses the combobox. -->
   <div
     ref="triggerEl"
     :data-ui-frame="props.size"
-    role="combobox"
-    :id="fieldControl.id"
-    v-bind="triggerAttrs"
     :class="triggerPart.class"
     :style="[triggerPart.style, attrs.style as never]"
-    :tabindex="isDisabled ? -1 : 0"
-    :aria-disabled="isDisabled || undefined"
-    aria-haspopup="tree"
-    :aria-expanded="open"
-    :aria-controls="treeId"
-    :aria-describedby="fieldControl.describedBy()"
-    :aria-labelledby="(attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()"
-    :aria-invalid="isInvalid || undefined"
-    :aria-required="fieldControl.required() || undefined"
+    tabindex="-1"
     :data-state="open ? 'open' : 'closed'"
     :data-invalid="isInvalid || undefined"
     @click="onTriggerClick"
-    @keydown="onTriggerKeydown"
-    @focus="fieldControl.onFocus"
-    @blur="fieldControl.onBlur"
+    @focus="focusControl"
   >
-    <span :class="valuePart.class" :style="valuePart.style">
-      <slot name="value" :selected="selectedNodes as T[]">
-        <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
-        <span v-else>{{ displayLabel }}</span>
-      </slot>
-    </span>
+    <!-- Start and end sit outside the combobox, so they don't join its accessible name. -->
+    <span v-if="$slots.start" :class="startPart.class" :style="startPart.style"
+      ><slot name="start"
+    /></span>
+    <div
+      ref="controlEl"
+      class="ui-select-control"
+      role="combobox"
+      :id="fieldControl.id"
+      v-bind="triggerAttrs"
+      :tabindex="isDisabled ? -1 : 0"
+      :aria-disabled="isDisabled || undefined"
+      aria-haspopup="tree"
+      :aria-expanded="open"
+      :aria-controls="treeId"
+      :aria-describedby="fieldControl.describedBy()"
+      :aria-labelledby="labelledBy"
+      :aria-invalid="isInvalid || undefined"
+      :aria-required="fieldControl.required() || undefined"
+      @keydown="onTriggerKeydown"
+      @focus="fieldControl.onFocus"
+      @blur="fieldControl.onBlur"
+    >
+      <span :class="valuePart.class" :style="valuePart.style">
+        <slot name="value" :selected="selectedNodes as T[]">
+          <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
+          <LazyAnimatedText
+            :class="isEmpty && 'ui-select-placeholder'"
+            :value="isEmpty ? (placeholder ?? '') : displayLabel"
+            :motion="!!props.motion && valueSwap()"
+          />
+        </slot>
+      </span>
+    </div>
+    <span v-if="$slots.end" :class="endPart.class" :style="endPart.style"><slot name="end" /></span>
     <Transition
       name="ui-clear"
-      :css="props.motionCss"
+      :css="!!props.motion"
       @enter="measureClearSpace"
       @leave="startClearLeave"
       @leave-cancelled="resetLeaveStyles"
@@ -39,7 +56,8 @@
       <button
         v-if="clearable && !isEmpty && !isDisabled"
         type="button"
-        class="ui-select-clear"
+        :class="clearPart.class"
+        :style="clearPart.style"
         :aria-label="messages.treeSelect.clear"
         @click.stop="onClear"
         @mousedown.stop.prevent
@@ -54,7 +72,7 @@
         </svg>
       </button>
     </Transition>
-    <span class="ui-select-chevron" aria-hidden="true">
+    <span :class="chevronPart.class" :style="chevronPart.style" aria-hidden="true">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
         <path
           d="M4 6l4 4 4-4"
@@ -68,7 +86,7 @@
   </div>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" appear :css="!forceMount">
+    <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -82,9 +100,15 @@
       >
         <div
           ref="panel"
+          data-ui-presence
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
-          :data-motion="props.motionCss ? undefined : 'off'"
+          :style="[
+            { transformOrigin },
+            panelMaxHeightStyle,
+            panelWidthStyle(props.panelWidth),
+            panelPart.style,
+          ]"
+          :data-motion="props.motion ? undefined : 'off'"
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
@@ -93,6 +117,8 @@
           <Tree
             ref="treeRef"
             :id="treeId"
+            :aria-labelledby="labelledBy"
+            :aria-label="labelledBy ? undefined : (attrs['aria-label'] as string | undefined)"
             v-model="model"
             v-model:query="query"
             v-model:node="nodeModel"
@@ -102,9 +128,10 @@
             :filterable="filterable"
             :filter-placeholder="filterPlaceholder"
             :empty-text="emptyText"
-            :motion-css="props.motionCss"
+            :motion="!!props.motion"
             :expand-on-row-click="expandOnRowClick"
             :sticky-scroll="stickyScroll"
+            :scroll-fade="scrollFade"
             :ui="treeUi"
             @change="(value) => emit('change', value)"
             @select="onTreeSelect"
@@ -140,6 +167,9 @@
 </template>
 
 <script lang="ts">
+import { useValueSwap } from '../../composables/valueSwap'
+import { panelWidthStyle } from '../../composables/panelWidth'
+import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
 import type { TreeNode, TreeSelectionMode } from '../Tree/Tree.vue'
@@ -153,9 +183,12 @@ export type TreeSelectSelectionMode = TreeSelectionMode
 </script>
 
 <script setup lang="ts" generic="T extends TreeSelectNode = TreeSelectNode">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, TreeSelectMotion } from '../../motion/types'
 import './TreeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/clear-transition.css'
 import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
 import '../shared/select-panel.css'
@@ -164,13 +197,16 @@ import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } fr
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { usePopover } from '../../composables/usePopover'
+import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
-import { useUiMessages } from '../../messages'
+import { useFormReset } from '../../composables/useFormReset'
+import { useMessages, treeSelectMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import Tree from '../Tree/Tree.vue'
+import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -245,6 +281,12 @@ const rawProps = withDefaults(
      * @default false
      */
     stickyScroll?: boolean
+    /**
+     * Fades the panel's top and bottom edges while there are more rows past them. With
+     * `stickyScroll`, only the bottom fades, so pinned rows stay solid.
+     * @default true
+     */
+    scrollFade?: boolean
     /** Renders hidden `<input>`(s) so a plain `<form>` post carries the selection, repeating `name` outside `'single'` mode. */
     name?: string
     /** Which side of the trigger the panel opens on. @default 'bottom' */
@@ -259,9 +301,9 @@ const rawProps = withDefaults(
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` to finish closing. */
-    beforeClose?: (done: () => void) => void
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
@@ -271,9 +313,18 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips all built-in motion (row transitions, chevron rotation, the panel and list easing
-     * to a new height, and the clear button). @default true */
-    motionCss?: boolean
+    /**
+     * The panel's width. `'trigger'` matches the field (at least 18rem, room for nested rows); a
+     * width in px or any CSS length (`'20rem'`) sets it. @default 'trigger'
+     */
+    panelWidth?: PanelWidth
+    /**
+     * `false` skips all built-in motion: the panel opening, rows, the chevron, the list easing to a
+     * new height, and the clear button. An object moves the panel your way, like Popover's: values
+     * for the `panel` part, `{ spring }`, or `enter` / `leave` hooks for your own library.
+     * @default true
+     */
+    motion?: TreeSelectMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
@@ -286,6 +337,14 @@ const rawProps = withDefaults(
       node: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
+      /** Wraps the `#start` slot, before the value. */
+      start: UiPartValue
+      /** Wraps the `#end` slot, before the clear button and chevron. */
+      end: UiPartValue
+      /** The clear button. */
+      clear: UiPartValue
+      /** The chevron at the end of the trigger. */
+      chevron: UiPartValue
     }>
   }>(),
   {
@@ -300,6 +359,7 @@ const rawProps = withDefaults(
     emptyText: 'No results found',
     expandOnRowClick: false,
     stickyScroll: false,
+    scrollFade: true,
     name: undefined,
     side: 'bottom',
     align: 'start',
@@ -311,11 +371,12 @@ const rawProps = withDefaults(
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
-    motionCss: undefined,
+    motion: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
+const valueSwap = useValueSwap(() => props.motion)
 
 const emit = defineEmits<{
   /** Fires before the panel closes; `details.cancel()` keeps it open. */
@@ -329,6 +390,10 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
+  /** Content at the start of the trigger, such as an icon, before the value. */
+  start(): unknown
+  /** Content before the built-in clear button and chevron. */
+  end(): unknown
   /** Custom trigger content for the selected nodes. */
   value(props: { selected: T[] }): unknown
   /** Content above the filter input (when `filterable` is on) or the tree. */
@@ -384,13 +449,18 @@ const isEmpty = computed(() => selectedNodes.value.length === 0)
 const displayLabel = computed(() => {
   if (selectedNodes.value.length === 0) return ''
   if (selectedNodes.value.length === 1) return selectedNodes.value[0]!.label
-  return `${selectedNodes.value.length} selected`
+  return messages.value.treeSelect.selectedCount.replace(
+    '{count}',
+    String(selectedNodes.value.length),
+  )
 })
 
 function onClear(event: MouseEvent) {
   event.preventDefault()
   model.value = props.selectionMode === 'single' ? null : []
   emit('change', model.value)
+  // The clear button goes with the value, so focus goes back to the combobox.
+  controlEl.value?.focus()
 }
 
 // Single-select commits and closes; multiple/checkbox stay open.
@@ -400,43 +470,26 @@ function onTreeSelect(node: T) {
 }
 
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
+useFormReset(model, () => triggerEl.value)
+const controlEl = useTemplateRef<HTMLElement>('controlEl')
+function focusControl() {
+  controlEl.value?.focus()
+}
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const panelTransition = useSelectPanelMotion({
+  name: 'TreeSelect',
+  key: 'treeSelect',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => triggerEl.value,
+  forceMount: () => props.forceMount,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
 
-// The panel grows and shrinks with the tree's own expand animation instead of jumping to its new
-// height first: Tree.vue's FLIP pass slides rows on --ui-ease-out, starting two frames in, over
-// the enter duration when opening and the exit duration when closing, and the panel does the same.
-// A folder that swaps at once (an arrow key) resizes the panel at once too. Heights ignore the
-// opening scale.
 function onExpandChange(value: string | number, expanded: boolean) {
   emit('expand-change', value, expanded)
-  const panel = panelEl.value
-  if (!panel || !props.motionCss || matchMedia('(prefers-reduced-motion: reduce)').matches) return
-  const from = panel.offsetHeight
-  nextTick(() => {
-    panel.style.transition = 'none'
-    panel.style.height = ''
-    const to = panel.offsetHeight
-    if (Math.abs(to - from) < 1 || panel.querySelector('.ui-tree-rows[data-instant]')) {
-      panel.style.transition = ''
-      return
-    }
-    panel.style.height = `${from}px`
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        const duration = expanded ? 'var(--ui-duration-enter)' : 'var(--ui-duration-exit)'
-        panel.style.transition = `height ${duration} var(--ui-ease-out)`
-        panel.style.height = `${to}px`
-        const settle = (event: TransitionEvent) => {
-          if (event.target !== panel || event.propertyName !== 'height') return
-          panel.removeEventListener('transitionend', settle)
-          panel.style.height = ''
-          panel.style.transition = ''
-        }
-        panel.addEventListener('transitionend', settle)
-      }),
-    )
-  })
 }
 const treeRef = useTemplateRef<ComponentExposed<typeof Tree>>('treeRef')
 
@@ -479,10 +532,17 @@ const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layer
 
 const treeId = useId()
 
-const messages = useUiMessages()
-const fieldControl = useFieldControl({ filled: () => !isEmpty.value })
+const messages = useMessages({ treeSelect: treeSelectMessages })
+const fieldControl = useFieldControl({
+  filled: () => !isEmpty.value,
+  frame: { el: () => triggerEl.value, size: () => props.size },
+})
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
+// The trigger's name names the tree too.
+const labelledBy = computed(
+  () => (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy(),
+)
 
 function openTree() {
   if (isDisabled.value) return
@@ -507,9 +567,13 @@ watch(
   (ready) => {
     if (!ready) return
     nextTick(() => {
-      treeRef.value?.initRoving()
-      if (props.filterable) treeRef.value?.filterInputRef?.inputEl?.focus()
-      else treeRef.value?.focusFirstRow()
+      const tree = treeRef.value
+      const selected = selectedNodes.value[0]
+      if (props.filterable) {
+        tree?.initRoving()
+        tree?.filterInputRef?.inputEl?.focus()
+      } else if (selected) tree?.focusNode(selected.value)
+      else tree?.focusFirstRow()
     })
   },
 )
@@ -519,7 +583,7 @@ watch(open, (value) => {
   nextTick(() => {
     const active = document.activeElement
     if (active instanceof Node && positionerEl.value?.contains(active)) {
-      triggerEl.value?.focus()
+      controlEl.value?.focus()
     }
   })
 })
@@ -539,6 +603,14 @@ const triggerPart = computed(() =>
   ),
 )
 const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-select-value'))
+const startPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.start, 'ui-select-start', 'ui-tree-select-start'),
+)
+const endPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.end, 'ui-select-end', 'ui-tree-select-end'),
+)
+const clearPart = computed(() => resolveUiPart(cx, themedUi()?.clear, 'ui-select-clear'))
+const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-select-chevron'))
 const positionerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.positioner, 'ui-select-positioner', 'ui-tree-select-positioner'),
 )
@@ -573,7 +645,7 @@ const resolvedAlign = computed<TreeSelectAlign>(() => {
 })
 
 defineExpose({
-  /** Trigger element. */
+  /** Trigger element: the frame around the combobox and its clear button. Focusing it focuses the combobox. */
   triggerEl,
   /** Panel element (null while closed). */
   panelEl,

@@ -27,17 +27,17 @@
         <PhCopy v-else key="copy" :size="14" />
       </Transition>
     </Button>
-    <div v-if="html" class="shiki-host" v-html="html" />
+    <div v-if="html" class="shiki-host" :data-shiki="`block:${lang}`" v-html="html" />
     <pre v-else><code ref="codeEl">{{ code }}</code></pre>
   </div>
 </template>
 
 <script setup lang="ts">
-import { shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { onServerPrefetch, shallowRef, useTemplateRef, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PhCheck, PhCopy } from '@phosphor-icons/vue'
 import { Button } from 'vael-ui'
-import { highlightBlock } from '../composables/highlightInline'
+import { highlightBlock, highlightedBlock } from '../composables/highlightInline'
 
 const props = withDefaults(
   defineProps<{ code: string; lang?: 'vue' | 'typescript' | 'bash' | 'json' | 'css' | 'html' }>(),
@@ -47,7 +47,11 @@ const props = withDefaults(
 const { t } = useI18n()
 const copied = shallowRef(false)
 const codeEl = useTemplateRef('codeEl')
-const html = shallowRef('')
+// Highlighted in the prerendered HTML, and from it on the first client render (see main.ts).
+const html = shallowRef(highlightedBlock(props.code, props.lang) ?? '')
+onServerPrefetch(async () => {
+  html.value = await highlightBlock(props.code, props.lang)
+})
 
 watchEffect(async () => {
   const { code, lang } = props
@@ -94,11 +98,12 @@ pre,
 }
 
 .copy-button {
+  /* A button's box is its own layer (vael-ui 0.5): colour it through these variables. */
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background: var(--ui-surface);
-  border: 1px solid var(--ui-border);
+  --ui-button-bg: var(--ui-surface);
+  --ui-button-border: var(--ui-border);
   opacity: 0;
   transition: opacity var(--ui-duration-press) var(--ui-ease-out);
 }

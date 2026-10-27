@@ -1,6 +1,6 @@
 import { computed, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { ComponentPublicInstance, MaybeRefOrGetter, Ref } from 'vue'
-import { useElementSize, useEventListener } from '@vueuse/core'
+import { tryOnMounted, useEventListener, useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 
 export type ScrollAlign = 'nearest' | 'start' | 'end' | 'center'
@@ -99,7 +99,14 @@ function findIndexAtOffset(offsets: number[], target: number): number {
 
 export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerReturn {
   const scrollTop = shallowRef(0)
-  const { height: containerSize } = useElementSize(options.containerEl)
+  // The container's height, kept by a ResizeObserver: read at mount, and zero for a new container
+  // until it reports (it may still be laying out, as an opening panel is).
+  const containerSize = shallowRef(0)
+  tryOnMounted(() => (containerSize.value = options.containerEl.value?.offsetHeight ?? 0))
+  watch(options.containerEl, () => (containerSize.value = 0))
+  useResizeObserver(options.containerEl, ([entry]) => {
+    containerSize.value = entry!.contentRect.height
+  })
   const measuredSize = shallowRef<number | null>(null)
 
   const isDynamic = computed(() => toValue(options.dynamic) ?? false)

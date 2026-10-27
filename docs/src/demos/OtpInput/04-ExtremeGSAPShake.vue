@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Extreme: GSAP shake-on-error (gsap)</h3>
+    <h3>Extreme: the cells shake on a wrong code (gsap)</h3>
     <p class="note">
-      Enter any 4-digit code except <code>1234</code>, a GSAP stagger timeline shakes each cell in
-      sequence off the exposed <code>cellEls</code> array, then clears the code. Cells lay out in
-      plain flow (no transform of their own), so GSAP's <code>x</code> tween is purely additive;
-      only <code>invalid</code>, a public prop, drives the library's own red state underneath.
+      Enter any 4-digit code except <code>1234</code>. A GSAP timeline shakes the exposed
+      <code>cellEls</code> one after another, then clears the code. The cells have no transform of
+      their own, so GSAP's <code>x</code> adds to their place in the layout. The red state
+      underneath comes from the <code>invalid</code> prop.
     </p>
     <OtpInput
       ref="shakeOtp"

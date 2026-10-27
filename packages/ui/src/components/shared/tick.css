@@ -35,7 +35,7 @@
     }
   }
 
-  /* motion-css false: the tick shows and goes at once. */
+  /* motion false: the tick shows and goes at once. */
   :is([data-motion='off'], .ui-motion-off)
     .ui-tick:is(.ui-tick-enter-active, .ui-tick-leave-active),
   :is([data-motion='off'], .ui-motion-off) .ui-tick-enter-active path {

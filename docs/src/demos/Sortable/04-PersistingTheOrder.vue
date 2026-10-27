@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Persisting the new order</h3>
+    <h3>Saving the new order</h3>
     <p>
       <code>@reorder</code> fires after the move. Since you own the array, an optimistic save rolls
       back by restoring your own snapshot — no extra API.

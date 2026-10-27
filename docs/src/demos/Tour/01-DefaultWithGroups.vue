@@ -2,8 +2,9 @@
   <section class="demo">
     <h3>Default, with groups</h3>
     <p class="note">
-      Steps sharing a <code>group</code> cluster into a "Section X of Y" progress line
-      automatically. The target itself stays clickable mid-tour by default.
+      Steps that share a <code>group</code> form a section, and the callout shows your progress
+      through the sections. Here the <code>#default</code> slot receives <code>group</code> and
+      shows it above the step count. By default, the target stays clickable during the tour.
     </p>
     <div class="row">
       <Button @click="basicOpen = true">Start tour</Button>

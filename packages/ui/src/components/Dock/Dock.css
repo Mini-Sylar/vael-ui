@@ -13,13 +13,20 @@
     touch-action: none;
     /* Never wider than its container: items shrink instead (see .ui-dock-item). */
     min-inline-size: 0;
-    max-inline-size: 100%;
+    max-inline-size: calc(100% + var(--ui-dock-spread, 0px));
+    /* Magnifying, the bar widens with its items, around where it rests: nothing beside it moves. */
+    margin-inline: calc(var(--ui-dock-spread, 0px) / -2);
+    padding-inline: calc(0.5rem + var(--ui-dock-spread, 0px) / 2);
   }
   .ui-dock--vertical {
     flex-direction: column;
     align-items: flex-end;
     min-block-size: 0;
-    max-block-size: 100%;
+    max-inline-size: 100%;
+    max-block-size: calc(100% + var(--ui-dock-spread, 0px));
+    margin-inline: 0;
+    margin-block: calc(var(--ui-dock-spread, 0px) / -2);
+    padding: calc(0.5rem + var(--ui-dock-spread, 0px) / 2) 0.5rem;
   }
   /* Growing items expand both ways across a column, not just toward one edge. */
   .ui-dock--grow.ui-dock--vertical {
@@ -67,6 +74,26 @@
   .ui-dock-item:active:not([style*='transform']) {
     transform: scale(0.94);
   }
+  /* Magnification sets the transform every frame; a transition would only lag behind it. */
+  .ui-dock-item[style*='transform'] {
+    transition: none;
+  }
+  /* A tapped item pops up and settles, the way a dock icon bounces, in place of the magnification
+     a hovering pointer would have given. */
+  .ui-dock-item[data-bounce] {
+    animation: ui-dock-bounce 420ms var(--ui-ease-out);
+  }
+  @keyframes ui-dock-bounce {
+    0% {
+      transform: translateY(0) scale(1);
+    }
+    35% {
+      transform: translateY(-7px) scale(1.08);
+    }
+    100% {
+      transform: translateY(0) scale(1);
+    }
+  }
   .ui-dock-item-badge {
     position: absolute;
     inset-block-start: -0.25rem;
@@ -91,5 +118,15 @@
     .ui-dock-item:active {
       scale: 1;
     }
+    .ui-dock-item[data-bounce] {
+      animation: none;
+    }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-dock-item:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

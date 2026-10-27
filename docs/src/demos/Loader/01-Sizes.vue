@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Sizes, <code>size</code> sets font-size, the ring is 1em</h3>
+    <h3>Sizes: <code>size</code> sets the font size, and the loader is <code>1em</code></h3>
     <div class="row">
       <Loader size="0.875rem" />
       <Loader size="1.25rem" />

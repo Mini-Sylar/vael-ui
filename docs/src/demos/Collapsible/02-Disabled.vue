@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3><code>disabled</code>, trigger click is a no-op</h3>
+    <h3><code>disabled</code>: the trigger does nothing</h3>
     <Collapsible :open="false" disabled class="collapsible-demo">
       <template #trigger="{ open }">
         <Button variant="outline" disabled>{{ open ? 'Hide' : 'Show' }} disabled panel</Button>

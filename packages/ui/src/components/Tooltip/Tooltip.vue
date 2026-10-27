@@ -1,7 +1,7 @@
 <template>
   <slot v-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   <Teleport :to="teleportTo">
-    <Transition name="ui-tooltip" appear :css="!forceMount">
+    <Transition name="ui-tooltip" appear v-bind="tooltipTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -14,17 +14,19 @@
         :data-align="resolvedAlign"
         :data-instant="instant || undefined"
         :data-traveling="traveling || undefined"
-        :data-sizing-locked="travelActive || undefined"
+        :data-morphing="morphing || undefined"
       >
         <div
           :id="tooltipId"
           ref="panel"
           role="tooltip"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelStyle, panelPart.style]"
           v-bind="panelAttrs"
         >
-          <slot :open="open" :isClosing="isClosing" />
+          <span class="ui-tooltip-content">
+            <slot :open="open" :isClosing="isClosing" />
+          </span>
         </div>
       </div>
     </Transition>
@@ -64,10 +66,16 @@ export interface TooltipProps {
   interactive?: boolean
   /** Escape key closes the tooltip. @default true */
   closeOnEsc?: boolean
-  /** Custom exit animation; call `done()` to finish closing. */
-  beforeClose?: (done: () => void) => void
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Runs before the tooltip closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The tooltip stays open while the promise is pending. */
+  beforeClose?: BeforeClose<TooltipCloseReason>
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How it moves. `false` shows and hides it at once. An object moves it your way, like Popover's:
+   * values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. A warm open, right after
+   * another tooltip, stays instant either way.
+   */
+  motion?: TooltipMotion
   /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
   /** Class and style overrides for each part. */
@@ -76,12 +84,16 @@ export interface TooltipProps {
 </script>
 
 <script setup lang="ts">
+import type { TooltipCloseReason } from '../../composables/useTooltip'
+import type { BeforeClose, TooltipMotion } from '../../motion/types'
 import '../shared/tooltip.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, inject, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance } from 'vue'
 import { setDescribedBy, useTooltip } from '../../composables/useTooltip'
+import { useTooltipMotion } from '../../composables/useTooltipMotion'
 import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -101,6 +113,7 @@ const props = withDefaults(defineProps<TooltipProps>(), {
   interactive: true,
   closeOnEsc: true,
   forceMount: false,
+  motion: undefined,
   teleportTo: 'body',
 })
 
@@ -151,12 +164,13 @@ const themeScope = inject(themeScopeKey, undefined)
 
 const {
   positionerStyle,
+  panelStyle,
   placement,
   transformOrigin,
   isClosing,
   instant,
   traveling,
-  travelActive,
+  morphing,
   show,
   hide,
   cancelClose,
@@ -177,80 +191,18 @@ const {
 
 const tooltipId = useId()
 
-// Animates the panel's own width/height when its content resizes while open (separate from the
-// position "travel" glide above, which never touches the panel's box).
-let resizePrev: { width: number; height: number } | null = null
-let resizeReleaseTimer: ReturnType<typeof setTimeout> | undefined
-let resizeObserver: ResizeObserver | undefined
-
-function reducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
-}
-
-function releasePanelSize(panel: HTMLElement) {
-  panel.style.transition = ''
-  panel.style.width = ''
-  panel.style.height = ''
-}
-
-function onPanelResize() {
-  const panel = panelEl.value
-  if (!panel) return
-  // While a travel is active (from the moment its from-state is staged, not just once the CSS
-  // transition itself is enabled) the positioner's own width/height is pinned to a value that
-  // isn't the panel's real content size, and the panel is forced to 100%/100% of it (see
-  // .ui-tooltip-positioner[data-sizing-locked]) — every frame of that looks like a content
-  // resize. Drop the baseline instead of tracking it, so the first real sample once the travel
-  // ends is treated as a fresh (unanimated) baseline rather than a "resize" from a pinned size.
-  if (positionerStyle.value.visibility !== 'visible' || travelActive.value) {
-    resizePrev = null
-    return
-  }
-  const width = panel.offsetWidth
-  const height = panel.offsetHeight
-  const prev = resizePrev
-  resizePrev = { width, height }
-  if (!prev) return
-  if (prev.width === width && prev.height === height) return
-  clearTimeout(resizeReleaseTimer)
-  if (reducedMotion()) return
-  panel.style.transition = 'none'
-  panel.style.width = `${prev.width}px`
-  panel.style.height = `${prev.height}px`
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (resizePrev?.width !== width || resizePrev?.height !== height) return
-      panel.style.transition =
-        'width var(--ui-duration-tooltip) var(--ui-ease-out), height var(--ui-duration-tooltip) var(--ui-ease-out)'
-      panel.style.width = `${width}px`
-      panel.style.height = `${height}px`
-      resizeReleaseTimer = setTimeout(() => releasePanelSize(panel), 200)
-    })
-  })
-}
-
-watch(open, (value) => {
-  if (value) return
-  resizePrev = null
-  clearTimeout(resizeReleaseTimer)
-  const panel = panelEl.value
-  if (panel) releasePanelSize(panel)
+const tooltipTransition = useTooltipMotion({
+  name: 'Tooltip',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => triggerElRef.value,
+  forceMount: () => props.forceMount,
+  instant: () => instant.value,
+  placed: () => positionerStyle.value.visibility === 'visible',
 })
 
-watch(
-  panelEl,
-  (el, _prev, onCleanup) => {
-    resizeObserver?.disconnect()
-    resizePrev = null
-    if (!el) return
-    resizeObserver = new ResizeObserver(onPanelResize)
-    resizeObserver.observe(el)
-    onCleanup(() => resizeObserver?.disconnect())
-  },
-  { immediate: true },
-)
+// A content resize while open morphs the box from the old size, inside useTooltip.
 
 // Set aria-describedby only while visible (pointing to unmounted content is worse than none).
 watch(

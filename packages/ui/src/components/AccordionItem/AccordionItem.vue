@@ -1,12 +1,14 @@
 <template>
   <div
+    ref="item"
     :class="itemPart.class"
     :style="itemPart.style"
-    :data-motion="ctx.motionCss() ? undefined : 'off'"
+    :data-motion="ctx.motion() ? undefined : 'off'"
     v-bind="attrs"
   >
-    <component :is="headingTag" :class="headerPart.class" :style="headerPart.style">
+    <component :is="headingTag" ref="header" :class="headerPart.class" :style="headerPart.style">
       <button
+        ref="trigger"
         :id="triggerId"
         type="button"
         :class="triggerPart.class"
@@ -20,7 +22,9 @@
         <slot name="trigger" :open="isOpenValue" :toggle="onToggle">
           <span class="ui-accordion-trigger-title">{{ title }}</span>
           <svg
-            class="ui-accordion-chevron"
+            ref="chevron"
+            :class="chevronPart.class"
+            :style="chevronPart.style"
             viewBox="0 0 16 16"
             width="14"
             height="14"
@@ -46,20 +50,21 @@
       :class="panelPart.class"
       :style="[collapseStyle, panelPart.style]"
       :data-state="collapseState"
-      :aria-hidden="collapseState === 'closed' ? 'true' : undefined"
-      :inert="collapseState === 'closed'"
+      :aria-hidden="collapseState === 'closed' && !findable ? 'true' : undefined"
+      :inert="collapseState === 'closed' && !findable"
     >
-      <div :class="bodyPart.class" :style="bodyPart.style">
+      <div ref="body" :class="bodyPart.class" :style="bodyPart.style">
         <slot :open="isOpenValue" :toggle="onToggle" />
       </div>
     </div>
   </div>
 </template>
 
-<!-- No beforeClose: panel always mounted (collapsed); data-state + motionCss={false} + exposed panelEl for exit animation -->
+<!-- No beforeClose: panel always mounted (collapsed); data-state + motion={false} + exposed panelEl/chevronEl for exit animation -->
 <script setup lang="ts">
 import './AccordionItem.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, inject, useAttrs, useId, useTemplateRef } from 'vue'
 import { accordionKey } from '../Accordion/Accordion.vue'
 import { useCollapse } from '../../composables/useCollapse'
@@ -67,6 +72,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { nativeTag } from '../../composables/dom'
+import { useStateMotion } from '../../motion/useStateMotion'
 
 defineOptions({ inheritAttrs: false })
 
@@ -87,6 +93,8 @@ const props = defineProps<{
     trigger: UiPartValue
     panel: UiPartValue
     body: UiPartValue
+    /** The chevron at the end of the trigger. */
+    chevron: UiPartValue
   }>
 }>()
 
@@ -116,10 +124,41 @@ const triggerId = useId()
 const panelId = useId()
 
 const panel = useTemplateRef<HTMLElement>('panel')
-const { style: collapseStyle, state: collapseState } = useCollapse(isOpenValue, {
+const {
+  style: collapseStyle,
+  state: collapseState,
+  findable,
+} = useCollapse(isOpenValue, {
   el: panel,
-  motionCss: ctx.motionCss,
+  motion: ctx.motion,
   handOff: ctx.handOff,
+  // The browser's find opens it on a match (closing the others, as a click would), disabled or
+  // not: the browser has already shown the match.
+  onFind: () => {
+    if (!isOpenValue.value) ctx.toggle(props.value)
+  },
+})
+
+const item = useTemplateRef<HTMLElement>('item')
+const header = useTemplateRef<HTMLElement>('header')
+const trigger = useTemplateRef<HTMLElement>('trigger')
+const chevron = useTemplateRef<SVGSVGElement>('chevron')
+const body = useTemplateRef<HTMLElement>('body')
+useStateMotion({
+  key: 'accordion',
+  mainPart: 'trigger',
+  motion: ctx.states,
+  // Your timing reaches the whole item: the panel's height as well as the chevron.
+  root: () => item.value,
+  parts: () => ({
+    item: item.value,
+    header: header.value,
+    trigger: trigger.value,
+    chevron: chevron.value,
+    panel: panel.value,
+    body: body.value,
+  }),
+  states: () => ({ open: isOpenValue.value, disabled: !!props.disabled }),
 })
 
 const cx = useClassMerge()
@@ -139,10 +178,13 @@ const headerPart = computed(() => resolveUiPart(cx, themedUi()?.header, 'ui-acco
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-accordion-trigger'))
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-accordion-panel'))
 const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-accordion-body'))
+const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-accordion-chevron'))
 
 defineExpose({
   /** Panel element, always mounted. */
   panelEl: panel,
+  /** The built-in chevron, for your own engine to turn. Null when the `#trigger` slot replaces it. */
+  chevronEl: chevron,
   /** Whether the item is open. */
   open: isOpenValue,
 })

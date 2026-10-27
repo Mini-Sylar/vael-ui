@@ -28,7 +28,7 @@ The Vapor build needs Vue 3.6, which is still a prerelease. Pin the exact versio
 built against. A range such as `^3.5.0` can install Vue 3.5, which has no Vapor mode.
 
 ```sh
-pnpm add vue@3.6.0-rc.12 --save-exact
+pnpm add vue@3.6.0-rc.13 --save-exact
 ```
 
 A minimal Vapor app:

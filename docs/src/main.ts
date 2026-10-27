@@ -4,8 +4,9 @@ import { preventFocusZoom, vTooltip } from 'vael-ui'
 import './demo-content.css'
 import './prose.css'
 import App from './App.vue'
-import { routerOptions } from './router'
+import { canonicalDocsName, routerOptions } from './router'
 import { i18n } from './i18n'
+import { adoptPrerendered } from './composables/highlightInline'
 
 export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => {
   app.use(i18n).directive('tooltip', vTooltip)
@@ -25,6 +26,7 @@ export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => 
             })
         : guard,
     )
+  router.beforeEach(canonicalDocsName)
   // vaporInteropPlugin only exists in Vue's browser build — vue/server-renderer
   // has no VDOM/Vapor interop concept (there's no live DOM to bridge into during
   // SSG), so this import must stay dynamic and client-gated or the SSR build's
@@ -32,6 +34,8 @@ export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => 
   if (!import.meta.env.SSR) {
     const { vaporInteropPlugin } = await import('vue')
     app.use(vaporInteropPlugin)
+    // The app replaces the prerendered page: its code renders highlighted from the first frame.
+    adoptPrerendered(document)
 
     // Route components are lazy-loaded (`() => import('./pages/X.vue')`) by
     // their build hash. After a redeploy, a tab still holding the old

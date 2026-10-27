@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Sides, modifier syntax</h3>
+    <h3>Sides with modifiers</h3>
     <div class="row">
       <Button v-tooltip.top="'side top'" size="sm" variant="secondary">top</Button>
       <Button v-tooltip.bottom="'side bottom'" size="sm" variant="secondary">bottom</Button>

@@ -2,12 +2,12 @@
   <section class="demo">
     <h3>Extreme: the line fills and the next step pops (GSAP)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> hands over the exposed <code>circleEls</code>,
-      <code>connectorEls</code> and <code>labelEls</code>. Next fills the line through
-      <code>--ui-stepper-fill</code>, and each step pops and lights its label when the fill reaches
-      it. Back drains it.
+      <code>:motion="false"</code> turns off Stepper's own transitions, and you animate the exposed
+      <code>circleEls</code>, <code>connectorEls</code> and <code>labelEls</code>. Next fills the
+      line through <code>--ui-stepper-fill</code>, and each step pops and lights up its label when
+      the fill reaches it. Back empties the line.
     </p>
-    <Stepper ref="stepper" v-model="step" :items="steps" :motion-css="false" class="stepper-demo">
+    <Stepper ref="stepper" v-model="step" :items="steps" :motion="false" class="stepper-demo">
       <template #indicator="{ index, completed }">
         <span class="glyph" :data-done="completed ? '' : undefined">
           <svg

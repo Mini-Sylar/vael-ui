@@ -1,6 +1,10 @@
 <template>
   <section class="demo">
     <h3>Two independent nav groups</h3>
+    <p class="note">
+      Each group opens on its own, and their lists share one highlight: move from Reports into
+      Settings and it glides across instead of fading out and back in.
+    </p>
     <div class="collapsible-nav">
       <Collapsible
         v-model:open="reportsOpen"
@@ -21,11 +25,7 @@
             </template>
           </Button>
         </template>
-        <ul class="collapsible-nav-list">
-          <li><Button variant="link">Overview</Button></li>
-          <li><Button variant="link">Revenue</Button></li>
-          <li><Button variant="link">Retention</Button></li>
-        </ul>
+        <MenuList :items="reports" aria-label="Reports" class="collapsible-nav-list" />
       </Collapsible>
 
       <Collapsible
@@ -47,11 +47,7 @@
             </template>
           </Button>
         </template>
-        <ul class="collapsible-nav-list">
-          <li><Button variant="link">Profile</Button></li>
-          <li><Button variant="link">Billing</Button></li>
-          <li><Button variant="link">Integrations</Button></li>
-        </ul>
+        <MenuList :items="settings" aria-label="Settings" class="collapsible-nav-list" />
       </Collapsible>
     </div>
   </section>
@@ -59,11 +55,13 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, Collapsible } from 'vael-ui'
+import { Button, Collapsible, MenuList } from 'vael-ui'
 import { PhCaretRight } from '@phosphor-icons/vue'
 
 const reportsOpen = shallowRef(true)
-const settingsOpen = shallowRef(false)
+const settingsOpen = shallowRef(true)
+const reports = ['Overview', 'Revenue', 'Retention'].map((label) => ({ label, value: label }))
+const settings = ['Profile', 'Billing', 'Integrations'].map((label) => ({ label, value: label }))
 </script>
 
 <style scoped>
@@ -81,17 +79,12 @@ const settingsOpen = shallowRef(false)
 }
 .collapsible-nav-chevron {
   display: inline-flex;
-  transition: transform 0.2s ease;
+  transition: transform var(--ui-duration-enter) var(--ui-ease-out);
 }
 .collapsible-nav-chevron[data-open='true'] {
   transform: rotate(90deg);
 }
 .collapsible-nav-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  margin: 0;
-  padding: 0.375rem 0.75rem 0.75rem;
-  list-style: none;
+  padding: 0 0.375rem 0.375rem;
 }
 </style>

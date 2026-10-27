@@ -31,7 +31,7 @@ import { dirname, relative, resolve } from 'node:path'
  * barrel re-exports `confirmAction` the value from its own local generated
  * copy, but `ConfirmActionOptions` the type from the original ui package).
  */
-export function collectBarrelEntries(barrelPath, cwd) {
+export function collectBarrelEntries(barrelPath, cwd, prefix = '') {
   const source = readFileSync(barrelPath, 'utf8')
   const barrelDir = dirname(barrelPath)
   const specifiers = new Set()
@@ -54,7 +54,8 @@ export function collectBarrelEntries(barrelPath, cwd) {
       .replace(/^\.\//, '')
       // Purely a source-layout artifact, not a meaningful part of the name.
       .replace(/(^|\/)src\//g, '$1')
-    entries[name] = path.startsWith('.') ? path : `./${path}`
+    // `prefix`: a barrel in a folder of its own (motion/index.ts) names its modules from src.
+    entries[prefix + name] = path.startsWith('.') ? path : `./${path}`
   }
   return entries
 }

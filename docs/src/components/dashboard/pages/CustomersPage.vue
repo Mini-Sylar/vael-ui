@@ -15,6 +15,7 @@
           :items="segmentItems"
           placeholder="Filter by segment…"
           clearable
+          :teleport-to="shell ?? undefined"
           class="dash-segment-filter"
         />
       </div>
@@ -74,14 +75,17 @@
   Comment stays outside <template> — see Button.vue for why.
 -->
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, inject, shallowRef } from 'vue'
 import { Card, Chip, Column, Combobox, DataTable, Tag } from 'vael-ui'
 import type { SelectItemData } from 'vael-ui'
 import { currency, customers } from '../data'
 import type { Customer } from '../data'
+import { dashboardShellKey } from '../dashboardNavigate'
 import { useDashStacked } from '../useDashStacked'
 
 const stacked = useDashStacked(680)
+// The option list teleports into the dashboard shell so it stays inside the frame.
+const shell = inject(dashboardShellKey, undefined)
 
 const SEGMENT_VARIANT: Record<Customer['segment'], 'success' | 'muted' | 'warning'> = {
   enterprise: 'success',

@@ -1,0 +1,23 @@
+@layer ui-components {
+  /* v-animate on a server-rendered page: the first appearance plays from CSS, before any script.
+     It comes in from the starting look in the --ui-appear-* variables to the element's own style. */
+  @keyframes ui-appear {
+    from {
+      opacity: var(--ui-appear-opacity, 1);
+      translate: var(--ui-appear-translate, none);
+      scale: var(--ui-appear-scale, none);
+      filter: var(--ui-appear-filter, none);
+    }
+  }
+  @keyframes ui-appear-fade {
+    from {
+      opacity: var(--ui-appear-opacity, 1);
+    }
+  }
+  /* Reduced motion: it fades, nothing moves. */
+  @media (prefers-reduced-motion: reduce) {
+    [data-ui-appear] {
+      animation-name: ui-appear-fade !important;
+    }
+  }
+}

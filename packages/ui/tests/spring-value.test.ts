@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest'
-import { createSpring, stepSpring } from '../src/composables/useSpringValue'
-import type { SpringState } from '../src/composables/useSpringValue'
+import { createSpring, stepSpring } from '../src/motion/useSpringValue'
+import type { SpringState } from '../src/motion/useSpringValue'
 
 // Pure integrator, driven with fixed timesteps rather than through rAF — real
 // frame timing can't be reproduced in a test, and the physics is the part
@@ -147,4 +147,15 @@ test('independent springs animate concurrently on the one shared loop', async ()
   expect(b.value).toBe(-20)
   a.destroy()
   b.destroy()
+})
+
+test("a spring's first frame moves, even when the frame's timestamp predates the call", () => {
+  let next: FrameRequestCallback | undefined
+  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => ((next = cb), 1))
+  const spring = createSpring(0, { response: 0.3 })
+  spring.set(100)
+  next!(performance.now() - 5)
+  expect(spring.value).toBeGreaterThan(0)
+  spring.destroy()
+  vi.unstubAllGlobals()
 })

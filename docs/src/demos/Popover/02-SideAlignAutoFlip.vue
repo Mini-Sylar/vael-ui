@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Side / align, resize the window near an edge to see auto-flip</h3>
+    <h3>Side and align: resize the window near an edge to see it flip</h3>
     <div class="row">
       <Popover
         v-for="config in sideAlignConfigs"

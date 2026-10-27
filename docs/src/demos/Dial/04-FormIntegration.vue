@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Form integration</h3>
     <p class="note">
-      <code>Field</code> wires up the label/description without extra ARIA plumbing. Separately, any
-      Dial with a <code>name</code> renders a hidden input automatically, so it participates in a
-      plain <code>&lt;form&gt;</code> submit with no extra wiring.
+      <code>Field</code> adds the label and description without extra ARIA work. Any Dial with a
+      <code>name</code> also renders a hidden input, so it submits with a plain
+      <code>&lt;form&gt;</code>.
     </p>
     <Field label="Playback pitch" description="Unbounded, spin freely up or down.">
       <Dial v-model="fieldValue" :value-text="(v) => `${v > 0 ? '+' : ''}${v} st`" />

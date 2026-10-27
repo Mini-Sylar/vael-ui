@@ -19,6 +19,12 @@
       z-index: 1;
       transition: transform var(--ui-duration-press) var(--ui-ease-out);
     }
+    /* Lifted, it still covers where it rests, ring included: a pointer on its bottom edge keeps it up. */
+    .ui-avatar-group--hover-lift .ui-avatar:hover::after {
+      content: '';
+      position: absolute;
+      inset: -2px -2px -5px;
+    }
   }
   .ui-avatar-group .ui-avatar:first-child {
     margin-inline-start: 0;

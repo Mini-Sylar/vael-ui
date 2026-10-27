@@ -28,6 +28,7 @@
       :close-on-outside="closeOnOutside"
       :before-close="beforeClose"
       :force-mount="forceMount"
+      :motion="motion"
       :teleport-to="teleportTo"
       :scroll-fade="scrollFade"
       :ui="{
@@ -53,7 +54,8 @@
           :aria-label="resolvedTriggerLabel"
         >
           <svg
-            class="ui-split-button-chevron"
+            :class="chevronPart.class"
+            :style="chevronPart.style"
             viewBox="0 0 16 16"
             width="14"
             height="14"
@@ -92,9 +94,12 @@ export type { MenuAlign as SplitButtonAlign, MenuSide as SplitButtonSide }
 </script>
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, MenuMotion } from '../../motion/types'
 import './SplitButton.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Button from '../Button/Button.vue'
@@ -102,7 +107,7 @@ import type { ButtonSize, ButtonVariant } from '../Button/Button.vue'
 import Menu from '../Menu/Menu.vue'
 import type { MenuEntry, MenuItemData } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
-import { useUiMessages } from '../../messages'
+import { useMessages, splitButtonMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -120,6 +125,8 @@ const rawProps = withDefaults(
     variant?: ButtonVariant
     /** Size of both buttons. @default 'md' */
     size?: ButtonSize
+    /** Joins the two buttons into one surface, without the thin line between them. @default false */
+    unified?: boolean
     /** Disables both buttons and blocks interaction. @default false */
     disabled?: boolean
     /** Forwarded to the main action Button only. @default 'auto' */
@@ -138,11 +145,17 @@ const rawProps = withDefaults(
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` to finish closing. */
-    beforeClose?: (done: () => void) => void
-    /** Keeps the panel mounted (toggled with `v-show`) and skips the built-in transition, for JS
-     * animation libraries. */
+    /** Runs before the menu closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The menu stays open while the promise is pending. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
+    /** Keeps the panel mounted while closed, toggled with `v-show`, so its content keeps its state.
+     * vael-ui then leaves its motion to you. */
     forceMount?: boolean
+    /**
+     * How the menu moves, like Menu's. `false` opens and closes it at once. An object moves it your
+     * way: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. Unset, it follows
+     * the nearest ConfigProvider's style.
+     */
+    motion?: MenuMotion
     /** Teleport target: a CSS selector or element. */
     teleportTo?: string | HTMLElement
     /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
@@ -156,15 +169,19 @@ const rawProps = withDefaults(
       panel: UiPartValue
       header: UiPartValue
       footer: UiPartValue
+      /** The chevron inside the menu trigger. */
+      chevron: UiPartValue
     }>
   }>(),
   {
     variant: 'primary',
+    unified: false,
     disabled: false,
     loading: 'auto',
     closeOnEsc: undefined,
     closeOnOutside: undefined,
     scrollFade: undefined,
+    motion: undefined,
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
@@ -193,7 +210,7 @@ const mainAttrs = computed(() => {
   return rest
 })
 
-const messages = useUiMessages()
+const messages = useMessages({ splitButton: splitButtonMessages })
 const resolvedTriggerLabel = computed(() => props.triggerLabel ?? messages.value.splitButton.more)
 
 const root = useTemplateRef<HTMLElement>('root')
@@ -209,9 +226,17 @@ const themedUi = useThemedUi(
 // Theme override, then attrs win last (see Input.vue).
 const rootSplit = computed(() => splitUiPart(themedUi()?.root))
 const rootClass = computed(() =>
-  cx('ui-split-button', rootSplit.value.class, attrs.class as string | undefined),
+  cx(
+    'ui-split-button',
+    rawProps.unified && 'ui-split-button--unified',
+    rootSplit.value.class,
+    attrs.class as string | undefined,
+  ),
 )
 const rootStyle = computed(() => rootSplit.value.style)
+const chevronPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.chevron, 'ui-split-button-chevron'),
+)
 const mainUi = computed(() => ({
   root: resolveUiPart(cx, themedUi()?.main, 'ui-split-button-main'),
 }))

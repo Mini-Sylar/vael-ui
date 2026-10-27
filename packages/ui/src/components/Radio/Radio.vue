@@ -44,6 +44,7 @@
 import './Radio.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   inject,
@@ -59,6 +60,8 @@ import { useControlAttrs } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { RadioMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -73,8 +76,13 @@ const rawProps = withDefaults(
     disabled?: boolean
     /** Secondary line under the label. */
     description?: string
-    /** `false` skips built-in transitions; animate the exposed `controlEl`/`dotEl` yourself. @default true */
-    motionCss?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { control: { opacity: 0, scale: 0.8 } } }`) and its
+     * states, like `checked` or `invalid` (`{ states: { checked: { control: { scale: '1.1' } } } }`).
+     * `false` turns its own animation off, built-in transitions too; animate the exposed `controlEl`/`dotEl` yourself.
+     * @default true
+     */
+    motion?: RadioMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -83,9 +91,9 @@ const rawProps = withDefaults(
       description: UiPartValue
     }>
   }>(),
-  { motionCss: undefined },
+  { motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 defineSlots<{
   /** Label content; replaces the `label` text. Receives `checked`. */
@@ -109,7 +117,7 @@ const dataState = computed(() => (isChecked.value ? 'checked' : 'unchecked'))
 
 // First paint only: suppress transitions to prevent initial render
 const firstPaint = shallowRef(true)
-const skipTransition = computed(() => firstPaint.value || !props.motionCss)
+const skipTransition = computed(() => firstPaint.value || !props.motion)
 onMounted(() => {
   void nextTick(() => {
     firstPaint.value = false
@@ -121,6 +129,24 @@ const root = useTemplateRef<HTMLElement>('root')
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const controlEl = useTemplateRef<HTMLElement>('controlEl')
 const dotEl = useTemplateRef<HTMLElement>('dotEl')
+const parts = useStateMotion({
+  key: 'radio',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-radio',
+    control: '.ui-radio-control',
+    label: '.ui-radio-label',
+    description: '.ui-radio-description',
+  },
+  states: () => ({
+    checked: isChecked.value,
+    unchecked: !isChecked.value,
+    invalid: ctx.invalid?.(),
+    disabled: isDisabled.value,
+  }),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.radio,
@@ -150,5 +176,9 @@ defineExpose({
   controlEl,
   /** The dot inside it. */
   dotEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

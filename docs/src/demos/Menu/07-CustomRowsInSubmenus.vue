@@ -2,9 +2,8 @@
   <section class="demo">
     <h3>Custom rows through nested submenus</h3>
     <p class="note">
-      The <code>#item</code> slot keeps rendering your own markup at every depth — a submenu row is
-      not a separate, un-styleable path. Here each row is a glyph, a label, and a hint line, three
-      levels deep.
+      The <code>#item</code> slot renders your markup at every depth, submenus included. Here each
+      row has a glyph, a label and a hint, three levels deep.
     </p>
     <div class="row">
       <Menu :items="items" @select="onSelect">

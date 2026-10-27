@@ -13,7 +13,13 @@ const UI_DIR = resolve(process.cwd(), '../ui')
 // for both builds, and a second copy would carry its own state. A toast() from one copy would
 // never reach a <Toaster> using the other, depending on how the app resolves 'vael-ui'.
 const vdomFiles = new Map(
-  Object.entries(collectBarrelEntries(join(UI_DIR, 'src/index.ts'), UI_DIR))
+  Object.entries({
+    ...collectBarrelEntries(join(UI_DIR, 'src/index.ts'), UI_DIR),
+    // Shared but not public (src/internal.ts).
+    ...collectBarrelEntries(join(UI_DIR, 'src/internal.ts'), UI_DIR),
+    // vael-ui/motion.
+    ...collectBarrelEntries(join(UI_DIR, 'src/motion/index.ts'), UI_DIR, 'motion/'),
+  })
     .filter(([, path]) => !path.endsWith('.vue'))
     .map(([name, path]) => [resolve(UI_DIR, path), join(UI_DIR, 'dist', `${name}.js`)]),
 )
@@ -95,11 +101,37 @@ function useVdomCss(outDir: string): Plugin {
 // ones that now come from the vdom build's files.
 const entry = {
   index: './src/generated/index.ts',
+  motion: './src/generated/motion.ts',
   ...Object.fromEntries(
     Object.entries(collectBarrelEntries('./src/generated/index.ts', process.cwd())).filter(
       ([, path]) => !vdomFiles.has(resolve(path)),
     ),
   ),
+}
+
+// Vue's server renderer only takes object directives (it reads `getSSRProps`), so on the server
+// `vAnimate` is the object form: a server render then carries the first-paint CSS. In the browser,
+// Vapor's function form; it hydrates what the object rendered.
+function objectDirectivesOnServer(): Plugin {
+  return {
+    name: 'vael-ui:object-directives-on-server',
+    transform(code) {
+      // The VDOM async wrapper too: the server renders components as VDOM.
+      if (code.includes('defineVaporAsyncComponent as defineAsyncComponent'))
+        code = code.replace(
+          'defineVaporAsyncComponent as defineAsyncComponent',
+          'defineAsyncComponent',
+        )
+      if (!code.includes('vAnimateVapor')) return code
+      return code.replace(
+        /\{([^}]*)\}(\s*from\s*['"][^'"]*motion\/vAnimate(?:\.js|\.ts)?['"])/g,
+        (_, names: string, from: string) =>
+          `{${names
+            .replace(/\bvAnimateVapor as vAnimate\b/, 'vAnimate')
+            .replace(/\bvAnimateVapor\b(?! as)/, 'vAnimate as vAnimateVapor')}}${from}`,
+      )
+    },
+  }
 }
 
 export default defineConfig([
@@ -129,6 +161,7 @@ export default defineConfig([
     outDir: '../ui/dist/vapor-server',
     platform: 'neutral',
     plugins: [
+      objectDirectivesOnServer(),
       useVdomFiles(join(UI_DIR, 'dist/vapor-server')),
       useVdomCss(join(UI_DIR, 'dist/vapor-server')),
       Vue({ isProduction: true, ssr: true, template: { compilerOptions: { comments: false } } }),

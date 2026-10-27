@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Magnification off, <code>:magnify="false"</code></h3>
+    <h3>Magnification off: <code>:magnify="false"</code></h3>
     <p class="note">
-      Stays fully interactive (click, keyboard, tooltips), items just never grow. Distinct from
-      <code>disabled</code>, which also blocks interaction outright.
+      Items never grow, but clicks, the keyboard and tooltips still work. <code>disabled</code> is
+      different: it blocks interaction too.
     </p>
     <div class="row">
       <Dock aria-label="Plain dock" :items="appItems" :magnify="false" @select="onSelect" />

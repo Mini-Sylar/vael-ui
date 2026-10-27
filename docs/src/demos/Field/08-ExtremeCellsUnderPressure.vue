@@ -3,13 +3,13 @@
     <h3>Extreme: joined cells under pressure</h3>
     <p class="note">
       Each toggle tests a different case. RTL mirrors the labels, cells and corners, and size makes
-      the cells follow the control's radius and font size. The currency cell mounts at runtime and
-      the float label moves to clear it. An error recolors the whole row, and the Select inside the
+      the cells follow the control’s radius and font size. The currency cell mounts at runtime and
+      the float label moves to make room. An error recolors the whole row, and the Select inside the
       cell keeps its own state.
     </p>
     <p class="note">
       The last row is a hand-built <code>&lt;input&gt;</code> that joins through
-      <code>data-ui-frame</code> and Field's <code>data-join-*</code> and <code>data-focused</code>
+      <code>data-ui-frame</code> and Field’s <code>data-join-*</code> and <code>data-focused</code>
       attributes (see Advanced in the styling guide). The copy button animates with motion-v.
     </p>
     <div class="toolbar">

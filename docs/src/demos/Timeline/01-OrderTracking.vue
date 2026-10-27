@@ -1,10 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Order tracking, with derived <code>completed</code>/<code>active</code></h3>
+    <h3>Order tracking with <code>completed</code> and <code>active</code></h3>
     <p class="note">
-      <code>completed</code> and <code>active</code> are two independent functions you supply — here
-      they both read a plain <code>done</code> boolean on each step. Nothing about the item shape is
-      dictated by Timeline itself.
+      <code>completed</code> and <code>active</code> are two functions you write; here both read a
+      <code>done</code> boolean on each step. Timeline doesn't require any item shape.
     </p>
     <Timeline :items="steps" :completed="(step) => step.done" :active="isActive">
       <template #item="{ item, completed }">

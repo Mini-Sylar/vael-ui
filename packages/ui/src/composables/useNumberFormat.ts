@@ -1,5 +1,5 @@
 import { computed, toValue } from 'vue'
-import type { MaybeRefOrGetter } from 'vue'
+import type { ComputedRef, MaybeRefOrGetter } from 'vue'
 
 export interface UseNumberFormatOptions {
   locale?: MaybeRefOrGetter<string | undefined>
@@ -15,6 +15,8 @@ export interface UseNumberFormatOptions {
 }
 
 export interface UseNumberFormatReturn {
+  /** The `Intl.NumberFormat` options built from `mode`, `currency`, fraction digits and grouping. */
+  formatOptions: ComputedRef<Intl.NumberFormatOptions>
   /** `null`/`NaN` → `''`. Always the full localized+affixed string. */
   format: (value: number | null) => string
   /** `null` for anything that isn't a complete, unambiguous number — including legal in-progress typing states (use `isPartial` to tell those apart from garbage). */
@@ -162,5 +164,5 @@ export function useNumberFormat(options: UseNumberFormatOptions = {}): UseNumber
     return /^\d*\.?\d*$/.test(body)
   }
 
-  return { format, parse, isPartial }
+  return { formatOptions: baseOptions, format, parse, isPartial }
 }

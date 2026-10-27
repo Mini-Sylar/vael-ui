@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 import { createVaporApp, nextTick } from 'vue'
 import ConfigDefaultsVaporRoot from './fixtures/ConfigDefaultsVaporRoot.vue'
 
-test('ConfigProvider size, motionCss and i18n locale reach Vapor components, and update live', async () => {
+test('ConfigProvider size, motion and i18n locale reach Vapor components, and update live', async () => {
   const host = document.createElement('div')
   document.body.append(host)
   const app = createVaporApp(ConfigDefaultsVaporRoot)

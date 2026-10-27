@@ -3,13 +3,21 @@
     ref="list"
     :class="rootPart.class"
     :style="rootPart.style"
+    :data-indicator-placed="indicatorPlaced || undefined"
     @keydown="onKeydown"
     v-bind="attrs"
   >
     <div
       v-if="hasActiveMatch"
+      ref="pageIndicatorEl"
       class="ui-menu-list-indicator"
       :style="indicatorStyle"
+      aria-hidden="true"
+    />
+    <div
+      ref="hoverEl"
+      class="ui-indicator ui-menu-list-hover"
+      :style="hoverStyle"
       aria-hidden="true"
     />
     <template v-for="(row, i) in flatRows" :key="row.key">
@@ -26,7 +34,7 @@
         :style="[indentStyle(row.depth), itemPart.style]"
       >
         <slot name="item" :item="row.entry as T" :is-group="true">
-          <span v-if="row.entry.icon" class="ui-menu-list-item-icon">
+          <span v-if="row.entry.icon" :class="iconPart.class" :style="iconPart.style">
             <component :is="row.entry.icon" />
           </span>
           <span class="ui-menu-list-item-label">{{ row.entry.label }}</span>
@@ -46,7 +54,7 @@
         v-bind="row.entry.attrs"
       >
         <slot name="item" :item="row.entry as T" :is-group="false">
-          <span v-if="row.entry.icon" class="ui-menu-list-item-icon">
+          <span v-if="row.entry.icon" :class="iconPart.class" :style="iconPart.style">
             <component :is="row.entry.icon" />
           </span>
           <span class="ui-menu-list-item-label">{{ row.entry.label }}</span>
@@ -62,6 +70,7 @@
 <script lang="ts">
 import type { MenuEntry, MenuItemData, MenuSeparator } from '../Menu/Menu.vue'
 import type { UiPartValue } from '../../classes'
+import type { MenuListMotion } from '../../motion/types'
 
 export type { MenuEntry, MenuItemData, MenuSeparator }
 
@@ -75,7 +84,15 @@ export interface MenuListProps<T extends MenuItemData = MenuItemData> {
   /** `value` of the current page; the matching row gets `aria-current="page"`. */
   active?: string | number | null
   /** Class and style overrides for each part. */
-  ui?: Partial<{ root: UiPartValue; item: UiPartValue; separator: UiPartValue }>
+  ui?: Partial<{
+    root: UiPartValue
+    item: UiPartValue
+    separator: UiPartValue
+    /** The icon at the start of an item or group label. */
+    icon: UiPartValue
+  }>
+  /** How it moves: its appearance, row by row (`{ initial: { item: { opacity: 0, x: -4 } }, stagger: 0.03 }`), over `root`, `item` and the current page's `indicator`. `spring` retimes the indicator; `move` hands its moves to your own animation. `false` turns its own animation off. */
+  motion?: MenuListMotion
 }
 </script>
 
@@ -87,17 +104,25 @@ export interface MenuListProps<T extends MenuItemData = MenuItemData> {
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './MenuList.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { nativeTag } from '../../composables/dom'
 import { computed, onMounted, useAttrs, useTemplateRef } from 'vue'
 import { useMenu } from '../../composables/useMenu'
 import { useTabIndicator } from '../../composables/useTabIndicator'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
+import '../shared/indicator.css'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import { useIndicatorMotion } from '../../composables/useIndicatorMotion'
 
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-const props = defineProps<MenuListProps<T>>()
+const props = withDefaults(defineProps<MenuListProps<T>>(), {
+  // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+  motion: undefined,
+})
 
 const emit = defineEmits<{
   /** Fires on click, or Enter/Space when the row has roving focus. */
@@ -171,14 +196,51 @@ function indentStyle(depth: number) {
 
 const list = useTemplateRef<HTMLElement>('list')
 
+const parts = useStateMotion({
+  key: 'menuList',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => list.value,
+  selectors: {
+    root: '.ui-menu-list',
+    item: '.ui-menu-list-item',
+    indicator: '.ui-menu-list-indicator',
+  },
+  states: () => ({}),
+})
+
 // Sliding indicator (Tabs pattern) for nav-item transitions; guards against non-matching active (page outside this list).
 const hasActiveMatch = computed(() =>
   flatRows.value.some((row) => row.kind === 'item' && isActive(row.entry)),
 )
-const { style: indicatorStyle } = useTabIndicator(
+const pageIndicatorEl = useTemplateRef<HTMLElement>('pageIndicatorEl')
+const indicatorMotion = useIndicatorMotion({
+  name: 'MenuList',
+  motion: () => props.motion,
+  indicator: () => pageIndicatorEl.value,
+  parts: () => parts(),
+})
+const { style: indicatorStyle, placed: indicatorPlaced } = useTabIndicator(
   computed(() => props.active),
-  { listEl: list, orientation: 'vertical', selector: '[aria-current="page"]' },
+  {
+    listEl: list,
+    orientation: 'vertical',
+    selector: '[aria-current="page"]',
+    indicatorEl: pageIndicatorEl,
+    position: 'translate',
+    indicator: indicatorMotion.spring,
+    motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
+  },
 )
+
+// The hover and keyboard highlight slides between rows, under the current page's own indicator.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(list, {
+  itemSelector: '.ui-menu-list-item:not(.ui-menu-list-item--group)',
+  indicatorEl: hoverEl,
+  // Two nav lists one above the other share one highlight.
+  group: 'menu-list',
+})
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(
@@ -187,6 +249,7 @@ const themedUi = useThemedUi(
 )
 
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-menu-list'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-menu-list-item-icon'))
 const separatorPart = computed(() =>
   resolveUiPart(cx, themedUi()?.separator, 'ui-menu-list-separator'),
 )
@@ -222,5 +285,13 @@ onMounted(() => initRoving())
 defineExpose({
   /** Root element. */
   el: list,
+  /** The current page's indicator, sliding between rows (null when no row is the current page). */
+  indicatorEl: pageIndicatorEl,
+  /** The hover and keyboard highlight, sliding between rows. Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

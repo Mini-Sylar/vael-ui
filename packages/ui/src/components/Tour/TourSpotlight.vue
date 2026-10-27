@@ -7,7 +7,7 @@
         ref="overlay"
         :class="overlayPart.class"
         :style="[
-          { '--ui-tour-cutout': clipPath, position: contained ? 'absolute' : undefined },
+          { ...cutoutVars, position: contained ? 'absolute' : undefined },
           overlayPart.style,
         ]"
         aria-hidden="true"
@@ -18,6 +18,7 @@
 
 <script lang="ts">
 import type { UiPartValue } from '../../classes'
+import type { MotionTiming } from '../../motion/types'
 
 export interface TourSpotlightProps {
   targetEl?: HTMLElement | null
@@ -36,6 +37,8 @@ export interface TourSpotlightProps {
   instant?: boolean
   /** `false` turns the glide off: the cutout jumps to each new target. @default true */
   glide?: boolean
+  /** The glide's timing. Unset: its length scales with the distance, on `GLIDE_EASE`. */
+  glideTiming?: MotionTiming
   forceMount?: boolean
   teleportTo?: string | HTMLElement
   /**
@@ -64,8 +67,13 @@ export interface TourSpotlightProps {
   The path goes out as `--ui-tour-cutout`, which the stylesheet reads into `clip-path`. An inline
   `clip-path` from a consumer animating the cutout (glide off) then wins while it's set, and
   removing it shows this cutout again.
+
+  The box goes out too, every frame of the glide: `--ui-tour-cutout-x`, `-y`, `-width`, `-height`
+  and `-radius` (px, in the overlay's own coordinates), for a ring of your own that follows it.
 -->
 <script setup lang="ts">
+import { prefersReducedMotion, restingRect } from '../../composables/dom'
+import { easingFn, glideOf } from '../../composables/tourGlide'
 import './Tour.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { autoUpdate } from '@floating-ui/dom'
@@ -78,6 +86,7 @@ const props = withDefaults(defineProps<TourSpotlightProps>(), {
   radius: 8,
   instant: false,
   glide: true,
+  glideTiming: undefined,
   forceMount: false,
   teleportTo: 'body',
   containerEl: null,
@@ -89,7 +98,8 @@ const overlay = useTemplateRef<HTMLElement>('overlay')
 const cx = useClassMerge()
 const overlayPart = computed(() => resolveUiPart(cx, props.ui, 'ui-tour-spotlight'))
 
-const clipPath = shallowRef<string | undefined>(undefined)
+// The resting cutout's path and box, as the custom properties the overlay carries.
+const cutoutVars = shallowRef<Record<string, string>>({})
 
 /** The cutout's geometry, in the overlay's own coordinate space, before it's serialised to a path. */
 interface Cutout {
@@ -105,7 +115,8 @@ interface Cutout {
 }
 
 function measure(): Cutout {
-  const rect = props.targetEl!.getBoundingClientRect()
+  // Where it will rest: inside an overlay still springing in, the spotlight goes straight there.
+  const rect = restingRect(props.targetEl!)
   const container = props.containerEl
   const containerRect = container?.getBoundingClientRect()
   const originX = containerRect?.left ?? 0
@@ -133,55 +144,22 @@ function toPath({ x, y, w, h, radius, vw, vh }: Cutout): string {
   )
 }
 
-// cubic-bezier solver — Newton-Raphson on x(t), then evaluate y(t).
-function makeBezierEasing(p1x: number, p1y: number, p2x: number, p2y: number) {
-  const cx = 3 * p1x
-  const bx = 3 * (p2x - p1x) - cx
-  const ax = 1 - cx - bx
-  const cy = 3 * p1y
-  const by = 3 * (p2y - p1y) - cy
-  const ay = 1 - cy - by
-  const xAt = (t: number) => ((ax * t + bx) * t + cx) * t
-  const dxAt = (t: number) => (3 * ax * t + 2 * bx) * t + cx
-  return (x: number) => {
-    let t = x
-    for (let i = 0; i < 8; i++) {
-      const dx = xAt(t) - x
-      if (Math.abs(dx) < 1e-4) break
-      const d = dxAt(t)
-      if (Math.abs(d) < 1e-6) break
-      t -= dx / d
-    }
-    return ((ay * t + by) * t + cy) * t
-  }
-}
-// `--ui-ease-out` — a decisive smooth-out. The cutout is repositioning, not making an
-// entrance, so it wants the library's position-change curve rather than the long, settling
-// `--ui-ease-drawer` tail, which made the far sweeps in the stress test look like they crawl
-// the last stretch after visually already arriving.
-const easeGlide = makeBezierEasing(0.23, 1, 0.32, 1)
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-// Travel-aware: a nudge to a neighbouring target resolves quickly; a sweep clear across the
-// viewport earns a longer glide — but a far bound is still faster than the old flat 500ms.
-// Range/curve follow the transitions-polish doctrine for a position change (~250–400ms).
-const GLIDE_MIN_MS = 220
-const GLIDE_MAX_MS = 380
-function glideDuration(a: Cutout, b: Cutout): number {
+// Travel-aware unless the Tour's motion sets a timing: a nudge to a neighbouring target resolves
+// quickly; a sweep clear across the viewport earns a longer glide (tourGlide.ts, shared with the callout).
+function glideBetween(a: Cutout, b: Cutout) {
   const travel = Math.hypot(b.x + b.w / 2 - (a.x + a.w / 2), b.y + b.h / 2 - (a.y + a.h / 2))
-  const t = Math.min(1, travel / (Math.hypot(a.vw, a.vh) || 1))
-  return GLIDE_MIN_MS + (GLIDE_MAX_MS - GLIDE_MIN_MS) * Math.sqrt(t)
+  return glideOf(overlay.value!, props.glideTiming, travel, Math.hypot(a.vw, a.vh))
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+// The corner as drawn: a pill's 999 is half its height, so it eases from there.
+const drawnRadius = (c: Cutout) => Math.max(0, Math.min(c.radius, c.w / 2, c.h / 2))
 const tween = (a: Cutout, b: Cutout, t: number): Cutout => ({
   x: lerp(a.x, b.x, t),
   y: lerp(a.y, b.y, t),
   w: lerp(a.w, b.w, t),
   h: lerp(a.h, b.h, t),
-  radius: lerp(a.radius, b.radius, t),
+  radius: lerp(drawnRadius(a), drawnRadius(b), t),
   vw: lerp(a.vw, b.vw, t),
   vh: lerp(a.vh, b.vh, t),
 })
@@ -192,7 +170,8 @@ let current: Cutout | null = null
 let from: Cutout | null = null
 let to: Cutout | null = null
 let animStart = 0
-let animDuration = GLIDE_MAX_MS
+let animDuration = 0
+let animEase: (p: number) => number = (p) => p
 let animFrame: number | undefined
 
 function stopAnim() {
@@ -203,21 +182,39 @@ function stopAnim() {
   from = to = null
 }
 
-function commit(cutout: Cutout) {
+function varsOf(cutout: Cutout): Record<string, string> {
+  const { x, y, w, h, radius } = cutout
+  return {
+    '--ui-tour-cutout': toPath(cutout),
+    '--ui-tour-cutout-x': `${x}px`,
+    '--ui-tour-cutout-y': `${y}px`,
+    '--ui-tour-cutout-width': `${w}px`,
+    '--ui-tour-cutout-height': `${h}px`,
+    '--ui-tour-cutout-radius': `${Math.max(0, Math.min(radius, w / 2, h / 2))}px`,
+  }
+}
+
+// Mid-glide frames go straight to the element; the ref (and so the template) gets the resting value.
+function commit(cutout: Cutout, settled = true) {
   current = cutout
-  clipPath.value = toPath(cutout)
+  const vars = varsOf(cutout)
+  const style = overlay.value?.style
+  if (style) for (const name in vars) style.setProperty(name, vars[name]!)
+  if (settled) cutoutVars.value = vars
 }
 
 function tick(now: number) {
   animFrame = undefined
   if (!from || !to) return
   const p = animDuration > 0 ? Math.min(1, (now - animStart) / animDuration) : 1
-  commit(p >= 1 ? to : tween(from, to, easeGlide(p)))
+  commit(p >= 1 ? to : tween(from, to, animEase(p)), p >= 1)
   if (p < 1) animFrame = requestAnimationFrame(tick)
   else from = to = null
 }
 
-function update() {
+// `fresh`: the first measure for this target. Later ones (positioning settling the same step)
+// move the destination of a glide on its way and keep its clock.
+function update(fresh = true) {
   if (!props.targetEl) return
   const next = measure()
   // Jump on first paint, during this step's scroll, with the glide off or with reduced motion.
@@ -226,10 +223,16 @@ function update() {
     commit(next)
     return
   }
+  if (!fresh && to) {
+    to = next
+    return
+  }
   from = current
   to = next
   animStart = performance.now()
-  animDuration = glideDuration(current, next)
+  const glide = glideBetween(current, next)
+  animDuration = glide.duration
+  animEase = easingFn(glide.easing)
   if (animFrame === undefined) animFrame = requestAnimationFrame(tick)
 }
 
@@ -255,8 +258,14 @@ watch(
       current = null
       return
     }
+    // Each step: its first measure glides, the rest retarget.
+    let fresh = true
+    const measureStep = () => {
+      update(fresh)
+      fresh = false
+    }
     if (paintedOverlay === overlayEl) {
-      stopAutoUpdate = autoUpdate(target, overlayEl, update)
+      stopAutoUpdate = autoUpdate(target, overlayEl, measureStep)
       return
     }
     // First paint of a freshly-inserted overlay: some compositors don't reflect the real cutout
@@ -267,7 +276,7 @@ watch(
     pendingFrame = requestAnimationFrame(() => {
       pendingFrame = undefined
       paintedOverlay = overlayEl
-      stopAutoUpdate = autoUpdate(target, overlayEl, update)
+      stopAutoUpdate = autoUpdate(target, overlayEl, measureStep)
     })
   },
   { flush: 'post' },

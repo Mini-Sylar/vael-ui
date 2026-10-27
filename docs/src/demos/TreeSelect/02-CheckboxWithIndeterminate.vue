@@ -1,12 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Checkbox, <code>selectionMode="checkbox"</code>, indeterminate parents</h3>
+    <h3>Checkboxes: <code>selectionMode="checkbox"</code>, with indeterminate parents</h3>
     <p class="note">
-      Checking a folder cascades to every enabled file beneath it; checking some-but-not-all of a
-      folder's files renders that folder's own checkbox as indeterminate via the real
-      <code>Checkbox</code> component, the same one DataTable's select-all header uses. The
-      <code>node_modules</code> folder is disabled: its whole subtree is unreachable and never
-      participates in a parent's indeterminate count.
+      Checking a folder checks every enabled file inside it. When only some of a folder's files are
+      checked, the folder's checkbox shows as indeterminate, using the same
+      <code>Checkbox</code> component as DataTable's select-all header. The
+      <code>node_modules</code> folder is disabled: you can't reach anything inside it, and it never
+      counts toward a parent's indeterminate state.
     </p>
     <div class="row">
       <Field label="Files">

@@ -92,7 +92,7 @@ function onKeydown(event: KeyboardEvent) {
 }
 function onFocusChange() {
   const focused = document.activeElement
-  // The dashboard's own menus are teleported out of the stage but still count as inside it.
+  // The dashboard's overlays teleport into its shell; the attribute still covers any that do not.
   focusElsewhere.value =
     !!focused &&
     focused !== document.body &&
@@ -135,7 +135,8 @@ const byText = (selector: string, text: string) => () =>
     el.textContent?.trim().startsWith(text),
   )
 
-// The Combobox's option list is teleported to <body>, outside the stage.
+// The Combobox's option list is teleported into the dashboard shell, so a document-wide lookup
+// finds it wherever it lands.
 const optionByText = (text: () => string) => () =>
   [...document.querySelectorAll('[role="option"]')].find((el) => el.textContent?.trim() === text())
 
@@ -168,7 +169,7 @@ useTicker(
   () => (haloSpin.value += 120),
 )
 
-// The workspace menu is teleported to <body>, outside the stage.
+// The workspace menu is teleported into the dashboard shell; a document-wide lookup finds it either way.
 const menuItemByText = (text: string) => () =>
   [...document.querySelectorAll('.ui-menu-panel [role="menuitem"]')].find((el) =>
     el.textContent?.trim().startsWith(text),
@@ -199,8 +200,8 @@ const STORE_STEPS: AutoplayStep[] = [
   ...SWITCH_TO('vael-ui / main'),
 ]
 
-// Overlays that may render outside the stage (a phone's BottomSheet, the
-// context menu) are looked up in the whole document.
+// Overlays are teleported (the review panel, the ship dialog, the context menu), so they are
+// looked up in the whole document rather than under the stage.
 const anywhere = (selector: string) => () => document.querySelector(selector)
 
 // A pull request is reviewed and merged, the release ships, and a file gets
@@ -419,6 +420,32 @@ const { pressed, visible } = useAutoplayCursor({
   );
 }
 
+/* Touch screens and the stacked layout: the same halo without its blur
+   filters. Each filter re-blurs a screen-sized surface on every frame of the
+   turn, four at once, and a phone GPU falls behind (the page shakes). The
+   aurora gets its soft edge from a mask instead, reaches further out and
+   glows brighter, since the frame sits 1rem from the screen's edge. The
+   rims go: a turning child under a rounded clip costs a full-screen mask
+   pass each, and 1 to 6px bands can't read at this size anyway. */
+@media (hover: none), (max-width: 900px) {
+  .halo-aurora {
+    filter: none;
+    inset: -2.5rem;
+    border-radius: 3rem;
+    opacity: calc(var(--halo-aurora-opacity) * 2);
+    mask-image:
+      linear-gradient(to right, transparent, black 2.5rem, black calc(100% - 2.5rem), transparent),
+      linear-gradient(to bottom, transparent, black 2.5rem, black calc(100% - 2.5rem), transparent);
+    mask-composite: intersect;
+  }
+
+  .halo-outer,
+  .halo-inner,
+  .halo-border {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .halo-layer::before {
     transition: none;
@@ -429,7 +456,9 @@ const { pressed, visible } = useAutoplayCursor({
   position: absolute;
   inset-block-start: 0;
   inset-inline-start: 0;
-  z-index: 2147483647;
+  /* Above the showcase and the header, below the mobile dock (z 20) so the dock is never
+     covered by the scripted cursor. */
+  z-index: 15;
   pointer-events: none;
   opacity: 0;
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.25));

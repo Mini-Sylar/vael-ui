@@ -2,6 +2,7 @@ import '../src/style.css'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, nextTick, shallowRef } from 'vue'
 import InputFixture from './fixtures/InputFixture.vue'
 import Input from '../src/components/Input/Input.vue'
 import Field from '../src/components/Field/Field.vue'
@@ -90,4 +91,91 @@ test('fallthrough attrs land on the native input; class lands on the root frame'
   expect(input.getAttribute('maxlength')).toBe('5')
   expect(input.getAttribute('name')).toBe('username')
   expect(wrapper.getAttribute('maxlength')).toBeNull()
+})
+
+test('#display draws the text over the input, which keeps the caret and the value', async () => {
+  const value = shallowRef('hello')
+  const screen = await render({
+    render: () =>
+      h(
+        Input,
+        {
+          modelValue: value.value,
+          'onUpdate:modelValue': (next: string) => (value.value = next),
+          'aria-label': 'Name',
+        },
+        { display: ({ value }: { value: string }) => h('b', { class: 'mine' }, value) },
+      ),
+  })
+  const input = screen.container.querySelector<HTMLInputElement>('input')!
+  const display = screen.container.querySelector<HTMLElement>('.ui-input-display')!
+  expect(display.querySelector('.mine')!.textContent).toBe('hello')
+  expect(getComputedStyle(input).color).toBe('rgba(0, 0, 0, 0)')
+  expect(getComputedStyle(input).caretColor).not.toBe('rgba(0, 0, 0, 0)')
+  input.focus()
+  await userEvent.keyboard('{End}!')
+  await vi.waitFor(() => expect(display.querySelector('.mine')!.textContent).toBe('hello!'))
+  const inputBox = input.getBoundingClientRect()
+  const displayBox = display.getBoundingClientRect()
+  expect(
+    Math.abs(displayBox.left - inputBox.left - parseFloat(getComputedStyle(input).paddingLeft)),
+  ).toBeLessThan(0.01)
+})
+
+test('#display follows the input as a long value scrolls', async () => {
+  const long = 'a fairly long value that cannot possibly fit inside this narrow input'
+  const screen = await render({
+    render: () =>
+      h(
+        Input,
+        { modelValue: long, style: 'inline-size: 8rem', 'aria-label': 'Long' },
+        { display: ({ value }: { value: string }) => value },
+      ),
+  })
+  const input = screen.container.querySelector<HTMLInputElement>('input')!
+  const track = screen.container.querySelector<HTMLElement>('.ui-input-display-track')!
+  input.focus()
+  input.setSelectionRange(long.length, long.length)
+  input.dispatchEvent(new Event('select'))
+  await vi.waitFor(() => {
+    expect(input.scrollLeft).toBeGreaterThan(0)
+    expect(track.style.translate).toBe(`${-input.scrollLeft}px`)
+  })
+})
+
+test('animated crossfades the placeholder and a value set while you are away, never typing', async () => {
+  const value = shallowRef('')
+  const placeholder = shallowRef('Search orders')
+  const screen = await render(
+    {
+      render: () =>
+        h(Input, {
+          modelValue: value.value,
+          'onUpdate:modelValue': (next: string) => (value.value = next),
+          placeholder: placeholder.value,
+          animated: true,
+          'aria-label': 'Search',
+        }),
+    },
+    { global: { stubs: { transition: false } } },
+  )
+  const input = screen.container.querySelector<HTMLInputElement>('input')!
+  const display = () => screen.container.querySelector<HTMLElement>('.ui-input-display')
+  expect(display()!.textContent).toBe('Search orders')
+  expect(input.getAttribute('data-ui-display')).toBe('placeholder')
+  // AnimatedText loads after mount; until then the same text shows as plain markup.
+  await import('../src/components/AnimatedText/AnimatedText.vue')
+  await new Promise((resolve) => setTimeout(resolve))
+  placeholder.value = 'Search tasks'
+  await nextTick()
+  expect(display()!.querySelectorAll('.ui-animated-text-value')).toHaveLength(2)
+
+  input.focus()
+  await userEvent.keyboard('lamp')
+  await vi.waitFor(() => expect(display()).toBeNull())
+  expect(input.hasAttribute('data-ui-display')).toBe(false)
+
+  input.blur()
+  await vi.waitFor(() => expect(display()!.textContent).toBe('lamp'))
+  expect(input.getAttribute('data-ui-display')).toBe('value')
 })

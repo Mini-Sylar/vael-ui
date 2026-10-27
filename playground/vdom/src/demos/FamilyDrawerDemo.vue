@@ -6,12 +6,12 @@
       <code>&lt;Button&gt;</code> only — every animated property lives on the exposed
       <code>panelEl</code> itself, nothing is delegated to inner wrappers. The sheet slides in from
       fully below the viewport edge on a bouncy spring — measured distance, no fade — and slides
-      back out (force-mount + <code>beforeClose(done)</code>, so Escape and backdrop-click get the
-      same slide exit), and switching views springs the panel's own <code>block-size</code> between
-      measured heights while the content crossfades with a blur+drift mask. The <code>ui</code> prop
-      reaches every layer this needs: the overlay (blur ramp), the panel (radius + neutralizing the
-      built-in maximize transition so the spring owns <code>block-size</code>), and the body
-      (padding removed so each view carries its own).
+      back out (<code>motion</code>'s <code>enter</code>/<code>leave</code> hooks, so Escape and
+      backdrop-click get the same slide exit), and switching views springs the panel's own
+      <code>block-size</code> between measured heights while the content crossfades with a
+      blur+drift mask. The <code>ui</code> prop reaches every layer this needs: the overlay (blur
+      ramp), the panel (radius + neutralizing the built-in maximize transition so the spring owns
+      <code>block-size</code>), and the body (padding removed so each view carries its own).
     </p>
 
     <Button @click="openDrawer">Start family plan</Button>
@@ -19,8 +19,7 @@
     <Dialog
       ref="drawer"
       v-model:open="open"
-      force-mount
-      :before-close="beforeClose"
+      :motion="look"
       position="bottom"
       :show-close="false"
       :scroll-fade="false"
@@ -127,10 +126,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, shallowRef, useTemplateRef } from 'vue'
+import { nextTick, shallowRef, useTemplateRef } from 'vue'
 import { animate } from 'motion-v'
 import { Button, Dialog } from 'vael-ui'
-import type { DialogProps } from 'vael-ui'
+import type { DialogExposed, DialogMotion, DialogProps } from 'vael-ui'
 
 interface SpringConfig {
   type: 'spring'
@@ -173,14 +172,13 @@ const open = shallowRef(false)
 const currentStep = shallowRef<Step>('plan')
 const selectedPlan = shallowRef<Plan | null>(null)
 const views = shallowRef<ViewEntry[]>([{ step: 'plan', entering: false, leaving: false }])
-const overlayVisible = shallowRef(false)
-const dialogUi = computed<DialogProps['ui']>(() => ({
-  overlay: overlayVisible.value ? 'family-overlay family-overlay--visible' : 'family-overlay',
+const dialogUi: DialogProps['ui'] = {
+  overlay: 'family-overlay',
   panel: 'family-panel',
   body: 'family-body',
-}))
+}
 
-const drawer = useTemplateRef('drawer')
+const drawer = useTemplateRef<DialogExposed>('drawer')
 
 // A sheet arriving on a mouse click shouldn't open with a focus ring on its
 // × button — land focus on the panel itself (tabindex=-1, outline: none);
@@ -268,90 +266,58 @@ function renderPanel(panel: HTMLElement) {
   panel.style.transform = `translateY(${(1 - progress) * slideDistance}px)`
 }
 
-// onSettle only fires if this animation is still the active one — a stopped,
-// superseded one must never call a stale done() after a reversal.
 function animatePanelTo(
+  panel: HTMLElement,
   target: number,
   options: SpringConfig | { duration: number; ease: typeof EASE_DRAWER },
-  onSettle?: () => void,
 ) {
-  const panel = drawer.value?.panelEl
-  if (!panel) {
-    onSettle?.()
-    return
-  }
   panelSpring?.stop()
-  const controls = animate(progress, target, {
+  renderPanel(panel)
+  panelSpring = animate(progress, target, {
     ...options,
     onUpdate: (v: number) => {
       progress = v
       renderPanel(panel)
     },
   })
-  panelSpring = controls
-  if (onSettle) {
-    controls.finished.then(() => {
-      if (panelSpring === controls) onSettle()
-    })
-  }
+  return panelSpring
 }
 
-async function openDrawer() {
-  const dialog = drawer.value
-  if (dialog?.isClosing) {
-    dialog.cancelClose()
-    overlayVisible.value = true
-    animatePanelTo(1, PANEL_SPRING)
-    return
-  }
+function openDrawer() {
   if (open.value) return
-  currentStep.value = 'plan'
-  selectedPlan.value = null
-  views.value = [{ step: 'plan', entering: false, leaving: false }]
-  const panel = dialog?.panelEl
-  progress = reducedMotion() ? 1 : 0
-  if (panel) {
-    panel.style.blockSize = ''
-    // Real geometry isn't measurable while v-show-hidden — park it safely
-    // off-screen, measure after the DOM patch (pre-paint), then re-render
-    // from the exact distance.
-    if (!reducedMotion()) panel.style.transform = 'translateY(100vh)'
+  // Reopened mid-exit, it keeps the view it was closing on
+  if (drawer.value?.phase !== 'leaving') {
+    progress = 0
+    currentStep.value = 'plan'
+    selectedPlan.value = null
+    views.value = [{ step: 'plan', entering: false, leaving: false }]
   }
   open.value = true
-  await nextTick()
-  if (panel) {
-    panel.style.transform = ''
-    slideDistance = window.innerHeight - panel.getBoundingClientRect().top
-    renderPanel(panel)
-  }
-  if (!reducedMotion()) animatePanelTo(1, PANEL_SPRING)
-  // The overlay fades via CSS class, so its start state must paint once
-  // before the class flips — only it waits; the spring is already running.
-  await nextFrame()
-  await nextFrame()
-  if (open.value) overlayVisible.value = true
 }
 
-function beforeClose(done: () => void) {
-  overlayVisible.value = false
-  const panel = drawer.value?.panelEl
-  if (!panel || reducedMotion()) {
-    done()
-    return
-  }
-  heightSpring?.stop()
-  panel.style.blockSize = ''
-  // Height morphs may have moved the resting top since open — re-derive the
-  // slide distance from the untransformed top, then remap progress so the
-  // panel's current visual position is unchanged (matters when Escape lands
-  // mid-entrance).
-  const currentY = (1 - progress) * slideDistance
-  slideDistance = window.innerHeight - (panel.getBoundingClientRect().top - currentY)
-  progress = 1 - currentY / slideDistance
-  animatePanelTo(0, { duration: 0.3, ease: EASE_DRAWER }, () => {
-    panel.style.transform = ''
-    done()
-  })
+const look: DialogMotion = {
+  // The backdrop fades on its own; the hooks below own the panel
+  initial: { overlay: { opacity: 0 } },
+  exit: { overlay: { opacity: 0 } },
+  duration: 200,
+  easing: 'var(--ui-ease-out)',
+  enter({ panel }) {
+    // Measured before the first transform, with the panel at rest
+    slideDistance = window.innerHeight - panel.getBoundingClientRect().top
+    return animatePanelTo(panel, 1, PANEL_SPRING)
+  },
+  leave({ panel }) {
+    heightSpring?.stop()
+    panel.style.blockSize = ''
+    // Height morphs may have moved the resting top since open — re-derive the
+    // slide distance from the untransformed top, then remap progress so the
+    // panel's current visual position is unchanged (matters when Escape lands
+    // mid-entrance).
+    const currentY = (1 - progress) * slideDistance
+    slideDistance = window.innerHeight - (panel.getBoundingClientRect().top - currentY)
+    progress = 1 - currentY / slideDistance
+    return animatePanelTo(panel, 0, { duration: 0.3, ease: EASE_DRAWER })
+  },
 }
 </script>
 
@@ -480,11 +446,6 @@ function beforeClose(done: () => void) {
      re-blurs the whole backdrop every frame of the fade. */
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
-  opacity: 0;
-  transition: opacity 200ms var(--ui-ease-out);
-}
-.family-overlay--visible {
-  opacity: 1;
 }
 .family-panel {
   border-radius: 1.5rem;
@@ -496,11 +457,5 @@ function beforeClose(done: () => void) {
 }
 .family-body {
   padding: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .family-overlay {
-    transition: opacity 120ms ease;
-  }
 }
 </style>

@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Interactive, <code>as="a"</code> or the <code>interactive</code> prop</h3>
+    <h3>Interactive: <code>as="a"</code> or <code>interactive</code></h3>
     <p class="note">
-      <code>as="a"</code>/<code>as="button"</code> implies the hover/press affordance automatically;
-      <code>interactive</code> adds the same feedback to a plain non-interactive tag when the whole
-      card acts as a single control.
+      <code>as="a"</code> or <code>as="button"</code> adds hover and press feedback on its own.
+      <code>interactive</code> adds the same feedback to any other tag, when the whole card acts as
+      one control.
     </p>
     <div class="row">
       <Card as="a" href="https://vuejs.org" target="_blank" rel="noopener" title="Read the docs">

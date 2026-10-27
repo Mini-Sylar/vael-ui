@@ -42,6 +42,31 @@
   .ui-input-el::placeholder {
     color: var(--ui-text-muted);
   }
+  /* #display and animated draw the text over the input; the input keeps the caret. */
+  .ui-input-display {
+    position: absolute;
+    overflow: hidden;
+    white-space: pre;
+    color: var(--ui-text);
+    pointer-events: none;
+  }
+  .ui-input-display-track {
+    display: inline-block;
+    min-inline-size: 100%;
+  }
+  .ui-input-display-placeholder {
+    color: var(--ui-text-muted);
+  }
+  .ui-input-el[data-ui-display]::placeholder {
+    color: transparent;
+  }
+  .ui-input-el[data-ui-display='all'] {
+    color: transparent;
+    caret-color: var(--ui-text);
+  }
+  .ui-input-el[data-ui-display='value'] {
+    color: transparent;
+  }
   /* WebKit paints its own yellow/blue fill behind autofilled inputs and ignores a plain `background` override — an opaque inset shadow the size of the whole field is the only thing that actually beats it. Tokens, not literal colors, so this still matches the surface in dark mode; the absurd transition-delay is the standard trick to stop Chrome flashing its own color for one frame before this rule's shadow paints over it. */
   .ui-input-el:-webkit-autofill,
   .ui-input-el:-webkit-autofill:hover,
@@ -59,6 +84,59 @@
     gap: 0.25rem;
     flex: none;
     color: var(--ui-text-muted);
+  }
+  /* clearable: Select's clear button, a 24px target with a circle painted behind the icon. */
+  .ui-input-clear {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    box-sizing: border-box;
+    inline-size: max(24px, 1.5em);
+    block-size: max(24px, 1.5em);
+    margin-block: min(0px, (1.5em - 24px) / 2);
+    margin-inline-start: min(0px, 1.5em - 24px);
+    padding: 0;
+    padding-inline-start: max(0px, 24px - 1.5em);
+    border: none;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition: transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-input-clear::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset-block: 0;
+    inset-inline-end: 0;
+    margin-block: auto;
+    inline-size: 1.5em;
+    block-size: 1.5em;
+    border-radius: 50%;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-input-clear svg {
+    inline-size: 0.85em;
+    block-size: 0.85em;
+  }
+  .ui-input-clear:active {
+    transform: scale(0.96);
+  }
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-input-clear:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-input-clear:hover {
+      color: var(--ui-text);
+    }
+    .ui-input-clear:hover::before {
+      background: var(--ui-muted);
+    }
   }
   /* Pointer focus: the 1px border quietly turns primary (transitioned). The full ring is reserved for keyboard travel — data-focus-visible, set from the tracked input modality (useFocusVisible.ts), because native :focus-visible matches text controls on mouse clicks too. */
   .ui-input:focus-within {
@@ -83,6 +161,15 @@
   }
   .ui-input--disabled .ui-input-el {
     cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-input-clear:is(.ui-clear-enter-active, .ui-clear-leave-active) {
+      transition: opacity var(--ui-duration-press) ease-out;
+    }
+    .ui-input-clear:is(.ui-clear-enter-from, .ui-clear-leave-to) {
+      transform: none;
+    }
   }
 
   @media (hover: none) and (pointer: coarse) {

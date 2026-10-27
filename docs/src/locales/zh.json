@@ -1,33 +1,54 @@
 {
   "animation": {
-    "beforeCloseIntro": "适用于命令式动画库：传入一个接收 <code>done</code> 的函数。在你调用它之前，组件会保持挂载，并处于 <code>isClosing</code> 状态。",
-    "beforeCloseTitle": "关闭前（完成）",
-    "forceMountIntro": "关闭时保持内容挂载，而不是用 <code>v-if</code> 移除，并关闭内置过渡。打开时为暴露的 <code>panelEl</code> 做动画，再配合 <code>beforeClose(done)</code> 实现你自己的退场。",
-    "forceMountTitle": "强制安装",
-    "gsapExampleIntro": "<code>beforeClose(done)</code> 加上公开的 <code>panelEl</code> 引用，因此补间在删除之前在真实面板元素上运行：",
-    "gsapExampleTitle": "示例：GSAP、对话框",
-    "intro": "每个带动画的组件都自带简单的 CSS 过渡，并且都能让你接管：用 GSAP、motion-v，或完全不要动画。可用的钩子取决于组件的功能。",
-    "motionCssIntro": "将其设为 <code>false</code> 可关闭内置的 CSS 过渡。组件仍会切换状态，只是立即完成，DOM 的动画交由你来处理。 在 <code>ConfigProvider</code> 上，<code>:motion-css=\"false\"</code> 表示完全不要动画：其中的所有内容都会立即打开、关闭和离开，你无需处理任何事情。",
-    "motionCssTitle": "运动CSS",
-    "motionVExampleIntro": "<code>forceMount</code> 把面板交给你。打开时为 <code>panelEl</code> 做入场动画，退场在 <code>beforeClose(done)</code> 中执行，在你调用 <code>done()</code> 之前面板会一直显示：",
-    "motionVExampleTitle": "示例：motion-v、Popover",
-    "title": "带来你自己的动画",
-    "kindsTitle": "各类组件的钩子",
+    "title": "自定义动效",
+    "intro": "每个会动画的组件都自带内置动效，并提供 <code>motion</code> 属性。你可以保留内置动效、关闭它、修改它的数值，或者用 GSAP、motion 或 Web Animations API 来驱动它。",
+    "builtInTitle": "内置动效",
+    "builtInIntro": "不设置 <code>motion</code> 时，组件使用内置动效。大多数应用这样就够了。设为 <code>false</code> 后，组件会立即切换状态：照常打开、关闭和移除条目，只是没有动画。",
+    "builtInProvider": "要在所有地方关闭动效（例如截图测试），在 <code>ConfigProvider</code> 上设置 <code>:motion=\"false\"</code>。在减少动态效果模式下，内置动效保留淡入淡出，去掉位移。",
+    "kindsTitle": "各组件接受什么",
     "kindsKind": "类型",
     "kindsComponents": "组件",
-    "kindsHooks": "钩子",
+    "kindsSet": "属性和键",
     "kindsOverlayTitle": "打开和关闭的组件",
     "kindsInPlaceTitle": "原地变化的组件",
     "kindsListTitle": "条目进出的组件",
-    "kindsCheck": "组件的 Props、Slots 和 Exposed 表会准确列出它提供的内容。",
+    "kindsCheck": "每个组件都导出自己的 <code>motion</code> 类型（如 <code>DialogMotion</code>），列出它的部件和状态。部件名与它的 <code>ui</code> 键一致。对于列表，括号中是每个条目收到的部件。",
+    "valuesTitle": "修改数值",
+    "valuesIntro": "传入一个对象，用数据描述动效。<code>initial</code> 指定每个部件从哪里进入，<code>exit</code> 指定它去往哪里。键是部件名，值是 CSS 属性，另加 <code>x</code>、<code>y</code> 和 <code>blur</code>。",
+    "valuesTiming": "时间方面，给出 <code>spring</code>，或者给出以毫秒为单位的 <code>duration</code> 加 <code>easing</code>，二者只能选一。弹簧的 <code>damping</code> 为 1 时不会冲过头，数值越小越会冲过头。<code>response</code> 大致是到达所需的秒数。不写 <code>exit</code> 时，部件会淡出并略微缩小。",
+    "hooksTitle": "使用你自己的库",
+    "hooksIntro": "数值不够用时，添加 <code>enter(parts, ctx)</code> 和 <code>leave(parts, ctx)</code> 钩子。<code>parts</code> 按部件名包含组件的元素。直接返回你的库返回的东西：Web Animations 的 <code>Animation</code>、GSAP 的 tween 或 timeline、motion 的 <code>animate()</code> 返回的控制对象，或一个 Promise。组件会等它完成，再结束打开或移除元素。",
+    "hooksInterrupt": "如果动效被打断，例如还在打开时就被关闭，组件会用 <code>kill</code>、<code>stop</code> 或 <code>cancel</code> 停止你返回的动画，并中止 <code>ctx.signal</code>。在减少动态效果模式下，钩子不会运行。设置 <code>reducedMotion: 'run'</code> 可以照常运行，并自行检查 <code>ctx.reducedMotion</code>。",
+    "gsapExampleTitle": "GSAP",
+    "gsapExampleIntro": "返回一个 timeline。这里的 Dialog 让遮罩淡入、面板滑入：",
+    "motionExampleTitle": "motion",
+    "motionExampleIntro": "返回 <code>animate()</code> 的控制对象，从 <code>motion-v</code> 或 <code>motion</code> 导入。这里的 Popover 面板以弹簧效果出现：",
+    "waapiExampleTitle": "Web Animations API",
+    "waapiExampleIntro": "不需要任何库：<code>element.animate()</code> 返回一个 <code>Animation</code>。这里的 Message 在关闭时向一侧滑出：",
+    "listsTitle": "列表",
+    "listsIntro": "Toaster、Timeline、FileUpload、SpeedDial 和 DataTable 的条目使用同样的 <code>motion</code> 对象。CommandPalette 写在 <code>items</code> 下，Select、Combobox 和 CascadeSelect 写在 <code>chips</code> 下。数值和钩子作用于每个条目。钩子收到一个条目的部件，如 <code>{'{'} toast {'}'}</code>、<code>{'{'} item {'}'}</code>、<code>{'{'} row {'}'}</code>、<code>{'{'} action {'}'}</code> 或 <code>{'{'} chip {'}'}</code>，另有 <code>ctx.index</code> 供你自己做错开。",
+    "listsOptions": "列表还接受三个键。<code>stagger</code> 是同时到达的条目之间相隔的秒数。<code>leaving</code> 决定离开条目的位置如何处理：默认的 <code>'pop'</code> 会让其他条目立即补上空位；<code>'hold'</code> 会让条目保留位置，直到它完全离开。<code>appear: true</code> 会在列表挂载时也为已有条目播放动画。",
+    "listsHooksIntro": "使用钩子时，Timeline 的每一步都会收到它的标记、连接线和内容：",
+    "listsEvents": "旧的列表事件，如 <code>{'@'}item-enter</code> 和 <code>{'@'}item-leave</code>，已被移除。请把这部分代码移到 <code>enter</code> 和 <code>leave</code> 中。",
+    "guardsTitle": "beforeClose 只做判断，不做动画",
+    "guardsIntro": "<code>beforeClose</code> 是一个守卫。返回 <code>true</code> 关闭，返回 <code>false</code> 保持打开，或返回二者之一的 Promise。Promise 未完成时，浮层保持打开且静止不动。确认只需一行：",
+    "guardsExit": "守卫会收到关闭的原因 <code>reason</code>。它不会运行你的退场动画，退场请写在 <code>motion.leave</code> 中。<code>done()</code> 回调已被移除。",
+    "forceMountTitle": "forceMount",
+    "forceMountIntro": "<code>forceMount</code> 让内容在关闭时仍保持挂载，并用 <code>v-show</code> 切换。当内容必须留在 DOM 中时使用它，例如保留状态或测量尺寸。以这种方式保留的内容不会播放内置动效，因此会立即显示和隐藏。要为它添加动画，请使用 <code>motion</code> 钩子。",
+    "appWideTitle": "整个应用使用一种风格",
+    "appWideIntro": "把风格传给 <code>ConfigProvider</code>，一次设定动效。角色键（如 <code>overlay</code> 和 <code>list</code>）作用于该类的所有组件。组件键（如 <code>dialog</code> 和 <code>toaster</code>）覆盖其角色的设置。组件自己的 <code>motion</code> prop 优先于二者。<code>version: 1</code> 标明格式，让保存下来的风格在以后的版本中继续可用。",
+    "vAnimateTitle": "用 v-animate 为你自己的元素添加动画",
+    "vAnimateIntro": "<code>v-animate</code> 指令让你自己的元素也拥有同样的动效。<code>v-animate=\"{'{'} initial: {'{'} opacity: 0, y: 8 {'}'} {'}'}\"</code> 会在元素挂载时播放。卸载时，它沿来时的方向离开，更轻、更快一些。",
+    "vAnimateNamed": "在组件内部加上名字：<code>v-animate:rows</code> 会作为名为 <code>rows</code> 的目标加入该组件的动效。元素随面板一起进入、一起离开。数值可以写在元素上，也可以写在组件 <code>motion</code> 的 <code>targets.rows</code> 下。",
     "exposedTitle": "暴露的元素",
-    "exposedIntro": "给组件加上模板 ref，就能拿到它真实的 DOM 元素：根元素 <code>el</code>，以及 <code>panelEl</code>、<code>listEl</code>、<code>thumbEl</code>、<code>checkEl</code> 等部件。用 <code>motionCss</code> 关闭内置过渡，再用任意库为这些元素做动画。每个组件的 Exposed 表列出了它提供的元素。",
+    "exposedIntro": "要完全控制某个部件，设置 <code>:motion=\"false\"</code>，在组件上加模板 ref，然后为它的 DOM 元素做动画：根元素是 <code>el</code>，部件如 <code>checkEl</code> 或 <code>thumbEl</code>。每个组件的 Exposed 表列出了它提供的元素。",
     "exposedExampleIntro": "在这个例子中，每次勾选复选框时，勾号都会用 GSAP 弹出："
   },
   "component": {
     "code": "代码",
     "hideCode": "隐藏代码",
-    "copied": "复制了！",
+    "anatomy": "结构",
+    "copied": "已复制",
     "copy": "复制",
     "examples": "示例",
     "exposed": "裸露",
@@ -43,118 +64,142 @@
     "slots": "老虎机",
     "vapor": "Vapor",
     "vaporUnavailable": "该组件还没有 Vapor 演示",
-    "vdom": "Vue DOM",
+    "vdom": "VDOM",
     "events": "活动",
-    "onThisPage": "本页内容"
+    "onThisPage": "本页内容",
+    "headless": "无头可组合项",
+    "motion": "动效",
+    "new": "新",
+    "accessibility": "无障碍",
+    "a11yPattern": "遵循 WAI-ARIA Authoring Practices Guide 中的 {pattern} 模式。",
+    "a11yKey": "按键",
+    "a11yAction": "操作",
+    "a11yNoKeys": "它没有自己的键盘交互。",
+    "highlights": "精选",
+    "moreExamples": "更多示例"
   },
   "descriptions": {
-    "Accordion": "一堆可折叠的部分，打开一个部分就可以关闭其他部分。",
-    "AccordionItem": "Accordion 中的一个可折叠区块。请始终在 Accordion 内使用。",
-    "Avatar": "代表人物或实体的圆形或方形图片或姓名缩写。",
-    "Badge": "覆盖在另一个元素角上的小点、计数或标签。",
-    "BottomSheet": "从底部边缘向上滑出的面板，适用于触屏布局。",
-    "Button": "具有变体、大小、加载状态和内置图标槽的可点击操作。",
-    "Calendar": "用于选择单个日期或日期范围的月视图网格。",
-    "Card": "用于对相关内容进行分组的带边框容器，具有可选的标题和操作。",
-    "CascadeSelect": "用于通过嵌套选项选择路径的下拉菜单，一次一层。",
-    "Checkbox": "用于单个“是/否”选择的复选框，可选支持不确定状态。",
-    "Chip": "用于选定过滤器、标签或多选值的可移动紧凑令牌。",
-    "Collapsible": "用于可选或次要内容的单个显示/隐藏区块。",
-    "Column": "定义 DataTable 的一列。请始终在 DataTable 内使用。",
-    "Combobox": "一种可搜索的下拉菜单，也接受自由文本，因此自动完成和标记是其中一个组件。",
-    "ConfigProvider": "包裹你的应用，为其中的所有组件提供主题、国际化和类名合并。",
-    "ContextMenu": "右键单击指针时打开的菜单，取代了本机浏览器菜单。",
-    "Tour": "引导式演示，每次高亮一个元素并在旁边显示提示框，适用于新手引导和产品导览。",
-    "DataTable": "支持排序、选择、调整列宽和虚拟化的数据表格，由 Column 组件构成。",
-    "DatePicker": "与日历弹出框配对的文本字段，用于选择日期或范围。",
-    "Dial": "用于选取数值的圆形拖动控件，如音量旋钮。",
-    "Dialog": "模态浮层，在用户响应或关闭之前会阻止对页面的操作。",
-    "Dock": "macOS 风格的一排图标，当指针接近它们时会放大。",
-    "Drawer": "从视口边缘滑入的面板，用于导航或侧面内容。",
-    "Field": "用标签、帮助文本和错误消息包装表单控件，并为您连接在一起。",
-    "FileUpload": "用于选择文件的拖放区和文件列表，支持校验。",
-    "Input": "具有大小、状态以及图标或提示槽的单行文本字段。",
-    "InputNumber": "带有递增、递减控件和格式感知解析的数字输入框。",
-    "Kbd": "设置键盘快捷键的样式，使其读起来像物理键。",
-    "Knob": "用于在固定弧线内选取数值的旋转控件。",
-    "Loader": "表示正在处理中的小型加载指示器。",
-    "Menu": "从触发器打开的操作下拉列表，具有完整的键盘导航。",
-    "MenuList": "将 Menu 的行渲染在页面流中而不是下拉菜单里，适用于常驻侧边栏导航。",
-    "Message": "状态文本的内嵌横幅：信息、成功、警告或错误。",
-    "OtpInput": "一排单字符框，用于一次性代码，具有粘贴和自动前进功能。",
-    "Pagination": "页码控件用于跨页拆分长列表或表格。",
-    "Popover": "锚定到触发元素的浮动面板，用于菜单、表单或额外细节。",
-    "Progress": "显示任务进度的进度条，支持确定和不确定两种状态。",
-    "PullToRefresh": "滚动容器顶部的下拉手势可触发刷新。",
-    "Radio": "互斥选项集合中的一个选项。请始终在 RadioGroup 内使用。",
-    "RadioGroup": "将一组 Radio 按钮组合在一起，使同一时间只能选中一个。",
-    "Resizable": "在最小和最大尺寸之间调整面板大小的拖动手柄。",
-    "Select": "用于从列表中选择一个或多个值的下拉框，支持筛选和虚拟化。",
-    "SelectButton": "用于从简短列表中选择一个或多个值的分段控件。",
-    "Separator": "将内容划分为不同分组的细线，可附带标签。",
-    "Skeleton": "在内容加载期间代替其显示的占位形状。",
-    "Slider": "沿轨道拖动一个手柄（或两个手柄，用于指定范围）以选取数值。",
-    "SpeedDial": "浮动操作按钮，可根据需要展开为辅助操作。",
-    "SplitButton": "主要操作与 V 形融合，在下拉菜单中打开备用操作。",
-    "SwipeToReveal": "滑动某个项目即可显示其下方的操作，就像本机移动列表行一样。",
-    "Switch": "类似于物理开关的开/关切换，用于立即生效的设置。",
-    "Tabs": "在内容面板之间切换，并在活动选项卡下有一个滑动指示器。",
-    "Tag": "用于对内联项目进行分类或注释的紧凑标签。",
-    "Textarea": "可以随内容自动增长的多行文本字段。",
-    "Toaster": "渲染 toast() 创建的通知。只需在应用中的任意位置挂载一次。",
-    "Toolbar": "用于对相关操作进行分组的水平条，具有移动键盘焦点。",
-    "Tooltip": "悬停或焦点时出现的小浮动标签，用于解释元素。",
-    "Tree": "用于展示层级数据的可折叠缩进列表，支持单选或多选。",
-    "TreeSelect": "其面板为树的下拉列表，用于从层次结构中选取一个或多个节点。",
-    "PasswordInput": "带有显示切换和要求提示的密码字段。",
-    "Sortable": "可拖动排序的列表，不仅支持指针操作，也支持键盘操作。",
-    "BreadcrumbItem": "Breadcrumb 路径中的一个链接或当前页面。",
-    "BreadcrumbSeparator": "两个 BreadcrumbItem 之间的分隔符。除非传入自定义内容，否则显示箭头图标。",
-    "Rating": "点击、拖动或使用方向键在一排星星上选择数值，可选半星精度。",
-    "Timeline": "由线条连接的有序步骤列表。每个步骤可以包含任意内容。"
+    "Accordion": "一组可折叠区块，打开一个时可以关闭其他区块。用于常见问题或拆分成多个区块的长内容。",
+    "AccordionItem": "Accordion 中的一个可折叠区块。只在 Accordion 内使用。",
+    "Avatar": "代表人物或实体的圆形或方形图片或姓名缩写。用于列表、评论和页眉中的名字旁边。",
+    "Badge": "表示状态或新内容的小圆点、计数或标签。放在 Button 或 Avatar 的 badge 插槽中，可固定在角上。",
+    "BottomSheet": "从底部边缘向上滑出、并停靠在你设定高度的面板。用于触屏，用户可以向上、向下拖动或拖走关闭。",
+    "Button": "用于执行操作的按钮，支持变体、尺寸、图标和加载状态。适用于任何操作；当破坏性操作需要长按确认时，加上 hold。",
+    "Calendar": "用于选择单个日期或日期范围的月视图网格。当日历需要常驻页面时使用。",
+    "Card": "用于对相关内容分组的带边框容器，可选标题和操作。用于摘要、设置项或指向更多内容的链接。",
+    "CascadeSelect": "逐层选择嵌套选项路径的下拉框。用于会逐级细分的分类或地点。",
+    "Checkbox": "用于单个“是/否”选择的复选框，可选支持不确定状态。当每个选择彼此独立时使用。",
+    "Chip": "用于已选筛选条件、标签或值的紧凑标记，可选可移除。用于展示用户可以撤回的选择。",
+    "Collapsible": "显示和隐藏其内容的单个区块。用于可选或次要内容。",
+    "Column": "DataTable 的一列。只在 DataTable 内使用。",
+    "Combobox": "可搜索的下拉框，也接受自由文本。用于自动补全，或用于边输入边创建的标签。",
+    "ConfigProvider": "为其中所有组件设置主题、尺寸、语言、类名合并和动效的包裹组件。在应用根部使用它，一次性完成设置。",
+    "ContextMenu": "右键单击时在指针处打开的菜单，在触屏上则通过长按打开。用于对指针下的项目执行操作。",
+    "Tour": "引导式演示，每次高亮一个元素并在旁边显示提示框。用于新手引导和产品导览。",
+    "DataTable": "支持排序、选择、调整列宽和虚拟化的数据表格，由 Column 组件构成。用于需要排序、选择和比较的记录。",
+    "DatePicker": "带日历弹出框的文本字段，用于选择日期、日期范围或时间。用于需要输入或选择日期的表单。",
+    "Dial": "转动以改变数值的转轮，除非设置 min 或 max，否则没有尽头。用于无界数值和精细调整。",
+    "Dialog": "覆盖在页面上的模态窗口，会一直等待用户响应或关闭它。用于需要先得到回答的任务或决定。",
+    "Dock": "macOS 风格的一排图标，指针或手指经过时会放大。用于应用式导航或启动器。",
+    "Drawer": "从屏幕边缘滑入的面板。用于页面旁的导航、筛选或详情。",
+    "Field": "把标签、帮助文本和错误消息连接到表单控件的包裹组件。用它为控件添加标签，无需自己连接 id 和 ARIA 属性。",
+    "FileUpload": "用于选择文件的拖放区和文件列表，支持校验。用于表单中的附件和上传。",
+    "Input": "单行文本字段，支持尺寸、状态，以及用于图标或按钮的起始和结束插槽。用于姓名、邮箱、搜索和其他短文本。",
+    "InputNumber": "带步进按钮、能按语言环境格式化和解析的数字字段。用于数量、价格和百分比。",
+    "Kbd": "样式像实体按键的键盘按键或快捷键。用于提示和帮助文本。",
+    "AnimatedNumber": "变化的数位会滚动到新值的数字，可按任意语言环境格式化。用于屏幕上会变化的计数、价格和统计数据。",
+    "AnimatedText": "以短暂的淡入和上移切换到下一段文字，同时平滑调整宽度，旁边的内容不会跳动。用于原地变化的标签和状态。",
+    "Knob": "在固定弧线内设置数值的旋转控件。用于有界数值，例如音量或电平。",
+    "Loader": "五种样式的小型加载指示器，尺寸随周围文字调整。用于表示正在处理中。",
+    "Menu": "从触发器打开的操作下拉列表，支持完整的键盘导航。用于收在一个按钮后面的一组操作。",
+    "MenuList": "把 Menu 的行渲染在页面中，而不是下拉菜单里。用于常驻屏幕的侧边栏或设置导航。",
+    "Message": "用于状态文本的内嵌横幅：信息、成功、警告或错误。用于常驻页面的提示。",
+    "OtpInput": "一排用于一次性验证码的单字符框，支持粘贴和自动跳到下一格。用于登录和验证码。",
+    "Editable": "点击后变为输入框、按 Enter 或失焦时保存的文本。用于就地重命名。",
+    "ColorPicker": "一个色块，点击后打开取色器：饱和度与明度平面、色相滑块、十六进制输入框、可选预设，以及浏览器支持时的吸管工具。当允许任意颜色而不只是几种时使用。",
+    "Pagination": "把长列表或表格拆分到多页的页码控件。当用户需要跳到特定页面时使用。",
+    "Popover": "锚定到触发元素的浮动面板。用于简短表单、选择器或额外细节。",
+    "Progress": "显示任务进度（确定或不确定）的进度条或圆环，也可显示整体中带图例的堆叠份额。用于上传、长任务或存储空间明细。",
+    "PullToRefresh": "滚动容器顶部的下拉手势，用于触发刷新。用于触屏上的信息流和列表。",
+    "Radio": "一组中只能选中一个的选项之一。只在 RadioGroup 内使用。",
+    "RadioGroup": "一组 Radio 选项，同一时间只能选中一个。用于应全部保持可见的简短选项列表。",
+    "Resizable": "在最小和最大尺寸之间调整面板大小的拖动手柄。用于侧边栏和分栏视图。",
+    "Select": "从列表中选择一个或多个值的下拉框，支持筛选和虚拟化。当列表太长、不适合单选框或 SelectButton 时使用。",
+    "SelectButton": "从简短列表中选择一个或多个值的分段控件。当所有选项能放在一行时，用它代替单选框或复选框。",
+    "Separator": "将内容分组的细线，可附带标签。用于区块之间，或带上“或”之类的标签放在两个选择之间。",
+    "Skeleton": "在内容加载期间代替其显示的占位形状。当数据到达前已知布局时使用。",
+    "Slider": "一条轨道，用一个手柄选取数值，或用两个手柄选取范围。用于通过拖动选取数字。",
+    "SpeedDial": "可展开为辅助操作的浮动操作按钮。当屏幕上有一个主按钮和几个相关操作时使用。",
+    "SplitButton": "主操作与一个 V 形箭头相连，箭头在下拉菜单中打开相关操作。当某个操作是常用选择，而另外几个操作应放在旁边时使用。",
+    "SwipeToReveal": "滑动即可显示其下方操作的行，就像原生移动端列表行一样。用于触屏上的归档或删除等操作。",
+    "Switch": "样式类似物理开关的开/关切换。用于立即生效的设置。",
+    "Tabs": "一排在面板之间切换的选项卡，活动选项卡下有滑动指示器。用于把相关内容拆分为同一页面上的多个视图。",
+    "Tag": "对项目进行内联分类或注释的紧凑标签。用于状态、分类和关键词。",
+    "Textarea": "可随内容增长的多行文本字段。用于评论、备注和其他长文本。",
+    "Toaster": "显示 toast() 创建的通知的容器。只需在应用中的任意位置挂载一次。",
+    "Toolbar": "一条相关控件栏，支持方向键移动焦点，放不下的内容收进溢出菜单。用于为一个视图或一个编辑器组织操作。",
+    "Tooltip": "悬停或聚焦时出现的简短标签。用于为图标按钮命名或解释控件。",
+    "Tree": "用于嵌套数据的可折叠缩进列表，支持单选或多选。用于文件浏览器和嵌套导航。",
+    "TreeSelect": "面板中为 Tree 的下拉框，用于从层级结构中选取一个或多个节点。当表单字段的值来自嵌套数据时使用。",
+    "PasswordInput": "带显示按钮和要求提示的密码字段。用于注册和登录表单。",
+    "Sortable": "可通过拖动或键盘重新排序的列表。用于用户手动设置的任何顺序，可在一个列表内或跨多个列表。",
+    "BreadcrumbItem": "Breadcrumb 路径中的一个链接或当前页面。只在 Breadcrumb 内使用。",
+    "BreadcrumbSeparator": "两个 BreadcrumbItem 之间的分隔符，除非传入自定义内容，否则显示 V 形箭头。只在 Breadcrumb 内使用。",
+    "Rating": "一排星星，可点击、拖动或用方向键设置，可选半星。用于评价和反馈。",
+    "Timeline": "由线条连接的有序步骤列表，每个步骤可以包含任意内容。用于历史记录、订单进度或更新日志。",
+    "ButtonGroup": "连成一行或一列的按钮，也可以作为单选或多选的切换按钮。用于属于同一组的相关操作或选项。",
+    "CommandPalette": "对话框中可搜索的命令列表，可用按钮或 ⌘K 等快捷键打开。让用户通过键盘到达任意操作或页面。",
+    "Stepper": "展示进度并允许在步骤之间切换的步骤序列。用于结账、注册流程和设置向导。",
+    "Breadcrumb": "从网站顶层到当前页面的一串链接。用于层级较深的页面。",
+    "AvatarGroup": "把多个头像重叠排成一行，放不下的显示为数量。用于展示团队、聊天或文档的成员。",
+    "ScrollArea": "带主题化细滚动条和渐隐边缘的滚动区域，支持单向或双向。用于在页面内滚动的面板和列表。"
   },
   "gettingStarted": {
-    "darkModeIntro": "深色模式完全由 CSS 实现。它跟随 <code>&lt;html data-theme=\"dark\"&gt;</code>，未设置时回退到 <code>prefers-color-scheme</code>。vael-ui 不提供切换 UI。<code>useColorScheme()</code> 会跟踪系统偏好的变化，并通过你传入的 <code>persist</code> 选项保存用户的选择：",
-    "appearanceHeadIntro": "如果将颜色模式或应用字体大小保存在 <code>localStorage</code> 中，请将此脚本放在 HTML 的 <code>&lt;head&gt;</code> 中，并置于应用脚本之前。它会在首次绘制前恢复这两个设置。将 <code>13px</code> 或 <code>1rem</code> 等 CSS 值保存到 <code>app-font-size</code>。除非设置了局部 <code>theme.fontSize</code>，组件会继承该值。",
+    "darkModeIntro": "深色模式完全由 CSS 实现。它跟随 <code>&lt;html data-theme=\"dark\"&gt;</code>，未设置时回退到 <code>prefers-color-scheme</code>。vael-ui 不提供切换开关，但 <code>useColorScheme()</code> 会跟踪系统设置的变化，并通过你传入的 <code>persist</code> 选项保存选择：",
+    "darkModeReveal": "要为切换添加动画，请传入它的起点。新主题会从点击位置、某个元素或某个坐标以圆形扩散开来；不支持 View Transitions 的浏览器，或开启了减少动态效果时，会立即切换。{link}有在线演示。",
+    "darkModeRevealLink": "useColorScheme 页面",
+    "appearanceHeadIntro": "如果将颜色模式或应用全局字体大小保存在 <code>localStorage</code> 中，请将此脚本放在 HTML 的 <code>&lt;head&gt;</code> 中，并置于应用脚本之前。它会在首次绘制前恢复这两个设置。将 <code>13px</code> 或 <code>1rem</code> 等 CSS 字体大小保存到 <code>app-font-size</code>。除非设置了局部 <code>theme.fontSize</code>，组件会继承该值。",
     "darkModeTitle": "深色模式",
-    "directivesIntro": "默认情况下，<code>v-tooltip</code> 和 <code>v-scroll-mask</code> 不会全局注册。如果你在多个组件中使用其中任意一个，请统一注册一次：",
+    "directivesIntro": "默认情况下，<code>v-tooltip</code>、<code>v-scroll-mask</code> 和 <code>v-hover-indicator</code> 不会全局注册。如果你在多个组件中使用其中任意一个，请统一注册一次：",
     "directivesNote": "<code>v-tooltip</code> 还需要在应用中挂载一个 <code>&lt;TooltipHost /&gt;</code>。在 Vapor 应用中，请改为从 <code>vael-ui/vapor</code> 导入这两个指令。",
     "ssrTitle": "服务端渲染",
     "ssrIntro": "两种构建都能在服务端渲染，并在浏览器中激活。{link}会自动完成下面的所有设置。",
     "ssrIntroLink": "Nuxt 模块",
-    "ssrNoExternal": "使用原生 Vite SSR 时，让 Vite 为服务端打包 vael-ui。每个组件都会导入自己的 CSS，而 Node 无法直接加载 CSS 文件：",
+    "ssrNoExternal": "使用原生 Vite 服务端渲染时，让 Vite 为服务端打包 vael-ui。每个组件都会导入自己的 CSS，而 Node 无法直接加载 CSS 文件：",
     "ssrTeleports": "对话框、弹出层、提示消息和工具提示通过 <code>&lt;Teleport&gt;</code> 渲染到 <code>&lt;body&gt;</code>。Vue 会把这部分 HTML 单独放在 <code>ctx.teleports</code> 中返回。请把它放在 <code>&lt;body&gt;</code> 开头、应用元素之前，否则页面无法正确激活：",
     "ssrLocale": "在服务器上渲染时，请在 <code>ConfigProvider</code> 上设置 <code>locale</code>。否则日期、数字和每周的第一天会跟随服务器的语言，并在页面于浏览器中运行后发生变化。",
     "directivesTitle": "指令",
     "installIntro": "vael-ui 已发布在 npm 上。使用你的包管理器安装：",
     "installTitle": "安装",
-    "intro": "一个提供完整 Vue Vapor 构建的 Vue 3 组件库。动画默认使用纯 CSS，你也可以接入自己的动画库。",
+    "intro": "vael-ui 是一个提供完整 Vue Vapor 构建的 Vue 3 组件库。每个组件都通过同一套动效系统实现动画，你也可以改用自己的动画库为任意部件制作动画。",
     "title": "快速开始",
     "usageImportNote": "每个组件都会导入自己的样式。仅当你使用 0.2.0 之前的版本，或希望一次性加载全部样式时，才需要添加这条导入。基础样式设置请参阅 {link}。",
     "usageImportNoteLink": "样式和级联层",
     "usageImportNoteTitle": "仅 0.2.0 之前需要",
-    "usageIntro": "然后，经典 VDOM 构建从 <code>'vael-ui'</code> 导入组件。Vapor 构建（Vue 3.6 不使用虚拟 DOM 的模式）则从 <code>'vael-ui/vapor'</code> 导入。两者的 props 完全相同：",
+    "usageIntro": "VDOM 构建从 <code>'vael-ui'</code> 导入组件。Vapor 构建（Vue 3.6 不使用虚拟 DOM 的模式）则从 <code>'vael-ui/vapor'</code> 导入。两者的 props 完全相同：",
     "fontIntro": "组件使用所在页面的字体，自身不带字体。如果不设置，浏览器会使用默认的衬线字体，所以请在 <code>body</code> 上设置字体：",
     "usageTitle": "用法",
     "vaporIntro": "两种构建来自同一个包和同一份源码，props 也相同。选择你的应用所使用的那一种即可。每个组件页面都有切换开关，方便对比。",
     "vaporPinIntro": "Vapor 构建需要 Vue 3.6，它目前仍是预发布版本。请安装 vael-ui 构建时所用的确切版本 <code>{version}</code>。像 <code>^3.5.0</code> 这样的范围可能会装上没有 Vapor 模式的 Vue 3.5，而其他预发布版本可能会让编译好的组件出错：",
     "vaporAppIntro": "Vapor 应用以 <code>createVaporApp</code> 启动，并从 <code>'vael-ui/vapor'</code> 导入组件、组合式函数和指令。你自己的组件用 <code>&lt;script setup vapor&gt;</code> 启用 Vapor：",
+    "vaporLibrariesIntro": "不是为 Vapor 构建的库中的组件（例如图标库）在 Vapor 应用中单独使用时不会渲染任何内容。请同时安装 Vue 的 <code>vaporInteropPlugin</code>：<code>createVaporApp(App).use(vaporInteropPlugin)</code>。",
     "vaporForceIntro": "如果不想在每个文件里写 <code>vapor</code> 属性，可以在 <code>{'@'}vitejs/plugin-vue</code> 6.0.8 或更高版本中开启 <code>features.vapor</code>。这样应用里所有 <code>&lt;script setup&gt;</code> 组件都会编译为 Vapor：",
     "vaporMixTitle": "混用两种构建",
-    "vaporMixIntro": "传统应用也可以包含 Vapor 组件。当你想把现有应用逐步迁移到 Vapor 时，这很有用。保留 <code>createApp</code>，安装 Vue 的 <code>vaporInteropPlugin</code>，并在标记了 <code>vapor</code> 的组件中从 <code>'vael-ui/vapor'</code> 导入。新应用请只选一种构建。标记了 <code>vapor</code> 的组件也要自己从 <code>'vael-ui/vapor'</code> 导入 <code>vTooltip</code> 等指令，因为用 <code>app.directive</code> 注册的指令只会作用于经典组件。",
+    "vaporMixIntro": "VDOM 应用也可以包含 Vapor 组件，因此你可以一次迁移几个组件，逐步把现有应用迁移到 Vapor。保留 <code>createApp</code>，安装 Vue 的 <code>vaporInteropPlugin</code>，并在标记了 <code>vapor</code> 的组件中从 <code>'vael-ui/vapor'</code> 导入。新应用请只选一种构建。标记了 <code>vapor</code> 的组件也要从 <code>'vael-ui/vapor'</code> 导入 <code>vTooltip</code> 等指令，因为 <code>app.directive</code> 只会为 VDOM 组件注册它们。",
     "vaporTitle": "Vue 蒸气支持"
   },
   "globalSetup": {
-    "allTogetherIntro": "在应用的根模板中将这四个组件各挂载一次：",
+    "allTogetherIntro": "在应用的根模板中挂载这四个组件,只需一次。不使用 <code>ConfigProvider</code> 时:",
+    "allTogetherProvider": "使用 <code>ConfigProvider</code> 时,请把它们放在其中。从代码打开的内容(<code>openDialog()</code>、<code>toast()</code>、提示框)由宿主渲染,只有宿主位于其中时,才会继承 provider 的主题、动效、文案和尺寸:",
     "allTogetherTitle": "全部在一起",
     "dialogHostIntro": "渲染通过 <code>openDialog()</code> 或 <code>confirmAction()</code> 从代码中打开的对话框。在你自己模板中使用 <code>&lt;Dialog v-model:open&gt;</code> 时不需要它。它没有任何 props 或配置。",
     "dialogHostTitle": "对话主机",
-    "intro": "vael-ui 有四个单例。每个只需在应用中的任意位置挂载一次，需要它的组件就会自动找到它。",
+    "intro": "vael-ui 有四个单例：只需在应用中的任意位置挂载一次、供其他所有组件使用的组件。",
     "title": "全局设置",
     "toasterIntro": "渲染由 {code} 创建的 toast。它有自己的 props，因此在 {link} 中单独说明。",
     "toasterIntroLink": "它自己的页面",
     "toasterTitle": "烤面包机",
-    "tooltipHostIntro": "负责渲染所有 <code>v-tooltip</code>。如果没有挂载它，工具提示将不会出现，也不会有任何报错。",
+    "tooltipHostIntro": "负责渲染所有 <code>v-tooltip</code>。如果没有挂载它，工具提示永远不会出现，也不会有任何报错告诉你原因。",
     "tooltipHostOptions": "它接受的选项与每个工具提示可覆盖的选项相同：",
     "tooltipHostTitle": "工具提示主机",
     "popoverHostIntro": "渲染通过 <code>openPopover()</code>，或通过带 <code>surface: 'popover'</code> 的 <code>confirmAction()</code> 从代码中打开的弹出层。在你自己模板中使用 <code>&lt;Popover v-model:open&gt;</code> 时不需要它。它没有任何 props 或配置。",
@@ -172,39 +217,53 @@
     "sizeSm": "小",
     "sizeMd": "中",
     "sizeLg": "大",
-    "animations": "动画",
+    "animations": "动效",
+    "loader": "加载动画",
+    "loaderRing": "圆环",
+    "loaderDots": "圆点",
+    "loaderBars": "条形",
+    "loaderComet": "彗星",
+    "loaderDither": "抖动",
     "radiusRounded": "圆形",
     "radiusSharp": "锋利的",
     "radiusSoft": "柔软的",
     "theme": "自定义主题",
-    "settings": "设置"
+    "settings": "设置",
+    "appearance": "外观",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统",
+    "demos": "演示",
+    "general": "通用",
+    "mode": "模式",
+    "fontSize": "字号"
   },
   "home": {
-    "tagline": "60 多个 Vue 3 组件，从同一份源码编译为经典 VDOM 构建和 Vue Vapor。",
+    "tagline": "60 多个 Vue 3 组件，内置一套动效系统。同一份源码同时编译为 VDOM 构建和 Vue Vapor。",
     "browseComponents": "浏览组件",
     "eyebrow": "Vue 3 组件库",
-    "featureAnimationBody": "默认情况下为纯CSS，或者使用GSAP 或motion-v 自行驱动。",
-    "featureAnimationTitle": "带来你自己的动画",
+    "featureAnimationBody": "每个组件都自带动效。可以用 motion prop 和弹簧来调整，也可以用 GSAP 或 motion 为任意部件制作动画。",
+    "featureAnimationTitle": "一套动效系统",
     "featureI18nBody": "每个内置字符串都通过您自己的 i18n 实例进行翻译。",
-    "featureI18nTitle": "内置 i18n",
-    "featurePrimitivesBody": "没有泛滥的复合组件，也没有需要手动连接的隐藏上下文。",
+    "featureI18nTitle": "内置翻译",
+    "featurePrimitivesBody": "没有需要组装的复合组件，也没有需要手动连接的隐藏上下文。",
     "featurePrimitivesTitle": "每个基元一个组件",
-    "featureSsrBody": "每个组件在访问 window 或 document 之前都会先检查是否处于真实浏览器环境。因此它们可以在 Nuxt、服务端渲染应用和静态站点生成器中安全渲染。本文档站点也是用同一套组件、通过 Vite SSG 构建的。",
-    "featureSsrTitle": "支持 SSR",
-    "featureVaporBody": "每个组件都通过 Vue 3.6 的 Vapor 模式从相同的源进行编译。",
-    "featureVaporTitle": "真正的蒸汽构建，而不是垫片",
+    "featureSsrBody": "每个组件在访问 window 或 document 之前都会先检查是否处于浏览器环境，因此可以在 Nuxt、服务端渲染应用和静态站点生成器中渲染。本文档站点也是用同一套组件、通过 Vite SSG 构建的。",
+    "featureSsrTitle": "支持服务端渲染",
+    "featureVaporBody": "每个组件都从同一份源码经由 Vue 3.6 的 Vapor 模式编译。",
+    "featureVaporTitle": "真正的 Vapor 构建，而非垫片",
     "headline": "直接编译为 Vapor 的组件，而不是围绕它。",
-    "featureSkillBody": "一个配套包，向 Claude Code、GitHub Copilot、Codex 等智能体讲解每个组件的真实 API。它由库自身的类型生成，而非手写。",
+    "featureSkillBody": "一个配套包，向 Claude Code、GitHub Copilot、Codex 等智能体提供每个组件的真实 API。它由 vael-ui 自身的类型生成，而非手写。",
     "featureSkillTitle": "AI 智能体技能",
     "themeLabel": "试试颜色：",
     "newTag": "新",
-    "newText": "每个 Prop 都在编辑器中有文档",
+    "newText": "0.5.0：全新的动效系统",
     "showcaseLabel": "使用 vael-ui 构建的在线演示"
   },
   "i18nKeys": {
     "copyIntro": "将以下内容复制到你的语言文件中的 uiKit 键下，然后翻译各个值：",
     "englishDefault": "默认英文",
-    "intro": "所有内置文本（对话框关闭按钮、toast 关闭、空状态等）都有英文默认值。要翻译它们，请将你自己的 i18n 实例传给 ConfigProvider。它会从你现有语言包的 uiKit 命名空间中读取，因此无需额外安装任何东西。 未翻译的键保留英文默认值，控制台不会出现警告。",
+    "intro": "所有内置文本（如对话框关闭按钮、toast 关闭和空状态）都有英文默认值。要翻译它们，请将你自己的 i18n 实例传给 ConfigProvider。它会从你现有语言包的 uiKit 命名空间中读取，因此无需额外安装任何东西。未翻译的键显示英文默认值。如果你只翻译了部分键，开发构建会为每个语言环境输出一条警告，列出缺失的键。",
     "key": "钥匙",
     "title": "翻译 vael-ui"
   },
@@ -217,39 +276,42 @@
     "link": "链接到"
   },
   "nav": {
-    "animationIntegrationGuide": "自带动画",
-    "components": "成分",
+    "animationIntegrationGuide": "自定义动效",
+    "components": "组件",
     "gettingStarted": "入门",
     "github": "GitHub",
     "sponsor": "赞助",
     "globalSetup": "全局设置",
     "guides": "指南",
+    "motionSystem": "动效系统",
     "home": "瓦尔伊",
     "i18nKeysGuide": "翻译 vael-ui",
     "search": "搜索组件...",
     "stylingAndLayersGuide": "样式和级联层",
     "tailwindGuide": "与 Tailwind 一起使用",
     "menu": "菜单",
-    "openMenu": "打开菜单",
     "composables": "可组合项",
     "autoImportGuide": "自动导入",
     "nuxtGuide": "努克斯特",
-    "skillGuide": "AI代理技能",
+    "skillGuide": "AI 智能体技能",
     "directives": "指令",
     "previous": "上一页",
     "next": "下一页",
     "pager": "上一页和下一页",
     "mainNav": "主导航",
-    "sidebarNav": "文档"
+    "sidebarNav": "文档",
+    "searchShort": "搜索",
+    "support": "支持",
+    "searchAll": "搜索组件、Props 和指南…"
   },
   "pageNotes": {
-    "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。",
-    "ContextMenu": "键盘用户通过 Shift+F10 或菜单键打开菜单，这两者会在获得焦点的元素上触发 contextmenu。因此请让被包裹的目标可聚焦（tabindex=\"0\"），并为它提供可访问名称。",
-    "Tree": "行会根据响应式状态更新，所以自定义的 #node 插槽应读取响应式的值（props、ref、computed），而不是从父组件捕获的普通变量。",
-    "DataTable": "大型表格：有几百行时，请添加 virtualize 和 scroll-height，例如 scroll-height=\"400px\"。表格只会绘制可见的行，排序、选择和滚动都能保持流畅。同时显示超过 150 行时，排序时行也不再滑动到新位置。"
+    "Resizable": "本站的侧边栏就是用 Resizable 构建的。拖动它的右边缘试试看。",
+    "ContextMenu": "键盘用户通过 Shift+F10 或菜单键打开菜单，这两者会在获得焦点的元素上触发 contextmenu。请让被包裹的目标可聚焦（tabindex=\"0\"），并为它提供可访问名称。",
+    "Tree": "行会根据响应式状态更新。在自定义 #node 插槽中，请读取响应式的值（props、ref、computed），而不是从父组件捕获的普通变量。",
+    "DataTable": "有几百行时，请添加 virtualize 和 scroll-height，例如 scroll-height=\"400px\"。表格只会绘制可见的行，排序、选择和滚动都能保持流畅。渲染超过 150 行时，排序时行也不再滑动到新位置。"
   },
   "stylingLayers": {
-    "intro": "vael-ui 发布在 {layer} 中。无论优先级如何，未分层的 CSS 总是会覆盖分层的 CSS。因此，一个普通的、未分层的基础重置样式会在没有任何提示的情况下覆盖 vael-ui 的内部样式。要解决这个问题，请把你的基础样式也放进一个层中，并将该层排在最前面。",
+    "intro": "vael-ui 发布在 {layer} 中。无论优先级如何，未分层的 CSS 总是会覆盖分层的 CSS，因此未分层的基础重置样式会在没有任何提示的情况下覆盖 vael-ui 的样式。要避免这种情况，请把你的基础样式也放进一个层中，并将该层排在最前面。",
     "orderNote": "这里的导入顺序只决定层的位置。未分层的覆盖样式无论在何处加载，总是优先生效。",
     "bundlerNoteTitle": "仅 0.2.0 之前需要",
     "bundlerNote": "每个组件都会导入自己的样式。仅当你使用 0.2.0 之前的版本，或希望一次性加载全部样式时，才需要添加下面的导入。",
@@ -258,51 +320,55 @@
     "title": "样式和级联层",
     "cascadeLayersTitle": "层序",
     "colorsTitle": "颜色",
-    "cssVariablesIntro": "vael-ui 中所有的颜色、圆角、阴影和动效值都来自 CSS 自定义属性。你可以在自己的未分层样式表中覆盖其中任意一个：",
-    "cssVariablesThemeNote": "<code>ConfigProvider</code> 的 <code>theme</code> 可设置 <code>primary</code>、<code>danger</code>、<code>radius</code> 和 <code>fontSize</code>。不设置 <code>fontSize</code> 时，组件（包括表单字段）跟随 <code>html</code> 的字号。如果字号小于 16px，请调用一次 <code>preventFocusZoom()</code>，防止 iPhone 放大表单字段。其他值通过 CSS 设置。",
+    "cssVariablesIntro": "vael-ui 的颜色、圆角、阴影和默认动效时长都来自 CSS 自定义属性。你可以在自己的未分层样式表中覆盖其中任意一个：",
+    "cssVariablesThemeNote": "<code>ConfigProvider</code> 的 <code>theme</code> 可设置 <code>primary</code>、<code>danger</code>、<code>radius</code> 和 <code>fontSize</code>。不设置 <code>fontSize</code> 时，组件（包括表单字段）跟随 <code>html</code> 的字号。如果字号小于 16 px，请调用一次 <code>preventFocusZoom()</code>，防止 iPhone 放大表单字段。其他变量通过 CSS 设置。",
     "cssVariablesTitle": "CSS 变量",
     "default": "默认",
     "description": "描述",
-    "elevationTitle": "海拔",
+    "elevationTitle": "高度与层叠",
     "motionTitle": "运动",
     "rows": {
       "border": "默认边框颜色。",
       "borderStrong": "更强的边框颜色强调边缘。",
-      "contrastVariant": "该颜色之上的文本/图标颜色。",
-      "danger": "破坏性/错误颜色。",
-      "durationDrawer": "抽屉/纸张滑动过渡的持续时间。",
-      "durationEnter": "输入/打开转换的持续时间。",
-      "durationExit": "退出/关闭转换的持续时间。",
-      "durationPress": "按下/点击反馈的持续时间。",
+      "contrastVariant": "此颜色之上的文本和图标颜色。",
+      "danger": "破坏性操作和错误颜色。",
+      "durationDrawer": "抽屉或底部面板滑开所需的时长。",
+      "durationEnter": "打开和进入的持续时间。",
+      "durationExit": "关闭和离开的持续时间。",
+      "durationIndicator": "列表和菜单中悬停高亮滑到下一行所需的时间。",
+      "durationIndicatorWide": "MenuList、Tree 和 DataTable 宽行的同样滑动。",
+      "easeIndicator": "悬停高亮的缓动曲线。",
+      "indicatorBg": "悬停高亮的颜色。请设置它，而不是给行设置 :hover 背景，后者会盖在高亮之上。",
+      "durationPress": "按下反馈的持续时间。",
       "durationToast": "toast 进入时的动画时长。",
-      "durationToastExit": "toast 退出时的动画时长。",
+      "durationToastExit": "toast 离开时的动画时长。",
       "durationTooltip": "工具提示打开时的动画时长。",
       "durationTooltipExit": "工具提示关闭时的动画时长。",
-      "easeDrawer": "边缘锚定幻灯片（抽屉、床单）的缓动。",
-      "easeInOut": "缓动屏幕上的移动（调整大小、重新定位）。",
-      "easeOut": "进入/稳定过渡的默认缓动。",
-      "easeToast": "简化 Toast 过渡。",
-      "hoverVariant": "此颜色的悬停状态。",
+      "easeDrawer": "从边缘滑入的缓动，例如抽屉和底部面板。",
+      "easeInOut": "屏幕上移动的缓动，例如调整大小和重新定位。",
+      "easeOut": "元素进入和稳定时的默认缓动。",
+      "easeToast": "toast 的缓动。",
+      "hoverVariant": "此颜色的悬停颜色。",
       "info": "信息颜色。",
       "muted": "次要表面的微妙背景。",
-      "mutedHover": "悬停状态为静音背景。",
-      "overlay": "模式和对话框后面的背景颜色。",
+      "mutedHover": "弱化背景的悬停颜色。",
+      "overlay": "对话框和其他模态框后面的遮罩颜色。",
       "panelShadow": "浮动面板的阴影。",
-      "primary": "主要操作颜色（按钮、链接、焦点强调）。",
-      "primaryContrast": "文本/图标颜色位于主颜色之上。",
-      "primaryHover": "主要颜色的悬停状态。",
-      "radius": "控件（按钮、输入、徽章）的底角半径。",
-      "radiusSurface": "大面积表面（面板、卡片、表格）的圆角半径上限，确保较大的圆角设置不会把它们变成胶囊形。",
+      "primary": "主要操作颜色：按钮、链接和焦点强调。",
+      "primaryContrast": "主要颜色之上的文本和图标颜色。",
+      "primaryHover": "主要颜色的悬停颜色。",
+      "radius": "按钮、输入框和徽章等控件的基础圆角半径。",
+      "radiusSurface": "面板、卡片和表格等大面积表面的圆角半径。它有上限，因此较大的圆角不会把它们变成胶囊形。",
       "success": "成功的颜色。",
       "surface": "面板、卡片和对话框的基础背景。",
       "text": "主要文本颜色。",
-      "textMuted": "辅助/静音文本颜色。",
-      "toastOffset": "Toast 堆栈的边缘偏移。",
+      "textMuted": "次要文本颜色。",
+      "toastOffset": "toast 堆栈与屏幕边缘的距离。",
       "warning": "警告色。",
       "zDialog": "对话框的堆叠顺序。",
-      "zPopover": "弹出窗口、菜单和选择的堆叠顺序。",
+      "zPopover": "弹出层、菜单和选择框的堆叠顺序。",
       "zToast": "吐司的堆叠顺序。",
-      "zTooltip": "工具提示的堆叠顺序（最上面）。",
+      "zTooltip": "工具提示的堆叠顺序，位于最上层。",
       "joinFrame": "设置在你的控件带边框的元素上，而不是 Field 上。可选值：sm、md 或 lg。",
       "joinStart": "单元格或连接标签位于控件的起始边。",
       "joinEnd": "单元格或连接标签位于控件的结束边。",
@@ -311,38 +377,38 @@
       "joinAttached": "标签绘制为连接单元格。",
       "cellBg": "连接单元格的背景：attached 标签、#prepend 和 #append。",
       "cellColor": "连接单元格的文字颜色。",
-      "labelWidth": "start/end 标签的宽度。设置在父元素上可对齐整个表单。"
+      "labelWidth": "起始或结束标签的宽度。设置在父元素上可对齐整个表单。"
     },
     "shapeTitle": "形状",
     "variable": "多变的",
     "joinTitle": "将自定义控件连接到 Field",
-    "joinIntro": "Field 的 <code>attached</code> 标签和 <code>#prepend</code>/<code>#append</code> 单元格会与控件带边框的外框连接。vael-ui 自带的控件用 <code>data-ui-frame</code> 标记这个外框。给你自己的控件加上同一个属性，它也会连接。把属性值设为控件的尺寸（<code>sm</code>、<code>md</code> 或 <code>lg</code>），单元格就会匹配它的圆角和字号。",
-    "joinLayerNote": "Field 的连接规则位于 {layer} 中，所以如果你的控件样式不在层中，会以你的样式为准。这时请用 Field 在根元素上设置的属性，自己把圆角改为直角并修改边框颜色：",
+    "joinIntro": "Field 的 <code>attached</code> 标签及其 <code>#prepend</code> 和 <code>#append</code> 单元格会与控件带边框的外框连接。vael-ui 自带的控件用 <code>data-ui-frame</code> 标记这个外框。给你自己的控件加上同一个属性，它也会连接。把属性值设为控件的尺寸（<code>sm</code>、<code>md</code> 或 <code>lg</code>），单元格就会匹配它的圆角和字号。",
+    "joinLayerNote": "Field 的连接规则位于 {layer} 中，所以你的控件自身未分层的样式会优先于它们。这时请用 Field 在根元素上设置的属性，自己把圆角改为直角并修改边框颜色：",
     "joinCellNote": "请给单元格内的控件设置它自己的 <code>aria-label</code>。它是独立的，Field 的标签不会为它命名。",
     "attributesTitle": "Field 属性",
     "variablesTitle": "Field 变量",
     "attribute": "属性",
     "setWhen": "设置时机",
     "advancedTitle": "高级",
-    "advancedNote": "日常使用不需要这些内容。它用于构建可接入 vael-ui 的自定义控件。"
+    "advancedNote": "大多数应用不需要这些内容。它用于构建可接入 vael-ui 的自定义控件。"
   },
   "tailwind": {
-    "layerNote": "vael-ui 发布在 {layer} 中。Tailwind v4 也会把自己的工具类放在一个层中，因此导入顺序很重要。请在 Tailwind 入口（见下方）之前导入 vael-ui 的 CSS，让它的层先注册。这样 Tailwind 的工具类层在级联中位于其后，vael-ui 组件上的 Tailwind 工具类总会生效。你不需要 {important}，也不会有优先级冲突。层的工作原理请参阅 {link}。",
+    "layerNote": "vael-ui 发布在 {layer} 中。Tailwind v4 也会把自己的工具类放在一个层中，因此导入顺序很重要。请按下方所示，在 Tailwind 入口之前导入 vael-ui 的 CSS，让它的层先注册。这样 Tailwind 的工具类在级联中位于其后，vael-ui 组件上的 Tailwind 工具类总会生效，不需要 {important}，也不会有优先级冲突。层的工作原理请参阅 {link}。",
     "layerNoteLink": "样式和级联层",
     "orderWarningTitle": "保持这个导入在最前面",
-    "orderWarning": "每个组件都会加载自己的 CSS，所以你不需要为 vael-ui 导入样式表。唯一的例外是 Tailwind v4。它的工具类位于自己的级联层中，而第一个声明层名的样式表决定顺序。请在应用的主入口文件中，在 Tailwind 入口之前导入 <code>vael-ui/layers.css</code>。它只声明 vael-ui 的层，不加载任何组件 CSS，因此之后组件加载 CSS 时顺序依然成立。",
-    "mergingIntro": "每个组件都接受用于部件类名的 <code>ui</code> prop（例如 <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>）。若要像 <code>tailwind-merge</code> 那样解决其中冲突的 Tailwind 工具类（每个属性以最后一个为准），只需设置一次：",
+    "orderWarning": "每个组件都会加载自己的 CSS，所以 vael-ui 不需要导入样式表，唯一的例外是 Tailwind v4。它的工具类位于自己的级联层中，而第一个声明层名的样式表决定顺序。请在应用的主入口文件中，在 Tailwind 入口之前导入 <code>vael-ui/layers.css</code>。它只声明 vael-ui 的层，不加载任何组件 CSS，因此之后组件加载 CSS 时顺序依然成立。",
+    "mergingIntro": "每个组件都接受用于部件类名的 <code>ui</code> prop，例如 <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>。若要像 <code>tailwind-merge</code> 那样解决其中冲突的 Tailwind 工具类（每个属性以最后一个为准），只需设置一次：",
     "mergingNote": "现在，树中所有 <code>ui.*</code> 部件类名都会经过 <code>twMerge</code> 处理。",
     "mergingTitle": "使用 tailwind-merge 合并类"
   },
   "taxonomy": {
     "actions": "行动",
-    "dataDisplay": "数据显示",
+    "dataDisplay": "数据展示",
     "feedback": "反馈",
-    "formsAndInputs": "表格",
+    "formsAndInputs": "表单与输入",
     "gestures": "手势",
-    "layoutAndStructure": "布局",
-    "navigationAndMenus": "导航",
+    "layoutAndStructure": "布局与结构",
+    "navigationAndMenus": "导航与菜单",
     "overlays": "叠加层",
     "selection": "选择",
     "setup": "设置"
@@ -350,7 +416,8 @@
   "notFound": {
     "body": "您要查找的页面不存在或已移动。",
     "home": "回到家",
-    "title": "找不到页面"
+    "title": "找不到页面",
+    "didYouMean": "你是不是要找："
   },
   "composable": {
     "noParameters": "不接受任何争论。",
@@ -359,80 +426,91 @@
     "returns": "退货"
   },
   "composablesTaxonomy": {
-    "overlaysAndConfirmation": "叠加层",
-    "positioningAndData": "定位",
-    "utilities": "公用事业",
+    "overlaysAndConfirmation": "浮层与确认",
+    "positioningAndData": "定位与数据",
+    "utilities": "实用工具",
+    "motion": "动效",
     "dragAndDrop": "拖放"
   },
   "composableDescriptions": {
-    "confirmAction": "支持异步的确认流程，以居中对话框或锚定在触发元素上的弹出层形式显示。它会等待你的处理函数完成后再关闭。",
-    "useDialogService": "通过代码而非模板将任意组件作为对话框打开。它返回一个 Promise，并以对话框关闭时的值进行解析。",
-    "usePopoverService": "通过代码而非模板将任意组件作为锚定弹出层打开。它返回一个 Promise，并以弹出层关闭时的值进行解析。",
-    "useToast": "可在应用任意位置显示 toast 通知，提供各变体的快捷方法，以及一个将加载中 toast 切换为成功或失败的 Promise 辅助函数。",
-    "useTour": "Tour 背后的无头状态机：负责步骤与分组导航，不内置任何 DOM 或渲染逻辑。",
-    "useAsyncLoading": "追踪你传入的每一个待定 Promise，只有全部完成后才会清除加载状态。",
-    "useNumberFormat": "支持本地化的数字格式化与解析，二者保持同步，使输入文本与格式化后的显示始终一致。",
-    "useColorScheme": "在浅色、深色和跟随系统的主题模式之间切换。持久化是可选的，通过你提供的存储函数实现。",
-    "preventFocusZoom": "阻止 iOS 在聚焦表单字段时放大页面，让字段与其余文字大小一致。",
-    "useFloatingPosition": "Popover、Menu 和 Tooltip 背后的定位引擎，基于 Floating UI 构建。可用它构建你自己的锚定浮层。",
-    "useVirtualizer": "面向长列表的虚拟化渲染，DOM 中只存在当前可见的行。",
-    "useFieldControl": "将自定义表单控件接入最近的 Field：处理 id、ARIA 属性以及聚焦和已填写状态。"
+    "confirmAction": "确认步骤，以居中对话框或锚定在触发元素上的弹出层形式显示，会等待你的异步处理函数完成后再关闭。在难以撤销的操作之前使用。",
+    "useDialogService": "通过代码而非模板将任意组件作为对话框打开。它的结果 Promise 以对话框关闭时的值进行解析。用于从函数中打开的对话框。",
+    "usePopoverService": "通过代码而非模板将任意组件作为锚定弹出层打开。它的结果 Promise 以弹出层关闭时的值进行解析。用于从函数中打开的弹出层。",
+    "useToast": "可在应用任意位置显示 toast 通知，提供各变体的快捷方法，以及一个将加载中 toast 切换为成功或失败的 Promise 辅助函数。用于不应打断页面的反馈。",
+    "useTour": "Tour 背后的步骤与分组导航，以无头状态的形式提供，不含 DOM 或渲染。用它构建你自己的导览。",
+    "useAsyncLoading": "追踪你通过它运行的每一个异步任务，直到全部完成前都保持加载状态。用于多个请求共用一个加载状态。",
+    "useNumberFormat": "用相同的选项按语言环境格式化和解析数字，使输入文本与格式化后的显示始终一致。用于你自己的数字字段，或让 AnimatedNumber 使用相同的格式。",
+    "useColorScheme": "在浅色、深色和跟随系统模式之间切换，还可以让新配色从点击处呈圆形扩散。用于主题切换，传入你自己的存储函数即可记住选择。",
+    "useHaptic": "在支持的手机上播放触感反馈：轻点、轻撞、短促的成功、警告或错误模式，或你自定义的模式。用于确认某个操作的时刻。",
+    "springEasing": "把弹簧转换成 CSS linear() 曲线及其稳定时间。用它让 element.animate() 或 CSS 过渡使用与 vael-ui 相同的弹簧。",
+    "preventFocusZoom": "阻止 iOS 在表单字段获得焦点时放大页面，让字段与其余文字大小一致。在客户端调用一次，例如在 main.ts 中。",
+    "useFloatingPosition": "Popover、Menu 和 Tooltip 背后的定位引擎，基于 Floating UI 构建。用它构建你自己的锚定浮层。",
+    "useVirtualizer": "只渲染长列表中可见的行，让 DOM 保持精简。用于你自己的长列表。",
+    "useFieldControl": "将自定义表单控件接入最近的 Field：id、ARIA 属性以及聚焦和已填写状态。当你自己的控件位于 Field 内时使用。",
+    "useHoverIndicator": "vael-ui 列表背后的滑动悬停和键盘高亮。用它让你自己的列表获得同样的高亮。",
+    "useSpringValue": "三种形式的可中断弹簧物理：一个响应式值、一个每帧直接写入且不触发重新渲染的命令式弹簧，以及两者背后的纯步进函数。用于可能中途改变目标的动效。",
+    "useScrollProgress": "以 0 到 1 的 ref 返回滚动进度：整个页面的，或元素穿过屏幕的进度。作为 getter 传给 v-animate 的 progress。",
+    "settled": "当 vael-ui 启动的动画全部结束时 resolve,可等待全局或单个元素。用于测试。",
+    "useTabIndicator": "Tabs、SelectButton、MenuList 和 Pagination 背后的滑动选中指示器。用于你自己的分段控件和列表。",
+    "useScrollLock": "像对话框打开时那样，锁定页面或任意元素的滚动，且不会造成布局偏移。用于你自己的浮层和全屏面板。",
+    "moveTreeNode": "将节点及其子树原地移动到新的父节点和索引。不可能的移动（例如把文件夹放进它自己里面）不会改变任何内容。用它把拖放移动应用到你的树数据上。",
+    "useFileDrop": "把任意元素变成文件放置区，拖拽经过子元素时悬停状态保持稳定，并忽略拖入的文本或链接。用它构建你自己的放置区。"
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components 支持 Vite、Webpack、Rollup、esbuild 和 Rspack。解析器是一个普通函数，因此在所有这些工具中的表现都相同。",
     "bundlersTitle": "捆绑者",
     "cssIntro": "这里无需额外设置。每个 vael-ui 组件都会导入自己的 CSS，因此解析组件时也会加载其样式。而大多数 unplugin-vue-components 解析器都需要单独的 <code>sideEffects</code> 配置项来实现这一点。",
     "cssTitle": "CSS",
-    "intro": "vael-ui/resolver 是 unplugin-vue-components 的解析器。注册一次后，你就可以在模板中直接使用任意 vael-ui 组件，无需导入。",
+    "intro": "vael-ui/resolver 是 unplugin-vue-components 的解析器。注册一次后，你就可以在模板中直接使用任意 vael-ui 组件，无需导入。它只解析组件，不解析指令。",
     "setupIntro": "在已配置 unplugin-vue-components 的位置添加解析器：",
     "setupOutro": "只需编写标签，插件会在构建时自动添加导入：",
     "setupTitle": "设置",
     "title": "自动导入",
-    "vaporIntro": "vael-ui 从同一份源码提供两种构建：常规的 VDOM 构建和 Vapor 构建（<code>vael-ui/vapor</code>）。解析器默认从 VDOM 构建导入。传入 <code>variant: 'vapor'</code> 即可改为从 Vapor 构建导入。解析器会从同一种构建导入所有组件，因此请选择你的应用实际用于渲染的那一种。",
-    "vaporHostsNote": "在 Vapor 模板中，unplugin-vue-components 只能找到位于其他组件插槽内的组件。在 unplugin-vue-components 支持 Vapor 之前，请手动导入顶层组件，例如 <code>&lt;Toaster&gt;</code>、<code>&lt;DialogHost&gt;</code> 和 <code>&lt;ConfigProvider&gt;</code>。",
+    "vaporIntro": "vael-ui 从同一份源码提供两种构建：VDOM 构建和 Vapor 构建（<code>vael-ui/vapor</code>）。解析器默认从 VDOM 构建导入。传入 <code>variant: 'vapor'</code> 即可改为从 Vapor 构建导入。解析器会从同一种构建导入所有组件，因此请选择你的应用用于渲染的那一种。",
+    "vaporHostsNote": "在 Vapor 模板中，unplugin-vue-components 只能找到位于其他组件插槽内的组件。在它支持 Vapor 之前，请手动导入顶层组件，例如 <code>&lt;Toaster&gt;</code>、<code>&lt;DialogHost&gt;</code> 和 <code>&lt;ConfigProvider&gt;</code>。",
     "vaporTitle": "汽",
-    "oneImportIntro": "编辑器的自动导入可能会一直建议使用 <code>vael-ui</code>，而不是 <code>vael-ui/vapor</code>。这是当一个包从两个入口点导出同名内容时 TypeScript 的已知限制。为避免这个问题，请设置 <code>vapor</code> 导出条件，而不是从子路径导入。这样，整个项目中所有的 <code>import … from 'vael-ui'</code> 都会解析到 Vapor 构建，组件和组合式函数都是如此。自动导入也就不会再选错了。",
+    "oneImportIntro": "编辑器的自动导入可能会一直建议使用 <code>vael-ui</code>，而不是 <code>vael-ui/vapor</code>。这是当一个包从两个入口点导出同名内容时 TypeScript 的已知限制。为避免这个问题，请设置 <code>vapor</code> 导出条件，而不是从子路径导入。这样，整个项目中所有的 <code>import … from 'vael-ui'</code> 都会解析到 Vapor 构建，组件和组合式函数都是如此，自动导入也就不会选错。<code>vael-ui/motion</code> 也遵循该条件,因此其中的 <code>vAnimate</code> 就是 Vapor 指令。",
     "oneImportDefaults": "把 <code>vapor</code> 加到 Vite 的默认条件中，而不是替换它们。只写 <code>['vapor']</code> 会丢掉默认值，其他包可能因此加载错误的文件。<code>ssr</code> 那一行为服务端渲染做同样的设置。",
-    "oneImportNote": "Vite 条件控制加载哪一种构建。TS 条件让类型与之保持一致。如果只设置其中一个，你不会得到报错，而是会出现无声的不一致：类型正确但加载了错误的构建，或者相反。",
+    "oneImportNote": "Vite 条件决定加载哪一种构建，TypeScript 条件让类型与之保持一致。如果只设置其中一个，不会有任何报错：你会得到正确的类型却加载了错误的构建，或者相反。",
     "oneImportNoteTitle": "保持两个设置同步",
     "oneImportTitle": "一个共享导入，无 /vapor 子路径"
   },
   "nuxt": {
     "excludeIntro": "跳过特定的组件名称，例如在同一标签下注册你自己的 <code>&lt;Button&gt;</code>：",
     "excludeTitle": "排除",
-    "intro": "vael-ui/nuxt 是一个 Nuxt 模块。添加一次后，你就可以在模板中直接使用任意 vael-ui 组件，无需导入。它使用的是 Nuxt 内置的组件注册机制，而不是 unplugin-vue-components。",
+    "intro": "vael-ui/nuxt 是一个 Nuxt 模块。添加一次后，你就可以在模板中直接使用任意 vael-ui 组件，无需导入。它使用的是 Nuxt 自身的组件注册机制，而不是 unplugin-vue-components。",
     "resolverIntro": "如果你的 Nuxt 应用已在使用 unplugin-vue-components 自动导入其他库，请改用 vael-ui/resolver。请参阅 {link} 指南。",
     "resolverIntroLink": "自动导入",
     "resolverTitle": "使用 unplugin-vue-components 代替",
     "setupIntro": "在 Nuxt 配置中注册模块：",
     "setupOutro": "只需编写标签，Nuxt 会为你解析导入：",
     "appSetupTitle": "应用设置",
-    "appSetupIntro": "该模块只注册组件。请在 app.vue 中挂载一次你要用到的宿主组件。{link}介绍了每个宿主的作用。",
+    "appSetupIntro": "该模块不会挂载宿主组件。请在 app.vue 中将你要用到的宿主各挂载一次。{link}介绍了每个宿主的作用。",
     "appSetupIntroLink": "全局设置",
     "composablesIntro": "<code>toast()</code>、<code>openDialog()</code> 等组合式函数不会自动导入。请从 <code>'vael-ui'</code> 导入，使用 Vapor 变体时从 <code>'vael-ui/vapor'</code> 导入：",
-    "directivesIntro": "<code>v-tooltip</code> 和 <code>v-scroll-mask</code> 指令同样不会注册。请在插件中注册它们。使用 Vapor 变体时，从 <code>'vael-ui/vapor'</code> 导入：",
+    "directivesIntro": "模块会为你注册 <code>v-animate</code>，但不会注册 <code>v-tooltip</code>、<code>v-scroll-mask</code> 和 <code>v-hover-indicator</code>。请在插件中注册这些指令。使用 Vapor 变体时，从 <code>'vael-ui/vapor'</code> 导入：",
     "setupTitle": "设置",
     "title": "努克斯特",
-    "vaporIntro": "设置 <code>variant: 'vapor'</code> 即可使用 <code>vael-ui/vapor</code>，与 <code>vael-ui/resolver</code> 的选项相同。模块会自动开启 Nuxt 的 <code>vue.vapor</code>。需要 Nuxt 4.6 或更高版本以及 Vue 3.6。请将 Vue 固定为“快速开始”中给出的确切版本。",
-    "vaporOutro": "页面依然在服务端渲染。服务端把每个组件渲染成 HTML，浏览器再将其作为 Vapor 组件接管，无需其他配置。",
+    "vaporIntro": "设置 <code>variant: 'vapor'</code> 即可使用 <code>vael-ui/vapor</code>，与 <code>vael-ui/resolver</code> 的选项相同。模块会自动开启 Nuxt 的 <code>vue.vapor</code>。需要 Nuxt 4.6 或更高版本以及 Vue 3.6。请将 Vue 固定为“入门”中给出的确切版本。",
+    "vaporOutro": "页面依然在服务端渲染。服务端把每个组件渲染成 HTML，浏览器再将其作为 Vapor 组件激活，无需其他配置。",
     "vaporForceIntro": "若想把你自己的 <code>&lt;script setup&gt;</code> 组件也编译为 Vapor，而无需逐个添加 <code>vapor</code>，可通过 Nuxt 的 <code>vite.vue</code> 开启 <code>{'@'}vitejs/plugin-vue</code> 的 <code>features.vapor</code>：",
     "vaporTitle": "Vapor"
   },
   "skill": {
     "claudeCodeIntro": "添加一次市场，然后安装技能：",
     "claudeCodeTitle": "克劳德·科德",
-    "includedAnimation": "与动画库无关的约定（motionCss、forceMount、beforeClose），附带真实的 GSAP 和 motion-v 示例",
-    "includedComponents": "每个组件的 props、slots、events 和公开的 refs",
-    "includedComposables": "每个独立可组合项的参数、返回值和使用示例",
-    "includedStyling": "级联层排序和主题的完整 CSS 变量参考",
-    "intro": "一个配套包，教 AI 编码智能体如何使用 vael-ui。它适用于 Claude Code、GitHub Copilot、Codex、Cursor 等。内容涵盖每个组件的 props、插槽和事件，每个组合式函数，以及如何设置动画、主题和 VDOM/Vapor 的划分。它由库自身的类型和文档内容生成，而非手写，因此会随着库的变化保持准确。它独立于 vael-ui 进行版本管理和发布。",
+    "includedAnimation": "动效系统（motion prop、enter 和 leave 钩子、v-animate），附带 GSAP 和 motion 示例",
+    "includedComponents": "每个组件的 props、插槽、事件和暴露的 ref",
+    "includedComposables": "每个独立组合式函数的参数、返回值和使用示例",
+    "includedStyling": "级联层顺序和用于主题的全部 CSS 变量",
+    "intro": "一个配套包，教 AI 编码智能体如何使用 vael-ui。它适用于 Claude Code、GitHub Copilot、Codex、Cursor 等。内容涵盖每个组件的 props、插槽和事件，每个组合式函数，以及如何设置动效、主题和 VDOM 与 Vapor 构建。它由 vael-ui 自身的类型和文档生成，而非手写，因此会随着 vael-ui 的变化保持准确。它独立于 vael-ui 进行版本管理和发布。",
     "otherAgentsIntro": "任何支持通用 <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 规范的智能体都可以通过 <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> 安装它。其中包括 GitHub Copilot、Codex、Cursor 以及其他 70 多个智能体：",
     "otherAgentsTitle": "其他代理",
     "sourceIntro": "该技能的源码位于 {link}，其中还附有在 vael-ui 发布周期之外更新它的说明。",
     "sourceTitle": "来源",
     "title": "AI 智能体技能",
     "whatsIncludedIntro": "一份简洁的顶层指南和一份完整参考，由与本文档站点相同的数据生成：",
-    "whatsIncludedTitle": "包含什么"
+    "whatsIncludedTitle": "包含内容"
   },
   "theme": {
     "label": "主题色",
@@ -448,5 +526,689 @@
     "value": "值",
     "modifiers": "修饰符",
     "noModifiers": "无修饰符。"
+  },
+  "dockTour": {
+    "componentsTitle": "组件入口移到了这里",
+    "componentsDescription": "菜单从顶部栏移到了底部 Dock，拇指更容易够到。",
+    "settingsTitle": "深色模式在设置里",
+    "settingsDescription": "主题色、圆角、尺寸、字号、动效、加载指示器和语言也都在设置中。",
+    "replayLabel": "引导",
+    "replay": "再看一次",
+    "searchTitle": "一键搜索",
+    "searchDescription": "按名称查找组件、指南和组合式函数，并附有简短说明。",
+    "variantTitle": "VDOM 或 Vapor，在顶部切换",
+    "variantDescription": "在这里把所有演示在 VDOM 构建和 Vapor 构建之间切换。"
+  },
+  "search": {
+    "actions": "命令",
+    "current": "当前",
+    "on": "开",
+    "off": "关",
+    "copyInstall": "复制安装命令",
+    "reportIssue": "报告问题",
+    "recent": "最近",
+    "drillIn": "{name} API",
+    "copy": {
+      "import": "复制导入",
+      "usage": "复制用法",
+      "link": "复制链接",
+      "command": "复制"
+    },
+    "noResults": "没有找到“{query}”的结果",
+    "didYouMean": "你是不是要找",
+    "request": "在 GitHub 上提需求",
+    "copied": "已复制到剪贴板",
+    "back": "全部结果",
+    "copiedShort": "已复制",
+    "noCommands": "没有与“{query}”匹配的命令"
+  },
+  "showMe": {
+    "loaderTitle": "所有加载器，一处设置",
+    "loaderDescription": "这个设置就是 ConfigProvider 的 loader-type，所以本站的每个加载指示器都会跟随它：按钮、列表行、提示消息和下拉刷新。选一个，看看它们如何一起变化。"
+  },
+  "motionDocs": {
+    "eyebrow": "动效系统",
+    "title": "动效",
+    "lede": "每个 vael-ui 组件都由同一套动效系统驱动。内置动效开箱即用，一个 <code>motion</code> prop 就能修改，也可以交给你自己的动画库来运行。",
+    "logoToV": "把球体变成 V",
+    "logoToOrb": "显示 vael-ui 球体",
+    "tourTitle": "从这里开始",
+    "card": {
+      "springs": {
+        "title": "弹簧与时间",
+        "body": "看看 damping 和 response 如何改变动效，再为整个应用设定一个弹簧。"
+      },
+      "engines": {
+        "title": "自定义引擎",
+        "body": "用 GSAP、motion 或 Web Animations API 并排播放同一组数值。"
+      },
+      "guide": {
+        "title": "使用你自己的动画",
+        "body": "关于数值、钩子、列表、守卫和全局样式的完整指南。"
+      },
+      "types": {
+        "title": "TypeScript",
+        "body": "每个部件和状态都能自动补全，常见错误会报类型错误。"
+      },
+      "blocks": {
+        "title": "区块",
+        "body": "由几个组件搭成的菜单、面板和小部件，可直接复制。"
+      }
+    },
+    "propTitle": "一个属性",
+    "propIntro": "每个组件都接受 <code>motion</code>。<code>false</code> 关闭它的动效。对象则修改动效：各部件的数值、弹簧或时长，或交给你自己库的 <code>enter</code> 和 <code>leave</code> 钩子。",
+    "propTable": "每个组件页面都有<strong>动效</strong>一节，列出它的部件、状态以及其他动效选项。",
+    "yoursTitle": "在你自己的组件中",
+    "yoursIntro": "<code>v-animate</code> 让你自己的元素拥有同样的动效：入场、离场、平滑适应内容的尺寸，或在布局变化时滑动到新位置。它和用于你自己元素的其他工具都从 <code>vael-ui/motion</code> 导入;在 Vapor 组件中,改为从那里导入 <code>vAnimateVapor</code>。",
+    "yoursComposables": "要实现你自己的动效，可使用背后的这些组合式函数：",
+    "composable": {
+      "springEasing": "把弹簧转换为 CSS 缓动和稳定所需的时间。",
+      "useSpringValue": "一个沿弹簧追随目标的值。",
+      "useScrollProgress": "0 到 1 的滚动进度，用于跟随滚动的动效。",
+      "settled": "在测试中等待动画结束。",
+      "useHoverIndicator": "滑动的悬停高亮，用于你自己的列表。",
+      "useTabIndicator": "Tabs 和 SelectButton 背后的滑动指示器。"
+    },
+    "nav": {
+      "motion": "动效",
+      "overview": "概览",
+      "springs": "弹簧与时间",
+      "engines": "自定义引擎",
+      "types": "TypeScript",
+      "back": "返回组件",
+      "blocks": "示例",
+      "showpieces": "并排对比",
+      "options": "所有选项"
+    },
+    "mode": {
+      "components": "按类别列出所有组件",
+      "composables": "组件背后的逻辑",
+      "motion": "一切如何运动"
+    },
+    "springs": {
+      "title": "弹簧与时间",
+      "intro": "弹簧由两个数决定。<code>damping</code> 决定它如何停下：1 时不会冲过头，更小则会回弹。<code>response</code> 大致是它所需的时间，单位为秒。弹簧没有固定时长，所以可以随时打断，并从当前位置反向。",
+      "labTitle": "试试弹簧",
+      "presets": "预设",
+      "preset": {
+        "snappy": "利落",
+        "smooth": "顺滑",
+        "bouncy": "弹跳",
+        "gentle": "柔和"
+      },
+      "reads": "约 {settle} 毫秒后稳定。",
+      "play": "播放",
+      "everywhereTitle": "整个应用一个弹簧",
+      "everywhereIntro": "在 <code>ConfigProvider</code> 上设定弹簧，其中的抽屉、底部面板、通知、指示器和 AnimatedNumber 都会使用这个弹簧。下面的演示会跟随上方的滑块。",
+      "switch": "通知",
+      "openDrawer": "打开抽屉",
+      "drawerTitle": "按你的弹簧",
+      "drawerBody": "这个抽屉按你设定的弹簧打开。"
+    },
+    "engines": {
+      "title": "自定义引擎",
+      "intro": "默认情况下，vael-ui 用 CSS 过渡和 Web Animations API 自己播放动效，因此 transform 和 opacity 在主线程之外运行。风格中的 <code>engine</code> 会改用你选择的库来播放浮层部件、列表条目和你自己的目标，数值和时间保持不变。状态、切换和 <code>linked</code> 元素始终使用内置引擎。",
+      "compareTitle": "并排对比",
+      "compareIntro": "三个弹出框使用相同的数值，各自位于自己的 <code>ConfigProvider</code> 中。一起打开来对比。",
+      "openAll": "三个一起打开",
+      "open": "打开",
+      "note": {
+        "waapi": "内置，无需安装。",
+        "gsap": "由 GSAP 以它自己的缓动播放。",
+        "motion": "由 motion 以它自己的弹簧播放。"
+      },
+      "adaptersTitle": "编写适配器",
+      "adaptersIntro": "引擎会收到元素、起始值和结束值、以秒为单位的时间，有弹簧时还会附带背后的弹簧。返回你的库返回的内容。vael-ui 会等待它，并在动画被打断时停止它。",
+      "appWideTitle": "在整个应用中切换引擎",
+      "appWideIntro": "把适配器放进根部的 <code>ConfigProvider</code>，其中的每个组件都会使用它。组件自己的钩子仍然优先。"
+    },
+    "presets": {
+      "label": "动效",
+      "changed": "动效：{name}",
+      "default": {
+        "label": "默认",
+        "body": "vael-ui 自带的动效"
+      },
+      "calm": {
+        "label": "平静",
+        "body": "柔和淡入，不冲过头"
+      },
+      "snappy": {
+        "label": "利落",
+        "body": "快速干脆"
+      },
+      "bouncy": {
+        "label": "弹跳",
+        "body": "处处带点回弹"
+      },
+      "jelly": {
+        "label": "果冻",
+        "body": "挤压拉伸，晃动后停下"
+      },
+      "gooey": {
+        "label": "黏稠",
+        "body": "模糊的团块膨胀成形"
+      },
+      "tune": "调整{name}",
+      "reset": "重置",
+      "dial": {
+        "response": "时长",
+        "damping": "回弹",
+        "press": "按压深度",
+        "stagger": "错开"
+      }
+    },
+    "tour": {
+      "cta": "新功能",
+      "menuTitle": "全站动效",
+      "menuBody": "选一个预设，每个页面上的每个组件都会使用它。用下面的旋钮微调。",
+      "modeTitle": "动效专区",
+      "modeBody": "切换到 Motion，查看弹簧、引擎和背后的组合式函数。",
+      "tabTitle": "演练场里的动效",
+      "tabBody": "改变这个组件的进入、离开和按下时的反应，然后复制代码。",
+      "sectionTitle": "每个部件都有名字",
+      "sectionBody": "每个组件页面都有动效一节，列出可以添加动画的部件和状态。"
+    },
+    "types": {
+      "title": "TypeScript",
+      "intro": "编辑器知道每个组件的部件和状态、每个 CSS 属性，以及 vael-ui 的时间令牌。错误在保存前就会标红。",
+      "component": "组件",
+      "completeTitle": "自动补全",
+      "completeIntro": "选中代码中的名称，查看编辑器在那里提供的候选，选一个即可插入。",
+      "completeHint": "选中带点线的名称，查看编辑器的候选。",
+      "completeNote": "同样的名称列在{link}中。",
+      "completeLink": "{name} 的 Motion 部分",
+      "mistakesTitle": "错误就是类型错误",
+      "mistakesIntro": "vael-ui 自己的类型测试会检查这些写法始终报错，因此任何版本都不会意外地开始接受它们。",
+      "unitsTitle": "单位",
+      "unitsIntro": "纯数字使用所示单位。字符串直接交给 CSS，所以 <code>'2rem'</code> 和 <code>'50%'</code> 也可以。",
+      "tokensTitle": "时间令牌",
+      "tokensIntro": "<code>duration</code> 和 <code>easing</code> 接受 vael-ui 的令牌，编辑器会列出它们。下面是它们此刻在本页的值。在页眉的动效菜单里选一个预设，由弹簧驱动的令牌会随之改变。",
+      "warningsTitle": "在控制台中",
+      "warningsIntro": "开发时，vael-ui 会在控制台说明哪里出错、该改什么。生产构建不包含这些消息。",
+      "devtools": "想知道什么动了、为什么动，检查组件即可。<code>data-motion</code> 列出设置其动效的层，每次打开和关闭都会显示在 Performance 面板的 Timings 轨道上。",
+      "mistake": {
+        "part": "不存在的部件",
+        "property": "拼错的 CSS 属性",
+        "timing": "同时给了弹簧和时长",
+        "state": "不存在的状态",
+        "kind": "对话框上的列表选项",
+        "version": "缺少 version 的样式"
+      },
+      "unit": {
+        "ms": "毫秒",
+        "s": "秒",
+        "px": "像素",
+        "deg": "度",
+        "none": "无单位"
+      },
+      "orAnyProperty": "或任意 CSS 属性",
+      "orAnyEasing": "或任意 CSS 缓动",
+      "orMs": "或数字，单位 ms"
+    },
+    "chapters": {
+      "eyebrow": "动效指南 · {n} / {total}",
+      "start": {
+        "title": "快速上手",
+        "intro": "vael-ui 的组件开箱即带动效。你可以为单个组件或整个应用改变它们的运动方式，用的都是同样几个选项。",
+        "already": {
+          "title": "本来就会动",
+          "body": "打开下面的对话框、选择器和消息提示。每个浮层、列表和控件都内置了动效。它很简短，而且关闭比打开更快。"
+        },
+        "one": {
+          "title": "修改一个组件",
+          "body": "每个组件都接受 <code>motion</code> prop。指定某个部件从哪里进入，比如 <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>，以及它运动所用的弹簧。"
+        },
+        "timing": {
+          "title": "时间",
+          "body": "动效可以用弹簧，也可以用 <code>duration</code>。弹簧可以写名字：<code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code> 或 <code>'gentle'</code>，也可以写 <code>damping</code> 和 <code>response</code> 的数值。以毫秒计的 <code>duration</code> 可以配任何 CSS <code>easing</code>，也可以用 vael-ui 的名字，比如 <code>'out'</code>、<code>'pop'</code> 或像落下的球一样着地的 <code>'bounce'</code>。使用弹簧时，位置和尺寸随弹簧运动，不透明度、颜色和模糊则平滑过渡。 这些名称表示一种感觉，而不是精确的曲线：<code>'in-out'</code> 会稍早经过中点，因此做拖动联动时请用 <code>'linear'</code>。"
+        },
+        "spring": {
+          "title": "一个弹簧管全部",
+          "body": "在 <code>ConfigProvider</code> 上设置 <code>spring</code>，里面的每个组件都会使用它。<code>damping</code> 小于 1 会冲过头，<code>response</code> 大致是所需的时间，单位为秒。 也可以直接写名字：<code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code> 或 <code>'gentle'</code>。"
+        },
+        "off": {
+          "title": "关闭动效",
+          "body": "在组件上加 <code>:motion=\"false\"</code>，或加在 <code>ConfigProvider</code> 上作用于其中所有内容，打开和关闭就会立即完成。动效开启时，要求减少动态效果的用户只会看到淡入淡出，没有位移。 加载指示器会继续旋转，因为它表示仍有操作在进行。"
+        }
+      },
+      "elements": {
+        "title": "任意元素",
+        "intro": "动效不只属于 vael-ui 的组件。<code>v-animate</code> 能直接在模板里给你的任意元素加上入场和离场动效。",
+        "appear": {
+          "title": "进入与离开",
+          "body": "<code>initial</code> 指定元素从哪里进入。Vue 移除它时，它会沿原路离开，更快也更轻，除非你给它一个 <code>exit</code>。在会关闭的组件里，比如对话框或菜单，它会随面板一起离开。 常用的入场可以直接写名字：<code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code> 或 <code>.blur</code>。弹簧也这样加，比如 <code>v-animate.pop.bouncy</code>，再用一个值来微调：<code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
+        },
+        "names": {
+          "title": "名称",
+          "body": "冒号后面的词（如 <code>v-animate:rows</code>）是名称。单独的元素不需要名称。当元素属于同一组时才给它们命名：",
+          "items": [
+            "同一名称下同时进入的元素是一组，<code>stagger</code> 会让它们依次进入。",
+            "在 vael-ui 组件（例如 Dialog）里，它的 <code>motion.targets.rows</code> 决定名为 <code>rows</code> 的元素如何运动，它们随组件一起出现和离开。",
+            "<code>after: 'rows'</code> 让另一个元素等待它们。",
+            "同一名称下的页面可以用 <code>swap: 'wait'</code> 互相等待。"
+          ]
+        },
+        "show": {
+          "title": "显示与隐藏",
+          "body": "与 <code>v-show</code> 一起使用时，<code>v-animate</code> 会在元素隐藏时播放离场，再次显示时播放入场，和 <code>v-if</code> 一样。"
+        },
+        "scroll": {
+          "title": "滚动到视野中时",
+          "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序以 <code>stagger</code> 间隔依次播放。 <code>stagger: true</code> 按 stagger 令牌的间隔排开；<code>'end'</code>、<code>'center'</code> 或 <code>'edges'</code> 会让这一波从那里开始。 在网格中，<code>'center'</code> 和 <code>'edges'</code> 按每个元素实际所在的位置计算：波从中间的单元格或四角开始。"
+        },
+        "grid": {
+          "title": "跨越网格",
+          "body": "同一名称下一起进入的元素会按各自所在的位置依次出现。在网格中，<code>stagger: 'center'</code> 从中间的单元格开始向外扩散，<code>'edges'</code> 从四角开始向内收拢。只有一行或一列时，按页面顺序进行。"
+        },
+        "inView": {
+          "title": "在视野中时",
+          "body": "<code>states.inView</code> 在元素位于屏幕上时保持一种外观，滚出视野后恢复。<code>viewport</code> 决定何时算作可见：<code>amount</code>（<code>'some'</code>、<code>'all'</code> 或 0 到 1）、屏幕周围的 <code>margin</code>，以及看到一次后保持的 <code>once</code>。<code>when: 'visible'</code> 也接受同样的 <code>viewport</code>。 当 <code>inView</code> 的判定需要与 <code>when: 'visible'</code> 不同时，给它自己的 <code>viewport</code>；再给它 <code>onAfterEnter</code> 和 <code>onAfterLeave</code>，就能在状态开启和关闭时运行你的代码，比如在目录中标出正在阅读的章节。"
+        },
+        "progress": {
+          "title": "跟随滚动",
+          "body": "<code>useScrollProgress()</code> 以 0 到 1 的 ref 返回页面的滚动，或元素穿过屏幕的进度。把它作为 getter 传给 <code>progress</code>（<code>progress: () => scroll</code>），关键帧就会跟随滚动，而不会重新渲染你的组件。<code>offset</code> 决定起点和终点：<code>['start end', 'end start']</code> 表示从进入到离开。"
+        },
+        "replay": {
+          "title": "再播一次",
+          "body": "<code>replay</code> 的值每次变化时，都会重新播放 <code>initial</code>，而不重新挂载元素。可用于数字增加、状态变化或复制失败。设置 <code>appear: false</code> 后，它只在这些变化时播放，挂载时不播放。 使用 <code>appear: 'later'</code> 时，页面首次渲染时已有的元素保持不动，之后添加的元素才会动画进入。在组件的面板里，指的是它打开时已有的元素。 <code>animate</code> 中的关键帧也会从头播放，所以每换一个周期，线条都会重新绘制。"
+        },
+        "layout": {
+          "title": "滑到新位置",
+          "body": "<code>layout: true</code> 会让元素滑到布局放置它的位置，比如列表重新排序或相邻元素变大时，并在尺寸改变时平滑过渡到新尺寸。<code>layout: 'position'</code> 只滑动。<code>delay</code> 会在滑动前等待，期间保持原来的位置。"
+        },
+        "shared": {
+          "title": "从一处到另一处",
+          "body": "<code>layoutId</code> 相同的两个元素会作为同一个元素运动。一个离开、另一个到来时，新元素会从旧元素的盒子中长出来。加上 <code>layout: 'position'</code> 能让它在途中保持尺寸，文字就不会被拉伸。"
+        },
+        "pages": {
+          "title": "页面",
+          "body": "路由切换就是一个元素离开、另一个元素进入。给路由组件加上带名称的 <code>v-animate</code>。旧页面在原处离开，同时新页面进入；<code>swap: 'wait'</code> 会等旧页面离开后再让新页面进入。"
+        },
+        "animate": {
+          "title": "保持一种外观",
+          "body": "<code>animate</code> 设置元素在页面上时一直保持的外观。修改它，元素就会从当前状态动画过去；除非你指定 <code>duration</code>，否则使用弹簧：<code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>。使用关键帧数组时，<code>progress</code>（0 到 1）会把它们停在某个位置，而不是播放它们，这样滑动或滚动就能拖动它们。配上 <code>spring</code>，它们会稍有延迟地跟上。"
+        },
+        "values": {
+          "title": "可以动画的属性",
+          "body": "除了 <code>x</code>、<code>y</code>、<code>scale</code>、<code>rotate</code>、3D 旋转和 <code>opacity</code>，外观可以包含任何可动画的 CSS 属性：<code>color</code>、模糊之类的 <code>filter</code>、用于擦除效果的 <code>clipPath</code>，以及你自己的自定义属性。纯数字表示 px，<code>rotate</code> 中表示度。移动请用 transform 和不透明度；颜色、模糊和裁剪只用于细微点缀。"
+        },
+        "turn": {
+          "title": "3D 翻转",
+          "body": "<code>rotateX</code> 和 <code>rotateY</code> 让元素朝向你或远离你转动，<code>perspective</code> 决定看起来有多深：翻转卡片就是 <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>。<code>skewX</code> 和 <code>skewY</code> 让它倾斜，<code>scaleX</code> 和 <code>scaleY</code> 只缩放一个轴，比如从底部长出来的柱条。"
+        },
+        "draw": {
+          "title": "绘制线条",
+          "body": "<code>pathLength</code> 把 SVG 线条从 0（无）画到 1（全部）：<code>initial: {'{'} pathLength: 0 {'}'}</code> 会画出一个对勾。<code>pathOffset</code> 移动绘制部分的起点。 <code>animate()</code> 会在路径上设置 <code>pathLength=\"1\"</code>，因此 <code>pathOffset</code> 和你在 CSS 中设置的虚线都是其长度的比例。"
+        },
+        "size": {
+          "title": "跟随内容",
+          "body": "<code>v-animate.size</code> 让元素平滑过渡到内容的新高度；当内容决定宽度时，也会过渡到新宽度，而不是突然跳变。"
+        },
+        "fromCode": {
+          "title": "从代码中",
+          "body": "对于由事件触发的动效，比如输入了错误的代码或把商品加入购物车，<code>animate(el, values, options)</code> 会在代码中播放与 <code>v-animate</code> 相同的值和时序，并把终点留作元素自身的样式。可以用 await 等待它，或用 <code>pause()</code>、<code>reverse()</code>、<code>time</code> 和 <code>speed</code> 控制它。<code>useAnimate(useTemplateRef('row'))</code> 把选择器限定在一个元素内，并在组件卸载时停止它启动的动画。它遵循应用的弹簧、<code>motion: false</code> 和减弱动态效果设置。"
+        },
+        "tween": {
+          "title": "补间一个数字",
+          "body": "<code>useTween(source)</code> 是一个从当前值平滑过渡到其来源每个新值的数字：总额、百分比、你自己绘制的值。除非你给它 <code>spring</code>，或 <code>duration</code> 和 <code>easing</code>，否则它使用应用的弹簧；关闭动效或减少动效时会直接跳到新值。"
+        },
+        "drag": {
+          "title": "拖动",
+          "body": "可拖动的组件（BottomSheet、SwipeToReveal、Sortable、Slider）已经内置了拖动。要让人重新排序你自己的列表，或在列表之间移动条目，请用 <code>v-draggable</code> 配合 <code>useSortableGroup</code>：与 Sortable 相同的引擎和动效。对自由拖动的元素（例如用 VueUse 的 <code>useDraggable</code>），把它的偏移放在 <code>animate</code> 里，松手时设回 0，<code>v-animate</code> 会用弹簧把它带回原位。"
+        },
+        "own": {
+          "title": "你自己的组件",
+          "body": "<code>useMotion</code> 能让你自己的组件拥有与 vael-ui 相同的动效。把它的 <code>transition</code> 绑定到 Vue 的 <code>&lt;Transition&gt;</code>。组件随后会跟随应用的动效进出，并带着它的具名子元素一起动画。"
+        }
+      },
+      "states": {
+        "title": "状态与列表",
+        "intro": "组件在屏幕上时也会动，例如按下、校验失败或面板展开。列表会在条目进出时为它们添加动画。",
+        "press": {
+          "title": "按下与悬停",
+          "body": "<code>states</code> 会在组件处于某个状态时为部件添加动画。普通值在状态开启期间一直保持：<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> 会在你按住按钮时把它缩小。 任何元素都可以通过 <code>v-animate</code> 使用同样的状态：<code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>。 所有组件和元素都有的状态：<code>hover</code>（仅鼠标，点按不会触发）、<code>active</code>（用指针、空格或 Enter 按下）和 <code>focus</code>（内部任意位置获得焦点）。组件还有自己的状态，例如 <code>invalid</code>、<code>checked</code>、<code>open</code> 或 <code>disabled</code>，列在各自页面上；<code>v-animate</code> 还有 <code>inView</code>。"
+        },
+        "shake": {
+          "title": "校验失败",
+          "body": "数组会在状态开启时播放一次：<code>invalid: {'{'} root: {'{'} x: [0, -8, 8, -4, 4, 0] {'}'} {'}'}</code> 会在字段每次变为无效时晃动它。"
+        },
+        "toggle": {
+          "title": "展开、选中、按下",
+          "body": "Accordion 在 <code>open</code> 状态旋转箭头，Switch 在 <code>active</code> 状态压扁滑块。每个组件页面的动效一节都列出了它的部件和状态。"
+        },
+        "keyframes": {
+          "title": "关键帧",
+          "body": "数组就是一组关键帧。<code>times</code> 把每一帧放在 0 到 1 之间的位置，<code>easing</code> 为每一步加上缓动。传入一个缓动列表可以让每一步各用一个缓动，比如先上升再回弹。<code>repeat</code> 会重播它们，<code>repeat: Infinity</code> 会一直播放，直到状态关闭或外观改变。 某一步也可以用弹簧：<code>easing: ['linear', 'bouncy']</code>。在循环播放时修改它的 <code>duration</code>，它会从当前位置加速或减速。 <code>repeatDelay</code> 在每次重复之间停顿，<code>repeatType: 'mirror'</code> 沿原路返回。第一个关键帧写 <code>null</code>，就从当前值开始：<code>scale: [null, 1.2, 1]</code>。"
+        },
+        "each": {
+          "title": "逐个播放",
+          "body": "有些部件会重复出现，比如 Stepper 的圆圈、Dock 的条目或 OtpInput 的格子。每个元素都播放自己的状态，所以只有变成 <code>current</code> 的那一步会弹一下。把值写成函数就能使用每个元素的 <code>index</code>，比如让晃动一格一格地传过去。"
+        },
+        "again": {
+          "title": "再次播放入场",
+          "body": "组件的 <code>motion</code> 也接受 <code>replay</code>。它变化时，组件会重新播放 <code>initial</code>，而不重新挂载，比如打出五星评分时迸出一串星星。<code>appear: false</code> 让它在组件挂载时不播放。 状态也接受 <code>replay</code>：在状态开启期间，值一变化就会再次播放其关键帧，所以第二次输错代码时字段也会再次抖动：<code>invalid: {'{'} root: {'{'} x: [0, -6, 6, 0] {'}'}, replay: attempts {'}'}</code>。"
+        },
+        "lists": {
+          "title": "列表",
+          "body": "Toaster、Timeline、FileUpload、SpeedDial、DataTable 的行、CommandPalette 的行以及 Select 系列的标签，都会让新条目依次进入。<code>leaving: 'pop'</code> 会把离开的条目移出布局，让其余条目立即合上空位。<code>'hold'</code> 会保留空位，直到条目离开。把 <code>initial</code> 或 <code>exit</code> 写成函数，它会收到一起进出的条目的 <code>{'{'} index, count {'}'}</code>，这样关闭时可以从最后一个到第一个依次进行。 <code>stagger</code> 接受与 <code>v-animate</code> 相同的写法（<code>true</code>、<code>'end'</code>、<code>'center'</code>、<code>'edges'</code>），或秒数。"
+        },
+        "toasts": {
+          "title": "会变化的消息提示",
+          "body": "Toaster 的 <code>states</code> 会在 toast 切换变体时播放。正在保存的 toast 变成 <code>error</code> 时可以晃动，变成 <code>success</code> 时可以让图标弹一下。"
+        }
+      },
+      "overlays": {
+        "title": "浮层",
+        "intro": "Dialog、Drawer、BottomSheet、Popover 和 Menu 等浮层都通过动效系统打开和关闭。它们可以从打开它们的元素中展开、带动页面一起动，还能切换里面的内容。",
+        "morph": {
+          "title": "从触发器展开",
+          "body": "<code>morph: 'trigger'</code> 会让面板从打开它的元素中展开，关闭时再缩回该元素。"
+        },
+        "morphAny": {
+          "title": "从任意元素展开",
+          "body": "给 <code>morph</code> 一个对象，其 <code>from</code> 返回一个元素，比如你点击的那一行：<code>morph: {'{'} from: () => row, hide: false {'}'}</code>。<code>hide: false</code> 让这一行在对话框打开时仍然可见。"
+        },
+        "surface": {
+          "title": "融合效果的 Popover",
+          "body": "<code>surface</code> 在 Popover 后面绘制一层形状：触发器上的胶囊和随面板移动的色块，都使用面板的颜色。给这一层加上样式中的某个 <code>filters</code>（例如 goo），形状就会融合在一起，而文字保持清晰。"
+        },
+        "recede": {
+          "title": "带动页面",
+          "body": "<code>linked</code> 会在 Dialog、Drawer 或 BottomSheet 打开时移动其他元素，比如让页面在抽屉后方向后退去。每一项指定一个元素，以及它在浮层打开时的样子。"
+        },
+        "inner": {
+          "title": "内部的部件",
+          "body": "<code>initial</code> 也能作用到对话框的标题、正文和页脚，让它们跟着面板进入。<code>exitOrder: 'reverse'</code> 会在面板之前关闭它们。 <code>stagger</code> 会让它们按页面顺序依次进入：<code>stagger: true</code>。"
+        },
+        "swap": {
+          "title": "切换内容",
+          "body": "在对话框里放一个带 key 的元素，然后改变它的 key。<code>swap: 'wait'</code> 让旧元素先离开、新元素再到来，<code>direction</code> 告诉你的值是往哪个方向切换的。 新内容进入时，面板会平滑过渡到它的尺寸；<code>resize: false</code> 则直接跳到该尺寸。"
+        },
+        "guard": {
+          "title": "关闭前先确认",
+          "body": "<code>before-close</code> 决定对话框是否关闭。返回 <code>true</code> 关闭，返回 <code>false</code> 保持打开，或返回二者之一的 Promise，比如一个确认框。在得到答复之前，对话框保持静止。"
+        }
+      },
+      "choreography": {
+        "title": "编排",
+        "intro": "在对话框或弹出框里，你自己的元素也能加入它的动效。先给它们命名，再安排它们彼此之间以及与面板的时间关系。",
+        "after": {
+          "title": "依次进行",
+          "body": "在 <code>targets</code> 中为元素命名，并用插槽提供的 <code>target('name')</code> 或 <code>v-animate:name</code> 标记它们。<code>after: 'summary:60%'</code> 会在摘要进入到 60% 时开始播放各行。 没有被组件包裹的元素，在一起出现时也可以互相等待：<code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>。 组件根据数据渲染的行无法打标记：请改为给它们的名称设置 <code>select</code>，例如 <code>targets: {'{'} rows: {'{'} select: 'tr' {'}'} {'}'}</code>。"
+        },
+        "moments": {
+          "title": "时间点",
+          "body": "<code>after</code> 会等待另一个元素动效中的某个时刻：",
+          "items": [
+            "<code>'summary'</code>：到达时",
+            "<code>'summary:start'</code>：开始时",
+            "<code>'summary:settle'</code>：弹簧静止时",
+            "<code>'summary:40%'</code>：进入到一部分时",
+            "<code>'panel'</code>：组件自身的部件也可以",
+            "<code>['summary', 'chart']</code>：全部到达时",
+            "<code>'tag'</code>：页面上已有的元素，在它当前播放的动画结束时"
+          ]
+        },
+        "steps": {
+          "title": "途中的停靠点",
+          "body": "<code>steps</code> 让元素经过一系列停靠点。它会在每一处停住，直到该停靠点的 <code>after</code> 时刻到来。"
+        },
+        "own": {
+          "title": "你自己的时间线",
+          "body": "<code>enter</code> 钩子会收到各个部件，并在第二个参数里按名称收到你的目标：<code>enter: ({'{'} panel {'}'}, {'{'} targets {'}'}) => …</code>。先在 <code>targets</code> 里为它们命名，即使没有自己的值。这样一条 GSAP 时间线就能为它们全部做动画。返回这条时间线。对话框会等它完成，提前关闭时会停止它。"
+        }
+      },
+      "callbacks": {
+        "title": "回调",
+        "intro": "这些回调都在动效播放完后运行，所以下一步不必去猜时长。没有动效播放时，比如关闭了动效，它们会立即运行。",
+        "enterLeave": {
+          "title": "进入之后，离开之后",
+          "body": "在 <code>v-animate</code> 上，<code>onAfterEnter</code> 在入场播放完后运行，每次 <code>replay</code> 后也会运行。<code>onAfterLeave</code> 在离场播放完、元素移除后运行。两者都会收到该元素。 <code>onStart</code> 在入场开始移动时运行，在任何 <code>delay</code> 之后。"
+        },
+        "states": {
+          "title": "状态之后",
+          "body": "状态的 <code>onAfterEnter</code> 在它打开并播放完后运行，按名称收到各部件：<code>({'{'} root {'}'}) => …</code>。它的 <code>onAfterLeave</code> 在它关闭并复原后运行。重复的部件，比如 OtpInput 的格子，以数组形式传入。"
+        },
+        "overlays": {
+          "title": "打开之后，关闭之后",
+          "body": "组件自身的 <code>onAfterEnter</code> 和 <code>onAfterLeave</code> 与它的 <code>{'@'}after-enter</code>、<code>{'@'}after-leave</code> 同时运行，并收到它的部件。里面你自己的元素，把回调写在 <code>targets</code> 中、外观旁边：<code>hint: {'{'} after: 'panel', onAfterEnter {'}'}</code>。"
+        },
+        "swap": {
+          "title": "切换之后",
+          "body": "<code>onAfterSwap</code> 在新视图进入后运行，收到该视图和 <code>direction</code>。Calendar 的在新月份进入后运行，收到它的网格。"
+        },
+        "lists": {
+          "title": "列表中的每一项",
+          "body": "在列表中，<code>onAfterEnter</code> 和 <code>onAfterLeave</code> 对每一项运行，收到它的部件，以及它在同时进入或离开的项中的 <code>index</code>。"
+        },
+        "move": {
+          "title": "移动之后",
+          "body": "<code>onAfterMove</code> 在 <code>layout</code> 或 <code>layoutId</code> 的滑动、或 <code>animate</code> 的变化播放完后运行。 每个元素各自运行一次，所以一次打乱移动了四行，就会运行四次。"
+        },
+        "repeat": {
+          "title": "每次重复",
+          "body": "与值的 <code>repeat</code> 一起使用时，<code>onRepeat</code> 会在每次重复开始时运行，并传入已完成的次数：第二次开始时为 1，然后是 2。"
+        },
+        "hooks": {
+          "title": "你自己的动画",
+          "body": "给元素加上 <code>enter</code> 或 <code>leave</code>，就能用 GSAP 或 motion 代替它的值来做动画。请返回该动画：vael-ui 会等它播放完再运行回调，元素提前离开时会停止它。钩子会收到元素和 <code>{'{'} signal, reducedMotion, index {'}'}</code>。 减少动效时，你的钩子不会运行。设置 <code>reducedMotion: 'run'</code> 可让它们照常运行，并在上下文中检查 <code>reducedMotion</code> 以去掉位移。"
+        }
+      },
+      "styles": {
+        "title": "你的应用的动效",
+        "intro": "动效风格是 <code>ConfigProvider</code> 上的一个对象，决定整个应用如何运动：按角色、按组件，还可以为你自己的元素设置预设。",
+        "style": {
+          "title": "整个应用一个对象",
+          "body": "样式是 <code>ConfigProvider</code> 上的一个对象：<code>version: 1</code>、作用于其中一切的 <code>spring</code>，以及按角色或按组件的键。对每个组件，依次以它自己的 <code>motion</code>、样式中它的键、它的角色、它的内置外观为准。角色如下：",
+          "items": [
+            "<code>overlay</code>：Dialog、Drawer、BottomSheet、Popover、Menu、Tooltip，以及 Select、Combobox、DatePicker、TreeSelect 的面板",
+            "<code>list</code>：Toaster、Timeline、FileUpload、SpeedDial、DataTable 的行、CommandPalette 的行、Breadcrumb 和 AvatarGroup",
+            "<code>press</code>：按下和悬停时 Button 的变化",
+            "<code>reveal</code>：自行出现和离开的内容，例如 Message",
+            "<code>content</code>：组件内你的元素，即它的 <code>targets</code>"
+          ]
+        },
+        "components": {
+          "title": "按组件",
+          "body": "每个带 <code>motion</code> 属性的组件在样式中都有以其命名的键：<code>dialog</code>、<code>drawer</code>、<code>toaster</code>、<code>button</code>、<code>select</code> 等。键接受该组件 <code>motion</code> 所接受的内容，因此一个样式就能统一修改应用中所有对话框、给抽屉设置独立的弹簧，并让每个失败的 toast 抖动。在代码中键还可以带钩子；从数据读取的样式则不行。"
+        },
+        "presets": {
+          "title": "预设",
+          "body": "<code>presets</code> 是你自己命名的入场效果。每个都能在 provider 内任意位置作为修饰符 <code>v-animate.wiggle</code> 或作为值 <code>v-animate=\"'wiggle'\"</code> 使用。预设可以包含 <code>v-animate</code> 接受的内容：<code>initial</code>、<code>exit</code>、时间、<code>stagger</code>，甚至 <code>states</code>。使用内置名称（如 <code>rise</code> 或 <code>pop</code>）即可在 provider 内替换该入场效果。把你的名称写进 <code>MotionPresets</code>，就能自动补全，拼错时类型检查会失败。"
+        },
+        "filters": {
+          "title": "滤镜",
+          "body": "<code>filters</code> 为 <code>ConfigProvider</code> 放到页面上的 SVG 滤镜命名，其中的任何元素都能用 <code>filter: url(#名称)</code> 使用它。goo（<code>{'{'} blur: 8, contrast: [18, -7] {'}'}</code>）会让形状在相接处融在一起。"
+        },
+        "parse": {
+          "title": "来自代码之外的风格",
+          "body": "<code>parseMotionStyle</code> 会检查来自设置页、数据库或网络的风格。它会丢弃任何不安全或未知的内容，并在 <code>issues</code> 中列出被丢弃的部分。"
+        }
+      },
+      "server": {
+        "title": "服务端渲染",
+        "intro": "动效在服务端渲染的页面上同样有效：入场在任何脚本之前就开始，水合时也不会重复播放。",
+        "paint": {
+          "title": "在任何脚本之前",
+          "body": "在服务端渲染的页面上，<code>v-animate</code> 的入场会以 CSS 的形式写进 HTML，因此它随页面绘制一起播放，不等你的 JavaScript 加载，水合时也不会再播放。它支持 <code>opacity</code>、<code>x</code>、<code>y</code>、<code>scale</code>、<code>blur</code>，可以用弹簧或 duration，也包括 <code>v-animate.rise</code> 这样的内置入场。在减少动态效果的设置下，它只做淡入。"
+        },
+        "stagger": {
+          "title": "依次出现的列表",
+          "body": "数值形式的 <code>stagger</code> 会读取每个元素的 <code>--i</code>：用 <code>v-for</code> 的索引来设置，比如 <code>:style=\"{'{'} '--i': index {'}'}\"</code>。<code>stagger: true</code> 按 stagger 令牌的间隔排开。"
+        },
+        "later": {
+          "title": "需要等 JavaScript 的部分",
+          "body": "关键帧数组、<code>when: 'visible'</code>、<code>layoutId</code>、<code>after</code>、<code>steps</code> 需要页面的脚本，所以这些元素在脚本运行前会保持原样。为组件命名的元素（<code>v-animate:rows</code>）随它的组件一起动。<code>appear: 'later'</code> 把服务端渲染算作首次渲染，所以那里的内容都不会动画。"
+        },
+        "open": {
+          "title": "加载时已打开",
+          "body": "页面加载时就处于打开状态的浮层会直接以打开状态渲染，不播放动画。组件的 <code>initial</code> 在水合时不会播放，列表的 <code>appear: true</code> 会跳过服务端已经渲染的项。 从首次渲染就显示的组件（例如 Message）会直接显示；之后再出现时才播放入场动画。"
+        },
+        "setup": {
+          "title": "Nuxt 和 Vite",
+          "body": "Nuxt 模块会自动注册 <code>v-animate</code>。只用 Vite SSR 时，设置 <code>ssr: {'{'} noExternal: ['vael-ui'] {'}'}</code>，让每个组件的 CSS 一起打包，并把 teleport 渲染到浮层所在的 <code>&lt;body&gt;</code>。VDOM 和 Vapor 两种构建都能在服务端渲染并水合。"
+        }
+      }
+    },
+    "blocks": {
+      "title": "示例",
+      "intro": "完整的界面片段，每个都由几个 vael-ui 组件和它们的动效组成。复制到你的应用里，再按需修改。",
+      "comingTitle": "更多即将到来",
+      "comingBody": "区块将拥有自己的站点 blocks.vael-ui.dev。这里是第一批。",
+      "items": {
+        "Bloom": {
+          "title": "绽放菜单",
+          "body": "“新建”按钮展开成菜单，选项从中心向外打开。"
+        },
+        "Family": {
+          "title": "钱包面板",
+          "body": "浮动面板的视图在原地交叉淡入，同时缓动到每个视图的高度。"
+        },
+        "Island": {
+          "title": "灵动岛",
+          "body": "一个按每项活动弹性变大小的胶囊，旁边会冒出一个气泡。"
+        },
+        "Feedback": {
+          "title": "反馈小部件",
+          "body": "按钮展开成表单，发送状态与致谢消息在原地切换。"
+        },
+        "Stack": {
+          "title": "通知堆叠",
+          "body": "指向堆叠，卡片会展开成列表。"
+        },
+        "Composer": {
+          "title": "回复框",
+          "body": "聚焦输入框，工具以弹簧打开，同时“回复”按钮滑到它们下方。"
+        },
+        "ActionBar": {
+          "title": "可展开的操作栏",
+          "body": "指向某个操作，它会展开显示标签，整栏随之调整大小。"
+        },
+        "Otp": {
+          "title": "验证码",
+          "body": "错误的验证码会让输入框晃动，输入 424242 会画出对勾。"
+        },
+        "Reveal": {
+          "title": "滚动出现",
+          "body": "卡片进入视野时上浮，数字向上滚动，只播一次。"
+        },
+        "Calendar": {
+          "title": "滑动的月份",
+          "body": "网格朝你翻动的方向滑动，标签随之滚动。"
+        },
+        "Accordion": {
+          "title": "弹性手风琴",
+          "body": "高度、箭头、间距和圆角都跟随同一个弹簧运动。"
+        },
+        "Spotlight": {
+          "title": "命令菜单",
+          "body": "每天要打开很多次，所以保留安静的内置动效。"
+        }
+      }
+    },
+    "showpieces": {
+      "title": "并排对比",
+      "intro": "文档中的每个展示作品最初都是用 GSAP、motion 或 vael-ui 的内置动效做成的。这里，每个作品旁边都放着只用 vael-ui 动效重建的同一作品。用同样的方式播放两者，并可打开任一边的代码。",
+      "filter": "最初实现方式",
+      "all": "全部",
+      "builtin": "内置",
+      "with": "使用 {engine}",
+      "vael": "使用 vael-ui 动效",
+      "none": "暂无 vael-ui 版本。"
+    },
+    "options": {
+      "title": "所有选项",
+      "intro": "动效指南中的每个选项，按用途分组，并附上讲解它的章节。",
+      "filter": "筛选选项",
+      "empty": "没有匹配的选项。",
+      "groups": {
+        "timing": "时间与关闭",
+        "presence": "出现与离开",
+        "moving": "移动",
+        "states": "状态",
+        "together": "多个元素一起",
+        "overlays": "浮层",
+        "values": "数值与关键帧",
+        "callbacks": "回调",
+        "code": "在代码中",
+        "app": "应用的整体动效",
+        "other": "其他"
+      }
+    }
+  },
+  "recipes": {
+    "DataTable": {
+      "Filtering": {
+        "title": "筛选",
+        "note": "请在把行传给 `data` 之前先筛选。这里由一个 `computed` 保留与搜索和状态匹配的行，表格显示它收到的行。"
+      },
+      "InlineEditing": {
+        "title": "单元格内编辑",
+        "note": "在列的 `#cell` 插槽中放一个 `Editable`，并绑定到行的字段。按 Enter 或离开单元格即保存，按 Escape 取消。请在 `submit` 事件中把修改保存到服务器。"
+      },
+      "CsvExport": {
+        "title": "导出 CSV",
+        "note": "用表格显示的同一组行和列生成 CSV，并以 `Blob` 的形式下载。包含逗号、引号或换行的值会加上引号。"
+      },
+      "RowGrouping": {
+        "title": "行分组",
+        "note": "请自己对行分组，然后传入一个扁平列表，并在每组前放一行分组标题。每个标题行都有自己的 key，CSS 可以为它设置样式，它的按钮可以折叠该组。请不要让列可排序，因为排序会移动标题行。"
+      },
+      "ColumnVisibility": {
+        "title": "列的显示与隐藏",
+        "note": "把可见的列保存在一个由复选框修改的列表中，并用 `v-if` 渲染每个 `Column`。列卸载后，表格会移除它。"
+      }
+    },
+    "Field": {
+      "ValidationVeeValidate": {
+        "title": "用 vee-validate 校验",
+        "note": "vee-validate 保存值和错误，Field 负责显示。把每个字段的错误传给 `error`，并在它的控件上设置 `invalid`。离开字段时会校验它，之后每次修改都会校验，直到它有效为止。提交时会校验所有字段。"
+      },
+      "ValidationStandardSchema": {
+        "title": "用 Standard Schema 校验",
+        "note": "Zod、Valibot、ArkType 等 Standard Schema 校验器都提供 `~standard.validate`。每个问题的 `path` 指明它的字段，所以消息会交给该 Field 的 `error`。这个示例用的是一个手写的小 schema，换成 Zod 或 Valibot 的 schema 也同样可用。"
+      }
+    },
+    "Input": {
+      "PhoneMask": {
+        "title": "输入掩码",
+        "note": "掩码就是挂在 `update:modelValue` 上的一个小格式化函数。它只保留数字，并格式化为 (555) 123-4567，所以输入、粘贴和删除得到的结果一致。请把纯数字发送到服务器。"
+      },
+      "CharacterCounter": {
+        "title": "字数统计",
+        "note": "在 `#end` 插槽中显示 `v-model` 值的长度。`maxlength` 在达到上限时停止输入，`aria-describedby` 把计数与输入框关联起来，供屏幕阅读器读取。"
+      }
+    },
+    "DatePicker": {
+      "RangePresets": {
+        "title": "常用日期范围",
+        "note": "在范围选择器旁边放上常用范围的按钮。每个按钮会生成一个包含 `start` 和 `end` 的范围，并设为 `v-model` 的值。你仍然可以手动选择日期。"
+      }
+    },
+    "Tabs": {
+      "ClosableTabs": {
+        "title": "可关闭的标签页",
+        "note": "自己渲染每个标签，并在里面放一个关闭按钮。关闭选中的标签后，会选中它右边的标签；如果它是最后一个，则选中左边的。焦点也会移到那个标签上，键盘用户不会丢失位置。按 Delete 或 Backspace 可关闭获得焦点的标签。"
+      }
+    },
+    "Pagination": {
+      "JumpToPage": {
+        "title": "跳转到页面",
+        "note": "列表较长时，在分页旁放一个 `InputNumber`。`min` 和 `max` 让数字保持在页数范围内。按 Enter 或离开输入框即可跳到该页。"
+      }
+    },
+    "FileUpload": {
+      "ImagePreviews": {
+        "title": "图片预览",
+        "note": "为每张图片创建一个对象 URL，并在 `#item` 插槽中显示。对象 URL 在被撤销之前会一直把文件留在内存中。图片被移除时撤销它的 URL，组件卸载时撤销其余的 URL。"
+      }
+    },
+    "Dialog": {
+      "DraggableDialog": {
+        "title": "可拖动的对话框",
+        "note": "拖动标题栏即可移动对话框。指针捕获让指针离开标题栏后拖动仍能继续。焦点在抓手按钮上时，方向键每次移动 10 px，按住 Shift 则移动 50 px。对话框会保持在窗口内，再次打开时回到中央。"
+      }
+    }
   }
 }

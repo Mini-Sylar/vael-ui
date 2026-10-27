@@ -17,6 +17,7 @@ import type { TooltipHostProps } from '../dist/index.js'
 type AssertHasKey<K extends string> = K extends keyof GlobalDirectives ? true : never
 const _hasVTooltip: AssertHasKey<'vTooltip'> = true
 const _hasVScrollMask: AssertHasKey<'vScrollMask'> = true
+const _hasVHoverIndicator: AssertHasKey<'vHoverIndicator'> = true
 
 defineProps<{ x?: TooltipHostProps }>()
 </script>

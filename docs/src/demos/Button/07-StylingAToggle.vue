@@ -1,11 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Styling a toggle: target <code>[aria-pressed='true']</code></h3>
+    <h3>Styling a toggle</h3>
     <p class="note">
-      A toggle that's on carries <code>aria-pressed="true"</code>, so style that state with a class
-      on <code>ui.root</code>. With Tailwind, the built-in variant does the same:
-      <code>:ui="{ root: 'aria-pressed:bg-amber-100' }"</code>. For every toggle in the app, put the
-      class in ConfigProvider's <code>button.ui.root</code>. Your styles win over vael-ui's without
+      <code>v-model:pressed</code> turns a Button into a toggle, and a ghost, outline or secondary
+      one already looks pressed when it’s on. For your own look, bind a class from the same value.
+      To style every toggle in the app, target <code>[aria-pressed='true']</code>, which Button sets
+      for you, from ConfigProvider’s <code>button.ui.root</code>, or use Tailwind’s
+      <code>aria-pressed:</code> variant. Your styles win over vael-ui’s without
       <code>!important</code>.
     </p>
     <div class="row">
@@ -15,7 +16,7 @@
         v-model:pressed="item.starred"
         variant="ghost"
         icon
-        :ui="{ root: 'star-toggle' }"
+        :class="{ starred: item.starred }"
         :aria-label="`Star ${item.name}`"
       >
         <PhStar :weight="item.starred ? 'fill' : 'regular'" />
@@ -37,8 +38,9 @@ const items = reactive([
 </script>
 
 <style scoped>
-.star-toggle[aria-pressed='true'] {
+.starred {
   color: var(--ui-warning);
-  background: color-mix(in oklab, var(--ui-warning) 14%, transparent);
+  /* The box is painted by the button's own layer; recolour it through this variable. */
+  --ui-button-bg: color-mix(in oklab, var(--ui-warning) 14%, transparent);
 }
 </style>

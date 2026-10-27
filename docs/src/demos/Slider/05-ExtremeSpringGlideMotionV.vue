@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: spring glide on key presses and track clicks (motion-v)</h3>
     <p class="note">
-      Arrow keys and clicks on the track jump the value. Here the thumb and the fill glide there on
-      a motion-v spring instead, while a drag still follows the pointer 1:1. Slider places both from
-      one CSS variable, <code>--ui-slider-p0</code>, so the spring drives that variable on the
-      exposed <code>trackEl</code> and the two always move together.
+      Slider already glides on arrow keys and track clicks. Here a motion-v spring runs that glide
+      instead, and a drag still follows the pointer 1:1. Slider places the thumb and the fill from
+      one CSS variable, <code>--ui-slider-p0</code>, so the spring writes it on the exposed
+      <code>trackEl</code> and both move together.
     </p>
     <div class="row slider-row">
       <Slider

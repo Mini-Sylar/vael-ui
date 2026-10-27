@@ -2,7 +2,8 @@
   <section class="demo">
     <h3>Indeterminate</h3>
     <p class="note">
-      A "select all" checkbox driven by its children's state, not by its own model.
+      A “Select all” checkbox whose state comes from the boxes below it, not from its own model. It
+      shows <code>indeterminate</code> while only some are checked.
     </p>
     <div class="row">
       <Checkbox

@@ -1,17 +1,20 @@
 <template>
-  <!-- display: contents keeps the layout while the status nodes stay outside the <ul>. -->
-  <div style="display: contents">
-    <ul
-      ref="root"
-      :class="rootPart.class"
-      :style="rootPart.style"
-      :data-motion="motionOff ? 'off' : undefined"
-      :data-axis="axis"
-      :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
-      :data-pending="isPending ? '' : undefined"
-      :data-drop-target="isForeignDropTarget ? '' : undefined"
-      v-bind="attrs"
-    >
+  <!-- The root is the box you style and measure, so a parent's class and scoped styles land on
+       the same element. The <ul> is display: contents: its rows lay out as the root's own
+       children, with the root's gap, and the status nodes stay outside the list. -->
+  <div
+    ref="root"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    :data-motion="motionOff ? 'off' : undefined"
+    :data-axis="axis"
+    :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
+    :data-settling="isSettling ? '' : undefined"
+    :data-pending="isPending ? '' : undefined"
+    :data-drop-target="isForeignDropTarget ? '' : undefined"
+    v-bind="attrs"
+  >
+    <ul class="ui-sortable-list">
       <li
         v-for="(item, index) in items"
         :key="keyOf(item)"
@@ -72,11 +75,15 @@
 import './Sortable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, useAttrs, useId, useTemplateRef } from 'vue'
+import '../../motion/timing.css'
+import { computed, nextTick, useAttrs, useId, useTemplateRef } from 'vue'
+import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { SortableMotion } from '../../motion/types'
+import { useMessages, sortableMessages } from '../../messages'
 import { useSortable } from '../../composables/useSortable'
 import { moveTreeNode } from '../../composables/useSortable'
 import type {
@@ -119,19 +126,30 @@ const rawProps = withDefaults(
      * @default true
      */
     autoScroll?: boolean
+    /**
+     * For lists in a `group`: keeps the dragged row inside the part of the list it's over that's on
+     * screen, so it never hangs past a fixed-height column. Leave it off for lists that grow with
+     * their rows.
+     * @default false
+     */
+    restrictToList?: boolean
     /** Turns off dragging, so rows stay static. @default false */
     disabled?: boolean
     /**
-     * `false` skips the built-in springs, so rows snap to their new slots. Use it when you drive the motion yourself.
+     * How it moves: its appearance, row by row (`{ initial: { item: { opacity: 0, y: 8 } }, stagger: 0.04 }`),
+     * and its states (`{ states: { dragging: { root: { scale: '1.01' } } } }`). `false` skips the
+     * built-in springs, so rows snap to their new slots. Use it when you drive the motion yourself.
      * @default true
      */
-    motionCss?: boolean
+    motion?: SortableMotion
     /** Handle from `useSortableGroup()`. Lists that share it, `<Sortable>` or `useSortable()`, let items cross between them. */
     group?: SortableGroupHandle
     /** This list's identity within `group`. Unset, Sortable assigns one. */
     groupId?: string | number
-    /** `group` only: what follows the pointer once a drag leaves this list.
-     * `'element'` moves the real item; `'clone'` floats a copy, for content that can't leave its layout.
+    /** What follows the pointer. `'element'` moves the real item; `'clone'` floats a copy from the
+     * start of the drag, for content that can't leave its layout. The original is the placeholder:
+     * it moves to where the row will land and carries `data-sortable-source` (hidden by default;
+     * style it to show it dimmed or outlined).
      * @default 'element' */
     previewMode?: 'element' | 'clone'
     /** Milliseconds a touch must hold a row still before a drag starts. Unset, drags start at once.
@@ -152,15 +170,16 @@ const rawProps = withDefaults(
     canDrop: undefined,
     beforeDrop: undefined,
     autoScroll: true,
+    restrictToList: false,
     disabled: false,
-    motionCss: undefined,
+    motion: undefined,
     group: undefined,
     groupId: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
-const motionOff = computed(() => !props.motionCss)
+const props = withProviderDefaults(rawProps, { motion: true })
+const motionOff = computed(() => !props.motion)
 
 const emit = defineEmits<{
   /** Fires after `items` changes order. Persist optimistically here; on failure, restore your own snapshot of `items`. */
@@ -177,7 +196,7 @@ defineSlots<{
 }>()
 
 const root = useTemplateRef<HTMLElement>('root')
-const messages = useUiMessages()
+const messages = useMessages({ sortable: sortableMessages })
 const instructionsId = useId()
 
 function keyOf(item: T): string | number {
@@ -200,9 +219,12 @@ function elementFor(value: string | number): HTMLElement | null {
   )
 }
 
+const haptic = useComponentHaptic()
+const tick = () => haptic.impact('medium')
 const {
   activeValue,
   isGrabbed,
+  isSettling,
   isGrabbedValue,
   isValidDrop,
   isPending,
@@ -224,8 +246,13 @@ const {
   beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
   onDropError: (error, details) => emit('drop-error', error, details),
   autoScroll: () => props.autoScroll,
+  restrictToList: () => props.restrictToList,
   disabled: () => props.disabled,
-  motionCss: () => props.motionCss,
+  motion: () => props.motion !== false,
+  spring: () =>
+    typeof rawProps.motion === 'object'
+      ? (rawProps.motion.spring as { damping: number; response: number } | undefined)
+      : undefined,
   labelOf: (value) => {
     const item = items.value.find((candidate) => keyOf(candidate) === value)
     return item ? labelOf(item) : String(value)
@@ -251,9 +278,27 @@ const {
     // because the bound array may be a shared constant.
     const next = [...items.value]
     if (!moveTreeNode(next, value, to, { getKey: keyOf, getChildren: () => undefined })) return
+    // Moving the row in the DOM can drop the focus a keyboard drop left on its handle.
+    const focused = document.activeElement as HTMLElement | null
+    const handle = elementFor(value)?.querySelector<HTMLElement>('.ui-sortable-handle')
     items.value = next
+    tick()
     emit('reorder', value, to)
+    if (handle && focused === handle)
+      void nextTick(() => {
+        if (handle.isConnected && document.activeElement !== handle)
+          handle.focus({ preventScroll: true })
+      })
   },
+})
+
+const parts = useStateMotion({
+  key: 'sortable',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-sortable', item: '.ui-sortable-item' },
+  states: () => ({ dragging: isGrabbed.value, settling: isSettling.value }),
 })
 
 function isGrabbedItem(item: T): boolean {
@@ -274,6 +319,10 @@ defineExpose({
   el: root,
   /** Whether an item is held, by pointer or keyboard. */
   isGrabbed,
+  /** Whether rows are still gliding into place after a drop or cancel. The root also carries
+   * `data-settling` then. A list that clips its overflow only while something is held would cut
+   * a row off mid-glide, so keep the clipping off while this is true too. */
+  isSettling,
   /** `false` while hovering a target that `canDrop` rejected. */
   isValidDrop,
   /** Whether an async `beforeDrop` is still deciding. */
@@ -282,5 +331,9 @@ defineExpose({
   isForeignDropTarget,
   /** Key of the item being dragged, or `null`. */
   activeValue,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

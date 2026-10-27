@@ -31,7 +31,7 @@ function rootRows() {
 
 test('opening a CascadeSelect with 1000 root items renders a window of rows, quickly', async () => {
   const screen = await render(CascadeSelectFixture, { props: { items: longTree(1000) } })
-  const trigger = screen.container.querySelector<HTMLElement>('[role="combobox"]')!
+  const trigger = screen.container.querySelector<HTMLElement>('[role="button"]')!
   const start = performance.now()
   trigger.click()
   await vi.waitFor(() => expect(focusedText()).toBe('City 0'), { interval: 1 })
@@ -42,7 +42,7 @@ test('opening a CascadeSelect with 1000 root items renders a window of rows, qui
 
 test('a long menu keeps End, Home, wrap-around and typeahead across the whole list', async () => {
   const screen = await render(CascadeSelectFixture, { props: { items: longTree(1000) } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('City 0'))
 
   await userEvent.keyboard('{End}')
@@ -63,7 +63,7 @@ test('a long menu keeps End, Home, wrap-around and typeahead across the whole li
 
 test('a submenu far down a long menu opens, selects, and is revealed again on reopen', async () => {
   const screen = await render(CascadeSelectFixture, { props: { items: longTree(1000) } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('City 0'))
 
   await userEvent.keyboard('{End}')
@@ -79,7 +79,7 @@ test('a submenu far down a long menu opens, selects, and is revealed again on re
   await expect.element(screen.getByTestId('path')).toHaveTextContent('c999>d999')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('District 999'))
   await userEvent.keyboard('{ArrowLeft}')
   await vi.waitFor(() => expect(focusedText()).toBe('City 999'))
@@ -96,7 +96,7 @@ test('ArrowUp on the trigger of a long Menu opens on its last row', async () => 
 
 test('scrolling a focused row out of a long menu keeps keyboard focus inside the menu', async () => {
   const screen = await render(CascadeSelectFixture, { props: { items: longTree(1000) } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('City 0'))
   const body = document.querySelector<HTMLElement>('.ui-menu-positioner .ui-menu-body')!
   body.scrollTop = 20000

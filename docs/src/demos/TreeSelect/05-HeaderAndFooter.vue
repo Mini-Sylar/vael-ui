@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Header and footer around the tree</h3>
     <p class="note">
-      Same flex-column panel restructure as Select and Menu — <code>#header</code>/
-      <code>#footer</code> stay fixed above/below the tree, which stays the one scrolling piece.
+      As in Select and Menu, the panel is a flex column: <code>#header</code> and
+      <code>#footer</code> stay fixed above and below the tree, which is the only part that scrolls.
     </p>
     <div class="row">
       <Field label="File or folder">

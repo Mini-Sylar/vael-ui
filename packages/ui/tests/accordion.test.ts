@@ -89,8 +89,8 @@ test('height pins to a concrete px value while animating, then releases to auto 
   expect(panel.style.blockSize).toBe('0px')
 })
 
-test('motionCss=false skips the pin/transition dance and removes the CSS height transition, so a consumer tween is not smoothed by it', async () => {
-  await render(AccordionFixture, { props: { motionCss: false } })
+test('motion=false skips the pin/transition dance and removes the CSS height transition, so a consumer tween is not smoothed by it', async () => {
+  await render(AccordionFixture, { props: { motion: false } })
   const panel = panelFor('First section')
   expect(getComputedStyle(panel).transitionDuration).toBe('0s')
 
@@ -110,7 +110,8 @@ test('rapid double-toggle (open then close before settling) does not strand a pi
 
   await vi.waitFor(() => expect(panel.dataset.state).toBe('closed'))
   expect(panel.style.blockSize).toBe('0px')
-  expect(panel.style.visibility).toBe('hidden')
+  // Closed: out of the page, yet findable.
+  await vi.waitFor(() => expect(panel.getAttribute('hidden')).toBe('until-found'))
 })
 
 test('ArrowDown/ArrowUp/Home/End move focus between enabled triggers, wrapping at the ends', async () => {
@@ -131,7 +132,7 @@ test('ArrowDown/ArrowUp/Home/End move focus between enabled triggers, wrapping a
 })
 
 test('trigger text and panel content share the same inline start edge', async () => {
-  const screen = await render(AccordionFixture, { props: { initial: 'first', motionCss: false } })
+  const screen = await render(AccordionFixture, { props: { initial: 'first', motion: false } })
   const trigger = screen.container.querySelector<HTMLElement>('.ui-accordion-trigger-title')!
   const body = screen.container.querySelector<HTMLElement>('.ui-accordion-body')!
   const range = document.createRange()
@@ -162,4 +163,55 @@ test('headers are <h3> by default; headingLevel on Accordion sets them, an item 
     .element(screen.getByRole('heading', { level: 4, name: 'Fourth level' }))
     .toBeVisible()
   expect(screen.container.querySelector('h3')!.classList.contains('ui-accordion-header')).toBe(true)
+})
+
+test('a panel opens to its exact height, so nothing hops when the animation lets go', async () => {
+  // 50.75px: scrollHeight reports 51, and opening to that left a quarter-pixel drop at the end.
+  await render({
+    render: () =>
+      h(Accordion, null, {
+        default: () => [
+          h(
+            AccordionItem,
+            { value: 'a', title: 'Open me' },
+            {
+              default: () => h('div', { style: 'height: 50.75px; margin: 0; padding: 0' }),
+            },
+          ),
+        ],
+      }),
+  })
+  const panel = document.querySelector<HTMLElement>('.ui-accordion-panel')!
+  const pinned: string[] = []
+  const watchPin = new MutationObserver(() => {
+    if (panel.style.blockSize) pinned.push(panel.style.blockSize)
+  })
+  watchPin.observe(panel, { attributes: true, attributeFilter: ['style'] })
+  await userEvent.click(page.getByRole('button', { name: 'Open me' }))
+  await vi.waitFor(() => expect(panel.style.blockSize).toBe(''), { timeout: 2000 })
+  watchPin.disconnect()
+  const body = panel.firstElementChild as HTMLElement
+  const open = body.getBoundingClientRect().bottom - panel.getBoundingClientRect().top
+  // Every height it opened towards is the one it settles at; a rounded target moves at the end.
+  const targets = pinned.map(Number.parseFloat).filter((height) => height > 0)
+  expect(targets.length).toBeGreaterThan(0)
+  for (const height of targets) expect(height).toBeCloseTo(open, 2)
+  expect(panel.getBoundingClientRect().height).toBeCloseTo(open, 2)
+})
+
+test('exposes the built-in chevron, and null when #trigger replaces it', async () => {
+  const items: Record<string, { chevronEl: SVGSVGElement | null } | null> = {}
+  render(() =>
+    h(Accordion as never, { value: 'a' }, () => [
+      h(AccordionItem, { value: 'a', title: 'A', ref: (el) => (items.a = el as never) }),
+      h(
+        AccordionItem,
+        { value: 'b', ref: (el) => (items.b = el as never) },
+        { trigger: () => 'B', default: () => 'Body' },
+      ),
+    ]),
+  )
+  await expect.poll(() => items.a?.chevronEl).toBeInstanceOf(SVGSVGElement)
+  expect(items.a!.chevronEl!.classList.contains('ui-accordion-chevron')).toBe(true)
+  expect(items.b?.chevronEl).toBeNull()
 })

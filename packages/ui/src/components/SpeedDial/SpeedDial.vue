@@ -9,22 +9,18 @@
     @mouseleave="onRootMouseLeave"
   >
     <div
+      :id="menuId"
       ref="listEl"
       :class="actionsPart.class"
       :style="actionsPart.style"
-      role="menu"
-      :aria-label="ariaLabel"
-      :aria-orientation="orientationFor(direction)"
-      :data-motion="props.motionCss ? undefined : 'off'"
+      :data-ui-list="listMarker"
+      :role="open ? 'menu' : undefined"
+      :aria-label="open ? label : undefined"
+      :aria-orientation="open ? orientationFor(direction) : undefined"
+      :data-motion="props.motion ? undefined : 'off'"
       @keydown="onKeydown"
     >
-      <TransitionGroup
-        name="ui-speed-dial-action"
-        appear
-        :css="props.motionCss"
-        @enter="enterHook"
-        @leave="leaveHook"
-      >
+      <TransitionGroup appear v-bind="actionsTransition">
         <Button
           v-for="(item, i) in visibleItems"
           :key="item.value ?? item.label"
@@ -59,10 +55,11 @@
       :disabled="disabled"
       :aria-expanded="open"
       aria-haspopup="menu"
-      :aria-label="ariaLabel"
+      :aria-controls="open ? menuId : undefined"
+      :aria-label="label"
       @click="onTriggerClick"
     >
-      <span ref="iconEl" class="ui-speed-dial-trigger-icon" aria-hidden="true">
+      <span ref="iconEl" :class="iconPart.class" :style="iconPart.style" aria-hidden="true">
         <slot name="icon" :open="open">
           <svg viewBox="0 0 16 16" width="16" height="16" fill="none">
             <path
@@ -99,7 +96,8 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
   /** Actions to fan out, one icon button each. */
   items: ReadonlyArray<T>
   /**
-   * Which way the actions fan out from the trigger. `'quarter-circle'` lays them on an arc of `radius`.
+   * Which way the actions fan out from the trigger, on screen: `'left'` is left on a right-to-left
+   * page too. `'quarter-circle'` lays them on an arc of `radius`.
    * @default 'up'
    */
   direction?: SpeedDialDirection
@@ -114,13 +112,20 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
   /** Arc radius in pixels. Only applies when `direction` is `'quarter-circle'`. @default 96 */
   radius?: number
   /**
-   * Built-in transitions for the actions and the icon. `false` hands actions to `@action-enter`
-   * and `@action-leave`, and turns the icon instantly.
+   * How the actions fan out and back, and the icon turns. `false` shows them and turns the icon
+   * at once. An object animates the actions your way: values for the `action` part, `stagger`,
+   * or `enter` / `leave` hooks for your own library.
    * @default true
    */
-  motionCss?: boolean
+  motion?: SpeedDialMotion
   /** Class and style overrides for each part. */
-  ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }>
+  ui?: Partial<{
+    root: UiPartValue
+    trigger: UiPartValue
+    action: UiPartValue
+    /** The icon inside the trigger, around the `#icon` slot. */
+    icon: UiPartValue
+  }>
 }
 
 export function quarterCirclePoint(
@@ -145,7 +150,8 @@ export function quarterCirclePoint(
 <script setup lang="ts" generic="T extends SpeedDialItem = SpeedDialItem">
 import './SpeedDial.css'
 import '../shared/tokens.css'
-import { computed, nextTick, onMounted, onScopeDispose, useTemplateRef, watch } from 'vue'
+import '../../motion/timing.css'
+import { computed, nextTick, onMounted, onScopeDispose, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Button from '../Button/Button.vue'
 import { useLayer } from '../../composables/useLayerStack'
@@ -154,6 +160,10 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { withProviderDefaults } from '../../config'
 import { ssrDocument } from '../../ssr'
+import { useMessages, speedDialMessages } from '../../messages'
+import { fragmentList, useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { SpeedDialMotion } from '../../motion/types'
 
 /** Whether the actions are shown. @default false */
 const open = defineModel<boolean>('open', { default: false })
@@ -163,20 +173,15 @@ const rawProps = withDefaults(defineProps<SpeedDialProps<T>>(), {
   openOn: 'click',
   disabled: false,
   closeOnSelect: true,
-  ariaLabel: 'Actions',
+  ariaLabel: undefined,
   radius: 96,
-  motionCss: undefined,
+  motion: undefined,
 })
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when you click an action. */
   select: [item: T]
-  /** Fires when an action's fan-out transition starts. Call `done()` when finished.
-   * Only fires when `motionCss` is `false`. */
-  'action-enter': [el: Element, done: () => void]
-  /** Fires when an action's fan-in transition starts, as with `@action-enter`. */
-  'action-leave': [el: Element, done: () => void]
 }>()
 
 defineSlots<{
@@ -188,16 +193,29 @@ defineSlots<{
 
 const visibleItems = computed(() => (open.value ? props.items : []))
 
-// Only the component's own motion-css="false" hands actions to the events. A provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('action-enter', el, done),
-)
-const leaveHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('action-leave', el, done),
+const messages = useMessages({ speedDial: speedDialMessages })
+const label = computed(() => props.ariaLabel ?? messages.value.speedDial.label)
+const menuId = useId()
+
+// Yours (an object, or a shared style): actions come and go on the motion system, held where they
+// fanned out to as they leave. Otherwise the built-in CSS fan.
+const style = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' || style?.value?.speedDial || style?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'speedDial',
+        part: 'action',
+        name: 'SpeedDial',
+        look: { opacity: 0, scale: '0.9' },
+        leaving: 'hold',
+      })
+    : undefined
+// The actions render with no wrapper of their own, so the list engine's marker goes on the menu.
+const actions = computed(() => fragmentList(listMotion))
+const listMarker = computed(() => actions.value.marker)
+const actionsTransition = computed(() =>
+  listMotion ? actions.value.transition : { name: 'ui-speed-dial-action', css: !!props.motion },
 )
 
 function orientationFor(direction: SpeedDialDirection): 'vertical' | 'horizontal' | undefined {
@@ -241,6 +259,8 @@ function focusTrigger() {
 
 // Set when a hover opened the dial and no pointer click on the trigger has landed since.
 let openedByHover = false
+// Set by a trigger click (pointer or keyboard); a hover or v-model open leaves focus where it is.
+let focusOnOpen = false
 
 function openDial() {
   if (props.disabled) return
@@ -261,6 +281,7 @@ function onTriggerClick(event: MouseEvent) {
     openedByHover = false
     return
   }
+  focusOnOpen = !open.value
   toggleDial()
 }
 
@@ -276,7 +297,7 @@ function selectItem(item: T) {
 }
 
 // useMenu handles roving-tabindex/arrows; onSelect unwired (clicks via @click).
-const { onKeydown: onMenuKeydown, focusFirst, focusItem } = useMenu({ listEl })
+const { onKeydown: onMenuKeydown, focusFirst, focusItem, initRoving } = useMenu({ listEl })
 
 // Arrow keys follow the visual direction; useMenu's vertical-only mapping would
 // send ArrowUp toward the trigger on an upward dial and ignore Left/Right.
@@ -296,9 +317,11 @@ function onKeydown(event: KeyboardEvent) {
   focusItem(items[(from + step + items.length) % items.length])
 }
 
-// Focus first action on open (Menu pattern, minus floating-position gate).
+// Focus first action on a click open (Menu pattern); other opens only set the roving tab stop.
 watch(open, (value) => {
-  if (value) nextTick(() => focusFirst())
+  const focus = focusOnOpen
+  focusOnOpen = false
+  if (value) nextTick(() => (focus ? focusFirst() : initRoving()))
   else openedByHover = false
 })
 
@@ -340,8 +363,10 @@ useEventListener(
     if (!layer.isTopmost()) return
     if (event.key !== 'Escape') return
     event.preventDefault()
+    // Focus returns only from inside; a hover open never took it.
+    const hadFocus = root.value?.contains(document.activeElement)
     closeDial()
-    focusTrigger()
+    if (hadFocus) focusTrigger()
   },
   true,
 )
@@ -383,12 +408,13 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-speed-dial',
     props.disabled && 'ui-speed-dial--disabled',
-    !props.motionCss && 'ui-speed-dial--no-motion',
+    !props.motion && 'ui-speed-dial--no-motion',
   ),
 )
 const actionsPart = computed(() => resolveUiPart(cx, undefined, 'ui-speed-dial-actions'))
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-speed-dial-trigger'))
 const actionPart = computed(() => resolveUiPart(cx, themedUi()?.action, 'ui-speed-dial-action'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-speed-dial-trigger-icon'))
 
 defineExpose({
   /** Root element. */

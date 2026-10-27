@@ -1,13 +1,14 @@
 import { nextTick, watch } from 'vue'
 import type { WatchSource } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { prefersReducedMotion } from './dom'
 
 export interface UseEasedHeightOptions {
   /** The list whose height eases. */
   el: () => HTMLElement | null | undefined
   /** What changes its contents: a search, items, loading. */
   source: WatchSource | WatchSource[]
-  /** False turns it off (a `motionCss` prop); reduced motion is checked here. */
+  /** False turns it off (a `motion` prop); reduced motion is checked here. */
   enabled: () => boolean
   /** The custom property the list's CSS eases its soft bottom edge with. @default '--ui-list-edge' */
   edgeProperty?: string
@@ -26,7 +27,7 @@ export function useEasedHeight(options: UseEasedHeightOptions): void {
     options.source,
     () => {
       const el = options.el()
-      if (!el || !options.enabled() || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (!el || !options.enabled() || prefersReducedMotion()) {
         return
       }
       const from = el.getBoundingClientRect().height

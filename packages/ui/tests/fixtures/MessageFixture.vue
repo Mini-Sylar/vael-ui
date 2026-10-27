@@ -21,12 +21,13 @@
 </template>
 
 <script setup lang="ts">
+import type { BeforeClose } from '../../src/motion/types'
 import { shallowRef, useTemplateRef } from 'vue'
 import Message from '../../src/components/Message/Message.vue'
 import type { MessageOpenChangeDetails } from '../../src/components/Message/Message.vue'
 
 const props = defineProps<{
-  beforeClose?: (done: () => void) => void
+  beforeClose?: BeforeClose
   veto?: boolean
 }>()
 

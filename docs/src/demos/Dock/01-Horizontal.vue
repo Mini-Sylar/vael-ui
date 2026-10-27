@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Horizontal, default orientation</h3>
+    <h3>Horizontal (default)</h3>
     <div class="row">
       <Dock aria-label="Applications" :items="appItems" @select="onSelect" />
     </div>

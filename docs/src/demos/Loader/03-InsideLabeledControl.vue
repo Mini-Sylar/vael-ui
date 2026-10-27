@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Inside a labeled control, <code>aria-hidden</code> by default</h3>
+    <h3>Inside a labeled control: <code>aria-hidden</code> by default</h3>
     <p class="note">
-      Without <code>label</code>, the root is <code>aria-hidden="true"</code>, the common case is a
-      loader living next to visible text, or inside an already-labeled control like Button (which is
-      exactly where this component's markup came from).
+      Without <code>label</code>, the root has <code>aria-hidden="true"</code>. That covers the
+      usual case: a loader next to visible text, or inside a control that already has a label, such
+      as Button.
     </p>
     <div class="row">
       <span class="loader-with-text"><Loader /> Fetching…</span>

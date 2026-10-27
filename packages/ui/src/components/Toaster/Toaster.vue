@@ -1,23 +1,23 @@
 <template>
-  <Teleport :to="teleportTo">
-    <!-- The named <section> is the live region, so the <ol> keeps list semantics.
+  <Teleport :to="teleportTarget">
+    <!-- The named <section> is the live region, so the <ol> keeps list semantics; an error toast
+         is its own assertive region, read once and first. No role="alert", which reads twice.
          Absolute keeps it out of a flex or grid parent's flow. -->
     <section
       aria-live="polite"
       :aria-label="(attrs['aria-label'] as string | undefined) ?? messages.toaster.label"
-      style="position: absolute"
+      :style="sectionStyle"
     >
       <TransitionGroup
         :ref="registerToaster"
         :data-ui-group="groupKey"
-        name="ui-toast"
         appear
         tag="ol"
         :class="rootPart.class"
         :style="[rootStyle, rootPart.style]"
-        v-bind="listAttrs"
-        :css="props.motionCss"
+        v-bind="{ ...listAttrs, ...toastsTransition }"
         :data-expanded="expanded"
+        :data-contained="contained || undefined"
         :data-y-position="yPos"
         :data-x-position="xPos"
         :data-ui-theme="themeScope"
@@ -25,8 +25,6 @@
         @pointerleave="onToasterLeave"
         @focusin="onToasterFocusIn"
         @focusout="onToasterFocusOut"
-        @enter="enterHook"
-        @leave="leaveHook"
       >
         <li
           v-for="(entry, index) in rendered"
@@ -41,6 +39,7 @@
           :data-swipe-out="swipeState.get(entry.id)?.swipeOut ?? false"
           :data-swipe-direction="swipeState.get(entry.id)?.direction ?? undefined"
           :data-y-position="yPos"
+          :aria-live="entry.variant === 'error' ? 'assertive' : undefined"
           @pointerdown="onPointerDown(entry.id, $event)"
           @pointermove="onPointerMove(entry.id, $event)"
           @pointerup="onPointerUp(entry.id)"
@@ -114,6 +113,7 @@ export type ToasterPosition =
 import './Toaster.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   inject,
@@ -130,18 +130,19 @@ import { useDocumentVisibility } from '@vueuse/core'
 import { useToastQueue } from '../../composables/useToast'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import type { ToastEntry, ToastId } from '../../composables/useToast'
-import { useUiMessages } from '../../messages'
+import { useMessages, toastMessages, toasterMessages } from '../../messages'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import StatusIcon from '../internal/StatusIcon.vue'
-import { getFocusable, transitionGroupRef } from '../../composables/dom'
+import { getFocusable, transitionGroupRef, useDOMTarget } from '../../composables/dom'
+import type { DOMTarget } from '../../composables/dom'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
-
-// Port of vue-sonner's swipe-to-dismiss mechanics; constants are Sonner's.
-const SWIPE_THRESHOLD = 45 // px
-const SWIPE_VELOCITY_THRESHOLD = 0.11 // px/ms
-const SWIPE_EXIT_MS = 200
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { ToasterMotion } from '../../motion/types'
+import { loadToastStates, loadToastSwipe } from '../../composables/lazyParts'
+import { springOf } from '../../motion/springNames'
 
 defineOptions({ inheritAttrs: false })
 
@@ -170,10 +171,20 @@ const rawProps = withDefaults(
     expand?: boolean
     /** Spacing between stacked cards, in pixels. @default 10 */
     gap?: number
-    /** CSS selector to teleport the toast stack to. @default 'body' */
-    teleportTo?: string
-    /** `false` delegates enter/leave animations to `@card-enter`/`@card-leave` events. @default true */
-    motionCss?: boolean
+    /** Teleport target: a CSS selector or element. Wins over `container` either way.
+     * @default 'body' */
+    teleportTo?: string | HTMLElement
+    /** Scopes the stack to an element instead of the viewport: it teleports there and sits in that
+     * element's corner, so give the element `position: relative`. Pair with `name` to send only
+     * some toasts there. Omit it for a page-level toaster. */
+    container?: DOMTarget
+    /**
+     * How toasts come and go. `false` shows and removes them at once. An object animates them
+     * your way: values for the `toast` part, or `enter` / `leave` hooks for your own library.
+     * The stack places them either way.
+     * @default true
+     */
+    motion?: ToasterMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -191,30 +202,28 @@ const rawProps = withDefaults(
     maxVisible: 4,
     expand: false,
     gap: 10,
-    teleportTo: 'body',
-    motionCss: undefined,
+    motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
-const emit = defineEmits<{
-  /** Fires when a toast enters, only while `motionCss` is `false`. Run your own animation, then call
-   * `done()`. */
-  'card-enter': [el: Element, done: () => void]
-  /** Same as `@card-enter`, for a toast leaving. */
-  'card-leave': [el: Element, done: () => void]
-}>()
-
-// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('card-enter', el, done),
-)
-const leaveHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('card-leave', el, done),
+// Yours (an object, or a shared style): toasts come and go on the motion system, held where the
+// stack placed them. Otherwise the built-in CSS look.
+const style = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' || style?.value?.toaster || style?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'toaster',
+        part: 'toast',
+        name: 'Toaster',
+        look: { opacity: 0, y: 12 },
+        leaving: 'hold',
+        arranged: true,
+      })
+    : undefined
+const toastsTransition = computed(() =>
+  listMotion ? listMotion.transition : { name: 'ui-toast', css: !!props.motion },
 )
 
 defineSlots<{
@@ -237,7 +246,7 @@ const toasts = computed(() => (mounted.value ? queue.value.toasts : []))
 const dismiss = (id: ToastId) => queue.value.dismiss(id)
 const pauseAll = () => queue.value.pauseAll()
 const resumeAll = () => queue.value.resumeAll()
-const messages = useUiMessages()
+const messages = useMessages({ toast: toastMessages, toaster: toasterMessages })
 
 // Extracted to bypass oxfmt removing semicolon from multi-statement @click expression.
 function onActionClick(entry: ToastEntry) {
@@ -256,6 +265,28 @@ const pinned = computed(() => toasts.value.filter((t) => t.pinned))
 const visible = computed(() => stack.value.slice(-props.maxVisible))
 // Pinned cards render last so they layer above the stack while it expands into them.
 const rendered = computed(() => [...visible.value, ...pinned.value])
+
+// `states`: a toast moving into a variant (a promise toast landing on success or error) plays
+// that state on its parts. The player loads only when states are set.
+const ownMotion = () =>
+  (typeof rawProps.motion === 'object' ? rawProps.motion : style?.value?.toaster) as
+    | Exclude<ToasterMotion, boolean>
+    | undefined
+let toastStates: import('../../motion/toastStates').ToastStates | undefined
+watch(
+  () =>
+    props.motion !== false && ownMotion()?.states
+      ? rendered.value.map((e) => `${e.id}:${e.variant}`).join('|')
+      : '',
+  async (key) => {
+    if (!key) return
+    toastStates ??= (await loadToastStates()).createToastStates()
+    toastStates.sync(rendered.value, cardEls, ownMotion()!, springOf(style?.value?.spring))
+  },
+  { flush: 'post' },
+)
+onScopeDispose(() => toastStates?.dispose())
+
 const isBottom = computed(() => props.position.startsWith('bottom'))
 const yPos = computed(() => props.position.split('-')[0])
 const xPos = computed(() => props.position.split('-')[1])
@@ -331,20 +362,42 @@ const toasterHeight = computed(() => {
   )
 })
 
+const { el: containerEl } = useDOMTarget(() => props.container ?? null)
+const contained = computed(() => containerEl.value !== null)
+// teleportTo has no default of its own, so an explicit teleportTo="body" is still
+// distinguishable from never setting it, and can win over container either way.
+// || not ??: an empty string is never a valid Teleport target, so it should fall
+// through the same as unset instead of reaching document.querySelector('').
+const teleportTarget = computed<string | HTMLElement>(
+  () => props.teleportTo || containerEl.value || 'body',
+)
+// Inside a container the live region spans it, so the stack's inset is measured from the
+// container's edges; pointer events pass through it to the content underneath.
+const sectionStyle = computed(() => {
+  const style: Record<string, string> = { position: 'absolute' }
+  if (contained.value) Object.assign(style, { inset: '0', pointerEvents: 'none' })
+  return style
+})
+
 // Inlined for structural correctness (position:fixed needs explicit inset); themeable via CSS variables.
 const rootStyle = computed(() => {
   const offset = 'var(--ui-toast-offset, 1rem)'
+  // On the screen, stay clear of the notch and the home indicator in an app
+  // that draws under them (viewport-fit=cover); the insets are 0 otherwise.
+  const edge = (side: string) =>
+    contained.value ? offset : `calc(${offset} + env(safe-area-inset-${side}, 0px))`
   const style: Record<string, string> = {
-    position: 'fixed',
+    position: contained.value ? 'absolute' : 'fixed',
     zIndex: 'var(--ui-z-toast, 60)',
     blockSize: `${toasterHeight.value}px`,
-    [isBottom.value ? 'insetBlockEnd' : 'insetBlockStart']: offset,
+    [isBottom.value ? 'insetBlockEnd' : 'insetBlockStart']: edge(isBottom.value ? 'bottom' : 'top'),
   }
+  if (contained.value) style.pointerEvents = 'auto'
   if (xPos.value === 'center') {
     style.insetInlineStart = '50%'
     style.translate = '-50% 0'
   } else {
-    style[xPos.value === 'left' ? 'insetInlineStart' : 'insetInlineEnd'] = offset
+    style[xPos.value === 'left' ? 'insetInlineStart' : 'insetInlineEnd'] = edge(xPos.value)
   }
   return style
 })
@@ -488,21 +541,23 @@ const pointerStart = new Map<ToastId, { x: number; y: number; time: number }>()
 const swipeAxis = new Map<ToastId, 'x' | 'y' | null>()
 const activeSwipeId = ref<ToastId | null>(null)
 
-function allowedDirections(): Array<'left' | 'right' | 'up' | 'down'> {
-  return ['left', 'right', isBottom.value ? 'down' : 'up']
-}
-function dampen(delta: number) {
-  return delta / (1.5 + Math.abs(delta) / 20)
-}
-
-function state(id: ToastId): SwipeState {
-  let s = swipeState.get(id)
-  if (!s) {
-    swipeState.set(id, { x: 0, y: 0, swiping: false, swipeOut: false, direction: null })
-    s = swipeState.get(id)!
-  }
-  return s
-}
+// The move and release maths (toastSwipe.ts) arrive as the Toaster mounts, long before a swipe.
+let swipe: ReturnType<typeof import('../../composables/toastSwipe').createToastSwipe> | undefined
+onMounted(
+  () =>
+    void loadToastSwipe().then(
+      (kit) =>
+        (swipe = kit.createToastSwipe({
+          swipeState,
+          pointerStart,
+          swipeAxis,
+          activeSwipeId,
+          bottom: () => isBottom.value,
+          dismiss: (id) => dismiss(id),
+          settle: () => !interacting.value && resumeAll(),
+        })),
+    ),
+)
 
 function onPointerDown(id: ToastId, event: PointerEvent) {
   if (event.button === 2) return
@@ -514,63 +569,8 @@ function onPointerDown(id: ToastId, event: PointerEvent) {
   activeSwipeId.value = id
 }
 
-function onPointerMove(id: ToastId, event: PointerEvent) {
-  const start = pointerStart.get(id)
-  if (!start) return
-  const dx = event.clientX - start.x
-  const dy = event.clientY - start.y
-  let axis = swipeAxis.get(id)
-  if (!axis && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
-    axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
-    swipeAxis.set(id, axis)
-  }
-  if (!axis) return
-
-  const s = state(id)
-  const allowed = allowedDirections()
-  if (axis === 'y') {
-    const wantsDown = dy > 0
-    s.y =
-      (wantsDown && allowed.includes('down')) || (!wantsDown && allowed.includes('up'))
-        ? dy
-        : dampen(dy)
-    s.x = 0
-  } else {
-    const wantsRight = dx > 0
-    s.x =
-      (wantsRight && allowed.includes('right')) || (!wantsRight && allowed.includes('left'))
-        ? dx
-        : dampen(dx)
-    s.y = 0
-  }
-  s.swiping = true
-}
-
-function onPointerUp(id: ToastId) {
-  const start = pointerStart.get(id)
-  const axis = swipeAxis.get(id)
-  pointerStart.delete(id)
-  swipeAxis.delete(id)
-  activeSwipeId.value = null
-  const s = swipeState.get(id)
-  if (!start || !s) return
-
-  const delta = axis === 'x' ? s.x : s.y
-  const elapsed = Math.max(1, performance.now() - start.time)
-  const velocity = Math.abs(delta) / elapsed
-
-  if (axis && (Math.abs(delta) >= SWIPE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD)) {
-    s.swiping = false
-    s.swipeOut = true
-    s.direction = axis === 'x' ? (delta > 0 ? 'right' : 'left') : delta > 0 ? 'down' : 'up'
-    setTimeout(() => dismiss(id), SWIPE_EXIT_MS)
-  } else {
-    s.swiping = false
-    s.x = 0
-    s.y = 0
-  }
-  if (!interacting.value) resumeAll()
-}
+const onPointerMove = (id: ToastId, event: PointerEvent) => swipe?.move(id, event)
+const onPointerUp = (id: ToastId) => swipe?.up(id)
 
 watch(
   () => toasts.value.map((t) => t.id),

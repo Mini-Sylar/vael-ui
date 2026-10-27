@@ -8,6 +8,21 @@
     gap: 0.25rem;
   }
 
+  /* A row wider than its space scrolls inside it, with fading edges, instead of widening the page. */
+  .ui-tabs:not(.ui-tabs--vertical) {
+    max-inline-size: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ui-tabs:not(.ui-tabs--vertical)::-webkit-scrollbar {
+    display: none;
+  }
+  /* A row that fits shows a spring's overshoot past its ends; only a row that scrolls clips. Set once
+     Tabs has measured, so a long row rendered on the server never spills out before then. */
+  .ui-tabs[data-indicator-placed]:not(.ui-tabs--vertical):not(.scroll-fade-x) {
+    overflow-x: visible;
+  }
+
   .ui-tabs--vertical {
     flex-direction: column;
     align-items: stretch;
@@ -74,6 +89,36 @@
     inline-size: auto;
     block-size: 1px; /* the scaleY() baseline instead, for the vertical axis */
   }
+  /* Server-rendered, before the indicator is measured: the selected tab draws its look. */
+  .ui-tabs:not([data-indicator-placed]):has(> .ui-tabs-indicator)
+    > [role='tab'][aria-selected='true'] {
+    position: relative;
+  }
+  .ui-tabs:not([data-indicator-placed]):has(> .ui-tabs-indicator--background)
+    > [role='tab'][aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: var(--ui-muted);
+  }
+  .ui-tabs:not([data-indicator-placed]):has(> .ui-tabs-indicator--underline)
+    > [role='tab'][aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: 2px;
+    background: var(--ui-primary);
+  }
+  .ui-tabs--vertical:not([data-indicator-placed]):has(> .ui-tabs-indicator--underline)
+    > [role='tab'][aria-selected='true']::after {
+    inset-inline: auto 0;
+    inset-block: 0;
+    inline-size: 2px;
+    block-size: auto;
+  }
   .ui-tabs-indicator--background {
     inset-block: 0;
     border-radius: calc(var(--ui-radius) - 4px);
@@ -98,5 +143,10 @@
     .ui-tabs-indicator {
       transition: none;
     }
+  }
+
+  /* Hover and focus: a pill sliding between tabs, beneath the selected tab's indicator. */
+  .ui-tabs-hover {
+    border-radius: calc(var(--ui-radius) - 4px);
   }
 }

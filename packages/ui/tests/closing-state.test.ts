@@ -5,10 +5,12 @@ import { render } from 'vitest-browser-vue'
 import PopoverClosingFixture from './fixtures/PopoverClosingFixture.vue'
 import DialogClosingFixture from './fixtures/DialogClosingFixture.vue'
 
-test('popover: deferred close exposes isClosing, dedupes dismissals, and done() completes it', async () => {
+test('popover: deferred close exposes isClosing, dedupes dismissals, and allowing completes it', async () => {
   const captured: Array<() => void> = []
   const screen = await render(PopoverClosingFixture, {
-    props: { beforeClose: (done: () => void) => captured.push(done) },
+    props: {
+      beforeClose: () => new Promise<boolean>((allow) => void captured.push(() => allow(true))),
+    },
   })
 
   await screen.getByTestId('trigger').click()
@@ -33,10 +35,12 @@ test('popover: deferred close exposes isClosing, dedupes dismissals, and done() 
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
-test('popover: cancelClose reverses a pending close and voids the stale done()', async () => {
+test('popover: cancelClose reverses a pending close and voids a late answer', async () => {
   const captured: Array<() => void> = []
   const screen = await render(PopoverClosingFixture, {
-    props: { beforeClose: (done: () => void) => captured.push(done) },
+    props: {
+      beforeClose: () => new Promise<boolean>((allow) => void captured.push(() => allow(true))),
+    },
   })
 
   await screen.getByTestId('trigger').click()
@@ -50,7 +54,7 @@ test('popover: cancelClose reverses a pending close and voids the stale done()',
   await expect.element(screen.getByTestId('closing-state')).toHaveTextContent('open')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 
-  // The cancelled close's done() must not close the popover later
+  // The cancelled close's late answer must not close the popover
   captured[0]()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 
@@ -61,10 +65,12 @@ test('popover: cancelClose reverses a pending close and voids the stale done()',
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
-test('dialog: same deferred-close contract — isClosing, dedupe, cancelClose, stale done voided', async () => {
+test('dialog: same deferred-close contract — isClosing, dedupe, cancelClose, late answer voided', async () => {
   const captured: Array<() => void> = []
   const screen = await render(DialogClosingFixture, {
-    props: { beforeClose: (done: () => void) => captured.push(done) },
+    props: {
+      beforeClose: () => new Promise<boolean>((allow) => void captured.push(() => allow(true))),
+    },
   })
 
   await screen.getByTestId('trigger').click()

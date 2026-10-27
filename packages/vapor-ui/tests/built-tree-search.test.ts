@@ -21,11 +21,11 @@ test('clearing a TreeSelect search drops the matched folders at once in the buil
     await new Promise((resolve) => setTimeout(resolve, 400))
     await userEvent.clear(input)
     await nextTick()
-    // A leaving block still in layout is what put the old rows on top of the new ones.
+    // A block still folding shut would put the old rows under the new ones.
     const shown = [...document.querySelectorAll<HTMLElement>('.ui-tree-rows')].filter(
       (el) => el.closest('.ui-tree-select-panel') && el.getClientRects().length > 0,
     )
-    const leaving = shown.filter((el) => /-leave-active/.test(el.className))
+    const leaving = shown.filter((el) => el.dataset.folding !== undefined)
     expect(leaving).toHaveLength(0)
   } finally {
     app.unmount()

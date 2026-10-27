@@ -5,6 +5,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, useTemplateRef } from 'vue'
 
+// `still`: drawn once (and on resize), never drifting, for a texture behind every page.
+const props = defineProps<{ still?: boolean }>()
+
 // Classic 4x4 ordered (Bayer) dither matrix, normalized to 0..1 — turns a
 // smooth noise field into a stable, print-like pattern of on/off pixels
 // instead of a muddy gray blend.
@@ -45,6 +48,7 @@ function resize() {
 
 // Two offset sine fields instead of true random noise: cheap, and its slow
 // drift reads as a living texture rather than static TV static.
+// index.html draws the prerendered canvases' first frame (t = 0) the same way: keep them in step.
 function noiseAt(x: number, y: number): number {
   const v = 0.5 + 0.25 * Math.sin(x * 0.09 + t) + 0.25 * Math.sin(y * 0.07 - t * 0.7 + x * 0.02)
   return v
@@ -74,6 +78,10 @@ function draw() {
 }
 
 let resizeObserver: ResizeObserver | undefined
+// The colour comes from the theme: a scheme or theme change redraws it.
+let themeObserver: MutationObserver | undefined
+const schemeQuery =
+  typeof window === 'undefined' ? null : window.matchMedia('(prefers-color-scheme: dark)')
 let visibilityObserver: IntersectionObserver | undefined
 let onScreen = false
 
@@ -81,7 +89,7 @@ let onScreen = false
 // last frame otherwise.
 function syncAnimation() {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const run = onScreen && document.visibilityState === 'visible' && !reduceMotion
+  const run = !props.still && onScreen && document.visibilityState === 'visible' && !reduceMotion
   if (run && !intervalId) {
     intervalId = setInterval(() => {
       t += 0.06
@@ -105,6 +113,9 @@ onMounted(() => {
     syncAnimation()
   })
   visibilityObserver.observe(canvas)
+  themeObserver = new MutationObserver(() => draw())
+  themeObserver.observe(document.documentElement, { attributes: true })
+  schemeQuery?.addEventListener('change', draw)
   document.addEventListener('visibilitychange', syncAnimation)
 
   if (canvas.parentElement) {
@@ -120,6 +131,8 @@ onUnmounted(() => {
   clearInterval(intervalId)
   resizeObserver?.disconnect()
   visibilityObserver?.disconnect()
+  themeObserver?.disconnect()
+  schemeQuery?.removeEventListener('change', draw)
   document.removeEventListener('visibilitychange', syncAnimation)
 })
 </script>

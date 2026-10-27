@@ -2,10 +2,9 @@
   <section class="demo">
     <h3>Custom loading feedback (GSAP)</h3>
     <p class="note">
-      Button owns none of this animation, it only exposes the underlying element through
-      <code>defineExpose</code>. This example runs a GSAP tween on that ref after the click promise
-      resolves, then hands the transform back to the stylesheet with <code>clearProps</code> so the
-      button's normal CSS press feedback keeps working afterward.
+      Button doesn’t run this animation; it exposes its element as <code>el</code>. After the click
+      promise resolves, a GSAP tween scales that element, and <code>clearProps</code> removes the
+      inline transform when it ends.
     </p>
     <div class="row">
       <Button ref="gsapBtn" loading="auto" @click="gsapSave">Publish</Button>

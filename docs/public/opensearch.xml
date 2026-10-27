@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+  <ShortName>vael-ui</ShortName>
+  <Description>Search the vael-ui docs for components, composables and guides.</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image type="image/svg+xml">https://vael-ui.dev/favicon.svg</Image>
+  <Url type="text/html" method="get" template="https://vael-ui.dev/?q={searchTerms}" />
+</OpenSearchDescription>

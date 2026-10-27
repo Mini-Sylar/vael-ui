@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>A phone input: a Select in Field's <code>#prepend</code></h3>
+    <h3>A phone input: a Select in Field’s <code>#prepend</code></h3>
     <p class="note">
-      Field's <code>#prepend</code> takes a whole control, not only text. A Select there drops its
-      own border and background, so the pair reads as one field split by a single divider. With a
-      real-sized country list, <code>filter</code> lets people pick one by typing.
+      Field’s <code>#prepend</code> takes a whole control, not only text. A Select there drops its
+      own border and background, so the pair looks like one field with a single divider. With a full
+      country list, <code>filter</code> lets you pick one by typing.
     </p>
     <Field label="Phone" class="phone-input">
       <template #prepend>

@@ -1,5 +1,5 @@
 <template>
-  <Transition name="ui-message" :css="!forceMount">
+  <Transition name="ui-message" v-bind="messageTransition">
     <div
       v-if="forceMount || open"
       v-show="open"
@@ -47,6 +47,10 @@
 
 <script lang="ts">
 import type { UiPartValue } from '../../classes'
+import type { BeforeClose, MessageMotion } from '../../motion/types'
+
+/** Why a message closes: its dismiss button, or your code. */
+export type MessageCloseReason = 'dismiss' | 'programmatic'
 
 export type MessageVariant = 'default' | 'success' | 'error' | 'warning' | 'info'
 
@@ -68,10 +72,17 @@ export interface MessageProps {
   appearance?: 'default' | 'bare'
   /** Renders the built-in dismiss button. @default false */
   closable?: boolean
-  /** Custom exit animation; call `done()` to finish closing. The model stays `true` until you do. */
-  beforeClose?: (done: () => void) => void
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Runs before the message closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. `v-model` stays `true` while the promise is pending. */
+  beforeClose?: BeforeClose<MessageCloseReason>
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How it comes and goes. `false` shows and hides it at once. An object moves it your way: values
+   * for the `root` part (`{ exit: { root: { opacity: 0, x: 24 } } }`), `{ spring }`, or `enter` /
+   * `leave` hooks for your own library. Its space opens as it enters, and closes after it leaves.
+   * @default true
+   */
+  motion?: MessageMotion
   /** Shows the leading status icon (or the `#icon` slot). @default true */
   showIcon?: boolean
   /** Defaults to `'alert'` for `'error'` and `'warning'`, `'status'` otherwise. */
@@ -89,20 +100,20 @@ export interface MessageProps {
 }
 </script>
 
-<!--
-  forceMount + beforeClose(done) contract reimplemented locally (Message needs no focus-trap/scroll-lock).
--->
 <script setup lang="ts">
 import './Message.css'
 import '../shared/tokens.css'
-import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import '../../motion/timing.css'
+import { computed, useAttrs, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
-import { useUiMessages } from '../../messages'
+import { useMessages, messageMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import StatusIcon from '../internal/StatusIcon.vue'
 import { getFocusable } from '../../composables/dom'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
+import { useCloseGuard } from '../../composables/useCloseGuard'
+import { useMessageMotion } from '../../composables/useMessageMotion'
 
 defineOptions({ inheritAttrs: false })
 
@@ -114,6 +125,7 @@ const props = withDefaults(defineProps<MessageProps>(), {
   appearance: 'default',
   closable: false,
   forceMount: false,
+  motion: undefined,
   showIcon: true,
 })
 
@@ -131,7 +143,7 @@ defineSlots<{
   actions(): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ message: messageMessages })
 const root = useTemplateRef<HTMLElement>('root')
 const rawAttrs = useAttrs()
 const attrs = useAttrListeners(
@@ -139,8 +151,7 @@ const attrs = useAttrListeners(
   () => rawAttrs,
 )
 
-const isClosing = shallowRef(false)
-let pendingClose: symbol | null = null
+const { isClosing, close: closeGuarded, cancelClose } = useCloseGuard(open, () => props.beforeClose)
 
 function requestClose(event?: Event) {
   if (!open.value || isClosing.value) return
@@ -154,24 +165,7 @@ function requestClose(event?: Event) {
   emit('open-change', false, details)
   if (cancelled) return
 
-  if (!props.beforeClose) {
-    open.value = false
-    return
-  }
-  const token = Symbol('pending-close')
-  pendingClose = token
-  isClosing.value = true
-  props.beforeClose(() => {
-    if (pendingClose !== token) return
-    pendingClose = null
-    isClosing.value = false
-    open.value = false
-  })
-}
-
-function cancelClose() {
-  pendingClose = null
-  isClosing.value = false
+  closeGuarded(event ? 'dismiss' : 'programmatic')
 }
 
 function close() {
@@ -181,8 +175,7 @@ function close() {
 // Guard stale pending token (same as useDialog.ts deactivate).
 watch(open, (value) => {
   if (!value) {
-    pendingClose = null
-    isClosing.value = false
+    cancelClose()
     moveFocusOut()
   }
 })
@@ -225,6 +218,76 @@ const descriptionPart = computed(() =>
 )
 const closePart = computed(() => resolveUiPart(cx, themedUi()?.close, 'ui-message-close'))
 const actionsPart = computed(() => resolveUiPart(cx, themedUi()?.actions, 'ui-message-actions'))
+
+// The box grows and shrinks with the fade, so what's below moves with it instead of snapping.
+// Shut, it has no height, padding, border or share of the parent's gap, so nothing lingers.
+// With force-mount the consumer owns all of it.
+function shutStyles(node: HTMLElement) {
+  const gap = Number.parseFloat(getComputedStyle(node.parentElement ?? node).rowGap) || 0
+  node.style.blockSize = '0px'
+  node.style.paddingBlock = '0px'
+  node.style.borderBlockWidth = '0px'
+  node.style.marginBlockStart = `${-gap}px`
+}
+function openStyles(node: HTMLElement) {
+  node.style.blockSize = `${node.dataset.size}px`
+  node.style.paddingBlock = ''
+  node.style.borderBlockWidth = ''
+  node.style.marginBlockStart = ''
+}
+function collapse(el: Element) {
+  const node = el as HTMLElement
+  node.style.boxSizing = 'border-box'
+  node.style.overflow = 'hidden'
+  shutStyles(node)
+}
+// Runs once the box is in the DOM (before-enter is before insertion, so it can't measure).
+function grow(el: Element) {
+  const node = el as HTMLElement
+  node.style.blockSize = ''
+  node.style.paddingBlock = ''
+  node.style.borderBlockWidth = ''
+  node.style.marginBlockStart = ''
+  node.dataset.size = String(node.offsetHeight)
+  shutStyles(node)
+  // Lays the shut box out before it grows, or the transition would start from `auto`.
+  void node.offsetHeight
+  requestAnimationFrame(() => openStyles(node))
+}
+function release(el: Element) {
+  const node = el as HTMLElement
+  delete node.dataset.size
+  node.style.boxSizing = ''
+  node.style.overflow = ''
+  node.style.transition = ''
+  node.style.blockSize = ''
+  node.style.paddingBlock = ''
+  node.style.borderBlockWidth = ''
+  node.style.marginBlockStart = ''
+}
+function hold(el: Element) {
+  const node = el as HTMLElement
+  node.style.boxSizing = 'border-box'
+  node.style.overflow = 'hidden'
+  node.style.blockSize = `${node.offsetHeight}px`
+  void node.offsetHeight
+}
+function shrink(el: Element) {
+  const node = el as HTMLElement
+  requestAnimationFrame(() => shutStyles(node))
+}
+const messageTransition = useMessageMotion({
+  motion: () => props.motion,
+  root: () => root.value,
+  forceMount: () => props.forceMount,
+  builtIn: {
+    onBeforeEnter: collapse,
+    onEnter: grow,
+    onAfterEnter: release,
+    onBeforeLeave: hold,
+    onLeave: shrink,
+  },
+})
 
 defineExpose({
   /** Root element (null while closed unless `forceMount`). */

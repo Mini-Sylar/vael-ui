@@ -9,14 +9,14 @@ const items = ['Accra', 'Kumasi', 'Tamale'].map((label) => ({ label, value: labe
 const global = { stubs: { transition: false, 'transition-group': false } }
 const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
 
-function multiSelect(motionCss = true) {
+function multiSelect(motion = true) {
   return defineComponent(() => {
     const value = shallowRef<string[]>(['accra'])
     return () =>
       h(Select as never, {
         items,
         multiple: true,
-        motionCss,
+        motion,
         modelValue: value.value,
         'onUpdate:modelValue': (next: string[]) => (value.value = next),
       })
@@ -62,7 +62,7 @@ test('a tick already there when the list opens shows at once', async () => {
   }
 })
 
-test('motion-css false: a picked tick shows at once', async () => {
+test('motion false: a picked tick shows at once', async () => {
   const screen = await render(multiSelect(false), { global })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(option('Kumasi')).toBeDefined())

@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Update one toast with id</h3>
+    <h3>Update one toast by <code>id</code></h3>
     <p class="note">
       Every call with the same <code>id</code> updates one toast instead of adding another, so
       progress reads as a single message. <code>toast.promise</code> takes an <code>id</code> too.

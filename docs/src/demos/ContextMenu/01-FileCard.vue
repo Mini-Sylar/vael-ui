@@ -5,15 +5,13 @@
       <ContextMenu :items="fileItems" @select="onSelect">
         <!-- Focusable, so Shift+F10 or the Menu key opens the menu from the keyboard. -->
         <Card class="file-card" tabindex="0" role="group" aria-label="Quarterly report.pdf">
-          <template #body>
-            <div class="file-card-body">
-              <span class="file-icon"><PhFileText :size="28" weight="duotone" /></span>
-              <div>
-                <strong>Quarterly report.pdf</strong>
-                <p class="file-meta">2.4 MB, edited 3 days ago</p>
-              </div>
+          <div class="file-card-body">
+            <span class="file-icon"><PhFileText :size="28" weight="duotone" /></span>
+            <div>
+              <strong>Quarterly report.pdf</strong>
+              <p class="file-meta">2.4 MB, edited 3 days ago</p>
             </div>
-          </template>
+          </div>
         </Card>
       </ContextMenu>
       <output class="panel-text">{{

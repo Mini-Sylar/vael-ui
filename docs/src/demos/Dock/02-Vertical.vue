@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
-    <h3>Vertical, <code>orientation="vertical"</code></h3>
-    <p class="note">Same falloff math, just measured along the block axis instead.</p>
+    <h3>Vertical: <code>orientation="vertical"</code></h3>
+    <p class="note">The same magnification, measured along the vertical axis.</p>
     <div class="row">
       <Dock aria-label="Side dock" orientation="vertical" :items="appItems" @select="onSelect" />
     </div>

@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Readonly, composed into review cards</h3>
+    <h3>Read-only ratings in review cards</h3>
     <p class="note">
-      <code>readonly</code> turns off pointer/keyboard interaction entirely, for just displaying a
-      value — here paired with <code>Card</code> to show a small list of reviews.
+      <code>readonly</code> turns off pointer and keyboard input, for showing a value. Here each
+      rating sits in a <code>Card</code> in a list of reviews.
     </p>
     <div class="row">
       <Card v-for="review in reviews" :key="review.author" :title="review.author">

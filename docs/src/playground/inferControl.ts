@@ -33,7 +33,9 @@ export function inferControl(schema: PropSchema | undefined): PlaygroundControl 
     return { kind: 'boolean' }
   }
   if (members.length === 1 && members[0] === 'string') return { kind: 'string' }
-  if (members.length === 1 && members[0] === 'number') return { kind: 'number' }
+  // `number | ProgressSegment[]`: the array half comes from a data preset, so the number stays a control.
+  if (members.includes('number') && members.every((m) => m === 'number' || m.endsWith('[]')))
+    return { kind: 'number' }
   if (members.every((m) => /^".*"$/.test(m))) {
     return { kind: 'select', options: members.map((m) => m.slice(1, -1)) }
   }

@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Hover to open: <code>open-on="hover"</code></h3>
     <p class="note">
-      Additive on top of click, and only on a real hover-capable pointer, Tab + Enter still opens it
-      with the mouse nowhere near.
+      Hover opens it in addition to click, and only on a pointer that can hover. Tab and Enter still
+      open it wherever the mouse is.
     </p>
     <div class="speed-dial-row">
       <div class="speed-dial-anchor">

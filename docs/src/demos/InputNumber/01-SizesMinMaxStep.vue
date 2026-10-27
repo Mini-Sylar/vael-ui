@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Sizes, min / max / step</h3>
+    <h3>Sizes, with <code>min</code>, <code>max</code> and <code>step</code></h3>
     <p class="note">
-      Clamps on blur, try typing 999. ArrowUp/ArrowDown and the stepper buttons step by
-      <code>step</code>, press-and-hold repeats.
+      Values clamp on blur: try typing 999. The arrow keys and the stepper buttons change the value
+      by <code>step</code>, and holding a button repeats.
     </p>
     <div class="row">
       <InputNumber v-model="sizeSm" size="sm" :min="0" :max="10" placeholder="Small" />

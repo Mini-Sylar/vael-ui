@@ -1,10 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Overflow: default scroll vs. <code>wrap</code></h3>
+    <h3>Overflow: scroll or <code>wrap</code></h3>
     <p class="note">
-      Default (<code>wrap</code> false): a single line that scrolls horizontally once it overflows
-      its container, edge-faded so there's a visible cue there's more. Set <code>wrap</code> to
-      break onto multiple lines instead.
+      By default, the trail stays on one line and scrolls sideways when it overflows, with faded
+      edges that show there’s more. Set <code>wrap</code> to break it onto several lines instead.
     </p>
     <p class="note">Scrolls (default):</p>
     <Breadcrumb class="breadcrumb-narrow" aria-label="Scrolling breadcrumb">

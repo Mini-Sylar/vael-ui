@@ -59,11 +59,11 @@ test('size: a nested provider overrides its parent, and a runtime change updates
   expect(q('[data-testid="inner"]').classList.contains('ui-button--lg')).toBe(true)
 })
 
-test('motionCss false turns built-in transitions off inside, and a component can turn its own back on', async () => {
+test('motion false turns built-in transitions off inside, and a component can turn its own back on', async () => {
   await render(() =>
-    h(ConfigProvider, { motionCss: false }, () => [
+    h(ConfigProvider, { motion: false }, () => [
       h(Calendar, { 'data-testid': 'off' }),
-      h(Calendar, { 'data-testid': 'on', motionCss: true }),
+      h(Calendar, { 'data-testid': 'on', motion: true }),
     ]),
   )
   expect(q('[data-testid="off"]').dataset.motion).toBe('off')
@@ -132,11 +132,11 @@ test('locale: a number field re-renders its text when the locale changes', async
 })
 
 // Animations off from a provider means instant, not "hands off": panels still open and close.
-test('motionCss false from a provider: Accordion and Collapsible open and close instantly', async () => {
+test('motion false from a provider: Accordion and Collapsible open and close instantly', async () => {
   const value = shallowRef<string | null>(null)
   const open = shallowRef(false)
   await render(() =>
-    h(ConfigProvider, { motionCss: false }, () => [
+    h(ConfigProvider, { motion: false }, () => [
       h(
         Accordion as never,
         { value: value.value, 'onUpdate:value': (v: string | null) => (value.value = v) },
@@ -165,19 +165,19 @@ test('motionCss false from a provider: Accordion and Collapsible open and close 
   await expect.poll(heights).toEqual([0, 0])
 })
 
-test('a component’s own motion-css="false" still hands the height over to you', async () => {
+test('a component’s own motion="false" still hands the height over to you', async () => {
   await render(() =>
-    h(ConfigProvider, { motionCss: false }, () =>
-      h(Collapsible, { open: false, motionCss: false }, () => 'Panel'),
+    h(ConfigProvider, { motion: false }, () =>
+      h(Collapsible, { open: false, motion: false }, () => 'Panel'),
     ),
   )
   // Hands-off writes no inline styles at all, so your own animation isn't fought.
   expect(q('.ui-collapsible-panel').getAttribute('style') ?? '').toBe('')
 })
 
-test('motionCss false from a provider: a dismissed toast still leaves, with no @card-leave listener', async () => {
+test('motion false from a provider: a dismissed toast still leaves', async () => {
   useToastQueue().dismiss()
-  await render(() => h(ConfigProvider, { motionCss: false }, () => h(Toaster)), {
+  await render(() => h(ConfigProvider, { motion: false }, () => h(Toaster)), {
     global: { stubs: { transition: false, 'transition-group': false } },
   })
   const id = toast('Saved', { duration: 60_000 })
@@ -186,12 +186,12 @@ test('motionCss false from a provider: a dismissed toast still leaves, with no @
   await expect.poll(() => all('.ui-toast').length).toBe(0)
 })
 
-test('motionCss false from a provider: SpeedDial actions still leave, with no @action-leave listener', async () => {
+test('motion false from a provider: SpeedDial actions leave at once', async () => {
   const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
   const open = shallowRef(true)
   await render(
     () =>
-      h(ConfigProvider, { motionCss: false }, () =>
+      h(ConfigProvider, { motion: false }, () =>
         h(SpeedDial as never, {
           items: [{ label: 'Home' }, { label: 'Settings' }],
           ariaLabel: 'Actions',
@@ -207,14 +207,14 @@ test('motionCss false from a provider: SpeedDial actions still leave, with no @a
   expect(getComputedStyle(q('.ui-speed-dial-trigger-icon')).transitionProperty).toBe('none')
 })
 
-test('motionCss false from a provider zeroes the duration tokens, teleported overlays included', async () => {
+test('motion false from a provider zeroes the duration tokens, teleported overlays included', async () => {
   const { default: Dialog } = await import('../src/components/Dialog/Dialog.vue')
   const duration = (el: Element) =>
     getComputedStyle(el).getPropertyValue('--ui-duration-enter').trim()
   await render(() =>
-    h(ConfigProvider, { motionCss: false }, () => [
+    h(ConfigProvider, { motion: false }, () => [
       h(Button, null, () => 'Inside'),
-      h(Dialog, { open: true, title: 'Teleported' }),
+      h(Dialog as never, { open: true, title: 'Teleported' }),
     ]),
   )
   await expect.poll(() => document.querySelector('.ui-dialog-panel')).not.toBeNull()

@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: an elastic orb (GSAP)</h3>
     <p class="note">
-      The <code>#indicator</code> slot hands you the pull's <code>state</code> and
-      <code>progress</code>, and the exposed <code>state</code> tells GSAP when it changes. While
-      you pull, a ring fills with your finger. Crossing the threshold snaps the orb with a spring
-      and flips the arrow, refreshing spins it, and finishing draws a check with a pulse.
+      The <code>#indicator</code> slot receives the pull's <code>state</code> and
+      <code>progress</code>, and the demo watches the exposed <code>state</code> to run GSAP. While
+      you pull, a ring fills with your finger. Past the threshold, the orb springs and the arrow
+      flips; refreshing spins it, and finishing draws a check with a pulse.
     </p>
     <PullToRefresh ref="ptr" class="ptr-box" :on-refresh="refresh">
       <template #indicator="{ state, progress }">
@@ -94,6 +94,7 @@ watch(
       gsap.to(arrow, {
         rotation: 0,
         opacity: 1,
+        scale: 1,
         transformOrigin: '50% 50%',
         duration: 0.3,
         ease: 'power3.out',

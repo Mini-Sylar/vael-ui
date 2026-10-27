@@ -11,10 +11,11 @@
 </template>
 
 <script setup lang="ts">
+import type { BeforeClose } from '../../src/motion/types'
 import { shallowRef, useTemplateRef } from 'vue'
 import Popover from '../../src/components/Popover/Popover.vue'
 
-defineProps<{ beforeClose?: (done: () => void) => void }>()
+defineProps<{ beforeClose?: BeforeClose }>()
 
 const open = shallowRef(false)
 const triggerRef = useTemplateRef('triggerRef')

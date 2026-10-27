@@ -1,8 +1,16 @@
 <template>
-  <div class="ui-tree-root" :data-motion="props.motionCss ? undefined : 'off'">
+  <div
+    class="ui-tree-root"
+    v-bind="rootAttrs"
+    :data-motion="props.motion ? undefined : 'off'"
+    :data-rows="flatRows.length > STATIC_CONTROLS_ROWS && !virtual ? 'many' : undefined"
+  >
     <div v-if="filterable" :class="filterPart.class" :style="filterPart.style">
       <Input
         ref="filterInputRef"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
         v-model="query"
         :placeholder="filterPlaceholder"
         size="sm"
@@ -11,7 +19,8 @@
       >
         <template #start>
           <svg
-            class="ui-tree-search-icon"
+            :class="filterIconPart.class"
+            :style="filterIconPart.style"
             viewBox="0 0 16 16"
             width="14"
             height="14"
@@ -34,15 +43,25 @@
       ref="listEl"
       :id="listId"
       role="tree"
+      v-bind="treeAttrs"
+      :aria-busy="loadingFlat || undefined"
       :data-reorderable="reorderable ? '' : undefined"
       :data-reordering="isReordering ? '' : undefined"
       :data-invalid-drop="isReordering && !isValidDrop ? '' : undefined"
       :data-drop-pending="isDropPending ? '' : undefined"
+      :data-sticky="stickyScroll ? '' : undefined"
       :aria-multiselectable="selectionMode !== 'single' || undefined"
       :class="listPart.class"
       :style="listPart.style"
+      v-scroll-mask="scrollFade"
       @keydown="onTreeKeydown"
     >
+      <div
+        ref="hoverEl"
+        class="ui-indicator ui-tree-indicator"
+        :style="hoverStyle"
+        aria-hidden="true"
+      />
       <div
         v-if="visibleRootNodes.length === 0"
         :class="emptyPart.class"
@@ -51,15 +70,37 @@
       >
         <slot name="empty">{{ emptyText }}</slot>
       </div>
-      <div v-else class="ui-tree-rows">
+      <!-- Small trees nest each folder's rows in its own block. A large one is a flat list that
+           renders only the rows in view, with the folders scrolled past pinned on top. -->
+      <div
+        v-else
+        ref="rowsEl"
+        :class="['ui-tree-rows', virtual && 'ui-tree-rows--virtual']"
+        :style="virtual ? virtualTree?.spacerStyle.value : loadingFlat ? loadingRoom : undefined"
+      >
         <!-- v-memo: the forwarded #node slot is dynamic, so without it each Tree re-render
              would re-render every row. Vapor ignores v-memo. -->
         <TreeNodeRow
-          v-for="node in visibleRootNodes"
-          :key="String(node.value)"
-          v-memo="[node]"
-          :node="node"
-          :depth="0"
+          v-for="entry in renderEntries"
+          :key="entry.key"
+          v-memo="[
+            entry.node,
+            entry.depth,
+            entry.y,
+            entry.top,
+            entry.setSize,
+            entry.posInSet,
+            virtual || loadingFlat,
+          ]"
+          :node="entry.node"
+          :depth="entry.depth"
+          :flat="virtual || loadingFlat"
+          :pinned="entry.top !== undefined"
+          :set-size="entry.setSize"
+          :pos-in-set="entry.posInSet"
+          :class="entry.top !== undefined ? 'ui-tree-pin' : undefined"
+          :data-virtual-index="entry.index"
+          :style="entry.style"
         >
           <template #node="scope">
             <slot
@@ -95,8 +136,10 @@
                 </svg>
               </span>
               <span v-else class="ui-tree-chevron-spacer" aria-hidden="true" />
+              <!-- The row is the tab stop and Space checks it, so the box stays out of the tab order. -->
               <Checkbox
                 v-if="selectionMode === 'checkbox'"
+                :ref="leaveTabOrder"
                 class="ui-tree-checkbox"
                 :model-value="scope.checked"
                 :indeterminate="scope.indeterminate"
@@ -196,9 +239,13 @@ export function removeTreeNode<T extends TreeNode>(nodes: T[], value: string | n
 // only follows .vue-extension sibling imports.
 export interface TreeRowContext {
   selectionMode: TreeSelectionMode
-  motionCss: boolean
-  /** motionCss, but off for the update a search or an arrow key causes, so those swap at once. */
+  motion: boolean
+  /** motion, but off for the update a search or an arrow key causes, and on very large trees. */
   rowMotion: boolean
+  /** Runs every folder's fold in this tree (useFold). */
+  fold: FoldScheduler
+  /** The spring folders open on: the tree's `motion`, then the app's style. */
+  foldSpring: FoldSpring
   stickyScroll: boolean
   maxStickyDepth: number
   isExpanded: (node: TreeNode) => boolean
@@ -228,16 +275,19 @@ export const treeRowContextKey: InjectionKey<TreeRowContext> = Symbol('treeRowCo
 <!-- Tree extracts logic for standalone or nested use; TreeSelect wraps it in popover.
      Independent DOM class set (ui-tree-*); TreeSelect passes ui overrides for legacy passenger classes (ui-tree-select-*).
      Focus delegation: focusFirstRow/initRoving exposed; roving tabindex internal; focus stealing is popover-specific (TreeSelect only).
-     Animation: motionCss=false disables all built-in motion via data-motion="off" on root. Rows render as a
-     recursive TreeNodeRow tree (not a flat list) so stickyScroll can use native `position: sticky` — see the FLIP
-     pass below for what that costs and how it's covered. -->
+     Animation: motion=false disables all built-in motion via data-motion="off" on root. Rows render as a
+     recursive TreeNodeRow tree (not a flat list) so stickyScroll can use native `position: sticky`; a
+     folder folds open and shut by its rows block's height (useFold), so everything below follows in layout. -->
 <script setup lang="ts" generic="T extends TreeNode = TreeNode">
 import './Tree.css'
 import '../shared/tick.css'
-import { withProviderDefaults } from '../../config'
+import { defaultsKey, withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
+  effectScope,
+  inject,
   nextTick,
   onBeforeUnmount,
   onMounted,
@@ -245,19 +295,38 @@ import {
   reactive,
   ref,
   shallowRef,
+  unref,
+  useAttrs,
   useId,
   useTemplateRef,
   watch,
 } from 'vue'
+import type { MaybeRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import { springOf } from '../../motion/springNames'
+import type { TreeMotion } from '../../motion/types'
 import Input from '../Input/Input.vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
 import TreeNodeRow from './TreeNodeRow.vue'
-import { useUiMessages } from '../../messages'
+import { useMessages, sortableMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
+import '../shared/indicator.css'
 import { useEasedHeight } from '../../composables/useEasedHeight'
+import { createFoldScheduler } from '../../composables/useFold'
+import { loadVirtualTree, loadedVirtualTree } from '../../composables/lazyVirtualTree'
+import type { useVirtualTree } from '../../composables/useVirtualTree'
+import { useEventListener } from '@vueuse/core'
+import { inlineKey, prefersReducedMotion } from '../../composables/dom'
+import { vScrollMask } from '../../directives/vScrollMask'
+import type { FoldScheduler, FoldSpring } from '../../composables/useFold'
+import { DEFAULT_FOLD_SPRING } from '../../composables/useFold'
+import { useMotionStyle } from '../../motion/context'
+import { timingOf } from '../../composables/tourGlide'
+import type { Spring } from '../../motion/types'
 import { moveTreeNode } from '../../composables/sortableTree'
 import { useLazySortable } from '../../composables/useLazySortable'
 import type {
@@ -265,6 +334,8 @@ import type {
   FlatSortableRow,
   SortableDropDetails,
 } from '../../composables/useSortable'
+
+defineOptions({ inheritAttrs: false })
 
 /**
  * Selected value: one value in `'single'` mode, an array in `'multiple'`, leaf values in `'checkbox'`.
@@ -301,11 +372,13 @@ const rawProps = withDefaults(
      */
     emptyText?: string
     /**
-     * `false` skips all built-in motion (row transitions, chevron rotation, cross-folder moves and
-     * the list easing to its new height as you search).
+     * How it moves: its appearance, row by row (`{ initial: { node: { opacity: 0, x: -4 } }, stagger: 0.03 }`),
+     * over `list`, `node`, `chevron` and `label`. `false` skips all built-in motion (row
+     * transitions, chevron rotation, cross-folder moves and the list easing to its new height as
+     * you search).
      * @default true
      */
-    motionCss?: boolean
+    motion?: TreeMotion
     /** Keeps collapsed folders' children mounted (`v-show` plus `data-state`) so you can animate
      * expand/collapse yourself instead of using the built-in transition.
      * @default false
@@ -349,6 +422,12 @@ const rawProps = withDefaults(
      * @default false
      */
     stickyScroll?: boolean
+    /**
+     * Fades the list's top and bottom edges while there are more rows past them. With
+     * `stickyScroll`, only the bottom fades, so pinned rows stay solid.
+     * @default true
+     */
+    scrollFade?: boolean
     /** Id for the `role="tree"` list element. Auto-generated when omitted. */
     id?: string
     /** Class and style overrides for each part. */
@@ -359,6 +438,8 @@ const rawProps = withDefaults(
       empty: UiPartValue
       chevron: UiPartValue
       label: UiPartValue
+      /** The search icon at the start of the filter box. */
+      filterIcon: UiPartValue
     }>
   }>(),
   {
@@ -367,7 +448,7 @@ const rawProps = withDefaults(
     filterable: true,
     filterPlaceholder: 'Search...',
     emptyText: 'No results found',
-    motionCss: undefined,
+    motion: undefined,
     forceMount: false,
     reorderable: false,
     canNestInto: undefined,
@@ -379,11 +460,27 @@ const rawProps = withDefaults(
     autoExpandDelay: 600,
     expandOnRowClick: false,
     stickyScroll: false,
+    scrollFade: true,
     id: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
+
+const attrs = useAttrs()
+// Your name and description go on the `role="tree"` element; the rest stays on the root.
+const isTreeAttr = (key: string) =>
+  key === 'aria-label' || key === 'aria-labelledby' || key === 'aria-describedby'
+const treeAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => isTreeAttr(key))),
+)
+const rootAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTreeAttr(key))),
+)
+function leaveTabOrder(checkbox: unknown) {
+  const input = unref((checkbox as { inputEl?: MaybeRef<HTMLInputElement | null> } | null)?.inputEl)
+  if (input) input.tabIndex = -1
+}
 
 const emit = defineEmits<{
   /** Fires when you change the selection, with the new model value. */
@@ -517,10 +614,9 @@ function activateNode(node: TreeNode) {
 const expandedKeys = ref(new Set<string | number>())
 const normalizedQuery = computed(() => normalizeText(query.value.trim()))
 const isFiltering = computed(() => normalizedQuery.value.length > 0)
-// A search opens and closes folders without the FLIP slide that a click gets, so their rows would
-// fade in and out over rows that already moved. Search results swap at once instead (the list's
-// height still eases); folder animations come back for the next click. Arrow keys swap at once
-// too: someone arrowing through a tree shouldn't wait on motion.
+// A search opens and closes many folders at once, so their rows swap instead of animating (the
+// list's height still eases); folder animations come back for the next click. Arrow keys swap at
+// once too: someone arrowing through a tree shouldn't wait on motion.
 const instantSwap = shallowRef(false)
 watch(
   normalizedQuery,
@@ -610,29 +706,94 @@ const visibleRootNodes = computed(() => props.items.filter(isVisible))
 
 // Roving tabindex + keyboard nav (own copy due to tree semantics).
 const listEl = useTemplateRef<HTMLElement>('listEl')
+// Single selection: the new row's highlight slides in from where the last one was, or fades in
+// when that's more than a few rows away. CSS owns the motion; this only measures the distance.
+let highlightFrom: number | null = null
+const highlightEl = () =>
+  listEl.value?.querySelector<HTMLElement>('[role="treeitem"] > .ui-tree-row-highlight') ?? null
+watch(
+  model,
+  () => {
+    if (props.selectionMode === 'single')
+      highlightFrom = highlightEl()?.getBoundingClientRect().top ?? null
+  },
+  { flush: 'pre' },
+)
+watch(
+  model,
+  () => {
+    const from = highlightFrom
+    highlightFrom = null
+    const el = highlightEl()
+    if (from === null || !el) return
+    const { top, height } = el.getBoundingClientRect()
+    if (Math.abs(from - top) < 0.5) return
+    el.style.setProperty('--ui-tree-highlight-from', `${from - top}px`)
+    el.dataset.from = Math.abs(from - top) > height * 4 ? 'far' : 'near'
+  },
+  { flush: 'post' },
+)
 // Searching eases the list to its new height, the same as Select's and Combobox's lists. TreeSelect
 // gets it from here.
 useEasedHeight({
   el: () => listEl.value,
   source: [normalizedQuery, () => props.items],
-  enabled: () => props.motionCss,
+  enabled: () => props.motion !== false,
 })
 function rowEls(): HTMLElement[] {
   return Array.from(listEl.value?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? [])
 }
+// The tabbable row, by value: a large tree re-renders rows as it scrolls and puts it back.
+let rovingValue: string | undefined
 function setRoving(target: HTMLElement | undefined) {
+  rovingValue = target?.dataset.treeValue
   for (const el of rowEls()) el.tabIndex = el === target ? 0 : -1
 }
 function focusRow(el: HTMLElement | undefined) {
   if (!el) return
   setRoving(el)
-  el.focus()
+  // A large tree has already scrolled the row into view, clear of its pinned rows.
+  el.focus({ preventScroll: virtual.value })
+}
+// Focuses a row by value; in a large tree, scrolls it into view (and so renders it) first.
+function focusValue(value: string | number) {
+  if (virtual.value) {
+    const index = virtualTree.value!.indexOf(value)
+    if (index === -1) return
+    virtualTree.value!.scrollToIndex(index)
+    const el = treeRowElement(value)
+    if (el) focusRow(el)
+    else void nextTick(() => focusRow(treeRowElement(value) ?? undefined))
+    return
+  }
+  focusRow(treeRowElement(value) ?? undefined)
+}
+function focusAt(index: number) {
+  const row = flatRows.value[index]
+  if (row) focusValue(row.node.value)
 }
 function focusFirstRow() {
-  focusRow(rowEls()[0])
+  focusAt(0)
 }
+// The tab stop starts on the first selected row, else the first row (APG tree view).
 function initRoving() {
-  setRoving(rowEls()[0])
+  const rows = rowEls()
+  setRoving(
+    rows.find(
+      (el) =>
+        el.getAttribute('aria-selected') === 'true' || el.getAttribute('aria-checked') === 'true',
+    ) ?? rows[0],
+  )
+}
+// Opens the folders above the row, then focuses it.
+function focusNode(value: string | number) {
+  instantSwap.value = true
+  for (let parent = findParent(value); parent; parent = findParent(parent.value))
+    setExpanded(parent.value, true)
+  void nextTick(() => {
+    instantSwap.value = false
+    focusValue(value)
+  })
 }
 
 // Depth-first flatten of currently VISIBLE rows, used only for keyboard-nav
@@ -674,7 +835,7 @@ function treeRowElement(value: string | number): HTMLElement | null {
     null
   )
 }
-const messages = useUiMessages()
+const messages = useMessages({ sortable: sortableMessages })
 const sortableRows = computed<FlatSortableRow[]>(() =>
   flatRows.value.map((row) => ({
     value: row.node.value,
@@ -707,7 +868,7 @@ const {
     touchDragDelay: () => props.touchDragDelay,
     disabled: () => !props.reorderable,
     reorderSiblings: () => props.reorderSiblings,
-    motionCss: () => props.motionCss,
+    motion: () => props.motion !== false,
     autoExpandDelay: () => props.autoExpandDelay,
     onAutoExpand: (value) => expandNode(value),
     canNestInto: (value) => {
@@ -743,6 +904,33 @@ const {
   () => props.reorderable,
 )
 
+// The hover and keyboard highlight slides between rows; not while a row is being dragged.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(listEl, {
+  itemSelector: '.ui-tree-row',
+  scope: '[role="tree"]',
+  scroller: true,
+  enabled: () => !isReordering.value,
+  motion: () => props.motion !== false,
+  indicatorEl: hoverEl,
+  // Trees stacked as sections (an explorer's) share one highlight.
+  group: 'tree',
+})
+
+const parts = useStateMotion({
+  key: 'tree',
+  mainPart: 'list',
+  motion: () => props.motion,
+  root: () => listEl.value,
+  selectors: {
+    list: '.ui-tree-list',
+    node: '.ui-tree-row',
+    chevron: '.ui-tree-chevron',
+    label: '.ui-tree-label',
+  },
+  states: () => ({}),
+})
+
 function onRowPointerdown(node: TreeNode, event: PointerEvent) {
   if (!props.reorderable || node.disabled) return
   onSortablePointerdown(event, node.value)
@@ -775,30 +963,40 @@ function onTreeKeydown(event: KeyboardEvent) {
   onTreeNavigationKeydown(event)
 }
 
+// Every visible row's place in the list, by value: keys move by position in the whole tree, not
+// among the rows a large tree happens to have rendered.
+const rowIndexByValue = computed(() => {
+  const map = new Map<string, number>()
+  flatRows.value.forEach((row, index) => map.set(String(row.node.value), index))
+  return map
+})
+
 function onTreeNavigationKeydown(event: KeyboardEvent) {
-  const rows = rowEls()
+  const rows = flatRows.value
   if (rows.length === 0) return
   const active = document.activeElement instanceof HTMLElement ? document.activeElement : null
   // Guard: resolve to owning row whether focus is on row div or nested input.
   const activeRow = active?.closest<HTMLElement>('[role="treeitem"]') ?? null
-  const currentIndex = activeRow ? rows.indexOf(activeRow) : -1
+  const currentIndex = activeRow
+    ? (rowIndexByValue.value.get(activeRow.dataset.treeValue ?? '') ?? -1)
+    : -1
 
-  switch (event.key) {
+  switch (inlineKey(event.key, event.currentTarget as Element)) {
     case 'ArrowDown':
       event.preventDefault()
-      focusRow(rows[Math.min(currentIndex + 1, rows.length - 1)] ?? rows[0])
+      focusAt(Math.min(currentIndex + 1, rows.length - 1))
       return
     case 'ArrowUp':
       event.preventDefault()
-      focusRow(currentIndex <= 0 ? rows[0] : rows[currentIndex - 1])
+      focusAt(currentIndex <= 0 ? 0 : currentIndex - 1)
       return
     case 'Home':
       event.preventDefault()
-      focusRow(rows[0])
+      focusAt(0)
       return
     case 'End':
       event.preventDefault()
-      focusRow(rows[rows.length - 1])
+      focusAt(rows.length - 1)
       return
     case 'ArrowRight': {
       if (currentIndex === -1) return
@@ -807,7 +1005,7 @@ function onTreeNavigationKeydown(event: KeyboardEvent) {
       event.preventDefault()
       // ARIA APG: closed opens (focus stays); open moves to first child.
       if (!isExpanded(row.node)) toggleExpandInstantly(row.node)
-      else focusRow(rows[currentIndex + 1])
+      else focusAt(currentIndex + 1)
       return
     }
     case 'ArrowLeft': {
@@ -818,8 +1016,7 @@ function onTreeNavigationKeydown(event: KeyboardEvent) {
       if (row.hasChildren && isExpanded(row.node)) {
         toggleExpandInstantly(row.node)
       } else if (row.parentValue != null) {
-        const parentIndex = flatRows.value.findIndex((r) => r.node.value === row.parentValue)
-        if (parentIndex !== -1) focusRow(rows[parentIndex])
+        focusValue(row.parentValue)
       }
       return
     }
@@ -879,7 +1076,7 @@ function typeahead(key: string, activeRow: HTMLElement | null): boolean {
   for (let offset = 0; offset < rows.length; offset++) {
     const row = rows[(start + offset) % rows.length]
     if (normalizeText(row.node.label.trim()).startsWith(search)) {
-      focusRow(treeRowElement(row.node.value) ?? undefined)
+      focusValue(row.node.value)
       return true
     }
   }
@@ -914,177 +1111,275 @@ watch(flatRows, () => {
 // Self-initializing: first row tabbable on mount.
 onMounted(() => initRoving())
 
-// Cross-folder FLIP: a folder's own children fade in/out locally (see
-// TreeNodeRow.vue), but a row several levels away that shifts because a
-// NESTED folder changed height gets no local re-render signal. Measures
-// every row's position before/after an expand/collapse and slides whatever
-// moved. Currently-stuck sticky rows are excluded (their position is
-// CSS-driven, not flow-driven) — checked live rather than by the sticky-
-// capable class, since with stickyScroll on nearly every folder has that
-// class whether or not it's actually pinned right now.
-// Above this many rendered rows the pass is skipped; it would block longer than the slide.
-const FLIP_MAX_ROWS = 150
-function flipRows(): HTMLElement[] {
-  return Array.from(listEl.value?.querySelectorAll<HTMLElement>('[data-tree-value]') ?? [])
-}
-function isCurrentlyStuck(el: HTMLElement, rect: DOMRect, listTop: number): boolean {
-  if (!el.classList.contains('ui-tree-row--sticky')) return false
-  const stickyTop = Number.parseFloat(getComputedStyle(el).top)
-  if (Number.isNaN(stickyTop)) return false
-  return Math.abs(rect.top - listTop - stickyTop) < 1
-}
-// Reads only, so the whole pass costs one layout.
-function captureRowRects(rows: HTMLElement[]): Map<string, DOMRect> {
-  const map = new Map<string, DOMRect>()
-  if (!listEl.value || rows.length === 0) return map
-  const listTop = listEl.value.getBoundingClientRect().top
-  for (const el of rows) {
-    const key = el.dataset.treeValue
-    if (key == null) continue
-    const rect = el.getBoundingClientRect()
-    if (!isCurrentlyStuck(el, rect, listTop)) map.set(key, rect)
+// Above this many rendered rows a folder opens and closes at once: re-laying out that many rows
+// every frame would cost more than the motion is worth. Measured with checkboxes and sticky rows on a
+// CPU slowed 4x: 500 rows fold at full frame rate, 1,000 drop a third of their frames.
+const FOLD_MAX_ROWS = 500
+// Above this many, checkboxes are static (no press, no layer each): that limit is memory, not time.
+// A large tree's flat list renders only the rows in view, so its checkboxes keep their press.
+const STATIC_CONTROLS_ROWS = 150
+// Past FOLD_MAX_ROWS a tree becomes a flat list that renders only what's in view, so its folders
+// fold at any size; it goes back below this, so a tree near the line doesn't switch on every click.
+// A reorderable tree and forceMount keep the nested rows.
+const MAX_STICKY_DEPTH = 5
+const VIRTUAL_EXIT_ROWS = 400
+const wantsVirtual = computed<boolean>((was) => {
+  if (props.reorderable || props.forceMount) return false
+  const count = flatRows.value.length
+  return was ? count >= VIRTUAL_EXIT_ROWS : count > FOLD_MAX_ROWS
+})
+type VirtualTreeApi = ReturnType<typeof useVirtualTree<DisplayRow>>
+// Loaded with the first tree past the line; until it arrives the rows stay nested, as they were.
+const virtualTree = shallowRef<VirtualTreeApi | null>(null)
+const virtual = computed(() => wantsVirtual.value && virtualTree.value !== null)
+// Past the line before the flat list has loaded: the first screenful, where the list will put it,
+// instead of mounting every row as nested ones.
+const loadingFlat = computed(() => wantsVirtual.value && virtualTree.value === null)
+const LOADING_ROWS = 60
+// Where the list will put them: from the row at the current scroll position, with the rows above
+// and below kept as room, so the scrollbar and the place you were stay put.
+const LOADING_PITCH = 33
+const loadingStart = shallowRef(0)
+watch(loadingFlat, (on) => {
+  if (on) loadingStart.value = Math.floor((listEl.value?.scrollTop ?? 0) / LOADING_PITCH)
+})
+const loadingEntries = computed<RenderEntry[]>(() => {
+  const rows = flatRows.value
+  const start = Math.max(0, Math.min(loadingStart.value, rows.length - LOADING_ROWS))
+  return rows.slice(start, start + LOADING_ROWS).map((row) => ({
+    key: String(row.node.value),
+    node: row.node,
+    depth: row.depth,
+  }))
+})
+const loadingRoom = computed(() => {
+  const start = Math.max(0, Math.min(loadingStart.value, flatRows.value.length - LOADING_ROWS))
+  const after = Math.max(0, flatRows.value.length - start - LOADING_ROWS)
+  return {
+    paddingBlockStart: `${start * LOADING_PITCH}px`,
+    paddingBlockEnd: `${after * LOADING_PITCH}px`,
   }
-  return map
-}
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+})
+// A tree whose nodes could add up past the line fetches the flat list while the browser is idle,
+// so expanding it later doesn't wait on the network.
+const nodeCount = computed(() => {
+  let count = 0
+  const visit = (nodes: readonly TreeNode[]) => {
+    for (const node of nodes) {
+      count++
+      if (node.children) visit(node.children)
+    }
+  }
+  visit(props.items)
+  return count
+})
+onMounted(() => {
+  watch(
+    nodeCount,
+    (count) => {
+      if (count <= FOLD_MAX_ROWS || props.reorderable || props.forceMount) return
+      const idle = window.requestIdleCallback ?? ((run: () => void) => setTimeout(run, 200))
+      idle(() => void loadVirtualTree())
+    },
+    { immediate: true },
   )
+})
+// A folder folding shut in the flat list keeps its rows until it has.
+const closingKeys = shallowRef(new Set<string | number>())
+interface DisplayRow extends FlatNode {
+  value: string | number
+  setSize: number
+  posInSet: number
 }
-let pendingBeforeRects: Map<string, DOMRect> | null = null
-interface BlockStart {
-  clipPath: string
-  opacity: string
+function flattenDisplay(
+  nodes: readonly TreeNode[],
+  depth: number,
+  parentValue: string | number | null,
+  out: DisplayRow[],
+) {
+  const shown = nodes.filter(isVisible)
+  shown.forEach((node, index) => {
+    const hasChildren = !!node.children && node.children.length > 0
+    out.push({
+      node,
+      value: node.value,
+      depth,
+      parentValue,
+      hasChildren,
+      setSize: shown.length,
+      posInSet: index + 1,
+    })
+    if (hasChildren && (isExpanded(node) || closingKeys.value.has(node.value)))
+      flattenDisplay(node.children!, depth + 1, node.value, out)
+  })
 }
-// Where an opening or closing block had got to, by its folder's value. A second click mid-way
-// makes Vue cancel that transition and start the other from its far end, a visible jump; reading
-// it here, before Vue does that, lets the new one start from the same place.
-let pendingBlockStarts: Map<string, BlockStart> | null = null
-function captureBlockStarts(): Map<string, BlockStart> {
-  const starts = new Map<string, BlockStart>()
-  for (const block of listEl.value?.querySelectorAll<HTMLElement>(
-    '.ui-tree-rows-enter-active, .ui-tree-rows-leave-active',
-  ) ?? []) {
-    const key = (block.previousElementSibling as HTMLElement | null)?.dataset.treeValue
-    if (key == null || block.dataset.instant !== undefined) continue
-    const style = getComputedStyle(block)
-    starts.set(key, { clipPath: style.clipPath, opacity: style.opacity })
+const displayRows = computed<DisplayRow[]>(() => {
+  if (!virtual.value) return []
+  const out: DisplayRow[] = []
+  flattenDisplay(props.items, 0, null, out)
+  return out
+})
+// Folders follow the motion system's timing the way every component's own motion does: this tree's
+// `motion`, then the style's `tree` key, then the app's spring (a provider's `{ spring }` or its
+// style's). A duration and easing become a spring at that pace without the bounce. They close at
+// the same pace without the bounce too.
+const motionStyle = useMotionStyle()
+const providerDefaults = inject(defaultsKey, undefined)
+const treeFoldSpring = computed<FoldSpring>(() => {
+  const timing = timingOf(rawProps.motion) ?? timingOf(motionStyle?.value?.tree)
+  if (typeof timing?.duration === 'number') return { damping: 1, response: timing.duration / 1000 }
+  const spring = springOf((timing?.spring as Spring | undefined) ?? providerDefaults?.value.spring)
+  return {
+    damping: spring?.damping ?? DEFAULT_FOLD_SPRING.damping,
+    response: spring?.response ?? DEFAULT_FOLD_SPRING.response,
   }
-  return starts
+})
+const rowsEl = useTemplateRef<HTMLElement>('rowsEl')
+// The focused row stays rendered while the list scrolls, so focus isn't dropped.
+const focusedValue = shallowRef<string | number | null>(null)
+useEventListener(listEl, 'focusin', (event: FocusEvent) => {
+  const row = (event.target as HTMLElement | null)?.closest<HTMLElement>('[role="treeitem"]')
+  const index = row ? rowIndexByValue.value.get(row.dataset.treeValue ?? '') : undefined
+  focusedValue.value = index === undefined ? null : flatRows.value[index]!.node.value
+})
+useEventListener(listEl, 'focusout', (event: FocusEvent) => {
+  if (!listEl.value?.contains(event.relatedTarget as Node | null)) focusedValue.value = null
+})
+// Its effects live in their own scope, stopped with the tree.
+const virtualScope = effectScope()
+function startVirtualTree(module: { useVirtualTree: typeof useVirtualTree }) {
+  if (virtualTree.value) return
+  virtualTree.value =
+    virtualScope.run(() =>
+      module.useVirtualTree<DisplayRow>({
+        rowsEl: () => rowsEl.value,
+        rows: () => displayRows.value,
+        enabled: () => virtual.value,
+        sticky: () => props.stickyScroll,
+        maxStickyDepth: MAX_STICKY_DEPTH,
+        keep: () => focusedValue.value,
+        spring: () => treeFoldSpring.value,
+        onClosed: (value) => {
+          const next = new Set(closingKeys.value)
+          next.delete(value)
+          closingKeys.value = next
+        },
+      }),
+    ) ?? null
 }
 watch(
+  wantsVirtual,
+  (on) => {
+    if (!on || virtualTree.value || typeof window === 'undefined') return
+    // Loaded already (another tree, or fetched while idle): switch in this same update.
+    const module = loadedVirtualTree()
+    if (module) startVirtualTree(module)
+    else void loadVirtualTree().then(startVirtualTree)
+  },
+  { immediate: true },
+)
+// One folder opened or closed by a click folds; many at once, a search, or keys swap at once.
+watch(
   expandedKeys,
+  (next, previous) => {
+    if (!virtual.value) return
+    const opened = [...next].filter((value) => !previous.has(value))
+    const closed = [...previous].filter((value) => !next.has(value))
+    if (opened.some((value) => closingKeys.value.has(value))) {
+      const keys = new Set(closingKeys.value)
+      for (const value of opened) keys.delete(value)
+      closingKeys.value = keys
+    }
+    const animate =
+      props.motion !== false &&
+      !instantSwap.value &&
+      !isFiltering.value &&
+      !prefersReducedMotion() &&
+      opened.length + closed.length === 1
+    const tree = virtualTree.value!
+    if (!animate) return tree.finishAll()
+    if (closed.length) {
+      closingKeys.value = new Set(closingKeys.value).add(closed[0]!)
+      tree.fold(closed[0]!, false)
+    } else tree.fold(opened[0]!, true)
+  },
+  { flush: 'pre' },
+)
+watch(normalizedQuery, () => virtualTree.value?.finishAll())
+
+interface RenderEntry {
+  key: string
+  node: TreeNode
+  depth: number
+  index?: number
+  y?: number
+  top?: number
+  setSize?: number
+  posInSet?: number
+  style?: Record<string, string>
+}
+const renderEntries = computed<RenderEntry[]>(() => {
+  if (loadingFlat.value) return loadingEntries.value
+  if (!virtual.value)
+    return visibleRootNodes.value.map((node) => ({ key: String(node.value), node, depth: 0 }))
+  const tree = virtualTree.value!
+  const pins = tree.pinned.value.map(({ row, top }) => ({
+    key: `pin:${String(row.value)}`,
+    node: row.node,
+    depth: row.depth,
+    top,
+    style: { top: `${top}px`, zIndex: String(6 - row.depth) },
+  }))
+  const rows = tree.window.value.map(({ row, index, y }) => ({
+    key: String(row.value),
+    node: row.node,
+    depth: row.depth,
+    index,
+    y,
+    setSize: row.setSize,
+    posInSet: row.posInSet,
+    style: { translate: `0 calc(${y}px - var(--ui-tree-shift, 0px))` },
+  }))
+  return [...pins, ...rows]
+})
+// Rows a large tree re-renders as it scrolls come back with the tabbable one where it was.
+watch(
+  renderEntries,
   () => {
-    pendingBeforeRects = null
-    pendingBlockStarts = null
-    if (!props.motionCss || instantSwap.value || prefersReducedMotion()) return
-    const rows = flipRows()
-    if (rows.length > FLIP_MAX_ROWS) return
-    pendingBeforeRects = captureRowRects(rows)
-    pendingBlockStarts = captureBlockStarts()
+    if (!virtual.value) return
+    const rows = rowEls()
+    const keep = rows.find((el) => el.dataset.treeValue === rovingValue) ?? rows[0]
+    for (const el of rows) el.tabIndex = el === keep ? 0 : -1
+  },
+  { flush: 'post' },
+)
+// Switching between nested and flat rows replaces them: the focused row gets its focus back.
+let refocusValue: string | null = null
+watch(
+  wantsVirtual,
+  () => {
+    const row =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement.closest<HTMLElement>('[role="treeitem"]')
+        : null
+    refocusValue = row && listEl.value?.contains(row) ? (row.dataset.treeValue ?? null) : null
   },
   { flush: 'pre' },
 )
 watch(
-  expandedKeys,
+  virtual,
   () => {
-    const before = pendingBeforeRects
-    const starts = pendingBlockStarts
-    pendingBeforeRects = null
-    pendingBlockStarts = null
-    if (!before || !listEl.value) return
-    const rows = flipRows()
-    if (rows.length > FLIP_MAX_ROWS) return
-    // A row still sliding from the last click would add that slide to where it now sits. `before`
-    // already holds where it's drawn, so the new slide picks up from there.
-    const sliding = rows.filter((el) => el.style.transition)
-    for (const el of sliding) {
-      el.style.transition = 'none'
-      el.style.transform = ''
-    }
-    const after = captureRowRects(rows)
-    for (const el of sliding) el.style.transition = ''
-    // Rows off screen before and after don't slide; one viewport of margin covers the edges.
-    const listRect = listEl.value.getBoundingClientRect()
-    const viewTop = Math.max(listRect.top, 0)
-    const viewBottom = Math.min(listRect.bottom, window.innerHeight)
-    const margin = Math.max(viewBottom - viewTop, 0)
-    const nearView = (rect: DOMRect) =>
-      rect.bottom >= viewTop - margin && rect.top <= viewBottom + margin
-    const moved: { el: HTMLElement; deltaY: number }[] = []
-    for (const el of rows) {
-      const key = el.dataset.treeValue
-      const afterRect = key == null ? undefined : after.get(key)
-      const beforeRect = key == null ? undefined : before.get(key)
-      if (!afterRect || !beforeRect) continue // entering row — its own local enter transition handles it
-      if (el.closest('.ui-tree-rows-leave-active')) continue // moves with its closing block, below
-      const deltaY = beforeRect.top - afterRect.top
-      if (Math.abs(deltaY) < 1) continue
-      if (!nearView(beforeRect) && !nearView(afterRect)) continue
-      moved.push({ el, deltaY })
-    }
-    // An opening or closing block sits where its folder ends up, so when the folder row itself
-    // slides (a tree centred in its box moves every row), the block slides with it. Its own
-    // transition (Tree.css) carries the transform, alongside the reveal. One that interrupted
-    // another starts from where that one was.
-    const deltas = new Map(moved.map(({ el, deltaY }) => [el, deltaY]))
-    const blocks: { el: HTMLElement; deltaY: number; start?: BlockStart }[] = []
-    for (const block of listEl.value.querySelectorAll<HTMLElement>(
-      '.ui-tree-rows-enter-active, .ui-tree-rows-leave-active',
-    )) {
-      if (block.dataset.instant !== undefined) continue
-      const folderRow = block.previousElementSibling as HTMLElement | null
-      const deltaY = (folderRow && deltas.get(folderRow)) || 0
-      const key = folderRow?.dataset.treeValue
-      const start = key == null ? undefined : starts?.get(key)
-      if (deltaY || start) blocks.push({ el: block, deltaY, start })
-    }
-    if (moved.length === 0 && blocks.length === 0) return
-    // The same clock as the blocks' reveal, so rows below track its edge and never overlap it.
-    const closing = !!listEl.value.querySelector('.ui-tree-rows-leave-active')
-    const duration = closing ? 'var(--ui-duration-exit)' : 'var(--ui-duration-enter)'
-    // Writes only, after every read.
-    for (const { el, deltaY } of moved) {
-      el.style.transition = 'none'
-      el.style.transform = `translateY(${deltaY}px)`
-    }
-    for (const { el, deltaY, start } of blocks) {
-      el.style.transition = 'none'
-      if (deltaY) el.style.transform = `translateY(${deltaY}px)`
-      if (start) {
-        el.style.clipPath = start.clipPath
-        el.style.opacity = start.opacity
-      }
-    }
-    // Double rAF: matches Vue's own <Transition> enter scheduling, so the
-    // slide and the blocks' reveal start on the same frame.
-    // The first frame paints the inverted position, so no forced reflow is needed.
-    requestAnimationFrame(() => {
-      // A frame early for the blocks: Vue reads their transition duration on the next frame, and
-      // an inline `none` there would end their reveal at once.
-      for (const { el } of blocks) el.style.transition = ''
-      requestAnimationFrame(() => {
-        for (const { el } of blocks) {
-          el.style.transform = ''
-          el.style.clipPath = ''
-          el.style.opacity = ''
-        }
-        for (const { el } of moved) {
-          el.style.transition = `transform ${duration} var(--ui-ease-out)`
-          el.style.transform = ''
-          el.addEventListener(
-            'transitionend',
-            () => {
-              el.style.transition = ''
-            },
-            { once: true },
-          )
-        }
-      })
-    })
+    const value = refocusValue
+    refocusValue = null
+    if (value === null) return
+    const row = flatRows.value[rowIndexByValue.value.get(value) ?? -1]
+    if (row) focusValue(row.node.value)
   },
   { flush: 'post' },
 )
+// One frame loop for every folder folding in this tree (useFold), so nested folders animating
+// together measure once and write once per frame.
+const foldScheduler = createFoldScheduler()
 
 const filterInputRef = useTemplateRef<{ el: HTMLElement | null; inputEl: HTMLInputElement | null }>(
   'filterInputRef',
@@ -1098,6 +1393,7 @@ const themedUi = useThemedUi<{
   empty: UiPartValue
   chevron: UiPartValue
   label: UiPartValue
+  filterIcon: UiPartValue
 }>(
   (theme) => theme.tree,
   () => props.ui,
@@ -1111,6 +1407,9 @@ const listPart = computed(() => resolveUiPart(cx, themedUi()?.list, 'ui-tree-lis
 const emptyPart = computed(() => resolveUiPart(cx, themedUi()?.empty, 'ui-tree-empty'))
 const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-tree-chevron'))
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-tree-label'))
+const filterIconPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.filterIcon, 'ui-tree-search-icon'),
+)
 function nodePart(node: TreeNode, selected: boolean) {
   return resolveUiPart(
     cx,
@@ -1151,13 +1450,16 @@ watch(
   { immediate: true },
 )
 
-const MAX_STICKY_DEPTH = 5
 provide<TreeRowContext>(
   treeRowContextKey,
   reactive({
     selectionMode: computed(() => props.selectionMode),
-    motionCss: computed(() => props.motionCss),
-    rowMotion: computed(() => props.motionCss && !instantSwap.value),
+    motion: computed(() => props.motion !== false),
+    rowMotion: computed(
+      () => props.motion !== false && !instantSwap.value && flatRows.value.length <= FOLD_MAX_ROWS,
+    ),
+    fold: foldScheduler,
+    foldSpring: treeFoldSpring,
     stickyScroll: computed(() => props.stickyScroll),
     maxStickyDepth: MAX_STICKY_DEPTH,
     isExpanded,
@@ -1188,12 +1490,16 @@ provide<TreeRowContext>(
 defineExpose({
   /** The `role="tree"` list element. */
   listEl,
+  /** The hover and keyboard highlight, sliding between rows. With `motion: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
   /** The filter box's Input instance (null when `filterable` is off). */
   filterInputRef,
   /** Focuses the first visible row. */
   focusFirstRow,
-  /** Makes the first visible row the tab stop without focusing it. */
+  /** Makes the first selected row, or else the first visible row, the tab stop without focusing it. */
   initRoving,
+  /** Expands the folders above the row with this value and focuses it. */
+  focusNode,
   /** Expands every folder. */
   expandAll,
   /** Collapses every folder. */
@@ -1212,5 +1518,9 @@ defineExpose({
   isReordering,
   /** Aborts an in-flight reorder and springs every row back into place. */
   cancelReorder,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

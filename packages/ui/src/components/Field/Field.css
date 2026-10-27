@@ -285,6 +285,18 @@
     padding-inline: 0;
     background: transparent;
   }
+  /* The button's box layer fits the cell: the cell owns the borders here. */
+  :is(.ui-field-prepend, .ui-field-append) > .ui-button::before {
+    inset: 0;
+    border: 0;
+  }
+  /* Flush with the cell, a whole number of pixels wide, as the button's own box is. */
+  @supports (inline-size: round(100%, 1px)) {
+    :is(.ui-field-prepend, .ui-field-append) > .ui-button::before {
+      inset-inline-end: auto;
+      inline-size: round(100%, 1px);
+    }
+  }
   :is(.ui-field-prepend, .ui-field-append) > :is([data-ui-frame], button, .ui-button) {
     align-self: stretch;
     block-size: auto;
@@ -350,15 +362,11 @@
     border-end-end-radius: 0;
   }
   /* Cells match the control's size: same corner radius and font size as its frame. */
-  .ui-field:has(
-    .ui-field-control [data-ui-frame='sm']:not(:is(.ui-field-prepend, .ui-field-append) *)
-  ) {
+  .ui-field[data-frame-size='sm'] {
     --ui-field-cell-radius: calc(var(--ui-radius) - 4px);
     --ui-field-cell-font-size: calc(var(--ui-font-size) * 0.8125);
   }
-  .ui-field:has(
-    .ui-field-control [data-ui-frame='lg']:not(:is(.ui-field-prepend, .ui-field-append) *)
-  ) {
+  .ui-field[data-frame-size='lg'] {
     --ui-field-cell-radius: var(--ui-radius);
     --ui-field-cell-font-size: var(--ui-font-size);
   }
@@ -376,50 +384,32 @@
   }
 
   /* No [data-ui-frame] to join (Switch, Slider, RadioGroup…): an attached label falls back to a plain side label and cells to plain inline text. */
-  .ui-field[data-joined]:not(
-      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
-    )
-    :is(.ui-field-prepend, .ui-field-append),
-  .ui-field[data-attached]:not(
-      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
-    )
-    .ui-field-label {
+  .ui-field[data-joined][data-frameless] :is(.ui-field-prepend, .ui-field-append),
+  .ui-field[data-attached][data-frameless] .ui-field-label {
     align-self: center;
     padding: 0;
     border: none;
     border-radius: 0;
     background: none;
   }
-  .ui-field[data-attached]:not(
-      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
-    ) {
+  .ui-field[data-attached][data-frameless] {
     column-gap: 0.75rem;
   }
-  .ui-field[data-attached]:not(
-      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
-    )
-    .ui-field-label {
+  .ui-field[data-attached][data-frameless] .ui-field-label {
     color: var(--ui-text);
   }
-  .ui-field[data-joined]:not(
-      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
-    )
-    .ui-field-group {
+  .ui-field[data-joined][data-frameless] .ui-field-group {
     align-items: center;
     gap: 0.5rem;
   }
-  .ui-field[data-joined]:not(
-      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
-    )
+  .ui-field[data-joined][data-frameless]
     .ui-field-group
     > :not(.ui-field-prepend, .ui-field-append) {
     flex: 0 1 auto;
   }
 
   /* With no frame to join, segment margins and dividers inside cells go too. */
-  .ui-field[data-joined]:not(
-      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
-    )
+  .ui-field[data-joined][data-frameless]
     :is(.ui-field-prepend, .ui-field-append)
     > :is([data-ui-frame], button, .ui-button) {
     margin-inline: 0;

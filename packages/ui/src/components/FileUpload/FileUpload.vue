@@ -10,11 +10,17 @@
       <slot :is-drag-over="isDragOver" :browse="browse">
         <p class="ui-file-upload-text">{{ messages.fileUpload.drop }}</p>
         <Button
+          :id="browseId"
           type="button"
           size="sm"
           variant="secondary"
           :ui="{ root: themedUi()?.browse }"
           :disabled="isDisabled"
+          :aria-labelledby="
+            fieldControl.labelledBy() ? `${fieldControl.labelledBy()} ${browseId}` : undefined
+          "
+          :aria-describedby="fieldControl.describedBy()"
+          :aria-invalid="isInvalid || undefined"
           @click="browse"
         >
           {{ messages.fileUpload.browse }}
@@ -35,23 +41,21 @@
       :disabled="isDisabled"
       :aria-label="fieldControl.labelledBy() ? undefined : messages.fileUpload.browse"
       :aria-describedby="fieldControl.describedBy()"
+      :aria-invalid="isInvalid || undefined"
       :aria-required="fieldControl.required() || undefined"
       @change="onInputChange"
       @focus="fieldControl.onFocus"
       @blur="fieldControl.onBlur"
     />
+    <span class="ui-file-upload-status" aria-live="polite">{{ announcement }}</span>
 
     <TransitionGroup
       :ref="registerListEl"
       :data-ui-group="groupKey"
       tag="ul"
-      name="ui-file-item"
-      :css="props.motionCss"
+      v-bind="rowsTransition"
       :class="listPart.class"
       :style="listPart.style"
-      @enter="enterHook"
-      @before-leave="beforeLeaveHook"
-      @leave="leaveHook"
     >
       <li
         v-for="(file, index) in modelValue"
@@ -96,15 +100,20 @@
 import './FileUpload.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, ref, shallowRef, useId, useTemplateRef } from 'vue'
 import { transitionGroupRef } from '../../composables/dom'
 import Button from '../Button/Button.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFileDrop } from '../../composables/useFileDrop'
-import { useUiMessages } from '../../messages'
+import { useFormReset } from '../../composables/useFormReset'
+import { useMessages, fileUploadMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { FileUploadMotion } from '../../motion/types'
 
 export type FileRejectReason = 'accept' | 'maxSize' | 'maxFiles'
 
@@ -132,10 +141,12 @@ const rawProps = withDefaults(
     /** Native `name` on the file input. */
     name?: string
     /**
-     * `false` skips the built-in file-row transition; use `@item-enter`/`@item-leave` for custom motion.
+     * How file rows come and go. `false` adds and removes them at once. An object animates them
+     * your way: values for the `item` part (`{ initial: { item: { opacity: 0, y: 6 } } }`),
+     * `stagger`, or `enter` / `leave` hooks for your own library.
      * @default true
      */
-    motionCss?: boolean
+    motion?: FileUploadMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -146,21 +157,17 @@ const rawProps = withDefaults(
       remove: UiPartValue
     }>
   }>(),
-  { capture: undefined, multiple: true, disabled: false, motionCss: undefined },
+  { capture: undefined, multiple: true, disabled: false, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires for each file that `accept`, `maxSize` or `maxFiles` rejects, with the reason. */
   reject: [{ file: File; reason: FileRejectReason }]
-  /** Fires with the files accepted from a pick or drop. */
+  /** Fires with the files accepted from a pick, a drop or a paste. */
   add: [files: File[]]
   /** Fires when you remove a file from the list. */
   remove: [file: File]
-  /** Fires when a file row enters, with the `(el, done)` transition hook. Only when `motionCss` is `false`. */
-  'item-enter': [el: Element, done: () => void]
-  /** Same as `item-enter`, for a row's exit. */
-  'item-leave': [el: Element, done: () => void]
 }>()
 
 defineSlots<{
@@ -170,12 +177,33 @@ defineSlots<{
   item(props: { file: File; remove: () => void; index: number }): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ fileUpload: fileUploadMessages })
 const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0 })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
 const hadReject = shallowRef(false)
-const dataState = computed(() => (hadReject.value || fieldControl.invalid() ? 'invalid' : 'idle'))
+const isInvalid = computed(() => hadReject.value || fieldControl.invalid())
+const dataState = computed(() => (isInvalid.value ? 'invalid' : 'idle'))
+// In a Field, Browse reads the label first: "Attachments Browse files".
+const browseId = useId()
+
+// Rejected files are read out politely; emptied first so the same message reads again.
+const announcement = shallowRef('')
+const REJECT_MESSAGE = {
+  accept: 'rejectedAccept',
+  maxSize: 'rejectedMaxSize',
+  maxFiles: 'rejectedMaxFiles',
+} as const
+function announce(rejects: { file: File; reason: FileRejectReason }[]) {
+  announcement.value = ''
+  if (rejects.length === 0) return
+  const text = rejects
+    .map(({ file, reason }) =>
+      messages.value.fileUpload[REJECT_MESSAGE[reason]].replace('{name}', file.name),
+    )
+    .join(' ')
+  nextTick(() => (announcement.value = text))
+}
 
 function fileKey(file: File): string {
   return `${file.name}:${file.size}:${file.lastModified}`
@@ -228,32 +256,34 @@ function processFiles(incoming: File[]) {
   const limit = props.maxFiles ?? (props.multiple ? Infinity : 1)
   const seenKeys = new Set(existing.map(fileKey))
   const accepted: File[] = []
-  let rejected = false
+  const rejects: { file: File; reason: FileRejectReason }[] = []
+  const reject = (file: File, reason: FileRejectReason) => {
+    emit('reject', { file, reason })
+    rejects.push({ file, reason })
+  }
 
   for (const file of pool) {
     if (props.accept && !matchesAccept(file, props.accept)) {
-      emit('reject', { file, reason: 'accept' })
-      rejected = true
+      reject(file, 'accept')
       continue
     }
     if (props.maxSize !== undefined && file.size > props.maxSize) {
-      emit('reject', { file, reason: 'maxSize' })
-      rejected = true
+      reject(file, 'maxSize')
       continue
     }
     const key = fileKey(file)
     if (seenKeys.has(key)) continue // silent dedupe, not a rejection
     const projectedCount = (props.multiple ? existing.length : 0) + accepted.length
     if (projectedCount >= limit) {
-      emit('reject', { file, reason: 'maxFiles' })
-      rejected = true
+      reject(file, 'maxFiles')
       continue
     }
     seenKeys.add(key)
     accepted.push(file)
   }
 
-  hadReject.value = rejected
+  hadReject.value = rejects.length > 0
+  announce(rejects)
   if (accepted.length === 0) return
   accepted.forEach((file, i) => staggerIndex.set(fileKey(file), Math.min(i, STAGGER_CAP - 1)))
   modelValue.value = props.multiple ? [...existing, ...accepted] : accepted
@@ -265,7 +295,10 @@ const FOCUSABLE =
 
 function liveRows(): Element[] {
   return [...(listEl.value?.children ?? [])].filter(
-    (el) => !el.classList.contains('ui-file-item-leave-active'),
+    // A leaving row: the CSS look's class, or lifted out of the flow by the motion system.
+    (el) =>
+      !el.classList.contains('ui-file-item-leave-active') &&
+      (el as HTMLElement).style.position !== 'absolute',
   )
 }
 
@@ -290,32 +323,40 @@ function removeFile(file: File) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const dropzoneEl = useTemplateRef<HTMLElement>('dropzoneEl')
 
 const listEl = ref<HTMLElement | null>(null)
 const groupKey = useId()
 const registerListEl = transitionGroupRef(listEl, groupKey)
-// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-enter', el, done),
-)
-// The built-in exit collapses the row from its measured height.
-const beforeLeaveHook = computed(() =>
-  props.motionCss
-    ? (el: Element) =>
-        (el as HTMLElement).style.setProperty(
-          '--ui-file-item-block-size',
-          `${el.getBoundingClientRect().height}px`,
-        )
-    : undefined,
-)
-const leaveHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-leave', el, done),
+// Yours (an object, or a shared style): rows come and go on the motion system. Otherwise the
+// built-in CSS look, its exit collapsing the row from its measured height.
+const style = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' || style?.value?.fileUpload || style?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'fileUpload',
+        part: 'item',
+        name: 'FileUpload',
+        look: { opacity: 0 },
+      })
+    : undefined
+const rowsTransition = computed(() =>
+  listMotion
+    ? listMotion.transition
+    : {
+        name: 'ui-file-item',
+        css: !!props.motion,
+        onBeforeLeave: props.motion
+          ? (el: Element) =>
+              (el as HTMLElement).style.setProperty(
+                '--ui-file-item-block-size',
+                `${el.getBoundingClientRect().height}px`,
+              )
+          : undefined,
+      },
 )
 
 function browse() {
@@ -336,9 +377,11 @@ function onInputChange(event: Event) {
   target.value = '' // so picking the identical file again still fires change
 }
 
+// Drop files or a folder on the dropzone, or paste them while it has focus or the pointer.
 const { isDragOver } = useFileDrop(dropzoneEl, {
   onFiles: processFiles,
   disabled: () => isDisabled.value,
+  paste: true,
 })
 
 const cx = useClassMerge()

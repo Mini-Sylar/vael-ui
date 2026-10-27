@@ -9,57 +9,17 @@
 // Run `pnpm gen` (or extract-component-meta.mjs) first.
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { RELATED, meta, motionSection, sections } from './api-markdown.mjs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const META_PATH = join(__dirname, '../src/generated/component-meta.json')
 const skillsRepo = resolve(process.argv[2] ?? join(__dirname, '../../../vael-ui-skills'))
 const REFS_DIR = join(skillsRepo, 'skills/vael-ui/references/docs')
-
-// Same parent/child grouping as the docs site's ComponentPage `RELATED`.
-const RELATED = {
-  DataTable: ['Column'],
-  Accordion: ['AccordionItem'],
-  Breadcrumb: ['BreadcrumbItem', 'BreadcrumbSeparator'],
-}
 
 if (!existsSync(REFS_DIR)) {
   console.error(`No references folder at ${REFS_DIR}`)
   process.exit(1)
-}
-const meta = JSON.parse(readFileSync(META_PATH, 'utf8'))
-
-const cell = (text) =>
-  (text ?? '')
-    .replace(/\s*\n\s*/g, ' ')
-    .replace(/\|/g, '\\|')
-    .trim()
-const code = (text) => (text ? `\`${cell(text)}\`` : '')
-
-function table(rows, { withDefault = false } = {}) {
-  if (rows.length === 0) return '_None._\n'
-  const head = withDefault
-    ? 'Name | Type | Default | Description\n--- | --- | --- | ---'
-    : 'Name | Type | Description\n--- | --- | ---'
-  const body = rows.map((row) => {
-    const text = row.defaultText ?? row.default
-    const defaultValue = text && text !== 'undefined' ? code(text) : ''
-    return withDefault
-      ? `${code(row.name)} | ${code(row.type)} | ${defaultValue} | ${cell(row.description)}`
-      : `${code(row.name)} | ${code(row.type)} | ${cell(row.description)}`
-  })
-  return `${head}\n${body.join('\n')}\n`
-}
-
-function sections(entry, level) {
-  const h = '#'.repeat(level)
-  return [
-    `${h} Props\n\n${table(entry.props, { withDefault: true })}`,
-    `${h} Slots\n\n${table(entry.slots)}`,
-    `${h} Events\n\n${table(entry.events)}`,
-    `${h} Exposed\n\n${table(entry.exposed)}`,
-  ].join('\n')
 }
 
 let written = 0
@@ -76,12 +36,12 @@ for (const file of readdirSync(REFS_DIR)) {
   const source = readFileSync(path, 'utf8')
   const headerEnd = source.indexOf('\n## Props')
   const header = headerEnd === -1 ? `# ${name}\n` : source.slice(0, headerEnd + 1)
-  let out = `${header}${sections(entry, 2)}`
+  let out = `${header}${sections(entry, 2)}${motionSection(name, 2)}`
   for (const child of RELATED[name] ?? []) {
     if (meta[child]) out += `\n## ${child}\n\n${sections(meta[child], 3)}`
   }
   // Keep the file's existing trailing whitespace so regeneration only diffs content.
-  out = out.trimEnd() + (source.match(/\s*$/)?.[0] || '\n')
+  out = (out.trimEnd() + (source.match(/\s*$/)?.[0] || '\n')).replace(/[ \t]+$/gm, '')
   if (out !== source) {
     writeFileSync(path, out)
     written++

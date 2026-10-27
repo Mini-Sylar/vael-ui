@@ -1,8 +1,8 @@
 <template>
   <section class="demo speed-dial-demo">
-    <h3>Directions: <code>direction="up" | "left" | "quarter-circle"</code></h3>
+    <h3>Directions: <code>up</code>, <code>left</code> and <code>quarter-circle</code></h3>
     <p class="note">
-      A staggered fan-out (40ms per action), each one visibly emerging from the trigger.
+      The actions fan out one after another, 40 ms apart, each coming out of the trigger.
     </p>
     <div class="speed-dial-row">
       <div class="speed-dial-anchor">

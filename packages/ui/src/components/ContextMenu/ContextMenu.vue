@@ -24,6 +24,7 @@
     :close-on-outside="closeOnOutside"
     :before-close="beforeClose"
     :force-mount="forceMount"
+    :motion="motion"
     :teleport-to="teleportTo"
     :scroll-fade="scrollFade"
     :ui="{
@@ -76,10 +77,16 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
   closeOnEsc?: boolean
   /** Clicking outside the panel closes it. @default true */
   closeOnOutside?: boolean
-  /** Custom exit animation; call `done()` to finish closing. */
-  beforeClose?: (done: () => void) => void
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Runs before the menu closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The menu stays open while the promise is pending. */
+  beforeClose?: BeforeClose<PopoverCloseReason>
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How the menu moves, like Menu's. `false` opens and closes it at once. An object moves it your
+   * way: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. Unset, it follows
+   * the nearest ConfigProvider's style.
+   */
+  motion?: MenuMotion
   /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
   /**
@@ -103,11 +110,15 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
   Reopening moves anchor, then closes/reopens to recompute position.
 -->
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, MenuMotion } from '../../motion/types'
 import './ContextMenu.css'
 import '../shared/tokens.css'
-import { computed, nextTick, onScopeDispose, useTemplateRef } from 'vue'
+import '../../motion/timing.css'
+import { computed, nextTick, onScopeDispose, useTemplateRef, watch } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Menu from '../Menu/Menu.vue'
+import { focusTargetIn } from '../../composables/dom'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useThemedUi } from '../../theme'
 
@@ -132,6 +143,7 @@ const props = withDefaults(defineProps<ContextMenuProps<T>>(), {
   closeOnEsc: true,
   closeOnOutside: true,
   forceMount: false,
+  motion: undefined,
   teleportTo: 'body',
   scrollFade: true,
 })
@@ -170,7 +182,56 @@ function setAnchorPosition(x: number, y: number) {
   if (rect.top !== y) el.style.top = `${2 * y - rect.top}px`
 }
 
-async function openAt(x: number, y: number) {
+// Closing returns focus to what had it, else to what was right-clicked, never to the page.
+let returnTo: HTMLElement | null = null
+let openPanel: HTMLElement | null = null
+function rememberFocus(target: EventTarget | null) {
+  const active = document.activeElement
+  if (openPanel?.contains(active)) return
+  if (active instanceof HTMLElement && active !== document.body) returnTo = active
+  else returnTo = target instanceof Element ? focusableFrom(target) : null
+}
+// The nearest focusable ancestor, else the nearest element with a box (focused with tabindex -1).
+function focusableFrom(target: Element): HTMLElement | null {
+  let boxed: HTMLElement | null = null
+  for (let el: Element | null = target; el; el = el.parentElement) {
+    if (!(el instanceof HTMLElement) || el === document.body) continue
+    if (focusTargetIn(el) === el) return el
+    if (!boxed && el.getClientRects().length > 0) boxed = el
+  }
+  return boxed
+}
+function restoreFocus() {
+  // Reopened at a new point: keep the target for the real close.
+  if (open.value) return
+  const target = returnTo
+  const panel = openPanel
+  returnTo = openPanel = null
+  const active = document.activeElement
+  if (!target?.isConnected || (active && active !== document.body && !panel?.contains(active)))
+    return
+  if (target.tabIndex < 0 && !target.hasAttribute('tabindex')) {
+    target.setAttribute('tabindex', '-1')
+    target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true })
+  }
+  target.focus({ preventScroll: true })
+}
+watch(
+  open,
+  (value) => {
+    if (value) openPanel = menuRef.value?.positionerEl ?? null
+    // After Menu's own restore, which can't reach the zero-size anchor it opened from.
+    else nextTick(restoreFocus)
+  },
+  { flush: 'post' },
+)
+
+function openAt(x: number, y: number) {
+  rememberFocus(null)
+  return show(x, y)
+}
+
+async function show(x: number, y: number) {
   setAnchorPosition(x, y)
   if (open.value) {
     open.value = false
@@ -182,7 +243,8 @@ async function openAt(x: number, y: number) {
 function onContextMenu(event: MouseEvent) {
   if (props.disabled) return
   event.preventDefault()
-  openAt(event.clientX, event.clientY)
+  rememberFocus(event.target)
+  show(event.clientX, event.clientY)
 }
 
 // Long-press (touch only): pointerdown + timer, cancelled by movement (scroll/drag detection).
@@ -200,10 +262,11 @@ function onPointerDown(event: PointerEvent) {
   if (props.disabled || !props.longPress || event.pointerType !== 'touch') return
   clearPress()
   pressStart = { x: event.clientX, y: event.clientY }
-  const { clientX, clientY } = event
+  const { clientX, clientY, target } = event
   pressTimer = setTimeout(() => {
     pressStart = null
-    openAt(clientX, clientY)
+    rememberFocus(target)
+    show(clientX, clientY)
   }, props.longPressDelay)
 }
 

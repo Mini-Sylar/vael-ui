@@ -50,11 +50,12 @@ import { toast } from 'vael-ui'
     <CodeBlock
       lang="typescript"
       code="// plugins/vael-ui.ts
-import { vTooltip, vScrollMask } from 'vael-ui'
+import { vTooltip, vScrollMask, vHoverIndicator } from 'vael-ui'
 
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.vueApp.directive('tooltip', vTooltip)
   nuxtApp.vueApp.directive('scroll-mask', vScrollMask)
+  nuxtApp.vueApp.directive('hover-indicator', vHoverIndicator)
 })"
     />
 

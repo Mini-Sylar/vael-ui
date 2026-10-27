@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Text block, stacked lines, last one shorter</h3>
+    <h3>A text block: stacked lines, the last one shorter</h3>
     <div class="skeleton-lines">
       <Skeleton variant="text" />
       <Skeleton variant="text" />

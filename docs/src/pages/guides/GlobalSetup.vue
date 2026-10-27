@@ -47,7 +47,7 @@
     />
 
     <h2 id="all-together">{{ t('globalSetup.allTogetherTitle') }}</h2>
-    <p>{{ t('globalSetup.allTogetherIntro') }}</p>
+    <p v-html="t('globalSetup.allTogetherIntro')" />
     <CodeBlock
       code="<script setup lang=&quot;ts&quot;>
 import { DialogHost, PopoverHost, Toaster, TooltipHost } from 'vael-ui'
@@ -59,6 +59,22 @@ import { DialogHost, PopoverHost, Toaster, TooltipHost } from 'vael-ui'
   <PopoverHost />
   <Toaster />
   <YourApp />
+</template>"
+    />
+    <p v-html="t('globalSetup.allTogetherProvider')" />
+    <CodeBlock
+      code="<script setup lang=&quot;ts&quot;>
+import { ConfigProvider, DialogHost, PopoverHost, Toaster, TooltipHost } from 'vael-ui'
+</script>
+
+<template>
+  <ConfigProvider :motion=&quot;{ spring: 'snappy' }&quot;>
+    <TooltipHost />
+    <DialogHost />
+    <PopoverHost />
+    <Toaster />
+    <YourApp />
+  </ConfigProvider>
 </template>"
     />
   </GuideLayout>

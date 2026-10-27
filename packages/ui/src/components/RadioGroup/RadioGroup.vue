@@ -25,6 +25,7 @@ export interface RadioGroupContext {
   isChecked: (value: string | number) => boolean
   select: (value: string | number) => void
   disabled: () => boolean
+  invalid?: () => boolean
 }
 
 /** Injection key for RadioGroup context. */
@@ -35,11 +36,15 @@ export const radioGroupKey: InjectionKey<RadioGroupContext> = Symbol('ui-radio-g
 <script setup lang="ts">
 import './RadioGroup.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, provide, useAttrs, useId, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { RadioGroupMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -58,8 +63,15 @@ const props = withDefaults(
     orientation?: 'horizontal' | 'vertical'
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
+    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`); each Radio keeps its own `motion`. `false` turns its own animation off. */
+    motion?: RadioGroupMotion
   }>(),
-  { disabled: false, orientation: 'vertical' },
+  {
+    disabled: false,
+    orientation: 'vertical',
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 
 const emit = defineEmits<{
@@ -88,9 +100,19 @@ provide<RadioGroupContext>(radioGroupKey, {
   isChecked: (value) => modelValue.value === value,
   select,
   disabled: () => props.disabled || fieldControl.disabled(),
+  invalid: () => isInvalid.value,
 })
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
+const parts = useStateMotion({
+  key: 'radioGroup',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-radio-group' },
+  states: () => ({}),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.radioGroup,
@@ -108,5 +130,9 @@ const rootPart = computed(() =>
 defineExpose({
   /** Root element. */
   el: root,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

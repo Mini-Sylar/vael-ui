@@ -1,13 +1,14 @@
 <template>
   <section class="demo">
-    <h3>Sliding indicator (built in via <code>itemProps</code>/<code>indicatorProps</code>)</h3>
+    <h3>Sliding indicator with <code>itemProps</code> and <code>indicatorProps</code></h3>
     <p class="note">
-      The <code>#default</code> slot hands back <code>itemProps(item)</code> — the full
-      <code>role</code>/<code>aria-selected</code>/roving-<code>tabindex</code>/click wiring, spread
-      with <code>v-bind</code> onto whatever element you render — and
-      <code>indicatorProps(variant)</code> for the optional sliding highlight, measured internally
-      via <code>useTabIndicator()</code>. Two variants shown here, <code>'background'</code> (the
-      default) and <code>'underline'</code>; both are plain classes if you'd rather style your own.
+      The <code>#default</code> slot receives <code>itemProps(item)</code>, which holds the
+      <code>role</code>, <code>aria-selected</code>, roving <code>tabindex</code> and click
+      handling; bind it with <code>v-bind</code> to any element you render.
+      <code>indicatorProps(variant)</code> adds the optional sliding indicator, which
+      <code>useTabIndicator()</code> measures. This shows both variants,
+      <code>'background'</code> (the default) and <code>'underline'</code>; they're plain classes
+      you can restyle.
     </p>
     <div class="row">
       <Tabs v-model:active="bgActive" :items="items">

@@ -49,6 +49,7 @@ import App from './App.vue'
 createVaporApp(App).mount('#app')"
     />
     <CodeBlock :code="vaporAppCode" />
+    <p v-html="t('gettingStarted.vaporLibrariesIntro')" />
     <p v-html="t('gettingStarted.vaporForceIntro')" />
     <CodeBlock
       lang="typescript"
@@ -94,6 +95,19 @@ const { mode, setMode } = useColorScheme({
   },
 })"
     />
+    <i18n-t keypath="gettingStarted.darkModeReveal" tag="p" scope="global">
+      <template #link>
+        <RouterLink to="/composables/useColorScheme">{{
+          t('gettingStarted.darkModeRevealLink')
+        }}</RouterLink>
+      </template>
+    </i18n-t>
+    <CodeBlock
+      lang="typescript"
+      code="// <button @click=&quot;toggleTheme&quot;>Toggle theme</button>
+const toggleTheme = (event: MouseEvent) =>
+  setMode(mode.value === 'dark' ? 'light' : 'dark', { from: event })"
+    />
     <p v-html="t('gettingStarted.appearanceHeadIntro')" />
     <CodeBlock lang="html" :code="appearanceHeadCode" />
 
@@ -103,12 +117,13 @@ const { mode, setMode } = useColorScheme({
       lang="typescript"
       code="// main.ts
 import { createApp } from 'vue'
-import { vTooltip, vScrollMask } from 'vael-ui'
+import { vTooltip, vScrollMask, vHoverIndicator } from 'vael-ui'
 import App from './App.vue'
 
 const app = createApp(App)
 app.directive('tooltip', vTooltip)
 app.directive('scroll-mask', vScrollMask)
+app.directive('hover-indicator', vHoverIndicator)
 app.mount('#app')"
     />
     <p v-html="t('gettingStarted.directivesNote')" />
@@ -163,7 +178,7 @@ const html = template
       <CodeBlock
         lang="typescript"
         code="// main.ts
-import 'vael-ui/layers.css'"
+import 'vael-ui/style.css'"
         class="callout-code"
       />
     </Message>

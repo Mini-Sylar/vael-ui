@@ -1,5 +1,5 @@
 <template>
-  <span v-if="variant === 'loading'" class="ui-loader" />
+  <LoaderMark v-if="variant === 'loading'" />
   <svg v-else-if="variant === 'success'" viewBox="0 0 16 16" width="15" height="15" fill="none">
     <path
       d="M3 8.5l3 3 7-7"
@@ -36,6 +36,7 @@
 -->
 <script setup lang="ts">
 import '../shared/loader-spinner.css'
+import LoaderMark from './LoaderMark.vue'
 defineProps<{
   variant: 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading'
 }>()

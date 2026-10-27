@@ -1,0 +1,205 @@
+@layer ui-components {
+  /* --ui-color-picker-radius rounds the swatch, the presets and the plane together: set it to
+     9999px on the picker (or in :ui) for circles. */
+  .ui-color-picker {
+    --ui-color-picker-radius: calc(var(--ui-radius) - 2px);
+    display: inline-flex;
+    align-items: center;
+  }
+  .ui-color-picker-swatch,
+  .ui-color-picker-preset {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    padding: 0;
+    border: 1px solid color-mix(in oklab, var(--ui-border) 70%, var(--ui-color-picker-value));
+    border-radius: var(--ui-color-picker-radius);
+    background: var(--ui-color-picker-value);
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-color-picker--sm .ui-color-picker-swatch {
+    inline-size: 2rem;
+    block-size: 2rem;
+  }
+  .ui-color-picker--md .ui-color-picker-swatch {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+  }
+  .ui-color-picker--lg .ui-color-picker-swatch {
+    inline-size: 3rem;
+    block-size: 3rem;
+  }
+  .ui-color-picker-swatch:focus-visible,
+  .ui-color-picker-preset:focus-visible,
+  .ui-color-picker-area:focus-visible,
+  .ui-color-picker-eyedropper:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-color-picker-swatch:active:not(:disabled),
+  .ui-color-picker-preset:active:not(:disabled) {
+    scale: 0.94;
+  }
+  .ui-color-picker-swatch:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .ui-color-picker-panel {
+    --ui-color-picker-radius: calc(var(--ui-radius) - 2px);
+    inline-size: 15rem;
+  }
+  .ui-color-picker-panel .ui-popover-body {
+    display: grid;
+    /* One column the panel's width. An auto column grows to its widest child's minimum, and the
+       hex field's native input has one that follows the font: with Windows' wider system font the
+       whole panel came out wider than itself and scrolled sideways. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+  /* White to the hue across, black up from the bottom: the full HSV plane in two gradients. */
+  .ui-color-picker-area {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    border-radius: var(--ui-color-picker-radius);
+    background:
+      linear-gradient(to top, #000, transparent),
+      linear-gradient(to right, #fff, var(--ui-color-picker-hue, red));
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .ui-color-picker-area-thumb {
+    position: absolute;
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+    border: 2px solid #fff;
+    border-radius: 9999px;
+    background: var(--ui-color-picker-value);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.25),
+      0 1px 3px rgb(0 0 0 / 0.3);
+    translate: -50% -50%;
+    pointer-events: none;
+    /* A preset or a typed hex moves the thumb; the pointer drags it 1:1. */
+    transition:
+      left var(--ui-duration-press) var(--ui-ease-out),
+      top var(--ui-duration-press) var(--ui-ease-out),
+      background-color var(--ui-duration-press) ease;
+  }
+  .ui-color-picker-area[data-dragging] .ui-color-picker-area-thumb {
+    transition: none;
+  }
+  .ui-color-picker-hue .ui-slider-track {
+    background: linear-gradient(
+      to right,
+      #f00 0%,
+      #ff0 17%,
+      #0f0 33%,
+      #0ff 50%,
+      #00f 67%,
+      #f0f 83%,
+      #f00 100%
+    );
+  }
+  /* Right to left the thumb runs from the right, so the hues do too. */
+  .ui-color-picker-hue:dir(rtl) .ui-slider-track {
+    background: linear-gradient(
+      to left,
+      #f00 0%,
+      #ff0 17%,
+      #0f0 33%,
+      #0ff 50%,
+      #00f 67%,
+      #f0f 83%,
+      #f00 100%
+    );
+  }
+  .ui-color-picker-hue .ui-slider-fill {
+    display: none;
+  }
+  .ui-color-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .ui-color-picker-value {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-color-picker-eyedropper {
+    display: inline-grid;
+    flex: none;
+    /* The hex field's height, square, whatever size the field is. */
+    align-self: stretch;
+    aspect-ratio: 1;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 2px);
+    background: var(--ui-surface);
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      color var(--ui-duration-press) ease,
+      scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-color-picker-eyedropper:hover {
+      background: var(--ui-muted);
+      color: var(--ui-text);
+    }
+  }
+  .ui-color-picker-eyedropper:active {
+    scale: 0.94;
+  }
+  .ui-color-picker-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .ui-color-picker-preset {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+  }
+  .ui-color-picker-preset[aria-pressed='true'] {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+
+  .ui-color-picker[data-motion='off'] .ui-color-picker-swatch,
+  .ui-color-picker[data-motion='off'] .ui-color-picker-area-thumb,
+  .ui-color-picker[data-motion='off'] .ui-color-picker-preset,
+  .ui-color-picker[data-motion='off'] .ui-color-picker-eyedropper {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-color-picker-area-thumb {
+      transition: background-color var(--ui-duration-press) ease;
+    }
+    .ui-color-picker-swatch:active:not(:disabled),
+    .ui-color-picker-preset:active:not(:disabled),
+    .ui-color-picker-eyedropper:active {
+      scale: 1;
+    }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-color-picker-eyedropper,
+  .ui-color-picker-preset,
+  .ui-color-picker-swatch {
+    position: relative;
+  }
+  .ui-color-picker-eyedropper:active::after,
+  .ui-color-picker-preset:active::after,
+  .ui-color-picker-swatch:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
+}

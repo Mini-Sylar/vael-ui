@@ -21,7 +21,7 @@ test('trigger click opens the panel and focuses the first top-level row; header/
   const screen = await render(CascadeSelectFixture, {
     props: { withHeader: true, withFooter: true },
   })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
@@ -31,7 +31,7 @@ test('trigger click opens the panel and focuses the first top-level row; header/
 
 test('ArrowRight descends a level at a time; Enter on a leaf commits the value, the full path, and closes the whole chain', async () => {
   const screen = await render(CascadeSelectFixture)
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
   await userEvent.keyboard('{ArrowRight}')
@@ -48,7 +48,7 @@ test('ArrowRight descends a level at a time; Enter on a leaf commits the value, 
 
 test('ArrowLeft ascends back to the parent row without losing focus context', async () => {
   const screen = await render(CascadeSelectFixture)
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
   await userEvent.keyboard('{ArrowRight}')
@@ -59,7 +59,7 @@ test('ArrowLeft ascends back to the parent row without losing focus context', as
 
 test('a disabled branch is skipped by arrow-key stepping at its own level', async () => {
   const screen = await render(CascadeSelectFixture)
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
   await userEvent.keyboard('{ArrowRight}')
@@ -72,7 +72,7 @@ test('a disabled branch is skipped by arrow-key stepping at its own level', asyn
 
 test('reopening with a value reveals the selected path: submenus open, the selected leaf is focused and tinted', async () => {
   const screen = await render(CascadeSelectFixture)
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
   await userEvent.keyboard('{ArrowRight}')
   await vi.waitFor(() => expect(focusedText()).toBe('Ghana'))
@@ -82,7 +82,7 @@ test('reopening with a value reveals the selected path: submenus open, the selec
   await expect.element(screen.getByTestId('value')).toHaveTextContent('kumasi')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Kumasi'))
   const row = (name: string) => screen.getByRole('menuitem', { name }).element()
   expect(row('Africa').getAttribute('aria-expanded')).toBe('true')
@@ -100,7 +100,7 @@ test('reopening with a value reveals the selected path: submenus open, the selec
 
 test('clicking a leaf row commits the value and path via mouse, same as keyboard', async () => {
   const screen = await render(CascadeSelectFixture)
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
   await screen.getByRole('menuitem', { name: 'Europe' }).hover()
@@ -125,7 +125,7 @@ test('clicking a leaf row commits the value and path via mouse, same as keyboard
 
 test('typeahead jumps within a level', async () => {
   const screen = await render(CascadeSelectFixture)
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
   await userEvent.keyboard('e')
@@ -134,7 +134,7 @@ test('typeahead jumps within a level', async () => {
 
 test('Escape closes the current level first, then the whole panel on a second press', async () => {
   const screen = await render(CascadeSelectFixture)
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
   await userEvent.keyboard('{ArrowRight}')
   await vi.waitFor(() => expect(focusedText()).toBe('Ghana'))
@@ -149,7 +149,7 @@ test('Escape closes the current level first, then the whole panel on a second pr
 
 test('the disabled prop disables the trigger and blocks opening', async () => {
   const screen = await render(CascadeSelectFixture, { props: { disabled: true } })
-  const trigger = screen.getByRole('combobox')
+  const trigger = screen.getByRole('button').first()
   await expect.element(trigger).toHaveAttribute('aria-disabled', 'true')
   await trigger.click({ force: true })
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
@@ -159,7 +159,7 @@ test('clearable shows a clear button once a leaf is selected, and it resets the 
   const screen = await render(CascadeSelectFixture, { props: { clearable: true } })
   await expect.element(screen.getByLabelText('Clear selection')).not.toBeInTheDocument()
 
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
   await userEvent.keyboard('{ArrowRight}')
   await vi.waitFor(() => expect(focusedText()).toBe('Ghana'))
@@ -178,7 +178,7 @@ test('clearable shows a clear button once a leaf is selected, and it resets the 
 
 test('an empty items array renders the localized empty row instead of a blank panel', async () => {
   const screen = await render(CascadeSelectFixture, { props: { items: [] } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await expect.element(screen.getByText('No options')).toBeInTheDocument()
 })
 
@@ -189,7 +189,7 @@ test('the `name` prop renders a hidden input mirroring the committed leaf value 
   )!
   expect(hidden.value).toBe('')
 
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
   await userEvent.keyboard('{ArrowRight}')
   await vi.waitFor(() => expect(focusedText()).toBe('Ghana'))
@@ -216,7 +216,7 @@ function chipLabels(container: Element) {
 
 test('multiple: Enter/Space on a leaf toggles it into the array, keeps the menu open and focus on that row', async () => {
   const screen = await render(CascadeSelectFixture, { props: { multiple: true } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
   await userEvent.keyboard('{ArrowRight}')
   await vi.waitFor(() => expect(focusedText()).toBe('Ghana'))
@@ -252,7 +252,7 @@ test('multiple: Enter/Space on a leaf toggles it into the array, keeps the menu 
 
 test('multiple: clicking leaves across branches builds the array; branches stay plain menuitems', async () => {
   const screen = await render(CascadeSelectFixture, { props: { multiple: true } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
   await screen.getByRole('menuitem', { name: 'Africa' }).click()
@@ -290,7 +290,7 @@ test('multiple: clicking leaves across branches builds the array; branches stay 
 
 test('single mode rows stay plain menuitems without aria-checked', async () => {
   const screen = await render(CascadeSelectFixture)
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
   await userEvent.keyboard('{ArrowRight}{ArrowRight}')
   await vi.waitFor(() => expect(focusedText()).toBe('Accra'))
@@ -302,20 +302,20 @@ test('multiple: chips follow tree order and the remove button drops just that va
   const screen = await render(CascadeSelectFixture, {
     props: { multiple: true, initial: ['lyon', 'accra'] },
   })
-  const trigger = screen.getByRole('combobox').element()
+  const trigger = screen.getByRole('button').first().element()
   expect(chipLabels(trigger)).toEqual(['Accra', 'Lyon'])
   expect(trigger.querySelector('.ui-cascade-select-chips')).not.toBeNull()
   expect(trigger.hasAttribute('data-placeholder')).toBe(false)
 
-  await screen.getByRole('button', { name: 'Remove Accra' }).click()
+  await userEvent.click(document.querySelector<HTMLElement>('[aria-label="Remove Accra"]')!)
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["lyon"]')
   await expect.element(screen.getByTestId('last-change')).toHaveTextContent('["lyon"]')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 
   // Removing a chip while the panel is open leaves it open.
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(focusedText()).toBe('Lyon'))
-  await screen.getByRole('button', { name: 'Remove Lyon' }).click()
+  await userEvent.click(document.querySelector<HTMLElement>('[aria-label="Remove Lyon"]')!)
   await expect.element(screen.getByTestId('model')).toHaveTextContent('[]')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
@@ -328,14 +328,14 @@ test('multiple: clearable empties the whole array', async () => {
   await expect.element(screen.getByTestId('model')).toHaveTextContent('[]')
   await expect.element(screen.getByTestId('last-change')).toHaveTextContent('[]')
   await expect.element(screen.getByLabelText('Clear selection')).not.toBeInTheDocument()
-  await expect.element(screen.getByRole('combobox')).toHaveTextContent('Pick a city')
+  await expect.element(screen.getByRole('button').first()).toHaveTextContent('Pick a city')
 })
 
 test('multiple: maxLabels collapses extra chips into "+N"', async () => {
   const screen = await render(CascadeSelectFixture, {
     props: { multiple: true, maxLabels: 1, initial: ['accra', 'kumasi', 'paris'] },
   })
-  const trigger = screen.getByRole('combobox').element()
+  const trigger = screen.getByRole('button').first().element()
   expect(chipLabels(trigger)).toEqual(['Accra'])
   expect(trigger.querySelector('.ui-cascade-select-chip--overflow')?.textContent?.trim()).toBe('+2')
 })
@@ -345,14 +345,14 @@ test('multiple: display="text" joins labels and display="count" shows the locali
     props: { multiple: true, display: 'text', initial: ['accra', 'paris'] },
   })
   expect(text.container.querySelector('.ui-chip')).toBeNull()
-  await expect.element(text.getByRole('combobox')).toHaveTextContent('Accra, Paris')
+  await expect.element(text.getByRole('button').first()).toHaveTextContent('Accra, Paris')
   await text.unmount()
 
   const count = await render(CascadeSelectFixture, {
     props: { multiple: true, display: 'count', initial: ['accra', 'paris'] },
   })
   expect(count.container.querySelector('.ui-chip')).toBeNull()
-  await expect.element(count.getByRole('combobox')).toHaveTextContent('2 selected')
+  await expect.element(count.getByRole('button').first()).toHaveTextContent('2 selected')
 })
 
 test('multiple: the name prop renders one hidden input per selected value', async () => {
@@ -364,7 +364,7 @@ test('multiple: the name prop renders one hidden input per selected value', asyn
       ...screen.container.querySelectorAll<HTMLInputElement>('input[type="hidden"][name="city"]'),
     ].map((input) => input.value)
   expect(values()).toEqual(['accra', 'paris'])
-  await screen.getByRole('button', { name: 'Remove Accra' }).click()
+  await userEvent.click(document.querySelector<HTMLElement>('[aria-label="Remove Accra"]')!)
   await vi.waitFor(() => expect(values()).toEqual(['paris']))
 })
 
@@ -387,7 +387,7 @@ test('multiple: the #value slot receives the selected items and their paths', as
   await expect.element(screen.getByTestId('slot')).toHaveTextContent('Accra|Lyon gh>accra|fr>lyon')
 })
 
-test('multiple: a Field label still names the combobox', async () => {
+test('multiple: a Field label still names the trigger', async () => {
   const screen = await render({
     components: { CascadeSelect, Field },
     data: () => ({
@@ -396,39 +396,40 @@ test('multiple: a Field label still names the combobox', async () => {
     }),
     template: `<Field label="Cities"><CascadeSelect v-model="model" multiple :items="tree" /></Field>`,
   })
-  await expect.element(screen.getByRole('combobox', { name: 'Cities' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Cities Leaf' })).toBeInTheDocument()
 })
 
 test('multiple: Enter on a chip remove button removes it without opening the panel', async () => {
   const screen = await render(CascadeSelectFixture, {
     props: { multiple: true, initial: ['accra', 'paris'] },
   })
-  const remove = screen.getByRole('button', { name: 'Remove Accra' }).element() as HTMLElement
+  // Pointer-only (hidden and out of the tab order), but a key that reaches it still removes it.
+  const remove = document.querySelector<HTMLElement>('[aria-label="Remove Accra"]')!
   remove.focus()
   await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["paris"]')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 
   // Enter on the trigger itself still opens it.
-  ;(screen.getByRole('combobox').element() as HTMLElement).focus()
+  ;(screen.getByRole('button').first().element() as HTMLElement).focus()
   await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
-test('multiple: motionCss=false turns off the built-in chip transition', async () => {
+test('multiple: motion=false turns off the built-in chip transition', async () => {
   const screen = await render(CascadeSelect, {
     props: {
       items: [{ label: 'Ghana', value: 'gh', children: [{ label: 'Accra', value: 'accra' }] }],
       multiple: true,
       modelValue: ['accra'],
-      motionCss: false,
+      motion: false,
     },
   })
   const chips = screen.container.querySelector('.ui-cascade-select-chips')!
   expect(chips.getAttribute('data-motion')).toBe('off')
 })
 
-test('the combobox carries the popup state, not a chip remove button inside it', async () => {
+test('the menu button carries the popup state, not a chip remove button inside it', async () => {
   const screen = await render({
     components: { CascadeSelect, Field },
     data: () => ({
@@ -437,7 +438,7 @@ test('the combobox carries the popup state, not a chip remove button inside it',
     }),
     template: `<Field label="Cities"><CascadeSelect v-model="model" multiple :items="tree" /></Field>`,
   })
-  const combobox = screen.getByRole('combobox', { name: 'Cities' })
+  const combobox = screen.getByRole('button', { name: 'Cities Leaf' })
   await expect.element(combobox).toHaveAttribute('aria-haspopup', 'menu')
   await expect.element(combobox).toHaveAttribute('aria-expanded', 'false')
   expect(document.querySelector('.ui-chip-remove')?.hasAttribute('aria-haspopup')).toBe(false)

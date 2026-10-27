@@ -50,38 +50,50 @@
 
       <section v-if="examples.length > 0" id="examples" class="section">
         <h2>{{ t('component.examples') }}</h2>
-        <DemoFrame :name="name" :examples="examples" />
+        <DemoFrame :name="name" :examples="shownExamples" />
       </section>
 
-      <MetaTable
-        id="props"
-        :title="t('component.props')"
-        :rows="meta.props"
-        kind="props"
-        :empty-text="t('component.noProps')"
-        show-default
-      />
-      <MetaTable
-        id="slots"
-        :title="t('component.slots')"
-        :rows="meta.slots"
-        kind="slots"
-        :empty-text="t('component.noSlots')"
-      />
-      <MetaTable
-        id="events"
-        :title="t('component.events')"
-        :rows="meta.events"
-        kind="events"
-        :empty-text="t('component.noEvents')"
-      />
-      <MetaTable
-        id="exposed"
-        :title="t('component.exposed')"
-        :rows="meta.exposed"
-        kind="exposed"
-        :empty-text="t('component.noExposed')"
-      />
+      <!-- Outside the examples, which load in the browser: the API is in the pre-rendered page. -->
+      <section class="section api">
+        <MetaTable
+          id="props"
+          :title="t('component.props')"
+          :rows="meta.props"
+          kind="props"
+          :empty-text="t('component.noProps')"
+          :type-link="
+            motionInfo
+              ? { prop: 'motion', href: '#motion', tip: motionInfo.doc.replace(/`/g, '') }
+              : undefined
+          "
+          show-default
+        />
+        <MetaTable
+          id="events"
+          :title="t('component.events')"
+          :rows="meta.events"
+          kind="events"
+          :empty-text="t('component.noEvents')"
+        />
+        <MetaTable
+          id="slots"
+          :title="t('component.slots')"
+          :rows="meta.slots"
+          kind="slots"
+          :empty-text="t('component.noSlots')"
+        />
+        <MetaTable
+          id="exposed"
+          :title="t('component.exposed')"
+          :rows="meta.exposed"
+          kind="exposed"
+          :empty-text="t('component.noExposed')"
+        />
+      </section>
+
+      <MotionTable v-if="motionInfo" :name="name" :info="motionInfo" />
+
+      <A11ySection v-if="a11yInfo" :info="a11yInfo" />
 
       <section
         v-for="related in relatedComponents"
@@ -111,6 +123,36 @@
           :empty-text="t('component.noExposed')"
         />
       </section>
+
+      <section
+        v-for="paired in pairedSections"
+        :id="paired.id"
+        :key="paired.id"
+        class="section related"
+      >
+        <p class="eyebrow">{{ t('component.headless') }}</p>
+        <h2>{{ paired.name }}</h2>
+        <p class="description"><RichText :text="paired.description" /></p>
+        <CodeBlock lang="typescript" :code="paired.installCode" />
+        <CodeBlock
+          v-if="paired.exampleCode"
+          :lang="paired.exampleLang"
+          :code="paired.exampleCode"
+          class="paired-example"
+        />
+        <MetaTable
+          :id="`${paired.id}-parameters`"
+          :title="t('composable.parameters')"
+          :rows="paired.params"
+          :empty-text="t('composable.noParameters')"
+        />
+        <MetaTable
+          :id="`${paired.id}-returns`"
+          :title="t('composable.returns')"
+          :rows="paired.returns"
+          :empty-text="t('composable.noReturns')"
+        />
+      </section>
       <DocsPager />
     </article>
     <OnThisPage :links="tocLinks" />
@@ -129,7 +171,13 @@ import componentMeta from '../generated/component-meta.json'
 import demoManifest from '../generated/demo-manifest.json'
 import DemoFrame from '../components/DemoFrame.vue'
 import MetaTable from '../components/MetaTable.vue'
+import MotionTable from '../components/MotionTable.vue'
+import A11ySection from '../components/A11ySection.vue'
+import { a11yContent } from '../a11yContent'
+import type { MotionInfo } from '../components/MotionTable.vue'
+import motionMeta from '../generated/motion-meta.json'
 import CodeBlock from '../components/CodeBlock.vue'
+import RichText from '../components/RichText.vue'
 import DocsPager from '../components/DocsPager.vue'
 import OnThisPage from '../components/OnThisPage.vue'
 import PropsPlayground from '../playground/PropsPlayground.vue'
@@ -138,15 +186,44 @@ import ToasterPlayground from '../playground/ToasterPlayground.vue'
 import TimelinePlayground from '../playground/TimelinePlayground.vue'
 import type { ComponentMetaEntry, DemoManifestEntry } from '../types'
 import { categoryOf } from '../taxonomy'
+import { pairedComposables } from '../pairedComposables'
 import { defaultVariant } from '../preferences'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import type { DemoExample } from '../components/DemoFrame.vue'
 
 // `**` (not `*`) because a migrated component's examples live one directory
 // deeper — `vdom-demos/Sortable/DragToReorder.vue` — while a not-yet-migrated
-// one is still flat — `vdom-demos/DataTableDemo.vue`. Both match either way.
+// one is still flat — `vdom-demos/TreeDemo.vue`. Both match either way.
 const vdomModules = import.meta.glob<{ default: Component }>('../generated/vdom-demos/**/*.vue')
 const vaporModules = import.meta.glob<{ default: Component }>('../generated/vapor-demos/**/*.vue')
+// A showpiece's twin, made with vael-ui's own motion: same folder, same number.
+const parityModules = import.meta.glob<{ default: Component }>('../motion-parity/**/*.vue')
+const paritySources = import.meta.glob<string>('../motion-parity/**/*.vue', {
+  query: '?raw',
+  import: 'default',
+})
+async function parityOf(id: string): Promise<DemoExample | undefined> {
+  const [folder, file] = id.split('/') as [string, string]
+  const prefix = file.match(/^\d+-/)?.[0] ?? ''
+  const path = Object.keys(parityModules).find((each) =>
+    each.startsWith(`../motion-parity/${folder}/${prefix}`),
+  )
+  if (!path) return undefined
+  let component = vdomComponentCache.get(path)
+  if (!component) {
+    component = defineAsyncComponent(parityModules[path]!)
+    vdomComponentCache.set(path, component)
+  }
+  return {
+    id: `${folder}/${file}-vael-ui`,
+    title: '',
+    vdomComponent: component,
+    vaporComponent: null,
+    vdomCode: stripDemoProse(await paritySources[path]!()),
+    vaporCode: '',
+  }
+}
+
 const vdomSources = import.meta.glob('../generated/vdom-demos/**/*.vue', {
   query: '?raw',
   import: 'default',
@@ -197,6 +274,8 @@ const note = computed(() => {
   return t(`pageNotes.${name.value}`)
 })
 const typedMeta = componentMeta as Record<string, ComponentMetaEntry>
+const motionInfo = computed(() => (motionMeta as Record<string, MotionInfo>)[name.value])
+const a11yInfo = computed(() => a11yContent[name.value])
 const meta = computed(() => typedMeta[name.value])
 
 // Sub-components that only render inside a specific parent (Column needs
@@ -214,6 +293,18 @@ const relatedComponents = computed(() =>
     meta: typedMeta[n],
   })),
 )
+// The headless composable behind this component, documented here rather than
+// as a separate composables page.
+const pairedSections = computed(() =>
+  (pairedComposables[name.value] ?? []).map((paired) => ({
+    ...paired,
+    id: `composable-${paired.name.replace(/[^\w]+/g, '-')}`,
+    installCode: `import { ${(paired.installNames ?? [paired.name]).join(', ')} } from 'vael-ui'`,
+    exampleLang: paired.exampleCode?.trimStart().startsWith('<')
+      ? ('vue' as const)
+      : ('typescript' as const),
+  })),
+)
 const manifestEntry = computed(
   () => (demoManifest as Record<string, DemoManifestEntry>)[name.value],
 )
@@ -223,7 +314,7 @@ const installCode = computed(() => {
 })
 
 // Cached per example id (already a unique path, e.g. "Sortable/DragToReorder"
-// or "DataTableDemo" for a not-yet-migrated component) so a revisit reuses
+// or "TreeDemo" for a not-yet-migrated component) so a revisit reuses
 // the already-resolved async component instead of a fresh loading gap.
 const vdomComponentCache = new Map<string, Component>()
 const vaporComponentCache = new Map<string, Component>()
@@ -236,6 +327,15 @@ function stripDemoProse(source: string): string {
     .replace(/[ \t]*<h[23]>[\s\S]*?<\/h[23]>\n?/g, '')
     .replace(/\n{3,}/g, '\n\n')
 }
+
+const isShowpiece = (title: string) => /^extreme\b/i.test(title)
+const showpieceTitle = (title: string) =>
+  title
+    .replace(/^extreme:?\s*/i, '')
+    .replace(/\s*\((gsap|motion-v|motion)\)\s*$/i, '')
+    .replace(/^./, (c) => c.toUpperCase())
+const recipeKey = (id: string) =>
+  `recipes.${name.value}.${id.split('/').pop()!.replace(/^\d+-/, '')}`
 
 const examples = shallowRef<DemoExample[]>([])
 watchEffect(async (onCleanup) => {
@@ -272,9 +372,16 @@ watchEffect(async (onCleanup) => {
         ? stripDemoProse((await vaporSourceLoader()) as string)
         : ''
 
+      // The showpieces close the examples, without the label that marked them, each beside its
+      // twin on vael-ui's own motion.
+      const highlight = isShowpiece(entry.title)
+      const file = entry.id.split('/').pop()!
       return {
         id: entry.id,
-        title: entry.title,
+        title: highlight ? showpieceTitle(entry.title) : entry.title,
+        highlight,
+        engine: /gsap/i.test(file) ? 'GSAP' : /motionv/i.test(file) ? 'motion' : undefined,
+        twin: highlight ? await parityOf(entry.id) : undefined,
         vdomComponent,
         vaporComponent,
         vdomCode,
@@ -285,15 +392,58 @@ watchEffect(async (onCleanup) => {
   if (!stale) examples.value = loaded
 })
 
+// A recipe's title and note live in the locale files under `recipes.{Component}.{File}`, so
+// they read in every language; other examples keep the title from their own <h3>.
+const shownExamples = computed(() =>
+  examples.value.map((example) => {
+    const key = recipeKey(example.id)
+    if (!te(`${key}.title`, 'en')) return example
+    return { ...example, title: t(`${key}.title`), note: t(`${key}.note`) }
+  }),
+)
+
+// The examples' links come from the manifest, not the loaded demos, so the table of contents is
+// whole in the prerendered page and on the first render instead of growing once they load.
+const exampleLinks = computed(() => {
+  const entries = (manifestEntry.value?.examples ?? []).map((entry) => {
+    const key = recipeKey(entry.id)
+    const highlight = isShowpiece(entry.title)
+    return {
+      id: `example-${entry.id.split('/').pop()!.replace(/^\d+-/, '')}`,
+      label: te(`${key}.title`, 'en')
+        ? t(`${key}.title`)
+        : highlight
+          ? showpieceTitle(entry.title)
+          : entry.title,
+      highlight,
+    }
+  })
+  return [
+    ...entries.filter((entry) => !entry.highlight),
+    ...entries.filter((entry) => entry.highlight),
+  ].map(({ id, label }) => ({ id, label }))
+})
+
 const tocLinks = computed(() => [
   { id: 'install', label: t('component.install') },
   { id: 'playground', label: t('component.playground') },
-  ...(examples.value.length > 0 ? [{ id: 'examples', label: t('component.examples') }] : []),
+  ...(exampleLinks.value.length > 0
+    ? [
+        {
+          id: 'examples',
+          label: t('component.examples'),
+          children: exampleLinks.value.length > 1 ? exampleLinks.value : undefined,
+        },
+      ]
+    : []),
   { id: 'props', label: t('component.props') },
-  { id: 'slots', label: t('component.slots') },
   { id: 'events', label: t('component.events') },
+  { id: 'slots', label: t('component.slots') },
   { id: 'exposed', label: t('component.exposed') },
+  ...(motionInfo.value ? [{ id: 'motion', label: t('component.motion'), isNew: true }] : []),
+  ...(a11yInfo.value ? [{ id: 'accessibility', label: t('component.accessibility') }] : []),
   ...relatedComponents.value.map((r) => ({ id: `related-${r.name}`, label: r.name })),
+  ...pairedSections.value.map((p) => ({ id: p.id, label: p.name })),
 ])
 </script>
 
@@ -409,5 +559,13 @@ const tocLinks = computed(() => [
 .related h2 {
   font-size: 1.3rem;
   letter-spacing: -0.015em;
+}
+
+.related .eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.paired-example {
+  margin-top: 1rem;
 }
 </style>

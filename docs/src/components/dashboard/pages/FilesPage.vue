@@ -65,6 +65,7 @@
         ref="menu"
         :items="menuItems"
         :long-press="false"
+        :teleport-to="shell ?? undefined"
         data-dash-overlay
         @select="onMenuSelect"
       />
@@ -136,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, inject, shallowRef, useTemplateRef, watch } from 'vue'
 import {
   Avatar,
   Breadcrumb,
@@ -164,6 +165,7 @@ import {
 } from '@phosphor-icons/vue'
 import { fileSources, fileTree, people } from '../repoData'
 import type { RepoFile } from '../repoData'
+import { dashboardShellKey } from '../dashboardNavigate'
 import { highlightBlock } from '../../../composables/highlightInline'
 
 const VIEWS = [
@@ -172,6 +174,8 @@ const VIEWS = [
 ]
 
 const tree = useTemplateRef<{ expandAll: () => void; collapseAll: () => void }>('tree')
+// The context menu teleports into the dashboard shell so it stays inside the frame.
+const shell = inject(dashboardShellKey, undefined)
 const menu = useTemplateRef<{ openAt: (x: number, y: number) => void }>('menu')
 const explorerSize = shallowRef(200)
 const selected = shallowRef<string | null>(null)
@@ -226,9 +230,11 @@ function onMenuSelect(item: MenuItemData) {
   const node = menuTarget.value
   if (!node) return
   if (item.value === 'open' && !node.children) selected.value = String(node.value)
-  else if (item.value === 'copy') toast(`Copied ${node.value}`)
-  else if (item.value === 'history') toast(`${node.label}: 4 commits this week.`)
-  else if (item.value === 'delete') toast.info("Nothing's deleted in this showcase.")
+  else if (item.value === 'copy') toast(`Copied ${node.value}`, { toaster: 'dashboard' })
+  else if (item.value === 'history')
+    toast(`${node.label}: 4 commits this week.`, { toaster: 'dashboard' })
+  else if (item.value === 'delete')
+    toast.info("Nothing's deleted in this showcase.", { toaster: 'dashboard' })
 }
 
 defineExpose({

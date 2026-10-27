@@ -4,7 +4,7 @@
       <div class="hero-copy">
         <a class="news-pill" :href="CHANGELOG_URL" target="_blank" rel="noreferrer">
           <span class="news-pill-tag">{{ t('home.newTag') }}</span>
-          <span>{{ t('home.newText') }}</span>
+          <span class="news-pill-text">{{ t('home.newText') }}</span>
           <PhArrowRight :size="12" aria-hidden="true" />
         </a>
         <p class="eyebrow">{{ t('home.eyebrow') }}</p>
@@ -366,6 +366,17 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   transition: color var(--ui-duration-press) var(--ui-ease-out);
 }
 
+/* One line, always: a narrow screen trims the end instead of wrapping. */
+.news-pill {
+  max-inline-size: 100%;
+}
+.news-pill-text {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .news-pill::before,
 .news-pill::after {
   content: '';
@@ -533,11 +544,16 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
     block-size: 28rem;
   }
 
-  /* Stacked, the swatches sit right above the dashboard: keep the glow off
-     them, and fade it out before the edges so no square block shows. */
+  /* Stacked, the dashboard fills the width, so the cloud shows above and
+     below it. A vertical fade on top of the ellipse: it blooms up from the
+     frame's edge toward the swatches, never a cut-off strip, and is gone by
+     the time it reaches them. */
   .showcase-backdrop {
-    inset: 0.75rem -1rem -1.25rem;
-    mask-image: radial-gradient(ellipse 70% 62% at 50% 50%, black 40%, transparent 100%);
+    inset: -2.5rem -1rem -3rem;
+    mask-image:
+      radial-gradient(ellipse 80% 72% at 50% 50%, black 45%, transparent 100%),
+      linear-gradient(to bottom, transparent, black 2.5rem, black calc(100% - 3rem), transparent);
+    mask-composite: intersect;
   }
 
   .features {

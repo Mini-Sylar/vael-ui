@@ -157,6 +157,12 @@ function suppressKnownVaporDirectiveGaps(source) {
 // and `import type` lines are untouched: vapor's .d.ts re-exports the same types.
 function rewriteToVapor(source, vaporExportNames) {
   const importRe = /^import\s+\{([^}]+)\}\s+from\s+['"]vael-ui['"];?$/gm
+  // v-animate's Vapor form comes from vael-ui/motion too, as vAnimateVapor.
+  source = source.replace(
+    /^import\s+\{([^}]+)\}\s+from\s+['"]vael-ui\/motion['"]/gm,
+    (full, clause) =>
+      full.replace(clause, clause.replace(/\bvAnimate\b(?!\s+as)/, 'vAnimateVapor as vAnimate')),
+  )
   return source.replace(importRe, (full, namedClause) => {
     const names = namedClause
       .split(',')
@@ -188,7 +194,7 @@ function extractTitle(source, fallback) {
 }
 
 // `id` and every entry in `allIds` are paths relative to the generated root,
-// without extension — "DataTableDemo" for a legacy flat file, or
+// without extension — "TreeDemo" for a legacy flat file, or
 // "Sortable/DragToReorder" for a migrated one. Fully self-describing, so
 // nothing here needs to know which shape produced them.
 function emitExample(id, allIds, sourceFor, vaporExportNames, state) {

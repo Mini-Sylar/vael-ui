@@ -2,13 +2,14 @@
   <section class="demo">
     <h3>Animated panel content (motion-v)</h3>
     <p class="note">
-      The panels aren't part of Tabs, they're ordinary consumer markup. Every panel stays mounted
-      and motion-v animates each one's <code>x</code>/<code>opacity</code> from its position
-      relative to <code>active</code>, so the outgoing and incoming panels cross fade with a
-      directional slide. No <code>AnimatePresence</code>: a keyed swap inside it loses its key in a
-      Vapor parent, so exits never ran there. <code>id-base</code> wires each tab's
-      <code>aria-controls</code> to its panel, and the exposed <code>panelProps(item)</code> gives
-      each panel its matching <code>id</code>, <code>role</code> and <code>aria-labelledby</code>.
+      The panels aren't part of Tabs; they're your own markup. Every panel stays mounted, and
+      motion-v animates each one's <code>x</code> and <code>opacity</code> from its position
+      relative to <code>active</code>, so the old and new panels crossfade with a slide in the
+      direction you moved. The demo skips <code>AnimatePresence</code>, because in a Vapor parent a
+      keyed swap inside it loses its key and the exits never run. <code>id-base</code> links each
+      tab's <code>aria-controls</code> to its panel, and the exposed
+      <code>panelProps(item)</code> gives each panel its matching <code>id</code>,
+      <code>role</code> and <code>aria-labelledby</code>.
     </p>
     <Tabs ref="tabs" v-model:active="active" :items="items" id-base="report">
       <template #default="{ items: list, itemProps }">

@@ -1,11 +1,10 @@
 <template>
   <section class="demo">
-    <h3>A date gutter via <code>#opposite</code></h3>
+    <h3>A date column with <code>#opposite</code></h3>
     <p class="note">
-      <code>#opposite</code> renders on the other side of the line from <code>#item</code> — a date,
-      a status, whatever reads better set apart. Leave it out entirely (see the other examples
-      above) and the row falls back to the plain marker+content layout, no empty column reserved for
-      it.
+      <code>#opposite</code> renders on the other side of the line from <code>#item</code>, for a
+      date or a status. Leave it out, as the other examples do, and the row keeps the plain marker
+      and content layout with no empty column.
     </p>
     <Timeline :items="releases">
       <template #opposite="{ item }">{{ item.date }}</template>

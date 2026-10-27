@@ -15,7 +15,7 @@
     "@floating-ui/dom": "^1.8.0",
     "@vueuse/core": "^15.0.0",
     "vael-ui": "workspace:*",
-    "vue": "3.6.0-rc.12"
+    "vue": "3.6.0-rc.13"
   },
   "devDependencies": {
     "@tsdown/css": "^0.23.1",

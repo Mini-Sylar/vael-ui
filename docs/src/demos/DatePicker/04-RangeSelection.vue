@@ -2,10 +2,11 @@
   <section class="demo">
     <h3>Range selection</h3>
     <p class="note">
-      The trigger shows both ends once committed; the panel stays open after the first click since
-      there's a second date still to pick.
+      The trigger shows both ends once the range is complete. The panel stays open after the first
+      click, because there’s a second date to pick.
     </p>
     <DatePicker
+      style="max-inline-size: 20rem"
       v-model="rangeValue"
       :locale="currentLocale"
       selection-mode="range"

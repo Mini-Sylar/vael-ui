@@ -1,11 +1,10 @@
 <template>
   <section ref="demoRoot" class="demo">
-    <h3>Responsive collapse: middle items into a <code>Menu</code> popup</h3>
+    <h3>Responsive collapse: middle crumbs move into a <code>Menu</code></h3>
     <p class="note">
-      Not a built-in feature — <code>Breadcrumb</code> stays a dumb primitive on purpose. This is
-      the recipe: a <code>ResizeObserver</code> on the container drives how many crumbs fit, the
-      hidden middle ones move into a <code>Menu</code> triggered by a "…" item. Drag the handle to
-      resize and watch it collapse/expand live.
+      Breadcrumb doesn’t collapse on its own; this is a recipe. A <code>ResizeObserver</code> on the
+      container counts how many crumbs fit, and the hidden middle ones move into a
+      <code>Menu</code> opened from a “…” item. Drag the handle to resize it.
     </p>
     <Resizable v-model:size="resizableSize" class="breadcrumb-resizable" :min="140" :max="480">
       <div ref="collapseContainer" class="breadcrumb-collapse-container">

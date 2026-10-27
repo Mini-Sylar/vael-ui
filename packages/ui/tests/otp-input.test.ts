@@ -178,7 +178,7 @@ test('a programmatic model write longer than length is clamped everywhere — ce
 test('groups puts a separator between each group of cells', async () => {
   const screen = await render(OtpInputFixture, { props: { groups: 3 } })
   const row = screen.container.querySelector('[data-testid="basic"] .ui-otp-cells')!
-  const kinds = Array.from(row.children).map((el) =>
+  const kinds = Array.from(row.querySelectorAll(':scope > :not(.ui-otp-ring)')).map((el) =>
     el.classList.contains('ui-otp-separator') ? '-' : 'c',
   )
   expect(kinds.join('')).toBe('ccc-ccc')
@@ -187,7 +187,7 @@ test('groups puts a separator between each group of cells', async () => {
 test('groups takes explicit group sizes', async () => {
   const screen = await render(OtpInputFixture, { props: { groups: [2, 4] } })
   const row = screen.container.querySelector('[data-testid="basic"] .ui-otp-cells')!
-  const kinds = Array.from(row.children).map((el) =>
+  const kinds = Array.from(row.querySelectorAll(':scope > :not(.ui-otp-ring)')).map((el) =>
     el.classList.contains('ui-otp-separator') ? '-' : 'c',
   )
   expect(kinds.join('')).toBe('cc-cccc')
@@ -226,4 +226,60 @@ test('aria-label, aria-labelledby and aria-describedby name the input, not the w
   await expect.element(screen.getByRole('textbox', { name: 'Backup code' })).toBeInTheDocument()
   const fieldInput = screen.getByRole('textbox', { name: 'Login code' })
   await expect.element(fieldInput).toHaveAccessibleDescription('Check your email')
+})
+
+test('variant="field" boxes the whole code and a placeholder marks each empty cell', async () => {
+  const screen = await render(OtpInput, {
+    props: { modelValue: '12', variant: 'field', placeholder: '0', 'aria-label': 'Code' },
+  })
+  expect(screen.container.querySelector('.ui-otp')).toHaveClass('ui-otp--field')
+  const chars = [...screen.container.querySelectorAll<HTMLElement>('.ui-otp-cell-char')]
+  expect(chars.map((c) => c.textContent)).toEqual(['1', '2', '0', '0', '0', '0'])
+  expect(chars[0].classList.contains('ui-otp-cell-char--placeholder')).toBe(false)
+  expect(chars[2].classList.contains('ui-otp-cell-char--placeholder')).toBe(true)
+  // Cells inside the box carry no border of their own.
+  const cell = screen.container.querySelector<HTMLElement>('.ui-otp-cell')!
+  expect(getComputedStyle(cell).borderTopColor).toBe('rgba(0, 0, 0, 0)')
+})
+
+test('one ring glides to the active cell and carries the caret while it is empty', async () => {
+  const screen = await render(OtpInputFixture)
+  const otp = screen.container.querySelector<HTMLElement>('[data-testid="basic"]')!
+  const input = otp.querySelector('input')!
+  const ring = otp.querySelector<HTMLElement>('.ui-otp-ring')!
+  input.focus()
+  await vi.waitFor(() => expect(getComputedStyle(ring).opacity).toBe('1'))
+  await userEvent.keyboard('12')
+  await vi.waitFor(() => {
+    const cell = otp.querySelector<HTMLElement>('.ui-otp-cell[data-active]')!
+    expect(cell).toBe(otp.querySelectorAll('.ui-otp-cell')[2])
+    expect(parseFloat(ring.style.translate)).toBe(cell.offsetLeft)
+  })
+  expect(ring.hasAttribute('data-caret')).toBe(true)
+  input.blur()
+  await vi.waitFor(() => expect(getComputedStyle(ring).opacity).toBe('0'))
+})
+
+test('clearing the code from your own code, while the field has focus, moves the active cell back to the first', async () => {
+  const { h, shallowRef } = await import('vue')
+  const code = shallowRef('')
+  const screen = await render(() =>
+    h(OtpInput, {
+      modelValue: code.value,
+      'onUpdate:modelValue': (v: string) => (code.value = v),
+      length: 4,
+      'aria-label': 'Code',
+    }),
+  )
+  const input = screen.container.querySelector<HTMLInputElement>('input')!
+  input.focus()
+  await userEvent.keyboard('9999')
+  const active = () =>
+    [...screen.container.querySelectorAll('.ui-otp-cell')].findIndex((cell) =>
+      cell.hasAttribute('data-active'),
+    )
+  await vi.waitFor(() => expect(active()).toBe(3))
+  code.value = ''
+  input.focus()
+  await vi.waitFor(() => expect(active()).toBe(0))
 })

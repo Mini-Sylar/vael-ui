@@ -2,24 +2,37 @@
   <Input
     ref="inputRef"
     v-bind="attrs"
-    :model-value="displayValue"
+    :model-value="inputText"
     :placeholder="placeholder"
     :size="props.size"
     :disabled="isDisabled"
-    :invalid="isInvalid"
-    readonly
+    :invalid="isInvalid || typedInvalid"
+    :animated="!!props.motion && valueSwap()"
     role="combobox"
     aria-haspopup="dialog"
     :aria-expanded="open"
     :aria-controls="panelId"
     autocomplete="off"
     :ui="innerUi"
+    @update:model-value="onType"
+    @blur="commitDraft"
     @click="onTriggerClick"
     @keydown="onTriggerKeydown"
+    @pointerenter="prefetchCalendar"
+    @focusin="prefetchCalendar"
   >
     <template #end>
-      <span class="ui-date-picker-icon" aria-hidden="true">
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+      <button
+        type="button"
+        :class="iconPart.class"
+        :style="iconPart.style"
+        tabindex="-1"
+        :aria-label="messages.datePicker.chooseDate"
+        :disabled="isDisabled"
+        @mousedown="keepInputFocus"
+        @click="onButtonClick"
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
           <rect
             x="2.5"
             y="3.5"
@@ -36,15 +49,15 @@
             stroke-linecap="round"
           />
         </svg>
-      </span>
+      </button>
     </template>
   </Input>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" appear :css="!forceMount">
+    <Transition name="ui-select" appear v-bind="panelTransition">
       <div
-        v-if="forceMount || open"
-        v-show="open"
+        v-if="forceMount || shown"
+        v-show="shown"
         ref="positioner"
         :class="positionerPart.class"
         :style="[positionerStyle, { zIndex }, positionerPart.style]"
@@ -56,11 +69,12 @@
         <div
           :id="panelId"
           ref="panel"
+          data-ui-presence
           role="dialog"
           aria-modal="false"
           :aria-label="messages.datePicker.chooseDate"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelWidthStyle(props.panelWidth), panelPart.style]"
           v-bind="panelAttrs"
         >
           <Calendar
@@ -76,7 +90,8 @@
             :first-day-of-week="firstDayOfWeek"
             :months="months"
             :show-year-buttons="showYearButtons"
-            :motion-css="props.motionCss"
+            :show-week-numbers="showWeekNumbers"
+            :motion="!!props.motion"
             :ui="calendarUi"
             @change="onCalendarChange"
             @month-change="(value) => emit('month-change', value)"
@@ -165,6 +180,10 @@
 </template>
 
 <script lang="ts">
+import { useValueSwap } from '../../composables/valueSwap'
+import { inputPickedKey } from '../../composables/inputPicked'
+import { panelWidthStyle } from '../../composables/panelWidth'
+import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
 
@@ -172,26 +191,43 @@ export type DatePickerSide = Side
 export type DatePickerAlign = Align
 </script>
 
-<!-- Wraps Calendar in Select's popover chrome; input readonly, formatting deferred. -->
+<!-- Wraps Calendar in Select's popover chrome; the input takes typed dates too (composables/dateText). -->
 <script setup lang="ts">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, DatePickerMotion } from '../../motion/types'
 import './DatePicker.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/select-panel.css'
-import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  nextTick,
+  onMounted,
+  provide,
+  shallowRef,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
+import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useMessages, datePickerMessages } from '../../messages'
+import { loadDateText } from '../../composables/lazyParts'
 import Input from '../Input/Input.vue'
 import Button from '../Button/Button.vue'
-import SelectButton from '../SelectButton/SelectButton.vue'
-import Calendar from '../Calendar/Calendar.vue'
-import TimeField from '../internal/TimeField.vue'
+import type CalendarType from '../Calendar/Calendar.vue'
+import type TimeFieldType from '../internal/TimeField.vue'
 import type {
   CalendarDisabledDates,
   CalendarRange,
@@ -213,7 +249,7 @@ const panelAttrs = useAttrListeners(
   () => panelEl.value,
   () => panelOwnAttrs.value,
 )
-const messages = useUiMessages()
+const messages = useMessages({ datePicker: datePickerMessages })
 
 /** Selected date, or `{ start, end }` in `range` mode. @default null */
 const model = defineModel<Date | CalendarRange | null>({ default: null })
@@ -250,7 +286,10 @@ const rawProps = withDefaults(
     maxDate?: Date
     /** List of unavailable dates, or a predicate function. Matching compares calendar days and ignores time. */
     disabledDates?: CalendarDisabledDates
-    /** BCP-47 locale for the input text, month and weekday names, and the week start day. */
+    /**
+     * BCP-47 locale for the input text, month and weekday names, and the week start day. Typed
+     * dates read in its order too: month/day/year in `en-US`, day/month/year in `de`.
+     */
     locale?: string
     /** `0` (Sunday) to `6` (Saturday). Unset, it derives from `locale` and falls back to Monday. */
     firstDayOfWeek?: number
@@ -274,18 +313,29 @@ const rawProps = withDefaults(
     sideOffset?: number
     /** Shifts the panel along the alignment axis, in pixels. @default 0 */
     alignOffset?: number
+    /**
+     * The panel's width. Unset, it is the calendar's own; `'trigger'` makes it at least the field's
+     * width, and a width in px or any CSS length (`'20rem'`) sets it. The calendar fills it and its
+     * days grow.
+     */
+    panelWidth?: PanelWidth
     /** Escape key closes the panel. @default true */
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` to finish closing. */
-    beforeClose?: (done: () => void) => void
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
-    /** `false` skips both the popover enter/leave and Calendar's month-slide transitions. @default true */
-    motionCss?: boolean
+    /**
+     * How the panel moves, like Popover's: `false` opens and closes it at once, and skips Calendar's
+     * month slide. An object retimes it (`{ spring }`), or gives values for the `panel` part or
+     * `enter` / `leave` hooks for your own library.
+     * @default true
+     */
+    motion?: DatePickerMotion
     /** Shows built-in Today (`single` mode only) and Clear buttons below the calendar.
      * Has no effect once you provide the `#footer` slot, which renders instead.
      * @default false
@@ -293,6 +343,8 @@ const rawProps = withDefaults(
     showButtonBar?: boolean
     /** Adds « and » beside the month arrows to jump a year at a time. See Calendar's `showYearButtons`. @default false */
     showYearButtons?: boolean
+    /** Shows each week's number (ISO 8601) at the start of its row. @default false */
+    showWeekNumbers?: boolean
     /** Adds an hour/minute row below the calendar (`single` mode only). Picking a date then keeps
      * the panel open so you can set the time.
      * @default false
@@ -320,6 +372,8 @@ const rawProps = withDefaults(
       cell: UiPartValue
       time: UiPartValue
       footer: UiPartValue
+      /** The calendar button at the end of the field. */
+      icon: UiPartValue
     }>
   }>(),
   {
@@ -346,9 +400,10 @@ const rawProps = withDefaults(
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
-    motionCss: undefined,
+    motion: undefined,
     showButtonBar: false,
     showYearButtons: false,
+    showWeekNumbers: false,
     showTime: false,
     timeOnly: false,
     hourFormat: undefined,
@@ -356,12 +411,48 @@ const rawProps = withDefaults(
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true, locale: undefined })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true, locale: undefined })
+const valueSwap = useValueSwap(() => props.motion)
+
+// The time row's parts load only for a picker that shows time, fetched as it's set up, long before
+// the panel opens. A ref on an async component reaches the inner one once it's loaded.
+const loadTimeField = () => import('../internal/TimeField.vue')
+const loadSelectButton = () => import('../SelectButton/SelectButton.vue')
+const TimeField = defineAsyncComponent(loadTimeField)
+// The calendar is drawn only in the open panel, so it loads apart from the field: while the browser
+// is idle after mount, or as the pointer or focus reaches the field, whichever comes first.
+const Calendar = defineAsyncComponent(() => import('../Calendar/Calendar.vue'))
+// Through the component's own loader: once it has loaded, a calendar renders as it's mounted, not a
+// tick later, so the panel never comes in empty.
+const calendarLoader = Calendar as unknown as {
+  __asyncLoader: () => Promise<unknown>
+  __asyncResolved?: unknown
+}
+const calendarReady = shallowRef(!!calendarLoader.__asyncResolved)
+function loadCalendar(): Promise<void> {
+  return calendarLoader.__asyncLoader().then(
+    () => void (calendarReady.value = true),
+    // Opens anyway: a panel that never opened would be worse than one without its calendar.
+    () => void (calendarReady.value = true),
+  )
+}
+const prefetchCalendar = () => {
+  if (!rawProps.timeOnly) void loadCalendar()
+}
+onMounted(() => {
+  const idle = window.requestIdleCallback ?? ((run: () => void) => setTimeout(run, 200))
+  idle(prefetchCalendar)
+})
+const SelectButton = defineAsyncComponent(loadSelectButton)
+if (rawProps.showTime || rawProps.timeOnly) {
+  void loadTimeField()
+  void loadSelectButton()
+}
 
 const emit = defineEmits<{
   /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
-  /** Fires when you pick a date, time or range endpoint, or use Today or Clear. */
+  /** Fires when you pick a date, time or range endpoint, type one, or use Today or Clear. */
   change: [value: Date | CalendarRange | null]
   /** Fires when the calendar's displayed month changes. */
   'month-change': [value: Date]
@@ -458,6 +549,94 @@ const displayValue = computed(() => {
   return formatOne(value)
 })
 
+// Typed text, until it's committed on Enter or blur; null shows the value.
+const draft = shallowRef<string | null>(null)
+// The parser loads with the first keystroke: a picker nobody types into never ships it.
+let dateText: Awaited<ReturnType<typeof loadDateText>> | undefined
+const parser = () => loadDateText().then((module) => (dateText = module))
+// An entry that didn't read as an available date: the value stays, the field shows invalid.
+const typedInvalid = shallowRef(false)
+const inputText = computed(() => draft.value ?? displayValue.value)
+// A date picked from the calendar crossfades in, as Select's label does, focused too; what you type
+// stays plain until it's committed.
+provide(inputPickedKey, () => draft.value === null)
+function readOne(text: string): Date | null {
+  const { parseDateText, isDateUnavailable } = dateText!
+  const date = parseDateText(text, {
+    locale: props.locale,
+    view: props.view,
+    time: timeOnlyEffective.value ? 'only' : props.showTime && props.selectionMode !== 'range',
+    base: isRangeModel(model.value) ? null : model.value,
+  })
+  if (!date || timeOnlyEffective.value) return date
+  return isDateUnavailable(date, props.view, props.minDate, props.maxDate, props.disabledDates)
+    ? null
+    : date
+}
+// `undefined` when the text isn't a date the picker would accept.
+function readTyped(text: string): Date | CalendarRange | null | undefined {
+  if (!text.trim()) return null
+  if (props.selectionMode !== 'range') return readOne(text) ?? undefined
+  const [startText = '', endText = '', ...extra] = dateText!.splitDateRange(text.trim())
+  if (extra.length) return undefined
+  const start = readOne(startText)
+  // A missing end, or the "…" shown while it's unset, leaves the range open.
+  const openEnd = /^(…|\.\.\.)?$/.test(endText.trim())
+  const end = openEnd ? null : readOne(endText)
+  if (!start || (!openEnd && !end)) return undefined
+  return end && end < start ? { start: end, end: start } : { start, end }
+}
+function sameValue(a: Date | CalendarRange | null, b: Date | CalendarRange | null): boolean {
+  const time = (d: Date | null | undefined) => d?.getTime() ?? null
+  if (isRangeModel(a) || isRangeModel(b)) {
+    return (
+      isRangeModel(a) &&
+      isRangeModel(b) &&
+      time(a.start) === time(b.start) &&
+      time(a.end) === time(b.end)
+    )
+  }
+  return time(a) === time(b)
+}
+function onType(text: string) {
+  draft.value = text
+  if (!dateText) void parser()
+  // Once flagged, the flag lifts as soon as the text reads, or is emptied.
+  if (typedInvalid.value && dateText) typedInvalid.value = readTyped(text) === undefined
+}
+// Returns false when the text didn't read; the value is kept and the field marked invalid.
+function commitDraft(): boolean {
+  const text = draft.value
+  if (text === null) return true
+  if (text === displayValue.value) {
+    draft.value = null
+    typedInvalid.value = false
+    return true
+  }
+  // Committed before the parser arrived (a paste, then Enter): commit once it's here.
+  if (!dateText) {
+    void parser().then(() => commitDraft())
+    return false
+  }
+  const next = readTyped(text)
+  if (next === undefined) {
+    typedInvalid.value = true
+    return false
+  }
+  draft.value = null
+  typedInvalid.value = false
+  if (!sameValue(next, model.value)) {
+    model.value = next
+    emit('change', next)
+  }
+  return true
+}
+// A value set from anywhere else replaces what was typed.
+watch(model, () => {
+  draft.value = null
+  typedInvalid.value = false
+})
+
 // Time state reads/writes straight off `model` — a JS Date already carries hour/minute, so
 // there's no separate time model to keep in sync, just this Date's own setHours.
 const timeBase = computed<Date>(() => {
@@ -521,11 +700,29 @@ function onCalendarChange(value: Date | CalendarRange | null) {
 const inputRef = useTemplateRef('inputRef')
 const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
+useFormReset(
+  model,
+  () => inputEl.value,
+  () => {
+    draft.value = null
+    typedInvalid.value = false
+  },
+)
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
-const calendarRef = useTemplateRef<InstanceType<typeof Calendar>>('calendarRef')
-const hourFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('hourFieldRef')
-const minuteFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('minuteFieldRef')
+const panelTransition = useSelectPanelMotion({
+  name: 'DatePicker',
+  key: 'datePicker',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => el.value,
+  forceMount: () => props.forceMount,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
+const calendarRef = useTemplateRef<InstanceType<typeof CalendarType>>('calendarRef')
+const hourFieldRef = useTemplateRef<InstanceType<typeof TimeFieldType>>('hourFieldRef')
+const minuteFieldRef = useTemplateRef<InstanceType<typeof TimeFieldType>>('minuteFieldRef')
 
 // Like a native time input: a complete hour moves on to the minutes (focus selects them).
 function focusMinuteField() {
@@ -539,8 +736,22 @@ const themedUi = useThemedUi(
 )
 const themeScope = inject(themeScopeKey, undefined)
 
+// Opened before the calendar has loaded (the first open, often), the panel waits for it and comes
+// in with it, so its entrance plays on the whole panel rather than on an empty one.
+const shown = computed({
+  get: () => open.value && (timeOnlyEffective.value || calendarReady.value),
+  set: (value: boolean) => (open.value = value),
+})
+watch(
+  open,
+  (isOpen) => {
+    if (isOpen && !calendarReady.value && !timeOnlyEffective.value) void loadCalendar()
+  },
+  { immediate: true },
+)
+
 const { positionerStyle, placement, transformOrigin, isClosing, close, cancelClose, layerIndex } =
-  usePopover(open, {
+  usePopover(shown, {
     triggerEl: el,
     positionerEl,
     side: () => props.side,
@@ -548,7 +759,7 @@ const { positionerStyle, placement, transformOrigin, isClosing, close, cancelClo
     sideOffset: () => props.sideOffset,
     alignOffset: () => props.alignOffset,
     // Calendar grid width is content-driven, not trigger-width-dependent like Select/TreeSelect.
-    matchReferenceWidth: false,
+    matchReferenceWidth: () => props.panelWidth === 'trigger',
     closeOnEsc: () => props.closeOnEsc,
     closeOnOutside: () => props.closeOnOutside,
     beforeClose: () => props.beforeClose,
@@ -564,37 +775,79 @@ const fieldControl = useFieldControl()
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
-// Opens on click or ArrowDown/Enter/Space, not on focus: tabbing through a
-// form shouldn't pop a calendar open at every date field.
+// Opens on click, the button, ArrowDown or Enter, not on focus: tabbing through a form shouldn't
+// pop a calendar open at every date field. A click leaves focus in the input for typing; the
+// button and the keys move it into the panel.
+let focusOnOpen = true
+function openPanel(moveFocus: boolean) {
+  if (isDisabled.value) return
+  focusOnOpen = moveFocus
+  open.value = true
+}
 function onTriggerClick() {
-  if (!isDisabled.value) open.value = !open.value
+  if (!open.value) openPanel(false)
+}
+function keepInputFocus(event: MouseEvent) {
+  event.preventDefault()
+  inputEl.value?.focus()
+}
+function onButtonClick() {
+  if (open.value) close()
+  else {
+    commitDraft()
+    openPanel(true)
+  }
 }
 function onTriggerKeydown(event: KeyboardEvent) {
-  if (isDisabled.value || open.value) return
-  if (event.key === 'Escape') return
-  if (['ArrowDown', 'Enter', ' '].includes(event.key)) {
+  if (isDisabled.value || event.isComposing) return
+  if (event.key === 'Escape') {
+    // An open panel takes the first Escape; the next one drops what was typed.
+    if (event.defaultPrevented || draft.value === null) return
     event.preventDefault()
-    open.value = true
+    draft.value = null
+    typedInvalid.value = false
+    return
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    if (draft.value !== null) {
+      if (commitDraft() && open.value) close()
+    } else if (open.value) close()
+    else openPanel(true)
+    return
+  }
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    commitDraft()
+    if (open.value) focusPanel()
+    else openPanel(true)
   }
 }
 
+function focusPanel() {
+  if (timeOnlyEffective.value) {
+    // The time fields may still be on their way: focus once they're in.
+    void loadTimeField().then(() => nextTick(() => hourFieldRef.value?.inputEl?.focus()))
+    return
+  }
+  const value = model.value
+  const anchor =
+    value == null
+      ? new Date()
+      : isRangeModel(value)
+        ? (value.end ?? value.start ?? new Date())
+        : value
+  // The calendar may still be on its way: focus the day once it's in.
+  void loadCalendar().then(() => nextTick(() => calendarRef.value?.focusDay(anchor)))
+}
 // Focus panel once positioner is visible; wait for floating-ui's computePosition() to resolve.
 watch(
   () => open.value && positionerStyle.value.visibility === 'visible',
   (ready) => {
     if (!ready) return
-    if (timeOnlyEffective.value) {
-      nextTick(() => hourFieldRef.value?.inputEl?.focus())
-      return
-    }
-    const value = model.value
-    const anchor =
-      value == null
-        ? new Date()
-        : isRangeModel(value)
-          ? (value.end ?? value.start ?? new Date())
-          : value
-    nextTick(() => calendarRef.value?.focusDay(anchor))
+    const moveFocus = focusOnOpen
+    focusOnOpen = true
+    if (moveFocus) focusPanel()
   },
 )
 const innerUi = computed(() => ({
@@ -620,6 +873,7 @@ const footerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.footer, 'ui-select-footer', 'ui-date-picker-footer'),
 )
 const timePart = computed(() => resolveUiPart(cx, themedUi()?.time, 'ui-date-picker-time'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-date-picker-icon'))
 
 const resolvedSide = computed(() => placement.value.split('-')[0] as DatePickerSide)
 const resolvedAlign = computed<DatePickerAlign>(() => {
@@ -643,9 +897,7 @@ defineExpose({
   /** `true` while a `beforeClose` close is pending. */
   isClosing,
   /** Opens the panel unless disabled. */
-  open: () => {
-    if (!isDisabled.value) open.value = true
-  },
+  open: () => openPanel(true),
   /** Closes the panel, running `@open-change` and `beforeClose` first. */
   close,
   /** Cancels a close pending in `beforeClose` and keeps the panel open. */

@@ -7,8 +7,10 @@
     position: relative;
     z-index: 1;
   }
+  /* A block box, so the label is exactly the icon's height: inline, it sat on the text baseline
+     a pixel above centre. */
   .ui-speed-dial-trigger-icon {
-    display: inline-flex;
+    display: flex;
     transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
   }
   .ui-speed-dial[data-state='open'] .ui-speed-dial-trigger-icon {
@@ -25,41 +27,49 @@
   }
   .ui-speed-dial[data-direction='up'] .ui-speed-dial-actions {
     flex-direction: column-reverse;
-    inset-inline-start: 50%;
+    left: 50%;
     inset-block-end: 100%;
     translate: -50% 0;
     margin-block-end: 0.75rem;
   }
   .ui-speed-dial[data-direction='down'] .ui-speed-dial-actions {
     flex-direction: column;
-    inset-inline-start: 50%;
+    left: 50%;
     inset-block-start: 100%;
     translate: -50% 0;
     margin-block-start: 0.75rem;
   }
   .ui-speed-dial[data-direction='left'] .ui-speed-dial-actions {
     flex-direction: row-reverse;
-    inset-inline-end: 100%;
+    right: 100%;
     inset-block-start: 50%;
     translate: 0 -50%;
-    margin-inline-end: 0.75rem;
+    margin-right: 0.75rem;
   }
   .ui-speed-dial[data-direction='right'] .ui-speed-dial-actions {
     flex-direction: row;
-    inset-inline-start: 100%;
+    left: 100%;
     inset-block-start: 50%;
     translate: 0 -50%;
-    margin-inline-start: 0.75rem;
+    margin-left: 0.75rem;
+  }
+  /* The directions are physical (`left` is left, as `translate` is): a row runs the same way right
+     to left, nearest action first. */
+  .ui-speed-dial[data-direction='left'] .ui-speed-dial-actions:dir(rtl) {
+    flex-direction: row;
+  }
+  .ui-speed-dial[data-direction='right'] .ui-speed-dial-actions:dir(rtl) {
+    flex-direction: row-reverse;
   }
   .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-actions {
-    inset-inline-start: 50%;
+    left: 50%;
     inset-block-start: 50%;
     inline-size: 0;
     block-size: 0;
   }
   .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action {
     position: absolute;
-    inset-inline-start: 0;
+    left: 0;
     inset-block-start: 0;
     translate: calc(var(--ui-speed-dial-x, 0px) - 50%) calc(var(--ui-speed-dial-y, 0px) - 50%);
   }
@@ -68,7 +78,9 @@
       opacity var(--ui-duration-enter) var(--ui-ease-out),
       scale var(--ui-duration-enter) var(--ui-ease-out),
       translate var(--ui-duration-enter) var(--ui-ease-out);
-    transition-delay: calc(var(--ui-speed-dial-action-index, 0) * 40ms);
+    transition-delay: calc(
+      min(var(--ui-speed-dial-action-index, 0), 5) * var(--ui-duration-stagger)
+    );
   }
   .ui-speed-dial-action-leave-active {
     transition:
@@ -107,7 +119,7 @@
   .ui-speed-dial-actions[data-motion='off'] .ui-speed-dial-action-move {
     transition: none;
   }
-  /* motionCss off: every built-in transition goes, including Button's own press and hover easing
+  /* motion off: every built-in transition goes, including Button's own press and hover easing
      on the trigger and actions. State still changes, only instantly. */
   .ui-speed-dial--no-motion .ui-speed-dial-trigger,
   .ui-speed-dial--no-motion .ui-speed-dial-trigger-icon,

@@ -2,11 +2,15 @@
   /* Pull to refresh: usePullToRefresh owns pullDistance and zone block-size. */
   .ui-pull-to-refresh-root {
     position: relative;
+    /* A wrapper: as a grid or flex item it shrinks like the content it wraps, not to its widest row. */
+    min-inline-size: 0;
   }
   /* Only when this root is itself the scroll box (no external `scrollEl`) — a consumer
      dropping this into an already-scrollable layout keeps their own overflow untouched. */
   .ui-pull-to-refresh-root[data-self-scroll] {
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     overscroll-behavior-y: contain;
   }
   /* With nothing focusable inside, the scroller takes focus itself (useFocusableScroller). */
@@ -19,6 +23,17 @@
   .ui-pull-to-refresh-root[data-state='pulling'],
   .ui-pull-to-refresh-root[data-state='ready'] {
     user-select: none;
+  }
+  .ui-pull-to-refresh-status {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
   .ui-pull-to-refresh-zone {
     display: flex;

@@ -6,10 +6,7 @@
     tag="ol"
     :class="rootPart.class"
     :style="rootPart.style"
-    :name="props.motionCss ? 'ui-timeline-item' : undefined"
-    :css="props.motionCss"
-    @enter="enterHook"
-    @leave="leaveHook"
+    v-bind="itemsTransition"
   >
     <li
       v-for="row in resolvedItems"
@@ -19,6 +16,7 @@
       :style="itemPart.style"
       :data-completed="row.completed || undefined"
       :data-active="row.active || undefined"
+      :aria-current="row.active ? 'step' : undefined"
     >
       <div v-if="$slots.opposite" :class="oppositePart.class" :style="oppositePart.style">
         <slot
@@ -105,23 +103,11 @@
 
      TransitionGroup (not plain Transition, unlike Stepper's checkmark swap) because items is a
      real array a consumer can push/splice at runtime. -->
-<script lang="ts">
-/** A step's elements, passed to `@item-enter` and `@item-leave` for custom animations. */
-export interface TimelineItemParts {
-  marker: HTMLElement | null
-  /** The line below this step's marker. `null` on the last step. */
-  connector: HTMLElement | null
-  /** The line coming down from the step above, the one that leads into this step. */
-  previousConnector: HTMLElement | null
-  content: HTMLElement | null
-  opposite: HTMLElement | null
-}
-</script>
-
 <script setup lang="ts" generic="T = unknown">
 import './Timeline.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, ref, useId, useSlots, useTemplateRef } from 'vue'
 import { transitionGroupRef, useSlotPresence } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -129,6 +115,9 @@ import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { TimelineMotion, TimelinePart } from '../../motion/types'
 
 const rawProps = withDefaults(
   defineProps<{
@@ -136,8 +125,13 @@ const rawProps = withDefaults(
     items: ReadonlyArray<T>
     /** Lays the entries out in a row or a column. @default 'vertical' */
     orientation?: 'horizontal' | 'vertical'
-    /** Gates the connector fill transition and the item enter/leave/move animation. @default true */
-    motionCss?: boolean
+    /**
+     * `false` turns off the connector fill and items coming and going. An object animates items your
+     * way: values for `item` or a step's own parts (`marker`, `connector`, `previousConnector`,
+     * `content`, `opposite`), `stagger`, or `enter` / `leave` hooks that get them all.
+     * @default true
+     */
+    motion?: TimelineMotion
     /** Adds a looping pulse ring to the active marker. @default false */
     pulse?: boolean
     /**
@@ -165,23 +159,15 @@ const rawProps = withDefaults(
   }>(),
   {
     orientation: 'vertical',
-    motionCss: undefined,
+    motion: undefined,
     pulse: false,
     itemKey: (_item: T, index: number) => index,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
-
-const emit = defineEmits<{
-  /** Fires when an item enters, only while `motionCss` is `false`. Run your own animation, then call
-   * `done()`. `parts` holds the step's marker, connectors, content and opposite elements. */
-  'item-enter': [el: Element, done: () => void, parts: TimelineItemParts]
-  /** Same as `@item-enter`, for an item leaving. */
-  'item-leave': [el: Element, done: () => void, parts: TimelineItemParts]
-}>()
+const props = withProviderDefaults(rawProps, { motion: true })
 
 // Direct children only, so a Timeline nested in a step's content isn't picked up.
-function partsOf(el: Element): TimelineItemParts {
+function partsOf(el: Element): Record<Exclude<TimelinePart, 'item'>, HTMLElement | null> {
   const child = (parent: Element | null | undefined, cls: string) =>
     parent?.querySelector<HTMLElement>(`:scope > .${cls}`) ?? null
   const col = child(el, 'ui-timeline-marker-col')
@@ -196,16 +182,25 @@ function partsOf(el: Element): TimelineItemParts {
     opposite: child(el, 'ui-timeline-opposite'),
   }
 }
-// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-enter', el, done, partsOf(el)),
-)
-const leaveHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-leave', el, done, partsOf(el)),
+// Yours (an object, or a shared style): items come and go on the motion system, their parts with
+// them. Otherwise the built-in CSS look.
+const style = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' || style?.value?.timeline || style?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'timeline',
+        part: 'item',
+        name: 'Timeline',
+        look: () =>
+          props.orientation === 'horizontal' ? { opacity: 0, x: 8 } : { opacity: 0, y: 8 },
+        parts: partsOf,
+      })
+    : undefined
+const itemsTransition = computed(() =>
+  listMotion
+    ? listMotion.transition
+    : { name: props.motion ? 'ui-timeline-item' : undefined, css: !!props.motion },
 )
 
 const $slots = useSlots()
@@ -284,7 +279,7 @@ const rootPart = computed(() =>
     `ui-timeline--${props.orientation}`,
     hasSlot('opposite') && 'ui-timeline--has-opposite',
     props.pulse && 'ui-timeline--pulse',
-    !props.motionCss && 'ui-timeline--no-motion',
+    !props.motion && 'ui-timeline--no-motion',
   ),
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-timeline-step'))

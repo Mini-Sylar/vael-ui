@@ -2,6 +2,7 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, shallowRef } from 'vue'
 import ComboboxFixture from './fixtures/ComboboxFixture.vue'
 import ComboboxFormFixture from './fixtures/ComboboxFormFixture.vue'
 import Combobox from '../src/components/Combobox/Combobox.vue'
@@ -508,7 +509,7 @@ test('multiple: selecting options renders removable chips in the input area; the
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
-test('motionCss=false disables the chip transition, including its move (reflow) animation', async () => {
+test('motion=false disables the chip transition, including its move (reflow) animation', async () => {
   const screen = await render(Combobox, {
     props: {
       items: [
@@ -517,7 +518,7 @@ test('motionCss=false disables the chip transition, including its move (reflow) 
       ],
       multiple: true,
       modelValue: ['apple', 'banana'],
-      motionCss: false,
+      motion: false,
     },
     global: { stubs: { 'transition-group': false } },
   })
@@ -652,4 +653,96 @@ test('multiple without maxLabels wraps its chips inside the field', async () => 
     expect(chip.right).toBeLessThanOrEqual(field.right + 1)
   }
   expect(new Set(chips.map((chip) => Math.round(chip.top))).size).toBeGreaterThan(1)
+})
+
+test('the keyboard key reads Enter by default, so a phone sends Enter to pick the match', async () => {
+  const items = [{ label: 'Apple', value: 'apple' }]
+  const screen = await render(Combobox, { props: { items } })
+  const input = screen.getByRole('combobox').element() as HTMLInputElement
+  expect(input.getAttribute('enterkeyhint')).toBe('enter')
+  await screen.unmount()
+
+  const custom = await render(Combobox, { props: { items }, attrs: { enterkeyhint: 'go' } })
+  const customInput = custom.getByRole('combobox').element() as HTMLInputElement
+  expect(customInput.getAttribute('enterkeyhint')).toBe('go')
+})
+
+test('multiple: content in #start stays at the start of the field, before the chips', async () => {
+  const value = shallowRef<number[]>([])
+  await render(() =>
+    h(
+      Combobox as never,
+      {
+        items: [
+          { label: 'No error', value: 1 },
+          { label: 'Fixed', value: 2 },
+        ],
+        multiple: true,
+        modelValue: value.value,
+        placeholder: 'Outcome',
+      },
+      { start: () => h('span', { class: 'test-flag' }, '⚑') },
+    ),
+  )
+  const flag = () => document.querySelector<HTMLElement>('.test-flag')!.getBoundingClientRect()
+  const input = () => document.querySelector<HTMLElement>('input')!.getBoundingClientRect()
+  await vi.waitFor(() => expect(flag().width).toBeGreaterThan(0))
+  // No chips: nothing between the icon and the text but the field's own gap.
+  const emptyGap = input().left - flag().right
+  value.value = [1]
+  await vi.waitFor(() => expect(document.querySelector('.ui-chip')).not.toBeNull())
+  const chip = document.querySelector<HTMLElement>('.ui-chip')!.getBoundingClientRect()
+  expect(flag().right).toBeLessThanOrEqual(chip.left)
+  expect(chip.right).toBeLessThanOrEqual(input().left)
+  expect(emptyGap).toBeLessThan(12)
+})
+
+test('a picked option crossfades in over the typed text, like Select, and typing takes over again', async () => {
+  // Real transitions, so the crossfade's classes show.
+  const screen = await render(ComboboxFixture, { global: { stubs: { transition: false } } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'cran')
+  await expect.element(screen.getByRole('option', { name: 'Cranberry' })).toBeVisible()
+  await screen.getByRole('option', { name: 'Cranberry' }).click()
+  // The picked label comes in through the overlay's crossfade, from the typed text.
+  await vi.waitFor(() =>
+    expect(
+      document.querySelector('.ui-input-display .ui-animated-text-enter-active'),
+    ).not.toBeNull(),
+  )
+  await vi.waitFor(() => expect(input.element()).toHaveValue('Cranberry'))
+  await vi.waitFor(() =>
+    expect(document.querySelector('.ui-input-display')?.textContent).toContain('Cranberry'),
+  )
+  // Typing again shows the field's own text, with no overlay over it.
+  input.element().focus()
+  await userEvent.type(input, 'x')
+  await vi.waitFor(() => expect(document.querySelector('.ui-input-display')).toBeNull())
+})
+
+test('the first pick crossfades in from the empty field too', async () => {
+  const screen = await render(ComboboxFixture, { global: { stubs: { transition: false } } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await screen.getByRole('option', { name: 'Cranberry' }).click()
+  await vi.waitFor(() =>
+    expect(
+      document.querySelector('.ui-input-display .ui-animated-text-enter-active'),
+    ).not.toBeNull(),
+  )
+})
+
+test('with motion off a pick writes the label straight into the field', async () => {
+  const items = [
+    { label: 'Apple', value: 'apple' },
+    { label: 'Cranberry', value: 'cranberry' },
+  ]
+  const screen = await render(Combobox, { props: { items, motion: false, 'aria-label': 'Fruit' } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'cran')
+  await screen.getByRole('option', { name: 'Cranberry' }).click()
+  await vi.waitFor(() => expect(input.element()).toHaveValue('Cranberry'))
+  expect(document.querySelector('.ui-input-display')).toBeNull()
 })

@@ -2,13 +2,14 @@
   <section class="demo">
     <h3><code>side</code> in inline mode</h3>
     <p class="note">
-      In <code>hintPlacement="popover"</code>, <code>side</code> is floating-ui's own side. In
-      <code>"inline"</code> it drives the flex layout instead — same prop, no separate one needed.
+      With <code>hintPlacement="popover"</code>, <code>side</code> places the floating hint. With
+      <code>"inline"</code>, the same prop sets which side of the input the hint sits on.
     </p>
     <div class="example-grid example-grid--1">
       <div class="example">
         <span class="example-label">side="bottom" (default)</span>
         <PasswordInput
+          style="max-inline-size: 16rem"
           v-model="sideBottom"
           :rules="DEFAULT_RULES"
           hint-placement="inline"
@@ -20,6 +21,7 @@
       <div class="example">
         <span class="example-label">side="top"</span>
         <PasswordInput
+          style="max-inline-size: 16rem"
           v-model="sideTop"
           :rules="DEFAULT_RULES"
           hint-placement="inline"
@@ -31,6 +33,7 @@
       <div class="example">
         <span class="example-label">side="left"</span>
         <PasswordInput
+          style="max-inline-size: 30rem"
           v-model="sideLeft"
           :rules="DEFAULT_RULES"
           hint-placement="inline"
@@ -42,6 +45,7 @@
       <div class="example">
         <span class="example-label">side="right"</span>
         <PasswordInput
+          style="max-inline-size: 30rem"
           v-model="sideRight"
           :rules="DEFAULT_RULES"
           hint-placement="inline"

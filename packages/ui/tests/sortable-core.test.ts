@@ -486,3 +486,10 @@ test('resolveAdjacentGroup clamps at either end', () => {
 test('resolveAdjacentGroup returns null for an unknown column', () => {
   expect(resolveAdjacentGroup(['todo', 'doing'], 'missing', 1)).toBeNull()
 })
+
+test('moveTreeNode with an unknown value changes nothing, not even an empty children array', () => {
+  const nodes: SortableTreeNode[] = [{ value: 'a' }, { value: 'b' }]
+  const before = JSON.stringify(nodes)
+  expect(moveTreeNode(nodes, 'missing', { parentValue: 'b', index: 0, depth: 1 })).toBe(false)
+  expect(JSON.stringify(nodes)).toBe(before)
+})

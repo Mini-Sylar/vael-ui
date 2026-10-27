@@ -30,14 +30,15 @@
     font-size: var(--ui-font-size);
     border-radius: var(--ui-radius);
   }
-  .ui-tree-select-trigger:focus-visible {
+  /* The frame rings while the combobox inside it has keyboard focus. */
+  .ui-tree-select-trigger:has(> .ui-select-control:focus-visible) {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }
   .ui-tree-select-trigger[data-invalid] {
     border-color: var(--ui-danger);
   }
-  .ui-tree-select-trigger[data-invalid]:focus-visible {
+  .ui-tree-select-trigger[data-invalid]:has(> .ui-select-control:focus-visible) {
     outline-color: var(--ui-danger);
   }
   .ui-tree-select-trigger--disabled {
@@ -66,6 +67,8 @@
     flex: 1 1 auto;
     min-block-size: 0; /* Allows scrolling. */
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     overscroll-behavior: contain;
     padding: 0.25rem;
   }
@@ -99,9 +102,7 @@
     text-align: start;
     cursor: pointer;
   }
-  .ui-tree-select-row:hover:not(.ui-tree-select-row--disabled),
   .ui-tree-select-row:focus-visible {
-    background: var(--ui-muted);
     outline: none;
   }
   /* Quiet permanent tint for current value. */
@@ -126,13 +127,13 @@
     padding: 0;
     color: var(--ui-text-muted);
     cursor: pointer;
-    /* Same rotation as Accordion. */
-    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+    /* Same turn as Tree's. */
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-tree-select-chevron[data-state='open'] {
     transform: rotate(90deg);
   }
-  /* motionCss=false on panel. */
+  /* motion=false on panel. */
   .ui-tree-select-panel[data-motion='off'] .ui-tree-select-chevron {
     transition: none;
   }
@@ -148,9 +149,11 @@
     color: var(--ui-primary);
   }
   /* Row enter/leave: opacity fade + FLIP move. */
-  .ui-tree-select-row-enter-active,
+  .ui-tree-select-row-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
   .ui-tree-select-row-leave-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
   }
   .ui-tree-select-row-enter-from,
   .ui-tree-select-row-leave-to {
@@ -186,6 +189,13 @@
     }
     .ui-tree-select-trigger--lg {
       font-size: max(var(--ui-touch-font-size), var(--ui-font-size));
+    }
+  }
+
+  /* Touch has no hover: the press itself shows the row was hit. */
+  @media (hover: none) and (pointer: coarse) {
+    .ui-tree-select-row:active:not(.ui-tree-select-row--disabled, .ui-tree-select-row--selected) {
+      background: var(--ui-muted);
     }
   }
 }

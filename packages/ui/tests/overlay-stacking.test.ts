@@ -1,11 +1,11 @@
-// Regression test for the cross-family stacking bug documented in gps-cmms-app's
-// vael-ui-issues.md: a Dialog/Drawer/BottomSheet opened from inside an already-open Popover used
+// Regression test for a cross-family stacking bug reported from a consuming app: a
+// Dialog/Drawer/BottomSheet opened from inside an already-open Popover used
 // to always render underneath it, since each overlay family had its own fixed z-index token with
 // no relationship to actual open order. Popover and Dialog now both derive their z-index from the
 // same shared layer stack (useLayerStack.ts), so whichever opened more recently wins regardless
 // of family.
 import '../src/style.css'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { page } from 'vitest/browser'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef } from 'vue'
@@ -36,8 +36,8 @@ test('a Dialog keeps its stacking order while its exit animation plays', async (
   // `second` mounts first, so at an equal z-index it would paint under `first`.
   await render(
     () => [
-      h(Dialog, { open: second.value, 'aria-label': 'Second' }, () => h('p', 'Second')),
-      h(Dialog, { open: first.value, 'aria-label': 'First' }, () => h('p', 'First')),
+      h(Dialog as never, { open: second.value, 'aria-label': 'Second' }, () => h('p', 'Second')),
+      h(Dialog as never, { open: first.value, 'aria-label': 'First' }, () => h('p', 'First')),
     ],
     { global: { stubs: { transition: false, 'transition-group': false } } },
   )
@@ -50,6 +50,11 @@ test('a Dialog keeps its stacking order while its exit animation plays', async (
     document.querySelector(`[aria-label="${name}"]`)!.closest<HTMLElement>('.ui-dialog')!
   const z = (name: string) => Number.parseFloat(getComputedStyle(root(name)).zIndex)
   const secondRoot = root('Second')
+  // Fully open first, so closing plays a real exit (closing one still at its starting look has
+  // nothing to animate and leaves at once).
+  await vi.waitFor(() =>
+    expect(getComputedStyle(secondRoot.querySelector('.ui-dialog-panel')!).opacity).toBe('1'),
+  )
 
   second.value = false
   await nextTick()

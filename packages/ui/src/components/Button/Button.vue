@@ -10,6 +10,7 @@
       v-bind="restAttrs"
       :value="value"
       :aria-pressed="ariaPressed"
+      :role="role"
       :type="isButtonTag ? type : undefined"
       :class="rootPart.class"
       :disabled="isButtonTag ? disabled : undefined"
@@ -17,37 +18,59 @@
       :aria-busy="isLoading || undefined"
       :tabindex="rootTabindex"
       :style="rootPart.style"
+      :data-hold="holdMs ? (held ? 'done' : holding ? 'holding' : '') : undefined"
+      :aria-describedby="describedBy"
       @click="onRootClick"
+      @pointerdown="onHoldPointerdown"
+      @pointerup="releaseHold"
+      @pointerleave="releaseHold"
+      @pointercancel="releaseHold"
+      @keydown="onKeydown"
+      @keyup="onKeyup"
+      @blur="onBlur"
+      @contextmenu="holdMs && $event.preventDefault()"
     >
-      <span class="ui-button-loader" aria-hidden="true">
-        <slot name="loader" :loading="isLoading" :el="el">
-          <span class="ui-loader" />
-        </slot>
-      </span>
       <span
-        v-if="$slots.leading"
-        :class="leadingPart.class"
-        :style="leadingPart.style"
+        v-if="holdMs"
+        class="ui-button-hold"
+        :style="{ '--ui-hold-duration': `${holdMs}ms` }"
         aria-hidden="true"
-      >
-        <slot name="leading" />
-      </span>
-      <span :class="contentPart.class" :style="contentPart.style">
-        <span :class="labelPart.class" :style="labelPart.style"
-          ><slot :loading="isLoading" :el="el" :run="run"
-        /></span>
-      </span>
-      <span
-        v-if="$slots.trailing"
-        :class="trailingPart.class"
-        :style="trailingPart.style"
-        aria-hidden="true"
-      >
-        <slot name="trailing" />
+      />
+      <span v-if="holdMs" :id="holdHintId" hidden>{{ messages.button.hold }}</span>
+      <span class="ui-button-inner">
+        <span class="ui-button-loader" aria-hidden="true">
+          <slot name="loader" :loading="isLoading" :el="el">
+            <LoaderMark :type="loaderType" />
+          </slot>
+        </span>
+        <span
+          v-if="$slots.leading"
+          ref="leadingEl"
+          :class="leadingPart.class"
+          :style="leadingPart.style"
+          aria-hidden="true"
+        >
+          <slot name="leading" />
+        </span>
+        <span ref="contentEl" :class="contentPart.class" :style="contentPart.style">
+          <span ref="labelEl" :class="labelPart.class" :style="labelPart.style"
+            ><slot :loading="isLoading" :el="el" :run="run" :hold-progress="holdProgress"
+          /></span>
+        </span>
+        <span
+          v-if="$slots.trailing"
+          ref="trailingEl"
+          :class="trailingPart.class"
+          :style="trailingPart.style"
+          aria-hidden="true"
+        >
+          <slot name="trailing" />
+        </span>
       </span>
     </component>
     <span
       v-if="$slots.badge"
+      ref="badgeEl"
       :class="badgePart.class"
       :style="badgePart.style"
       :data-placement="resolvedBadgePlacement"
@@ -62,6 +85,7 @@
     v-bind="restAttrs"
     :value="value"
     :aria-pressed="ariaPressed"
+    :role="role"
     :type="isButtonTag ? type : undefined"
     :class="rootPart.class"
     :disabled="isButtonTag ? disabled : undefined"
@@ -69,33 +93,54 @@
     :aria-busy="isLoading || undefined"
     :tabindex="rootTabindex"
     :style="rootPart.style"
+    :data-hold="holdMs ? (held ? 'done' : holding ? 'holding' : '') : undefined"
+    :aria-describedby="describedBy"
     @click="onRootClick"
+    @pointerdown="onHoldPointerdown"
+    @pointerup="releaseHold"
+    @pointerleave="releaseHold"
+    @pointercancel="releaseHold"
+    @keydown="onKeydown"
+    @keyup="onKeyup"
+    @blur="onBlur"
+    @contextmenu="holdMs && $event.preventDefault()"
   >
-    <span class="ui-button-loader" aria-hidden="true">
-      <slot name="loader" :loading="isLoading" :el="el">
-        <span class="ui-loader" />
-      </slot>
-    </span>
     <span
-      v-if="$slots.leading"
-      :class="leadingPart.class"
-      :style="leadingPart.style"
+      v-if="holdMs"
+      class="ui-button-hold"
+      :style="{ '--ui-hold-duration': `${holdMs}ms` }"
       aria-hidden="true"
-    >
-      <slot name="leading" />
-    </span>
-    <span :class="contentPart.class" :style="contentPart.style">
-      <span :class="labelPart.class" :style="labelPart.style"
-        ><slot :loading="isLoading" :el="el" :run="run"
-      /></span>
-    </span>
-    <span
-      v-if="$slots.trailing"
-      :class="trailingPart.class"
-      :style="trailingPart.style"
-      aria-hidden="true"
-    >
-      <slot name="trailing" />
+    />
+    <span v-if="holdMs" :id="holdHintId" hidden>{{ messages.button.hold }}</span>
+    <span class="ui-button-inner">
+      <span class="ui-button-loader" aria-hidden="true">
+        <slot name="loader" :loading="isLoading" :el="el">
+          <LoaderMark :type="loaderType" />
+        </slot>
+      </span>
+      <span
+        v-if="$slots.leading"
+        ref="leadingEl"
+        :class="leadingPart.class"
+        :style="leadingPart.style"
+        aria-hidden="true"
+      >
+        <slot name="leading" />
+      </span>
+      <span ref="contentEl" :class="contentPart.class" :style="contentPart.style">
+        <span ref="labelEl" :class="labelPart.class" :style="labelPart.style"
+          ><slot :loading="isLoading" :el="el" :run="run" :hold-progress="holdProgress"
+        /></span>
+      </span>
+      <span
+        v-if="$slots.trailing"
+        ref="trailingEl"
+        :class="trailingPart.class"
+        :style="trailingPart.style"
+        aria-hidden="true"
+      >
+        <slot name="trailing" />
+      </span>
     </span>
   </component>
 </template>
@@ -127,13 +172,32 @@ export type ButtonLoaderPlacement = 'overlay' | 'inline'
 import './Button.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { nativeTag, useSlotPresence } from '../../composables/dom'
 import '../shared/loader-spinner.css'
-import { computed, inject, useAttrs, useSlots, useTemplateRef } from 'vue'
+import LoaderMark from '../internal/LoaderMark.vue'
+import type { LoaderSource } from '../../composables/loaderType'
+import {
+  computed,
+  inject,
+  onScopeDispose,
+  shallowRef,
+  useAttrs,
+  useId,
+  useSlots,
+  useTemplateRef,
+  watch,
+} from 'vue'
+import { useMessages, buttonMessages } from '../../messages'
+import { useComponentHaptic } from '../../composables/componentHaptic'
+import { loadButtonHold } from '../../composables/lazyParts'
+import type { ButtonHold } from '../../composables/buttonHold'
 import { buttonGroupKey } from '../ButtonGroup/ButtonGroup.vue'
 import type { StyleValue } from 'vue'
 import { useAsyncLoading } from '../../composables/useAsyncLoading'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { ButtonMotion } from '../../motion/types'
 import type { ClassValue, UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
@@ -158,6 +222,8 @@ const rawProps = withDefaults(
      * @default 'overlay'
      */
     loader?: ButtonLoaderPlacement
+    /** The loading animation: a built-in name, or your own component. Unset, it follows the nearest ConfigProvider's `loaderType`. @default 'ring' */
+    loaderType?: LoaderSource
     /** Renders a square icon-only button; pair it with an `aria-label`. @default false */
     icon?: boolean
     /** Gives the button a fully rounded pill shape. @default false */
@@ -175,6 +241,13 @@ const rawProps = withDefaults(
      * `value` attribute, for a submit button in a form. Style the on state with
      * `[aria-pressed='true']`, or Tailwind's `aria-pressed:`. */
     value?: string | number
+    /**
+     * Acts only after a press and hold, for a destructive action: a fill sweeps across while you
+     * hold, and `@click` fires when it completes. Letting go early cancels. `true` holds for
+     * 1200ms; a number sets the milliseconds. Space and Enter hold too.
+     * @default false
+     */
+    hold?: boolean | number
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -188,6 +261,8 @@ const rawProps = withDefaults(
       label: UiPartValue
       badge: UiPartValue
     }>
+    /** Animates its states, like a label that sinks while pressed: `{ states: { active: { label: { scale: '0.94' } } } }`. */
+    motion?: ButtonMotion
   }>(),
   {
     loading: false,
@@ -199,16 +274,21 @@ const rawProps = withDefaults(
     block: false,
     type: 'button',
     as: 'button',
+    hold: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
 
 defineSlots<{
-  /** Button label; receives the loading state, the root element and `run`. */
+  /** Button label; receives the loading state, the root element, `run` and, with `hold`, how far the hold has got. */
   default(props: {
     loading: boolean
     el: HTMLElement | null
     run: <T>(fn: () => T | Promise<T>) => Promise<T>
+    /** With `hold`: 0 at rest, rising to 1 as the hold completes. */
+    holdProgress: number
   }): unknown
   /** Custom loader visuals; the library still handles placement and the crossfade. */
   loader(props: { loading: boolean; el: HTMLElement | null }): unknown
@@ -240,22 +320,130 @@ const { loading: autoLoading, run } = useAsyncLoading()
 const isLoading = computed(() => (props.loading === 'auto' ? autoLoading.value : props.loading))
 
 const isButtonTag = computed(() => props.as === 'button')
-// Non-button tags use aria-disabled (no native disabled attribute).
-const ariaDisabled = computed<true | undefined>(() => {
+// A plain tag with no semantics of its own (div, span, a without href) acts as a button.
+const INTERACTIVE_TAGS = new Set(['button', 'input', 'select', 'textarea', 'summary'])
+const actsAsButton = computed(() => {
+  const tag = props.as
+  if (!/^[a-z][a-z0-9]*$/.test(tag) || INTERACTIVE_TAGS.has(tag)) return false
+  return !((tag === 'a' || tag === 'area') && attrs.href != null)
+})
+const role = computed(
+  () => (attrs.role as string | undefined) ?? (actsAsButton.value ? 'button' : undefined),
+)
+// Non-button tags use aria-disabled (no native disabled attribute); your own aria-disabled stays.
+const ariaDisabled = computed(() => {
   if (isButtonTag.value && props.disabled) return undefined
-  return isLoading.value || props.disabled ? true : undefined
+  if (isLoading.value || props.disabled) return true
+  return attrs['aria-disabled'] as boolean | 'true' | 'false' | undefined
 })
 // An explicit incoming tabindex (e.g. a roving-tabindex tablist) always wins
 // — this only supplies the non-button-tag disabled fallback otherwise.
 const rootTabindex = computed(() => {
   if (attrs.tabindex !== undefined) return attrs.tabindex as number | string
-  return !isButtonTag.value && props.disabled ? -1 : undefined
+  if (!isButtonTag.value && props.disabled) return -1
+  return actsAsButton.value ? 0 : undefined
 })
+
+// Hold: the fill runs while you hold, and only the click fired on completion gets through.
+const messages = useMessages({ button: buttonMessages })
+const haptic = useComponentHaptic()
+const tick = () => haptic.impact('heavy')
+const holdMs = computed(() => (props.hold === true ? 1200 : props.hold || 0))
+// A hidden element inside the button: left out of its name, still read as its description.
+const holdHintId = useId()
+const describedBy = computed(
+  () =>
+    [attrs['aria-describedby'], holdMs.value ? holdHintId : undefined].filter(Boolean).join(' ') ||
+    undefined,
+)
+const holding = shallowRef(false)
+const held = shallowRef(false)
+// 0 to 1 while holding, for your own stages; also `--ui-hold-progress` on the button for CSS.
+const holdProgress = shallowRef(0)
+let completing = false
+// The hold's timing loads with a Button that has `hold`, as it's set up (buttonHold.ts).
+let holdKit: ButtonHold | undefined
+let ready: Promise<unknown> | undefined
+// Pressed before it arrived (a press right as the page loads): it starts then, if still held.
+let pressed$ = false
+watch(
+  holdMs,
+  (ms) =>
+    ms &&
+    !holdKit &&
+    (ready = loadButtonHold().then(
+      (kit) =>
+        (holdKit ??= kit.createButtonHold({
+          ms: () => holdMs.value,
+          blocked: () => isLoading.value || !!props.disabled,
+          el: () => el.value,
+          holding,
+          held,
+          progress: holdProgress,
+          complete: () => {
+            tick()
+            completing = true
+            el.value?.click()
+            completing = false
+          },
+        })),
+    )),
+  { immediate: true },
+)
+function startHold() {
+  pressed$ = true
+  if (holdKit) holdKit.start()
+  else void ready?.then(() => pressed$ && holdKit?.start())
+}
+function releaseHold() {
+  pressed$ = false
+  holdKit?.release()
+}
+function onHoldPointerdown(event: PointerEvent) {
+  if (event.button === 0) startHold()
+}
+function onHoldKeydown(event: KeyboardEvent) {
+  if (!holdMs.value || (event.key !== ' ' && event.key !== 'Enter')) return
+  event.preventDefault()
+  if (!event.repeat) startHold()
+}
+function onHoldKeyup(event: KeyboardEvent) {
+  if (event.key === ' ' || event.key === 'Enter') releaseHold()
+}
+onScopeDispose(() => holdKit?.dispose())
+
+// A plain tag acting as a button: Enter clicks on keydown, Space on keyup, as a native button does.
+let spaceDown = false
+function onKeydown(event: KeyboardEvent) {
+  onHoldKeydown(event)
+  if (!actsAsButton.value || holdMs.value || event.target !== event.currentTarget) return
+  if (event.key === ' ') {
+    event.preventDefault()
+    spaceDown = true
+  } else if (event.key === 'Enter') {
+    event.preventDefault()
+    el.value?.click()
+  }
+}
+function onKeyup(event: KeyboardEvent) {
+  const click = event.key === ' ' && spaceDown
+  if (event.key === ' ') spaceDown = false
+  onHoldKeyup(event)
+  if (click) el.value?.click()
+}
+function onBlur() {
+  spaceDown = false
+  releaseHold()
+}
 
 // Detects promise-returning handlers to trigger auto-loading.
 function onRootClick(event: MouseEvent) {
   // Guard clicks during loading (no native disabled—see template comment for focus preservation).
   if (isLoading.value) return
+  if (holdMs.value && !completing) {
+    event.preventDefault()
+    return
+  }
   if (!isButtonTag.value && props.disabled) {
     event.preventDefault()
     return
@@ -288,6 +476,26 @@ const restAttrs = computed(() => {
 })
 
 const el = useTemplateRef<HTMLElement>('root')
+const leadingEl = useTemplateRef<HTMLElement>('leadingEl')
+const contentEl = useTemplateRef<HTMLElement>('contentEl')
+const labelEl = useTemplateRef<HTMLElement>('labelEl')
+const trailingEl = useTemplateRef<HTMLElement>('trailingEl')
+const badgeEl = useTemplateRef<HTMLElement>('badgeEl')
+useStateMotion({
+  key: 'button',
+  role: 'press',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({
+    root: el.value,
+    leading: leadingEl.value,
+    content: contentEl.value,
+    label: labelEl.value,
+    trailing: trailingEl.value,
+    badge: badgeEl.value,
+  }),
+  states: () => ({ loading: isLoading.value, disabled: !!props.disabled || !!ariaDisabled.value }),
+})
 const cx = useClassMerge()
 // Theme from ConfigProvider; instance ui prop overrides per-key.
 const themedUi = useThemedUi(
@@ -333,5 +541,9 @@ defineExpose({
   loading: isLoading,
   /** Runs `fn` with the loading state shown until it settles. */
   run,
+  /** Whether a `hold` press is in progress. */
+  holding,
+  /** With `hold`: 0 at rest, rising to 1 as the hold completes. */
+  holdProgress,
 })
 </script>

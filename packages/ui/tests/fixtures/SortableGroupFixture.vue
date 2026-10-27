@@ -5,8 +5,9 @@
       item-key="id"
       label-key="label"
       :group="board"
+      :preview-mode="previewMode"
       group-id="todo"
-      style="width: 160px"
+      style="width: 160px; min-block-size: 200px"
     >
       <template #item="{ item }">
         <span :data-testid="`label-${item.id}`">{{ item.label }}</span>
@@ -17,8 +18,9 @@
       item-key="id"
       label-key="label"
       :group="board"
+      :preview-mode="previewMode"
       group-id="doing"
-      style="width: 160px"
+      style="width: 160px; min-block-size: 200px"
     >
       <template #item="{ item }">
         <span :data-testid="`label-${item.id}`">{{ item.label }}</span>
@@ -39,8 +41,9 @@ const props = withDefaults(
   defineProps<{
     canDrop?: (d: GroupDropDetails) => boolean
     beforeDrop?: (d: GroupDropDetails) => boolean | Promise<boolean>
+    previewMode?: 'element' | 'clone'
   }>(),
-  { canDrop: undefined, beforeDrop: undefined },
+  { canDrop: undefined, beforeDrop: undefined, previewMode: undefined },
 )
 
 const todo = ref([

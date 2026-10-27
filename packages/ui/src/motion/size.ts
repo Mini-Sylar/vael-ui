@@ -1,0 +1,280 @@
+// v-animate.size and lists: a box that follows its content's size on a spring instead of jumping.
+import { pageHidden, prefersReducedMotion } from '../composables/dom'
+import { motionOffAt } from './styleHolder'
+import { resolveTiming } from './timing'
+import type { MotionTiming } from './types'
+import { LAYOUT_ID } from './ids'
+
+const SIZE_ID = 'ui-size'
+
+/** A border-box size as the element's own `width` or `height`, whatever its `box-sizing`. */
+export function cssSize(el: HTMLElement, borderBox: number, axis: 'height' | 'width'): string {
+  const style = getComputedStyle(el)
+  if (style.boxSizing === 'border-box') return `${borderBox}px`
+  const edges =
+    axis === 'height'
+      ? (['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'] as const)
+      : (['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'] as const)
+  const extra = edges.reduce((sum, key) => sum + (Number.parseFloat(style[key]) || 0), 0)
+  return `${Math.max(0, borderBox - extra)}px`
+}
+
+// Each following box's timing, so what moves inside it as it resizes can keep pace with it.
+const timings = new WeakMap<Element, () => MotionTiming | undefined>()
+
+/** The duration and easing `box` resizes on, when it follows its size. */
+export function sizeTimingOf(box: HTMLElement): { duration: number; easing: string } | undefined {
+  const timing = timings.get(box)
+  return timing && resolveTiming(box, timing() ?? {}, undefined)
+}
+
+export interface FollowSize {
+  /** Check now: call after changing content in a way the observers can't see. */
+  sync: () => void
+  stop: () => void
+}
+
+type Box = { width: number; height: number }
+const close = (a: number, b: number) => Math.abs(a - b) < 0.5
+
+/**
+ * Eases `el`'s size to its content's whenever the content changes it, from wherever it is now:
+ * its height, and its width when the content sizes that too (a pill, a flex item; a block's width
+ * is its container's and stays). It watches the content (DOM changes, children's sizes), never its
+ * own box, so animating the box can't feed back. New content always animates. A change that moved
+ * its width without new content (a window or container resize, its own style) is layout, and
+ * doesn't.
+ */
+export function followSize(
+  el: HTMLElement,
+  timing: () => MotionTiming | undefined,
+  /** Clip only past the bottom edge, so content moving in from above or the sides stays visible. */
+  clipEnd = false,
+  /** `layout: true`: a size its own class or style gave it animates too. */
+  layout = false,
+): FollowSize {
+  if (typeof ResizeObserver === 'undefined' || typeof MutationObserver === 'undefined')
+    return { sync: () => {}, stop: () => {} }
+  // Growing, it clips what isn't revealed yet: past the edges that move only, or the whole box (a
+  // panel: clip-path would cut its shadow too). Shrinking, nothing: what still moves inside (a card
+  // sliding up, a label fading out) stays seen.
+  // The moving edges open out by the shadows (its own, its children's) as it lands: no pop at the end.
+  const clipFor = (from: Box, to: Box): [Keyframe, Keyframe] | [] => {
+    const taller = to.height > from.height + 0.5
+    const wider = to.width > from.width + 0.5
+    if (!taller && !wider) return []
+    if (!clipEnd) return [{ overflow: 'hidden' }, { overflow: 'hidden' }]
+    const rtl = getComputedStyle(el).direction === 'rtl'
+    const at = (block: number, inline: number) => {
+      const edge = (moves: boolean, margin: number) => (moves ? `${-margin}px` : '-100vmax')
+      const side = (end: boolean) => edge(wider && end, inline)
+      return { clipPath: `inset(-100vmax ${side(!rtl)} ${edge(taller, block)} ${side(rtl)})` }
+    }
+    const reach = shadowReach(el)
+    // What showed past it, its shadow included, never a hair short of its edge.
+    const past = (shown: number) => (shown > 0 ? shown + reach : 0)
+    return [at(past(seen.block), past(seen.inline)), at(reach, reach)]
+  }
+  // What already shows past its moving edges at rest (cards peeking out of a stack): a growth
+  // starts its clip there, so nothing seen vanishes, or stops taking the pointer, as it opens.
+  let seen = { block: 0, inline: 0 }
+  const note = () => {
+    const box = el.getBoundingClientRect()
+    const rtl = getComputedStyle(el).direction === 'rtl'
+    seen = { block: 0, inline: 0 }
+    for (const child of el.children) {
+      const r = child.getBoundingClientRect()
+      seen.block = Math.max(seen.block, r.bottom - box.bottom)
+      seen.inline = Math.max(seen.inline, rtl ? box.left - r.left : r.right - box.right)
+    }
+  }
+  const measure = (): Box => {
+    const { width, height } = el.getBoundingClientRect()
+    // Scaled (its own entrance, or an opening around it): its layout size, not the drawn one.
+    if (Math.abs(width - el.offsetWidth) >= 1 || Math.abs(height - el.offsetHeight) >= 1)
+      return { width: el.offsetWidth, height: el.offsetHeight }
+    return { width, height }
+  }
+  // Marked, so what leaves inside it is clipped to it (leaveInPlace).
+  el.setAttribute('data-ui-size', '')
+  timings.set(el, timing)
+  // No box at all (display: none, or not laid out yet): its size is unknown, not 0. The first one
+  // it shows is where it starts, not a resize from nothing: a panel opening the first time doesn't
+  // grow from a sliver. An empty box that's there (a list with no rows yet) still grows.
+  const sized = (): Box | undefined => (el.getClientRects().length ? measure() : undefined)
+  let last = sized()
+  let target = last ?? { width: 0, height: 0 }
+  let running: Animation | undefined
+  // While the width moves, each child holds the width it lands at (the box clips what isn't
+  // revealed yet), so text keeps its final wrap instead of re-wrapping every frame.
+  let pinned: [HTMLElement, string][] = []
+  const pins = new WeakSet<Element>()
+  function pin() {
+    unpin()
+    for (const child of el.children) {
+      if (!(child instanceof HTMLElement)) continue
+      pins.add(child)
+      pinned.push([child, child.style.inlineSize])
+      // Its computed width: offsetWidth rounds, and a fraction of a pixel short re-wraps text.
+      child.style.inlineSize = getComputedStyle(child).width
+    }
+  }
+  function unpin() {
+    for (const [child, was] of pinned) child.style.inlineSize = was
+    pinned = []
+  }
+
+  function play(from: Box, to: Box) {
+    const { easing, duration } = resolveTiming(el, timing() ?? {}, undefined)
+    running?.cancel()
+    target = to
+    // Only the sides that change: an animated width would pin one that's its container's.
+    const [clipFrom, clipTo] = clipFor(from, to)
+    const frame = (box: Box, clip?: Keyframe): Keyframe => ({
+      height: cssSize(el, box.height, 'height'),
+      ...(close(from.width, to.width) ? {} : { width: cssSize(el, box.width, 'width') }),
+      ...clip,
+    })
+    if (!close(from.width, to.width)) pin()
+    // Clipped while it moves: growing reveals new content, children are never stretched.
+    run(el.animate([frame(from, clipFrom), frame(to, clipTo)], { id: SIZE_ID, duration, easing }))
+  }
+  function run(animation: Animation) {
+    running = animation
+    animation.finished.then(
+      () => {
+        if (running !== animation) return
+        running = undefined
+        unpin()
+        requestAnimationFrame(() => running || note())
+      },
+      () => {},
+    )
+  }
+
+  // A `layoutId` trip resizes the element itself, from the size it left at: that trip owns its size,
+  // so a change seen meanwhile isn't new content. Once it lands, its size there is the last one.
+  const trip = () =>
+    el
+      .getAnimations()
+      .find(
+        (run) =>
+          run.id === LAYOUT_ID &&
+          run.playState !== 'finished' &&
+          (run.effect as KeyframeEffect | null)
+            ?.getKeyframes()
+            .some((k) => 'width' in k || 'height' in k),
+      )
+  let waiting: Animation | undefined
+  function afterTrip(run: Animation) {
+    if (waiting === run) return
+    waiting = run
+    void run.finished
+      .catch(() => {})
+      .then(() => {
+        if (waiting !== run) return
+        waiting = undefined
+        if (!running && el.isConnected) last = sized()
+      })
+  }
+
+  function sync(changed = false) {
+    // Parked off the page (KeepAlive): it measures nothing; it comes back the size it was.
+    if (!el.isConnected) return
+    const traveling = trip()
+    if (traveling) return afterTrip(traveling)
+    // What's on screen: mid-animation, the animated size; otherwise the last size we saw (the
+    // observers run after the DOM changed, so the box already measures its new size).
+    const showing = running ? measure() : last
+    if (running) {
+      // Measure without our animation (no paint in between). Not scrollHeight: it counts what only
+      // shows past the content (a button's 1px rim, an element mid-slide) and overshot the size.
+      const animation = running
+      const at = animation.currentTime
+      const held = pinned.length > 0
+      animation.cancel()
+      unpin()
+      // Only our own animation resizing a child it stretches (a dialog's body), or nothing new:
+      // carry on from where it was. Restarting on each of these made it crawl.
+      const natural = measure()
+      if (close(natural.height, target.height) && close(natural.width, target.width)) {
+        if (held) pin()
+        animation.currentTime = at
+        animation.play()
+        run(animation)
+        return
+      }
+      running = undefined
+    }
+    const box = sized()
+    const before = last
+    last = box
+    if (!box || !before || !showing) return
+    const widthMoved = !changed && !close(box.width, before.width)
+    if (widthMoved || prefersReducedMotion() || pageHidden() || motionOffAt(el)) return
+    if (close(box.height, showing.height) && close(box.width, showing.width)) return
+    play(showing, box)
+  }
+  // A child resizing is new content: it animates. Only the box itself resizing is layout from
+  // outside (a grid row stretched by a neighbour, a container): noted as where it is, so a later
+  // check doesn't replay it.
+  const sizes = new ResizeObserver((entries) => {
+    if (entries.some((entry) => entry.target !== el)) return sync()
+    const traveling = trip()
+    if (traveling) return afterTrip(traveling)
+    if (!running && el.isConnected) last = sized()
+  })
+  const watchChildren = () => {
+    sizes.disconnect()
+    sizes.observe(el)
+    for (const child of el.children) sizes.observe(child)
+  }
+  // New content: nodes, text, or something inside changing. Its own style or class is layout.
+  const changes = new MutationObserver((all) => {
+    // Its own pins aren't new content.
+    const records = all.filter(
+      (r) =>
+        !(r.type === 'attributes' && r.attributeName === 'style' && pins.has(r.target as Element)),
+    )
+    if (!records.length) return
+    watchChildren()
+    sync(layout || records.some((r) => r.target !== el || r.type !== 'attributes'))
+  })
+  changes.observe(el, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    // Any attribute: a `data-open` on the box can rearrange what's in it.
+    attributes: true,
+  })
+  watchChildren()
+  requestAnimationFrame(() => running || note())
+  return {
+    sync: () => sync(true),
+    stop() {
+      el.removeAttribute('data-ui-size')
+      timings.delete(el)
+      changes.disconnect()
+      sizes.disconnect()
+      running?.cancel()
+      unpin()
+    },
+  }
+}
+
+/** How far its own shadow and its children's reach past their boxes, in px. */
+function shadowReach(el: Element): number {
+  let reach = 0
+  for (const node of [el, ...el.children]) {
+    const shadows = getComputedStyle(node).boxShadow
+    if (shadows === 'none') continue
+    for (const shadow of shadows.split(/,(?![^(]*\))/)) {
+      if (shadow.includes('inset')) continue
+      const [x = 0, y = 0, blur = 0, spread = 0] = (shadow.match(/-?[\d.]+px/g) ?? []).map(
+        parseFloat,
+      )
+      reach = Math.max(reach, Math.max(Math.abs(x), Math.abs(y)) + blur + spread)
+    }
+  }
+  return Math.min(reach, 64)
+}

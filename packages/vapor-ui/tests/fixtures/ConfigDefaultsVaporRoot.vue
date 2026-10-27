@@ -1,5 +1,5 @@
 <template>
-  <ConfigProvider :size="size" :motion-css="false" :i18n="i18n">
+  <ConfigProvider :size="size" :motion="false" :i18n="i18n">
     <Button data-testid="inherits">Inherits</Button>
     <Button data-testid="own" size="lg">Own</Button>
     <Calendar data-testid="calendar" :model-value="day" />

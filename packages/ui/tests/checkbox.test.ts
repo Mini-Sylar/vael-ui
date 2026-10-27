@@ -85,11 +85,11 @@ test('no draw animation on initial checked mount; transitions resume right after
   await vi.waitFor(() => expect(root).not.toHaveClass('ui-checkbox--no-anim'))
 })
 
-test('motionCss=false keeps the no-anim class permanently, past first paint', async () => {
-  const screen = await render(Checkbox, { props: { motionCss: false, label: 'No motion' } })
+test('motion=false keeps the no-anim class permanently, past first paint', async () => {
+  const screen = await render(Checkbox, { props: { motion: false, label: 'No motion' } })
   const root = screen.container.querySelector<HTMLElement>('.ui-checkbox')!
   // Long enough for the sibling test's own first-paint guard to have
-  // resolved by now — the class staying past that point is motionCss's doing.
+  // resolved by now — the class staying past that point is motion's doing.
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(root).toHaveClass('ui-checkbox--no-anim')
 })

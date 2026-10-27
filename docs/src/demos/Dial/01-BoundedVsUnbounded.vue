@@ -1,11 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Bounded vs. unbounded</h3>
+    <h3>Bounded and unbounded</h3>
     <p class="note">
-      Bounded shows a static progress ring underneath the spinning ticks and clamps at
-      <code>min</code>/<code>max</code>; unbounded has no fill ring (there is no range to show
-      progress through) and simply keeps counting, drag it several full turns and watch the number
-      climb with no ceiling.
+      A bounded Dial shows a progress ring under the spinning ticks and stops at
+      <code>min</code> and <code>max</code>. An unbounded one has no ring, since there’s no range to
+      fill, and keeps counting: drag it several full turns and the number keeps climbing.
     </p>
     <div class="row dial-row">
       <div class="dial-cell">

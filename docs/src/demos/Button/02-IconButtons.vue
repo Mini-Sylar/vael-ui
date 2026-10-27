@@ -1,9 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Icon buttons: leading/trailing slots, and icon-only via the <code>icon</code> prop</h3>
+    <h3>
+      Icon buttons: <code>#leading</code>, <code>#trailing</code> and icon-only with
+      <code>icon</code>
+    </h3>
     <p class="note">
-      An icon-only button always needs an explicit <code>aria-label</code>, since there's no text
-      content for assistive tech to read.
+      An icon-only button needs an <code>aria-label</code>, since it has no text for screen readers
+      to read.
     </p>
     <div class="row">
       <Button>

@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Controlled state and custom rows via the <code>#item</code> slot</h3>
+    <h3>Controlled open state and custom rows with <code>#item</code></h3>
     <p class="note">
-      <code>v-model:open</code> is optional, bind it only to drive the menu from outside (here a
-      second button toggles it). The <code>#item</code> slot overrides a row's content while keeping
-      its behavior, this one renders a color swatch beside each label.
+      <code>v-model:open</code> is optional. Bind it only to open the menu from outside, here from a
+      second button. The <code>#item</code> slot replaces a row's content and keeps its behavior;
+      this one adds a color swatch beside each label.
     </p>
     <div class="row">
       <Menu v-model:open="paletteOpen" :items="paletteItems" @select="pickColor">

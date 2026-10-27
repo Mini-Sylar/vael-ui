@@ -110,8 +110,10 @@
       transform var(--ui-duration-press) var(--ui-ease-in-out),
       opacity var(--ui-duration-press) ease;
   }
-  .ui-datatable-sort-button:hover .ui-datatable-sort-chevron {
-    opacity: 0.7;
+  @media (hover: hover) and (pointer: fine) {
+    .ui-datatable-sort-button:hover .ui-datatable-sort-chevron {
+      opacity: 0.7;
+    }
   }
   .ui-datatable-sort-chevron[data-state='asc'] {
     opacity: 1;
@@ -138,26 +140,42 @@
   .ui-datatable-tr:last-child .ui-datatable-td {
     border-block-end: none;
   }
+  /* Stripes and selection are see-through, so the sliding row hover (.ui-indicator) shows under
+     them; frozen cells stay solid over the columns scrolling beneath, and paint the hover themselves. */
+  .ui-datatable-scroll-x,
+  .ui-datatable-scroll-y {
+    position: relative;
+    isolation: isolate;
+    --ui-duration-indicator: var(--ui-duration-indicator-wide);
+  }
+  .ui-datatable-hover {
+    border-radius: 0;
+  }
   .ui-datatable--striped .ui-datatable-tr:nth-child(even) .ui-datatable-td {
+    background: color-mix(in oklch, var(--ui-primary) 3%, transparent);
+  }
+  .ui-datatable--striped
+    .ui-datatable-tr:nth-child(even)
+    .ui-datatable-td:is(.ui-datatable-td--frozen, .ui-datatable-td--frozen-end) {
     background: color-mix(in oklch, var(--ui-primary) 3%, var(--ui-surface));
   }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-datatable-tbody
-      .ui-datatable-tr:hover
-      .ui-datatable-td:not(.ui-datatable-td--loading):not(.ui-datatable-td--empty) {
-      background: var(--ui-muted-hover);
-    }
-  }
   .ui-datatable-tbody .ui-datatable-tr[data-selected] .ui-datatable-td {
+    background: color-mix(in oklch, var(--ui-primary) 8%, transparent);
+  }
+  .ui-datatable-tbody
+    .ui-datatable-tr[data-selected]
+    .ui-datatable-td:is(.ui-datatable-td--frozen, .ui-datatable-td--frozen-end) {
     background: color-mix(in oklch, var(--ui-primary) 8%, var(--ui-surface));
   }
+  .ui-datatable-tbody
+    .ui-datatable-tr[data-indicated]
+    .ui-datatable-td:is(.ui-datatable-td--frozen, .ui-datatable-td--frozen-end) {
+    background: var(--ui-indicator-bg, var(--ui-muted));
+  }
   /* selectionMode="row": the whole row is the click target, not just a checkbox. */
+  /* No press scale: a shrinking full-width row drops edge clicks; the hover highlight is feedback. */
   .ui-datatable-tr--clickable {
     cursor: pointer;
-    transition: transform var(--ui-duration-press) var(--ui-ease-out);
-  }
-  .ui-datatable-tr--clickable:active {
-    transform: scale(0.99);
   }
   .ui-datatable-tr--clickable:focus {
     outline: none;
@@ -207,6 +225,8 @@
   /* The body scrolls both ways, so its frozen cells stick to the box that actually moves. */
   .ui-datatable-scroll-y {
     overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     /* No fade on an axis until its fade class sets one. */
     --ui-datatable-fade-y: linear-gradient(#000, #000);
     --ui-datatable-fade-x: linear-gradient(#000, #000);
@@ -379,6 +399,18 @@
       background: var(--ui-primary);
     }
   }
+  .ui-datatable-resize-handle:focus-visible {
+    outline: none;
+  }
+  .ui-datatable-resize-handle:focus-visible::after {
+    inset-block: 0;
+    inline-size: 2px;
+    background: var(--ui-primary);
+  }
+  .ui-datatable-th:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
+  }
 
   .ui-datatable-th--frozen,
   .ui-datatable-td--frozen {
@@ -410,16 +442,22 @@
     padding: 0.875rem 1rem;
   }
   .ui-datatable-expand-chevron {
-    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-datatable-expand-chevron[data-state='open'] {
     transform: rotate(90deg);
   }
 
   /* Move is transform-only: a <tr> can't go position-absolute without breaking the table.
-     Only expansion rows fade out. A page change swaps uneven row sets, so it snaps. */
+     Only expansion rows fade out. A swap that keeps no row (a page change) snaps. */
   .ui-datatable-row-move {
     transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  /* A sliding row covers what it slides over. Rows arriving under it (a group opening) show as it
+     moves off them, as an expanded row's content does, instead of both rows' text showing through
+     each other. No specificity: a row's own background (a group header's, yours) still wins. */
+  :where(.ui-datatable-row-move) {
+    background-color: var(--ui-surface);
   }
   /* TransitionGroup's `css` prop doesn't gate move; only a missing transition here does. */
   .ui-datatable-tbody[data-motion='off'] .ui-datatable-row-move {
@@ -432,8 +470,12 @@
   .ui-datatable-row-enter-from {
     opacity: 0;
   }
+  /* A leaving row drops out of the flow at once (Vue keeps it two frames), so the rest glide. */
+  .ui-datatable-tr:not(.ui-datatable-tr--expansion).ui-datatable-row-leave-active {
+    display: none;
+  }
   .ui-datatable-tr--expansion.ui-datatable-row-leave-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
   }
   .ui-datatable-tr--expansion.ui-datatable-row-leave-to {
     opacity: 0;
@@ -441,16 +483,15 @@
   .ui-datatable-expansion-rows {
     contain: layout;
   }
-  .ui-datatable-row-enter-active .ui-datatable-expansion-rows,
-  .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
+  .ui-datatable-row-enter-active .ui-datatable-expansion-rows {
     transition: max-block-size var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
+    transition: max-block-size var(--ui-duration-exit) var(--ui-ease-out);
   }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-datatable-sort-button:active {
-      transform: none;
-    }
-    .ui-datatable-tr--clickable:active {
       transform: none;
     }
     .ui-datatable-sort-chevron {
@@ -493,12 +534,16 @@
     color: var(--ui-text-muted);
     cursor: grab;
     opacity: 0;
-    transition: opacity var(--ui-duration-press) var(--ui-ease-out);
+    transition: opacity var(--ui-duration-press) ease;
   }
-  .ui-datatable-th:hover .ui-datatable-th-grip,
   .ui-datatable-th:focus-within .ui-datatable-th-grip,
   .ui-datatable-th[data-dragging] .ui-datatable-th-grip {
     opacity: 1;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-datatable-th:hover .ui-datatable-th-grip {
+      opacity: 1;
+    }
   }
   .ui-datatable-th-grip[data-visibility='always'] {
     opacity: 1;
@@ -525,5 +570,27 @@
     .ui-datatable-th-grip {
       transition: none;
     }
+  }
+
+  /* Too many rows to animate: static selection controls, so no compositor layer each. */
+  .ui-datatable-tbody[data-motion='off'] .ui-checkbox-box,
+  .ui-datatable-tbody[data-motion='off'] .ui-radio-control {
+    will-change: auto;
+  }
+  .ui-datatable-tbody[data-motion='off']
+    .ui-checkbox-input:active:not(:disabled)
+    + .ui-checkbox-box,
+  .ui-datatable-tbody[data-motion='off'] .ui-radio-input:active:not(:disabled) + .ui-radio-control {
+    scale: none;
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-datatable-sort-button {
+    position: relative;
+  }
+  .ui-datatable-sort-button:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

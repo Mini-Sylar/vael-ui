@@ -2,15 +2,11 @@
   <section class="demo">
     <h3>Grid layout</h3>
     <p class="note">
-      The <code>&lt;Resizable&gt;</code> component itself works fine inside a CSS Grid app shell
-      (sidebar, header, and main laid out via <code>grid-template-areas</code>) as long as the
-      sidebar column track is <code>auto</code>, not a second value independently bound to
-      <code>grid-template-columns</code> with its own transition.
-      <code>&lt;Resizable&gt;</code> already transitions its own <code>inline-size</code> internally
-      (and already suppresses that transition during the live drag); an <code>auto</code> track just
-      follows that one value every frame. Binding the track to a second, separately-timed value on
-      top of that (the mistake to avoid) gives you two independently-animating edges, handle and
-      border, that visibly desync the moment they should snap back together.
+      Resizable works inside a CSS Grid app shell laid out with <code>grid-template-areas</code>, as
+      long as the sidebar's column track is <code>auto</code>. Resizable already transitions its own
+      <code>inline-size</code> and turns that off during a drag, so an <code>auto</code> track
+      follows it on every frame. Don't also bind <code>grid-template-columns</code> to the size with
+      its own transition: the handle and the border then animate separately and drift apart.
     </p>
     <div class="resizable-gshell">
       <Resizable

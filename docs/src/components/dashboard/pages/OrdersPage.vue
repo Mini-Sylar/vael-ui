@@ -2,7 +2,7 @@
   <div>
     <Card
       title="All orders"
-      :description="`${orders.length} orders — sortable, searchable, selectable.`"
+      :description="`${orders.length} orders you can sort, search and select.`"
     >
       <DataTable
         :data="filteredOrders"
@@ -60,7 +60,7 @@
 <!--
   `selectable` (built-in checkbox column) replaces the old dashboard's
   manual DataTableSelectCell/DataTableSelectAllHeader composition — that
-  escape hatch still exists and is still exercised by DataTableDemo.vue
+  escape hatch still exists and is still exercised by DataTable/01-Overview.vue
   elsewhere in this playground, this page just doesn't need it anymore now
   that DataTable owns a built-in option for the common case. `scrollHeight`
   demonstrates the new sticky-header internal scroll on a real, fairly tall

@@ -1,15 +1,13 @@
 <template>
   <section class="demo">
-    <h3>Extreme: GSAP settle wobble on release (gsap)</h3>
+    <h3>Extreme: the dot wobbles as it settles (gsap)</h3>
     <p class="note">
-      Flick the knob and let go, the indicator overshoots past the release angle and eases back,
-      scaled to release velocity. This rides <code>indicatorEl</code> directly: the dot's rotation
-      to the current value is owned entirely by its parent pivot's CSS <code>rotate</code> (reading
-      <code>--ui-knob-angle</code>), so <code>indicatorEl</code> itself carries no Vue-managed
-      inline style of its own, GSAP's <code>rotate</code> tween on the dot composes additively on
-      top of the library's positioning instead of fighting it, same reasoning as the Slider momentum
-      demo's <code>x</code> tween on the thumb. <code>clearProps</code> wipes the tween's inline
-      transform once it settles so a later drag measures a clean position again.
+      Flick the knob and let go: the dot swings past the release angle and settles back, further for
+      a faster flick. GSAP tweens <code>rotate</code> on the exposed <code>indicatorEl</code>. The
+      dot’s position comes from its parent’s CSS <code>rotate</code>, which reads
+      <code>--ui-knob-angle</code>, so the tween adds to it instead of replacing it.
+      <code>clearProps</code> removes the inline style once it settles, so the next drag starts
+      clean.
     </p>
     <div class="row knob-row">
       <Knob

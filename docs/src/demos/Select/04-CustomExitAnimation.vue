@@ -1,33 +1,27 @@
 <template>
   <section class="demo">
-    <h3>Custom exit animation (motion-v)</h3>
+    <h3>Custom animation (motion-v)</h3>
     <p class="note">
-      <code>force-mount</code> + <code>before-close(done)</code> + the exposed
-      <code>panelEl</code> hand a motion-v spring the whole open/close pop; Select's own CSS
-      transition never runs. The panel's <code>positionerStyle.visibility</code> (also exposed)
-      gates the entrance so it never starts before floating-ui has actually placed the panel. Close
-      it by picking an item, pressing Escape, clicking outside, or re-clicking the trigger: all four
-      route through <code>beforeClose</code>.
+      <code>enter</code> and <code>leave</code> hooks in <code>motion</code> animate the panel on a
+      motion-v spring, and Select waits for the exit before removing the panel. Picking an item,
+      pressing Escape, clicking outside and clicking the trigger again all close it the same way.
     </p>
-    <Field label="Destination">
+    <Field style="max-inline-size: 16rem" label="Destination">
       <Select
-        ref="springSelect"
         v-model="springValue"
-        v-model:open="springOpen"
         :items="countries"
         placeholder="Choose a destination"
-        force-mount
-        :before-close="beforeCloseSpring"
+        :motion="look"
       />
     </Field>
   </section>
 </template>
 
 <script setup lang="ts">
-import { shallowRef, useTemplateRef, watch } from 'vue'
+import { shallowRef } from 'vue'
 import { animate } from 'motion-v'
 import { Field, Select } from 'vael-ui'
-import type { SelectItemData } from 'vael-ui'
+import type { SelectItemData, SelectMotion } from 'vael-ui'
 
 const countries: SelectItemData[] = [
   { label: 'Ghana', value: 'GH' },
@@ -62,53 +56,11 @@ const countries: SelectItemData[] = [
   { label: 'Antarctica', value: 'AQ', disabled: true },
 ]
 
-const springSelect = useTemplateRef<{
-  panelEl: HTMLElement | null
-  positionerStyle: { visibility: string }
-}>('springSelect')
-const springOpen = shallowRef(false)
 const springValue = shallowRef<string | number | null>(null)
 
-const reducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-function animatePanel(panel: HTMLElement, target: { scale: number; opacity: number }) {
-  if (reducedMotion()) {
-    panel.style.transform = ''
-    panel.style.opacity = ''
-    return Promise.resolve()
-  }
-  const controls = animate(panel, target, { type: 'spring', visualDuration: 0.28, bounce: 0.28 })
-  return controls.finished.then(() => {
-    panel.style.transform = ''
-    panel.style.opacity = ''
-  })
-}
-
-watch(springOpen, (isOpen) => {
-  if (!isOpen) return
-  const panel = springSelect.value?.panelEl
-  if (panel && !reducedMotion()) {
-    panel.style.transform = 'scale(0.92)'
-    panel.style.opacity = '0'
-  }
-})
-
-watch(
-  () => springOpen.value && springSelect.value?.positionerStyle.visibility === 'visible',
-  (ready) => {
-    const panel = springSelect.value?.panelEl
-    if (!ready || !panel) return
-    void animatePanel(panel, { scale: 1, opacity: 1 })
-  },
-)
-
-function beforeCloseSpring(done: () => void) {
-  const panel = springSelect.value?.panelEl
-  if (!panel) {
-    done()
-    return
-  }
-  void animatePanel(panel, { scale: 0.92, opacity: 0 }).then(done)
+const pop = { type: 'spring', visualDuration: 0.28, bounce: 0.28 } as const
+const look: SelectMotion = {
+  enter: ({ panel }) => animate(panel, { scale: [0.92, 1], opacity: [0, 1] }, pop),
+  leave: ({ panel }) => animate(panel, { scale: 0.92, opacity: 0 }, pop),
 }
 </script>

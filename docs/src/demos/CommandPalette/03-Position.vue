@@ -2,8 +2,8 @@
   <section class="demo">
     <h3><code>position</code></h3>
     <p class="note">
-      Forwarded straight to the underlying <code>Dialog</code>. Default <code>top</code> matches the
-      Spotlight/Raycast convention; <code>center</code> reads more like a regular modal.
+      Passed to the underlying <code>Dialog</code>. The default, <code>top</code>, follows the
+      Spotlight and Raycast convention; <code>center</code> looks more like a regular modal.
     </p>
     <div class="row">
       <Button variant="outline" @click="centerOpen = true">Open, position="center"</Button>

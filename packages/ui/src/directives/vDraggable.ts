@@ -1,4 +1,4 @@
-import { computed, effectScope, shallowRef, watchEffect } from 'vue'
+import { effectScope, watchEffect } from 'vue'
 import type { Directive, DirectiveBinding } from 'vue'
 import { useSortable } from '../composables/useSortable'
 import type { FlatSortableRow, SortableAxis, SortableGroupHandle } from '../composables/useSortable'
@@ -50,11 +50,26 @@ function sameValue(a: DraggableValue, b: DraggableValue | null): boolean {
   )
 }
 
+// A row with no box of its own (`display: contents`, as a ContextMenu or Tooltip wrapping a card
+// is) is dragged by the first element inside it that has one: that's what's on screen, and what
+// can be measured, copied and moved.
+function boxOf(row: HTMLElement): HTMLElement {
+  let el = row
+  while (getComputedStyle(el).display === 'contents' && el.firstElementChild instanceof HTMLElement)
+    el = el.firstElementChild
+  return el
+}
+
+// Rows only: not the drag preview, nor a decorative layer such as Tabs' hover indicator.
 function childrenOf(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.children).filter(
-    (child): child is HTMLElement =>
-      child instanceof HTMLElement && !child.hasAttribute('data-sortable-preview'),
-  )
+  return Array.from(container.children)
+    .filter(
+      (child): child is HTMLElement =>
+        child instanceof HTMLElement &&
+        !child.hasAttribute('data-sortable-preview') &&
+        child.getAttribute('aria-hidden') !== 'true',
+    )
+    .map(boxOf)
 }
 
 /**
@@ -75,11 +90,10 @@ function start(el: HTMLElement, value: DraggableValue): void {
 
   const scope = effectScope(true)
   scope.run(() => {
-    const version = shallowRef(0)
-    const rows = computed<FlatSortableRow[]>(() => {
-      void version.value
-      return childrenOf(el).map((_, index) => ({ value: index, depth: 0, parentValue: null }))
-    })
+    // Read from the page each time: rows come and go with other lists too (a card dropped in from
+    // another list, or taken out to one), not only with this list's own reorders.
+    const rows = (): FlatSortableRow[] =>
+      childrenOf(el).map((_, index) => ({ value: index, depth: 0, parentValue: null }))
 
     const engine = useSortable({
       rows,
@@ -99,7 +113,6 @@ function start(el: HTMLElement, value: DraggableValue): void {
           0,
           moved as never,
         )
-        version.value++
         options.onReorder?.(source, to.index)
       },
     })

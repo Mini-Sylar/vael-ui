@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>With page-size select, <code>pageSizeOptions</code></h3>
+    <h3>Page size select with <code>pageSizeOptions</code></h3>
     <Pagination
       v-model:page="page"
       v-model:page-size="pageSize"

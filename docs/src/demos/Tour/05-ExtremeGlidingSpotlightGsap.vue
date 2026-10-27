@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Extreme: the spotlight glides between steps (GSAP)</h3>
     <p class="note">
-      With <code>:motion-css="false"</code> Tour's own glide is off and the cutout jumps to each
-      target. On every <code>@step-change</code>, one GSAP timeline carries the exposed
-      <code>spotlightEl</code> from the old target to the new one. Its position, size and corner
-      radius morph together, and <code>panelEl</code> rides along on the same progress value. Press
-      Next or Back mid-glide and it turns from where it is.
+      With <code>:motion="false"</code>, Tour's own glide is off and the cutout jumps to each
+      target. On every <code>@step-change</code>, one GSAP timeline moves the exposed
+      <code>spotlightEl</code> from the old target to the new one, changing its position, size and
+      corner radius together, and <code>panelEl</code> follows on the same progress. Press Next or
+      Back mid-glide and it heads for the new target from where it is.
     </p>
     <div class="row">
       <Button @click="open = true">Start tour</Button>
@@ -23,7 +23,7 @@
         description="Sales, signups and churn for the last seven days."
       />
     </div>
-    <Tour ref="tour" v-model:open="open" :steps="steps" :motion-css="false" @step-change="glide" />
+    <Tour ref="tour" v-model:open="open" :steps="steps" :motion="false" @step-change="glide" />
     <Teleport to="body">
       <div ref="ring" class="glide-ring" aria-hidden="true" />
     </Teleport>
@@ -100,11 +100,16 @@ let shown: Box | null = null
 let ringOpacity = 0
 // The elements we wrote inline styles on, to clean up even after Tour unmounts them.
 let touched: { spotlight: HTMLElement; panel: HTMLElement } | null = null
+// The positioner lands on its new spot after GSAP's frame, before the paint: redraw right then,
+// or the panel shows there for one frame.
+let follow: MutationObserver | null = null
 
 // An inline clip-path wins over Tour's own cutout. Removing it hands the spotlight back to Tour.
 function release() {
   timeline?.kill()
   timeline = null
+  follow?.disconnect()
+  follow = null
   shown = null
   ringOpacity = 0
   ring.value?.removeAttribute('style')
@@ -166,6 +171,9 @@ function glide({ step, previousStep, reason }: TourStepChangeDetails) {
     panel.style.translate = `${dx}px ${dy}px`
   }
   draw()
+  follow?.disconnect()
+  follow = new MutationObserver(draw)
+  follow.observe(positioner, { attributes: true, attributeFilter: ['style'] })
 
   timeline = gsap
     .timeline({ onUpdate: draw, onComplete: release })

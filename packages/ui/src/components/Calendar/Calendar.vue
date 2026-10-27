@@ -1,9 +1,9 @@
 <template>
   <div
     ref="rootEl"
-    :class="rootPart.class"
+    :class="[rootPart.class, showWeekNumbers && 'ui-calendar-root--week-numbers']"
     :style="rootPart.style"
-    :data-motion="props.motionCss ? undefined : 'off'"
+    :data-motion="motionOn ? undefined : 'off'"
   >
     <div
       :class="[
@@ -54,6 +54,7 @@
            dropped when drilling up to the year grid. -->
       <button
         v-if="!splitMonths"
+        ref="labelButton"
         type="button"
         :class="[labelPart.class, canDrill && 'ui-calendar-label--button']"
         :style="labelPart.style"
@@ -62,10 +63,7 @@
         @pointerenter="titleIfCut"
         @click="canDrill && drillUp()"
       >
-        <Transition
-          :name="props.motionCss ? 'ui-calendar-label' : undefined"
-          :css="props.motionCss"
-        >
+        <Transition v-bind="labelTransition">
           <span :key="headerLabel" class="ui-calendar-label-text">
             <slot name="label" :label="headerLabel" :date="viewDate" :level="navLevel">{{
               headerLabel
@@ -118,9 +116,15 @@
       :style="[{ '--ui-calendar-direction': direction }, bodyMinSize]"
       :data-zoom="zoom"
     >
+      <div
+        ref="hoverEl"
+        class="ui-indicator ui-indicator--grid ui-calendar-hover"
+        :style="hoverStyle"
+        aria-hidden="true"
+      />
       <Transition
-        :name="props.motionCss ? 'ui-calendar-level' : undefined"
-        :css="props.motionCss"
+        :name="motionOn ? 'ui-calendar-level' : undefined"
+        :css="motionOn"
         @enter="anchorZoom"
       >
         <div :key="navLevel" class="ui-calendar-level">
@@ -134,10 +138,7 @@
           >
             <div v-for="(pane, pi) in panes" :key="pi" class="ui-calendar-pane">
               <div v-if="panes.length > 1" class="ui-calendar-pane-head">
-                <Transition
-                  :name="props.motionCss ? 'ui-calendar-label' : undefined"
-                  :css="props.motionCss"
-                >
+                <Transition v-bind="labelTransition">
                   <button
                     :key="monthKeyOf(pane)"
                     type="button"
@@ -158,6 +159,7 @@
                 </Transition>
               </div>
               <div :class="weekdaysPart.class" :style="weekdaysPart.style" aria-hidden="true">
+                <span v-if="showWeekNumbers" class="ui-calendar-week-number" />
                 <span
                   v-for="(label, i) in weekdayLabels"
                   :key="i"
@@ -169,10 +171,7 @@
               </div>
 
               <div class="ui-calendar-grid-wrap">
-                <Transition
-                  :name="props.motionCss ? 'ui-calendar-grid' : undefined"
-                  :css="props.motionCss"
-                >
+                <Transition v-bind="gridTransition">
                   <div
                     :key="monthKeyOf(pane)"
                     :ref="(el) => pi === 0 && setGridEl(el)"
@@ -188,6 +187,14 @@
                       role="row"
                       class="ui-calendar-week"
                     >
+                      <div
+                        v-if="showWeekNumbers"
+                        role="rowheader"
+                        class="ui-calendar-week-number"
+                        :aria-label="weekLabel(week)"
+                      >
+                        {{ isoWeek(week) }}
+                      </div>
                       <div
                         v-for="day in week"
                         :key="isoDate(day)"
@@ -222,15 +229,13 @@
           </div>
 
           <template v-else-if="navLevel === 'month'">
-            <Transition
-              :name="props.motionCss ? 'ui-calendar-grid' : undefined"
-              :css="props.motionCss"
-            >
+            <Transition v-bind="gridTransition">
               <div
                 :key="`m${viewDate.getFullYear()}`"
                 role="grid"
                 :aria-label="headerLabel"
                 class="ui-calendar-month-grid"
+                @keydown="onMonthKeydown"
               >
                 <div
                   v-for="(row, ri) in monthRows"
@@ -243,7 +248,7 @@
                     :key="month.getMonth()"
                     :data-month="month.getMonth()"
                     role="gridcell"
-                    tabindex="0"
+                    :tabindex="month.getMonth() === viewDate.getMonth() ? 0 : -1"
                     :aria-selected="isMonthSelected(month) || undefined"
                     :aria-disabled="isMonthDisabled(month) || undefined"
                     class="ui-calendar-month-cell"
@@ -263,15 +268,13 @@
           </template>
 
           <template v-else>
-            <Transition
-              :name="props.motionCss ? 'ui-calendar-grid' : undefined"
-              :css="props.motionCss"
-            >
+            <Transition v-bind="gridTransition">
               <div
                 :key="`y${yearWindowStart}`"
                 role="grid"
                 :aria-label="headerLabel"
                 class="ui-calendar-year-grid"
+                @keydown="onYearKeydown"
               >
                 <div
                   v-for="(row, ri) in yearRows"
@@ -284,7 +287,7 @@
                     :key="year"
                     :data-year="year"
                     role="gridcell"
-                    tabindex="0"
+                    :tabindex="year === yearStop ? 0 : -1"
                     :aria-selected="isYearSelected(year) || undefined"
                     :aria-disabled="isYearDisabled(year) || undefined"
                     class="ui-calendar-year-cell"
@@ -324,12 +327,16 @@ export type CalendarView = 'date' | 'month' | 'year'
      Model: `Date | CalendarRange | null`, never ISO strings (timezone footguns).
      Range: two-click state machine; landing before start restarts (no silent swap).
      view vs navLevel: view is prop granularity; navLevel can drill up/down temporarily.
-     Keyboard (date): ARIA APG pattern with roving focusedDate; Month/year grids use Tab between tabindex="0" cells.
-     Month transition: grid re-keys inside Transition, slides by --ui-calendar-direction. motionCss=false disables. -->
+     Keyboard: ARIA APG grid pattern, one roving tab stop per level (focusedDate, viewDate's month, focusedYear).
+     Month transition: grid re-keys inside Transition, slides by --ui-calendar-direction. motion=false disables. -->
 <script setup lang="ts">
+import { inlineKey, prefersReducedMotion } from '../../composables/dom'
 import './Calendar.css'
+import '../shared/indicator.css'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   nextTick,
@@ -344,7 +351,9 @@ import type { ComponentPublicInstance } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useSwapMotion } from '../../motion/useSwapMotion'
+import type { CalendarMotion } from '../../motion/types'
+import { useMessages, calendarMessages } from '../../messages'
 
 /** Selected date, or `{ start, end }` in `range` mode. @default null */
 const model = defineModel<Date | CalendarRange | null>({ default: null })
@@ -380,8 +389,13 @@ const rawProps = withDefaults(
      * @default false
      */
     showYearButtons?: boolean
-    /** `false` skips the month-navigation slide transition. @default true */
-    motionCss?: boolean
+    /** Shows each week's number (ISO 8601) at the start of its row. @default false */
+    showWeekNumbers?: boolean
+    /**
+     * `false` skips the month change's slide. An object restyles it: give the `label` and `grid`
+     * looks as values, or as functions of `where.direction` (`1` forward, `-1` back). @default true
+     */
+    motion?: CalendarMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -404,11 +418,12 @@ const rawProps = withDefaults(
     firstDayOfWeek: undefined,
     months: 1,
     showYearButtons: false,
-    motionCss: undefined,
+    showWeekNumbers: false,
+    motion: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true, locale: undefined })
+const props = withProviderDefaults(rawProps, { motion: true, locale: undefined })
 
 const emit = defineEmits<{
   /** Fires when you pick a date, month, year or range endpoint. */
@@ -518,6 +533,36 @@ const initialAnchor = modelAnchor() ?? startOfMonth(new Date())
 const viewDate = ref<Date>(startOfMonth(initialAnchor))
 // 1 = forward, -1 = backward; drives month-transition slide direction.
 const direction = ref(1)
+const motionOn = computed(() => !!props.motion)
+// Yours set: the engine plays the label and grid swaps; otherwise their CSS classes do.
+const swapMotion = useSwapMotion({
+  key: 'calendar',
+  view: 'grid',
+  motion: () => props.motion,
+  direction: () => (direction.value < 0 ? -1 : 1),
+  initial: {
+    label: ({ direction: d }) => ({ opacity: 0, x: 4 * d, blur: 2 }),
+    grid: ({ direction: d }) => ({ opacity: 0, x: 8 * d, blur: 3 }),
+  },
+  exit: {
+    label: ({ direction: d }) => ({ opacity: 0, x: -4 * d, blur: 2 }),
+    grid: ({ direction: d }) => ({ opacity: 0, x: -8 * d, blur: 3 }),
+  },
+  timing: { duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' },
+})
+const labelSwap = swapMotion.hooks('label', 'wait')
+const gridSwap = swapMotion.hooks('grid', 'sync')
+// Motion off: no `mode` either, since Vue throws on an out-in leave that ends at once (3.6 rc.12).
+const swapped = (name: string, hooks: typeof labelSwap, mode?: 'out-in') =>
+  swapMotion.active.value
+    ? { css: false, onEnter: hooks.onEnter, onLeave: hooks.onLeave, mode }
+    : {
+        name: motionOn.value ? name : undefined,
+        css: motionOn.value,
+        mode: motionOn.value ? mode : undefined,
+      }
+const labelTransition = computed(() => swapped('ui-calendar-label', labelSwap, 'out-in'))
+const gridTransition = computed(() => swapped('ui-calendar-grid', gridSwap))
 const focusedDate = ref<Date>(initialAnchor)
 
 onMounted(() => {
@@ -559,6 +604,7 @@ watch(
     zoom.value = LEVEL_DEPTH[to] > LEVEL_DEPTH[from] ? 'out' : 'in'
     zoomLink = LEVEL_DEPTH[to] > LEVEL_DEPTH[from] ? to : from
     if (zoom.value === 'in') linkCellOrigin()
+    if (to === 'year') focusedYear.value = viewDate.value.getFullYear()
   },
   { flush: 'sync' },
 )
@@ -629,6 +675,13 @@ const yearRows = computed<number[][]>(() => {
 })
 
 const canDrill = computed(() => navLevel.value !== 'year')
+// The year grid's tab stop: the focused year while it's on show, else viewDate's.
+const focusedYear = ref(viewDate.value.getFullYear())
+const yearStop = computed(() =>
+  yearsInWindow.value.includes(focusedYear.value)
+    ? focusedYear.value
+    : viewDate.value.getFullYear(),
+)
 
 function monthYearFormat(month: Date): string {
   return new Intl.DateTimeFormat(props.locale, { month: 'long', year: 'numeric' }).format(month)
@@ -643,7 +696,7 @@ const headerLabel = computed(() => {
   if (navLevel.value === 'month') return yearLabel.value
   return yearRangeLabel.value
 })
-const messages = useUiMessages()
+const messages = useMessages({ calendar: calendarMessages })
 const previousLabel = computed(() =>
   navLevel.value === 'date'
     ? messages.value.calendar.previousMonth
@@ -665,6 +718,18 @@ const weekdayLabels = computed(() => {
 })
 function cellLabel(day: Date): string {
   return new Intl.DateTimeFormat(props.locale, { dateStyle: 'full' }).format(day)
+}
+// The ISO week of the row's Thursday, which shares its week with most of the row whatever day
+// the week starts on.
+function isoWeek(week: Date[]): number {
+  const thursday = week.find((day) => day.getDay() === 4)!
+  const dayOfYear = Math.round(
+    (startOfDay(thursday).getTime() - new Date(thursday.getFullYear(), 0, 1).getTime()) / 864e5,
+  )
+  return Math.floor(dayOfYear / 7) + 1
+}
+function weekLabel(week: Date[]): string {
+  return messages.value.calendar.weekNumber.replace('{week}', String(isoWeek(week)))
 }
 function monthLabel(month: Date): string {
   return new Intl.DateTimeFormat(props.locale, { month: 'short' }).format(month)
@@ -708,6 +773,13 @@ function rangeBounds(): { start: Date; end: Date } | null {
       : { start: hoveredDate.value, end: start }
   }
   return null
+}
+// The committed days between a range's ends; a hover preview isn't a selection.
+function isBetweenEnds(day: Date): boolean {
+  const value = model.value
+  if (!isRange(value) || !value.start || !value.end) return false
+  const [from, to] = value.start <= value.end ? [value.start, value.end] : [value.end, value.start]
+  return day > startOfDay(from) && day < startOfDay(to)
 }
 function isDayInRange(day: Date): boolean {
   const bounds = rangeBounds()
@@ -862,6 +934,8 @@ function selectDate(day: Date) {
   else commitSingle(day)
 }
 function onDayClick(day: Date) {
+  // A disabled day does nothing, including the jump to its month when it's an adjacent month's day.
+  if (isDayDisabled(day)) return
   focusedDate.value = day
   if (!isShownMonth(day)) showMonth(day)
   selectDate(day)
@@ -878,6 +952,10 @@ function onMonthPick(month: Date) {
     emit('change', value)
     return
   }
+  // The same day of the picked month takes the tab stop, and focus if the calendar had it.
+  const day = Math.min(focusedDate.value.getDate(), endOfMonth(month).getDate())
+  focusedDate.value = new Date(month.getFullYear(), month.getMonth(), day)
+  const moveFocus = hasFocus()
   animateBodyHeight(() => {
     // The zoom back in centres on the picked month's cell, read when navLevel changes.
     viewDate.value = startOfMonth(month)
@@ -885,6 +963,7 @@ function onMonthPick(month: Date) {
     viewDate.value = addMonths(startOfMonth(month), -drillPane)
     drillPane = 0
   })
+  if (moveFocus) focusLevelCell(`[data-date="${isoDate(focusedDate.value)}"]`)
   emit('month-change', viewDate.value)
 }
 function onYearPick(year: number) {
@@ -903,6 +982,7 @@ function onYearPick(year: number) {
     viewDate.value = new Date(year, viewDate.value.getMonth(), 1)
     navLevel.value = 'month'
   })
+  if (hasFocus()) focusLevelCell(`[data-month="${viewDate.value.getMonth()}"]`)
 }
 
 const rootEl = useTemplateRef<HTMLElement>('rootEl')
@@ -912,6 +992,60 @@ function setGridEl(el: Element | ComponentPublicInstance | null) {
   gridEl.value = el instanceof HTMLElement ? el : null
 }
 const bodyEl = useTemplateRef<HTMLElement>('bodyEl')
+// The hover and keyboard highlight glides between days (and months, and years) on both axes.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(bodyEl, {
+  itemSelector:
+    '.ui-calendar-cell:not(.ui-calendar-cell--blank), .ui-calendar-month-cell, .ui-calendar-year-cell',
+  scope: '.ui-calendar-body',
+  motion: () => motionOn.value,
+  indicatorEl: hoverEl,
+})
+const labelButton = useTemplateRef<HTMLElement>('labelButton')
+
+// The label button is as wide as its text, so a new name would snap it to a new width and the
+// centred text would jump sideways. The incoming name is measured ahead with a hidden copy, and
+// the width eases over the whole swap (the old name out, the new one in) as one movement.
+watch(
+  headerLabel,
+  (next) => {
+    const button = labelButton.value
+    const text = button?.querySelector<HTMLElement>('.ui-calendar-label-text')
+    if (!button || !text || !motionOn.value) return
+    if (prefersReducedMotion()) return
+    // A custom #label renders more than text; only the plain name is measured.
+    if (text.childElementCount > 0) return
+    button.style.inlineSize = ''
+    const before = button.offsetWidth
+    const probe = text.cloneNode(false) as HTMLElement
+    probe.textContent = next
+    probe.className = text.className.split(' ')[0] ?? ''
+    probe.style.position = 'absolute'
+    probe.style.visibility = 'hidden'
+    probe.style.whiteSpace = 'nowrap'
+    button.append(probe)
+    const after = before - text.offsetWidth + probe.offsetWidth
+    probe.remove()
+    if (!after || Math.abs(after - before) < 1) return
+    button.style.transition = 'none'
+    button.style.inlineSize = `${before}px`
+    button.style.textOverflow = 'clip'
+    void button.offsetWidth
+    button.style.transition =
+      'inline-size calc(var(--ui-duration-tooltip-exit) + var(--ui-duration-enter)) var(--ui-ease-out)'
+    button.style.inlineSize = `${after}px`
+    button.addEventListener(
+      'transitionend',
+      () => {
+        button.style.transition = ''
+        button.style.inlineSize = ''
+        button.style.textOverflow = ''
+      },
+      { once: true },
+    )
+  },
+  { flush: 'pre' },
+)
 
 // FLIP-style height animation: Vue's Transition already handles the grid's
 // own slide/fade, but the body's overall height (a 4-week vs. 6-week month,
@@ -921,7 +1055,7 @@ function animateBodyHeight(mutate: () => void) {
   if (navLevel.value === 'date' && bodyEl.value) {
     dateBodySize.value = { inline: bodyEl.value.offsetWidth, block: bodyEl.value.offsetHeight }
   }
-  if (!props.motionCss || !bodyEl.value) {
+  if (!motionOn.value || !bodyEl.value) {
     mutate()
     return
   }
@@ -931,7 +1065,7 @@ function animateBodyHeight(mutate: () => void) {
   nextTick(() => {
     const after = body.offsetHeight
     if (!after || before === after) return
-    body.style.overflow = 'hidden'
+    body.style.overflowY = 'clip'
     body.style.blockSize = `${before}px`
     void body.offsetHeight
     requestAnimationFrame(() => {
@@ -941,7 +1075,7 @@ function animateBodyHeight(mutate: () => void) {
     body.addEventListener(
       'transitionend',
       () => {
-        body.style.overflow = ''
+        body.style.overflowY = ''
         body.style.blockSize = ''
         body.style.transition = ''
       },
@@ -958,17 +1092,77 @@ function moveFocus(day: Date) {
   if (!isShownMonth(day)) showMonth(day)
   nextTick(() => focusCellEl(day))
 }
-/** Roving-tabindex to a specific day; only resets navLevel to 'date' if that view exists. */
+/** Roving-tabindex to a specific day, or its month or year in those views. */
 function focusDay(day: Date) {
   navLevel.value = props.view
-  if (props.view !== 'date') return
-  moveFocus(day)
+  if (props.view === 'date') return moveFocus(day)
+  viewDate.value = startOfMonth(day)
+  focusedYear.value = day.getFullYear()
+  focusLevelCell(
+    props.view === 'month'
+      ? `[data-month="${day.getMonth()}"]`
+      : `[data-year="${day.getFullYear()}"]`,
+  )
+}
+function hasFocus(): boolean {
+  return !!rootEl.value?.contains(document.activeElement)
+}
+// A grid swap leaves the old grid in place before the new one, so the last match that takes
+// focus is the arriving cell.
+function focusLevelCell(selector: string) {
+  nextTick(() => {
+    const cells = [...(bodyEl.value?.querySelectorAll<HTMLElement>(selector) ?? [])]
+    for (const cell of cells.reverse()) {
+      cell.focus()
+      if (document.activeElement === cell) return
+    }
+  })
+}
+
+// Month and year grids are four wide: arrows step a cell or a row, Home and End go to the row's
+// ends, Page keys a page (a year of months, twelve years).
+const GRID_STEPS: Record<string, number> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+  ArrowUp: -4,
+  ArrowDown: 4,
+}
+function gridStep(event: KeyboardEvent, index: number, page: number): number | null {
+  const key = inlineKey(event.key, event.currentTarget as Element)
+  if (key in GRID_STEPS) return GRID_STEPS[key]!
+  if (key === 'Home') return -(index % 4)
+  if (key === 'End') return 3 - (index % 4)
+  if (key === 'PageUp') return -page
+  if (key === 'PageDown') return page
+  return null
+}
+function onMonthKeydown(event: KeyboardEvent) {
+  const step = gridStep(event, viewDate.value.getMonth(), 12)
+  if (step === null) return
+  event.preventDefault()
+  const next = addMonths(viewDate.value, step)
+  if (next.getFullYear() === viewDate.value.getFullYear()) viewDate.value = next
+  else setView(next, step < 0 ? -1 : 1)
+  focusLevelCell(`[data-month="${next.getMonth()}"]`)
+}
+function onYearKeydown(event: KeyboardEvent) {
+  const step = gridStep(event, yearStop.value - yearWindowStart.value, 12)
+  if (step === null) return
+  event.preventDefault()
+  const year = yearStop.value + step
+  focusedYear.value = year
+  const offset = year - yearWindowStart.value
+  if (offset < 0 || offset >= 12) {
+    setView(addYears(viewDate.value, offset < 0 ? -12 : 12), offset < 0 ? -1 : 1)
+  }
+  focusLevelCell(`[data-year="${year}"]`)
 }
 
 function onGridKeydown(event: KeyboardEvent) {
   let next: Date | null = null
-  // ARIA APG keyboard nav: arrow keys move focus, Enter/Space select.
-  switch (event.key) {
+  // ARIA APG keyboard nav: arrow keys move focus, Enter/Space select. Right to left, the week
+  // runs from the right.
+  switch (inlineKey(event.key, event.currentTarget as Element)) {
     case 'ArrowLeft':
       next = addDays(focusedDate.value, -1)
       break
@@ -1036,7 +1230,7 @@ function dayAttrs(day: Date, month: Date) {
   return {
     'data-date': isoDate(day),
     tabindex: isSameDay(day, focusedDate.value) ? 0 : -1,
-    'aria-selected': isDaySelected(day) || undefined,
+    'aria-selected': isDaySelected(day) || isBetweenEnds(day) || undefined,
     'aria-current': isToday(day) ? ('date' as const) : undefined,
     'aria-disabled': isDayDisabled(day) || undefined,
     'aria-label': slots.day ? undefined : cellLabel(day),
@@ -1065,11 +1259,13 @@ defineExpose({
   rootEl,
   /** Day grid element (`null` while the month or year grid shows). */
   gridEl,
+  /** The hover and keyboard highlight, sliding between cells. With `motion: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
   /** Steps back one page: a month, or a year or 12 years in the month and year grids. */
   goToPreviousMonth: goPrevious,
   /** Steps forward one page: a month, or a year or 12 years in the month and year grids. */
   goToNextMonth: goNext,
-  /** Moves keyboard focus to the given day, switching months if needed. Does nothing unless `view` is `'date'`. */
+  /** Moves keyboard focus to the given day, switching months if needed. With `view` set to `'month'` or `'year'`, focuses its month or year. */
   focusDay,
 })
 </script>

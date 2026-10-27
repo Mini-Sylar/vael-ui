@@ -1,6 +1,7 @@
 <template>
   <section class="playground">
     <div class="playground-toolbar">
+      <AnatomyToggle v-model:shown="anatomyOn" />
       <SelectButton
         v-model="defaultVariant"
         size="sm"
@@ -13,27 +14,38 @@
     </div>
 
     <div class="playground-body">
-      <div class="playground-preview">
-        <component
-          :is="timelineComponent"
-          :items="steps"
-          :orientation="orientation"
-          :motion-css="motionCss"
-          :current="current"
-        >
-          <template v-if="showOpposite" #opposite="{ item }">{{ item.date }}</template>
-          <template #item="{ item }">
-            <p class="step-title">{{ item.label }}</p>
-          </template>
-        </component>
-        <div class="trigger-row">
-          <Button size="sm" variant="outline" :disabled="current === 0" @click="current--"
-            >Back</Button
+      <div ref="previewEl" class="playground-preview">
+        <component :is="specimen" v-if="anatomyOn && specimen" />
+        <template v-else>
+          <component
+            :is="timelineComponent"
+            :items="steps"
+            :orientation="orientation"
+            :motion="motion"
+            :current="current"
           >
-          <Button size="sm" :disabled="current >= steps.length - 1" @click="current++"
-            >Advance</Button
-          >
-        </div>
+            <template v-if="showOpposite" #opposite="{ item }">{{ item.date }}</template>
+            <template #item="{ item }">
+              <p class="step-title">{{ item.label }}</p>
+            </template>
+          </component>
+          <div class="trigger-row">
+            <Button size="sm" variant="outline" :disabled="current === 0" @click="current--"
+              >Back</Button
+            >
+            <Button size="sm" :disabled="current >= steps.length - 1" @click="current++"
+              >Advance</Button
+            >
+          </div>
+        </template>
+        <AnatomyOverlay
+          v-if="previewEl"
+          :root="previewEl"
+          component="Timeline"
+          :parts="parts"
+          :slots="slots"
+          :shown="anatomyOn"
+        />
       </div>
 
       <div class="playground-controls">
@@ -53,8 +65,8 @@
           <Switch id="ctl-opposite" v-model="showOpposite" />
         </div>
         <div class="control-row control-row--inline">
-          <label for="ctl-motion">motionCss</label>
-          <Switch id="ctl-motion" v-model="motionCss" />
+          <label for="ctl-motion">motion</label>
+          <Switch id="ctl-motion" v-model="motion" />
         </div>
       </div>
     </div>
@@ -64,14 +76,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, type Component } from 'vue'
+import { computed, shallowRef, useTemplateRef, type Component } from 'vue'
 import * as VaelUi from 'vael-ui'
 import { Button, Select, SelectButton, Switch } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
+import AnatomyOverlay from '../components/AnatomyOverlay.vue'
+import AnatomyToggle from '../components/AnatomyToggle.vue'
+import { partsOf, slotsOf, specimenOf } from '../anatomyOf'
 import { defaultVariant } from '../preferences'
 import { useVaporComponents } from '../composables/useVaporComponents'
 
 const vaelUi = VaelUi as unknown as Record<string, Component>
+
+// Anatomy: its parts outlined over a specimen that has every one of them.
+const previewEl = useTemplateRef<HTMLElement>('previewEl')
+const anatomyOn = shallowRef(false)
+const parts = partsOf('Timeline')
+const slots = slotsOf('Timeline')
+const specimen = specimenOf('Timeline')
 const vaelUiVapor = useVaporComponents()
 const timelineComponent = computed<Component>(() =>
   defaultVariant.value === 'vapor' ? vaelUiVapor.value.Timeline : vaelUi.Timeline,
@@ -96,7 +118,7 @@ const orientationItems = [
   { label: 'horizontal', value: 'horizontal' },
 ]
 const showOpposite = shallowRef(true)
-const motionCss = shallowRef(true)
+const motion = shallowRef(true)
 
 const code = computed(() => {
   const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
@@ -108,7 +130,7 @@ const code = computed(() => {
 <Timeline
   :items="steps"
   orientation="${orientation.value}"
-  :motion-css="${motionCss.value}"
+  :motion="${motion.value}"
   :current="current"
 >${oppositeSlot}
   <template #item="{ item }">{{ item.label }}</template>
@@ -127,6 +149,8 @@ const code = computed(() => {
 .playground-toolbar {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.75rem;
   border-bottom: 1px solid var(--ui-border);
   background: var(--ui-muted);

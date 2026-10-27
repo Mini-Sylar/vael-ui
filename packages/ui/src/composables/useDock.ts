@@ -3,6 +3,8 @@ import type { MaybeRefOrGetter } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
 import type { ElRef } from './dom'
+import { prefersReducedMotion } from './dom'
+import { stepSpring } from '../motion/springStep'
 
 export type DockOrientation = 'horizontal' | 'vertical'
 
@@ -19,13 +21,20 @@ export interface UseDockOptions {
   magnify?: MaybeRefOrGetter<boolean>
   /** `true` magnifies by changing each item's real size, so the dock grows with its items. Default `false` scales and spreads items with transforms: the dock keeps its size and the end items can reach past it. */
   grow?: MaybeRefOrGetter<boolean>
+  /** A spring for items to chase the pointer on, overshoot included. Unset, they ease in without one. */
+  spring?: MaybeRefOrGetter<{ damping?: number; response?: number } | undefined>
 }
 
 export interface UseDockReturn {
   /** Bind as `:ref="setItemEl(index)"` on each item's own root element. */
   setItemEl: (index: number) => (el: unknown) => void
+  /** Bind to the root's `pointerdown`: a finger or pen magnifies only once it has slid from here. */
+  onPointerDown: (event: PointerEvent) => void
   onPointerMove: (event: PointerEvent) => void
-  onPointerLeave: () => void
+  /** Bind to the root's `pointerleave`, `pointerup` and `pointercancel`. */
+  onPointerLeave: (event?: PointerEvent) => void
+  /** Whether the finger or pen that is down has slid far enough to magnify; false means a tap. */
+  touchSlid: () => boolean
   /** Re-measures each item's resting center. Called automatically on mount, on root resize, and when `itemCount` changes — exposed for a consumer that mutates layout some other way (e.g. a font swap mid-session). */
   remeasure: () => void
 }
@@ -64,14 +73,18 @@ export function dockItemOffsets(
   gap: number,
 ): number[] {
   if (sizes.length === 0) return []
+  // Laid out in the order they sit on screen, not index order: right to left (or row-reverse),
+  // the first item is at the far end.
+  const order = centers.map((_, i) => i).sort((a, b) => centers[a]! - centers[b]!)
   const virtualCenters: number[] = []
   let cursor = 0
-  for (const size of sizes) {
-    virtualCenters.push(cursor + size / 2)
-    cursor += size + gap
+  for (const i of order) {
+    virtualCenters[i] = cursor + sizes[i]! / 2
+    cursor += sizes[i]! + gap
   }
-  const restingMid = (centers[0]! + centers[centers.length - 1]!) / 2
-  const virtualMid = (virtualCenters[0]! + virtualCenters[virtualCenters.length - 1]!) / 2
+  const [first, last] = [order[0]!, order[order.length - 1]!]
+  const restingMid = (centers[first]! + centers[last]!) / 2
+  const virtualMid = (virtualCenters[first]! + virtualCenters[last]!) / 2
   const shift = restingMid - virtualMid
   return virtualCenters.map((center, i) => center + shift - centers[i]!)
 }
@@ -156,6 +169,14 @@ export function useDock(
   // In grow mode the root resizes every frame while magnified; only the resting
   // layout is worth measuring.
   let magnified = false
+  // How far the bar has widened past its resting length, half on each side (transforms only).
+  let spread = 0
+  function setSpread(px: number) {
+    const root = rootEl.value
+    spread = Math.abs(px) < 0.5 ? 0 : px
+    if (spread) root?.style.setProperty('--ui-dock-spread', `${spread}px`)
+    else root?.style.removeProperty('--ui-dock-spread')
+  }
 
   // Real macOS Dock magnification is a continuous spring-like catch-up, not
   // a value tweened between discrete pointermove samples — a CSS transition
@@ -168,6 +189,8 @@ export function useDock(
   let currentOffset: number[] = []
   let targetScale: number[] = []
   let targetOffset: number[] = []
+  let scaleVelocity: number[] = []
+  let offsetVelocity: number[] = []
   let rafId: number | null = null
   let lastFrameTime = 0
   const SETTLE_HALF_LIFE_MS = 30 // time to close half the remaining distance to target
@@ -176,8 +199,18 @@ export function useDock(
 
   function syncArrayLengths() {
     const n = itemEls.length
-    for (const arr of [currentScale, currentOffset, targetScale, targetOffset]) arr.length = n
+    for (const arr of [
+      currentScale,
+      currentOffset,
+      targetScale,
+      targetOffset,
+      scaleVelocity,
+      offsetVelocity,
+    ])
+      arr.length = n
     for (let i = 0; i < n; i++) {
+      scaleVelocity[i] ??= 0
+      offsetVelocity[i] ??= 0
       if (currentScale[i] === undefined) currentScale[i] = 1
       if (currentOffset[i] === undefined) currentOffset[i] = 0
       if (targetScale[i] === undefined) targetScale[i] = 1
@@ -221,24 +254,63 @@ export function useDock(
     const dt = lastFrameTime ? time - lastFrameTime : 16
     lastFrameTime = time
     const factor = 1 - Math.pow(0.5, dt / SETTLE_HALF_LIFE_MS)
+    const spring = toValue(options.spring)
+    // A tab coming back after a while doesn't fling the items.
+    const seconds = Math.min(dt, 64) / 1000
     const vertical = orientation() === 'vertical'
     let stillMoving = false
     let atRest = true
+    let widened = 0
     itemEls.forEach((el, i) => {
       if (!el) return
       const scaleDelta = targetScale[i]! - currentScale[i]!
       const offsetDelta = targetOffset[i]! - currentOffset[i]!
-      if (Math.abs(scaleDelta) > SCALE_EPSILON || Math.abs(offsetDelta) > OFFSET_EPSILON) {
-        currentScale[i]! += scaleDelta * factor
-        currentOffset[i]! += offsetDelta * factor
+      const coasting =
+        !!spring &&
+        (Math.abs(scaleVelocity[i]!) > SCALE_EPSILON * 10 ||
+          Math.abs(offsetVelocity[i]!) > OFFSET_EPSILON * 10)
+      if (
+        coasting ||
+        Math.abs(scaleDelta) > SCALE_EPSILON ||
+        Math.abs(offsetDelta) > OFFSET_EPSILON
+      ) {
+        if (spring) {
+          const { damping, response } = spring
+          const scale = stepSpring(
+            { value: currentScale[i]!, velocity: scaleVelocity[i]! },
+            targetScale[i]!,
+            seconds,
+            damping,
+            response,
+          )
+          const offset = stepSpring(
+            { value: currentOffset[i]!, velocity: offsetVelocity[i]! },
+            targetOffset[i]!,
+            seconds,
+            damping,
+            response,
+          )
+          currentScale[i] = scale.value
+          scaleVelocity[i] = scale.velocity
+          currentOffset[i] = offset.value
+          offsetVelocity[i] = offset.velocity
+        } else {
+          currentScale[i]! += scaleDelta * factor
+          currentOffset[i]! += offsetDelta * factor
+        }
         stillMoving = true
       } else {
         currentScale[i] = targetScale[i]
         currentOffset[i] = targetOffset[i]
+        scaleVelocity[i] = 0
+        offsetVelocity[i] = 0
       }
       if (Math.abs(currentScale[i]! - 1) >= SCALE_EPSILON) atRest = false
       writeTransform(el, i, vertical)
+      widened += (currentScale[i]! - 1) * restSize
     })
+    // The bar widens with the items, so the end ones never hang off it.
+    if (!grows()) setSpread(atRest ? 0 : widened)
     magnified = !atRest
     rafId = stillMoving ? requestAnimationFrame(tick) : null
     if (!stillMoving) lastFrameTime = 0
@@ -253,27 +325,45 @@ export function useDock(
     if (!root || (grows() && magnified)) return
     const rootRect = root.getBoundingClientRect()
     const vertical = orientation() === 'vertical'
+    // From where the bar's edge rests, however far it has widened.
+    const origin = (vertical ? rootRect.top : rootRect.left) + spread / 2
     const first = itemEls.find((el): el is HTMLElement => !!el)
     // offsetWidth/Height ignore transforms, so this is the resting size even mid-magnify.
     if (first) restSize = vertical ? first.offsetHeight : first.offsetWidth
     centers = itemEls.map((el) => {
       if (!el) return 0
       const rect = el.getBoundingClientRect()
-      return vertical
-        ? rect.top + rect.height / 2 - rootRect.top
-        : rect.left + rect.width / 2 - rootRect.left
+      return vertical ? rect.top + rect.height / 2 - origin : rect.left + rect.width / 2 - origin
     })
     const gapProperty = vertical ? 'rowGap' : 'columnGap'
     gap = parseFloat(getComputedStyle(root)[gapProperty]) || 0
   }
 
-  function canMagnify(): boolean {
+  // A finger or a pen has no hover, so it magnifies while it is down and sliding along the dock
+  // (the dock's touch-action: none keeps the page from scrolling then), and settles when it
+  // lifts. It has to travel this far first: a tap on an item is a tap, not a slide.
+  const TOUCH_SLIDE = 8
+  let touchStart: { x: number; y: number } | null = null
+  let touchSliding = false
+
+  function onPointerDown(event: PointerEvent) {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+    touchStart = { x: event.clientX, y: event.clientY }
+    touchSliding = false
+  }
+
+  function canMagnify(event?: PointerEvent): boolean {
     if (isDisabled() || !magnifyEnabled()) return false
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
-    return (
-      window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    )
+    if (prefersReducedMotion()) return false
+    if (event && (event.pointerType === 'touch' || event.pointerType === 'pen')) {
+      if (!touchStart || !(event.buttons > 0 || event.pressure > 0)) return false
+      if (!touchSliding)
+        touchSliding =
+          Math.hypot(event.clientX - touchStart.x, event.clientY - touchStart.y) >= TOUCH_SLIDE
+      return touchSliding
+    }
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches
   }
 
   // Instant — stops live tracking and jumps straight to rest, no easing.
@@ -292,8 +382,11 @@ export function useDock(
       currentOffset[i] = 0
       targetScale[i] = 1
       targetOffset[i] = 0
+      scaleVelocity[i] = 0
+      offsetVelocity[i] = 0
     }
     magnified = false
+    setSpread(0)
     for (const el of itemEls) {
       if (el) clearStyles(el)
     }
@@ -312,8 +405,9 @@ export function useDock(
   }
 
   function onPointerMove(event: PointerEvent) {
-    if (!canMagnify()) {
-      resetSizes()
+    if (!canMagnify(event)) {
+      // Only what it drew itself: with `magnify` off the items' styles are yours.
+      if (magnified && event.pointerType !== 'touch' && event.pointerType !== 'pen') resetSizes()
       return
     }
     const root = rootEl.value
@@ -321,7 +415,8 @@ export function useDock(
     syncArrayLengths()
     const rootRect = root.getBoundingClientRect()
     const vertical = orientation() === 'vertical'
-    let pointerPosition = vertical ? event.clientY - rootRect.top : event.clientX - rootRect.left
+    let pointerPosition =
+      (vertical ? event.clientY - rootRect.top : event.clientX - rootRect.left) - spread / 2
     if (grows()) {
       // The layout itself has grown; map the pointer back onto the resting one.
       const spans = itemEls.map((el): [number, number] => {
@@ -349,8 +444,12 @@ export function useDock(
     startLoop()
   }
 
-  function onPointerLeave() {
-    settleToRest()
+  function onPointerLeave(event?: PointerEvent) {
+    // A finger or pen lifting settles the dock; a mouse click under a still pointer doesn't.
+    if (event?.type === 'pointerup' && event.pointerType === 'mouse') return
+    touchStart = null
+    touchSliding = false
+    if (magnified || rafId != null) settleToRest()
   }
 
   onMounted(() => {
@@ -375,5 +474,12 @@ export function useDock(
     if (rafId != null) cancelAnimationFrame(rafId)
   })
 
-  return { setItemEl, onPointerMove, onPointerLeave, remeasure: measure }
+  return {
+    setItemEl,
+    onPointerDown,
+    onPointerMove,
+    onPointerLeave,
+    touchSlid: () => touchSliding,
+    remeasure: measure,
+  }
 }

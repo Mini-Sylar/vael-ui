@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Custom header via <code>#header</code></h3>
+    <h3>Custom header with <code>#header</code></h3>
     <div class="row">
       <Card>
         <template #header>

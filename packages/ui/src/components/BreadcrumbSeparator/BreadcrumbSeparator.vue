@@ -1,7 +1,14 @@
 <template>
   <li ref="root" aria-hidden="true" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
     <slot>
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+      <svg
+        :class="iconPart.class"
+        :style="iconPart.style"
+        viewBox="0 0 16 16"
+        width="14"
+        height="14"
+        fill="none"
+      >
         <path
           d="M6 3l4 5-4 5"
           stroke="currentColor"
@@ -17,6 +24,7 @@
 <script setup lang="ts">
 import './BreadcrumbSeparator.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -27,7 +35,11 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = defineProps<{
   /** Class and style overrides for each part. */
-  ui?: Partial<{ root: UiPartValue }>
+  ui?: Partial<{
+    root: UiPartValue
+    /** The built-in chevron icon. */
+    icon: UiPartValue
+  }>
 }>()
 
 defineSlots<{
@@ -42,6 +54,7 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-breadcrumb-separator'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-breadcrumb-separator-icon'))
 
 defineExpose({
   /** Root element. */

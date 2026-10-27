@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>A completely different item shape: a start/end range</h3>
+    <h3>A different item shape: a start and end range</h3>
     <p class="note">
-      No <code>date</code> field anywhere — each item spans a range instead of a single point in
-      time. Same component, just a different <code>#item</code> slot.
+      Each item spans a range instead of a single date, and there's no <code>date</code> field. It's
+      the same component with a different <code>#item</code> slot.
     </p>
     <Timeline :items="sprints">
       <template #item="{ item }">

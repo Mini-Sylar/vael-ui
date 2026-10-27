@@ -2,12 +2,12 @@
   <section class="demo">
     <h3>Turn off animations everywhere</h3>
     <p class="note">
-      <code>:motion-css="false"</code> turns off every built-in transition inside. Everything still
-      opens, closes and leaves, but instantly. Use it for screenshot and end-to-end tests that
-      shouldn't wait on motion. Toggle it, then open the accordion or flip the switch.
+      <code>:motion="false"</code> turns off every built-in animation inside. Everything still
+      opens, closes and leaves, but at once. Use it for screenshots and end-to-end tests that
+      shouldn’t wait for animations. Toggle it, then open the accordion or flip the switch.
     </p>
     <Switch v-model="animate" label="Built-in animations" />
-    <ConfigProvider :motion-css="animate">
+    <ConfigProvider :motion="animate">
       <div class="stack">
         <Switch v-model="wifi" label="Wi-Fi" />
         <Accordion v-model:value="open">

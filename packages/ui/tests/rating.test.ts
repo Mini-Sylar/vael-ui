@@ -176,15 +176,16 @@ test('keyboard input clears a resting hover preview so the change shows at once'
   await userEvent.hover(parking)
   const { screen, modelValue } = await renderModel({ max: 5, modelValue: 2 })
   const root = screen.container.querySelector<HTMLElement>('.ui-rating')!
-  const items = screen.container.querySelectorAll<HTMLElement>('.ui-rating-item')
+  // Read fresh: a committed change re-keys the row (its pop).
+  const items = () => screen.container.querySelectorAll<HTMLElement>('.ui-rating-item')
   const rect = root.getBoundingClientRect()
   pointermove(root, 'pointermove', rect.right - 1)
-  await expect.poll(() => items[4]!.style.getPropertyValue('--ui-rating-fill')).toBe('100%')
+  await expect.poll(() => items()[4]!.style.getPropertyValue('--ui-rating-fill')).toBe('100%')
   root.focus()
   await userEvent.keyboard('{ArrowRight}')
   expect(modelValue.value).toBe(3)
-  await expect.poll(() => items[3]!.style.getPropertyValue('--ui-rating-fill')).toBe('0%')
-  expect(items[2]!.style.getPropertyValue('--ui-rating-fill')).toBe('100%')
+  await expect.poll(() => items()[3]!.style.getPropertyValue('--ui-rating-fill')).toBe('0%')
+  expect(items()[2]!.style.getPropertyValue('--ui-rating-fill')).toBe('100%')
   parking.remove()
 })
 
@@ -210,4 +211,103 @@ test("inside a Field, the label's for points at the slider and aria-labelledby s
   const slider = screen.getByRole('slider', { name: 'Score' }).element()
   expect(document.getElementById(label.htmlFor)).toBe(slider)
   expect(slider.getAttribute('aria-labelledby')).toBe(label.id)
+})
+
+test('the row pops on every committed change, never on mount, and the stars stay the same nodes', async () => {
+  const { screen } = await renderModel({ max: 5, modelValue: 3 })
+  const track = () => screen.container.querySelector<HTMLElement>('.ui-rating-track')!
+  const stars = [...screen.container.querySelectorAll('.ui-rating-item')]
+  const popping = () =>
+    track()
+      .getAnimations()
+      .map((a) => (a as CSSAnimation).animationName)
+  await new Promise(requestAnimationFrame)
+  expect(track().getAnimations()).toHaveLength(0)
+  screen.container.querySelector<HTMLElement>('.ui-rating')!.focus()
+  await userEvent.keyboard('{ArrowRight}')
+  await new Promise(requestAnimationFrame)
+  expect(popping()).toEqual(['ui-rating-pop'])
+  await userEvent.keyboard('{ArrowRight}')
+  await new Promise(requestAnimationFrame)
+  expect(popping()).toEqual(['ui-rating-pop-again'])
+  // Your own animations on the stars keep their targets.
+  expect([...screen.container.querySelectorAll('.ui-rating-item')]).toEqual(stars)
+})
+
+test('replay plays the stars’ initial again, staggered, without remounting them', async () => {
+  const { shallowRef, nextTick } = await import('vue')
+  const bursts = shallowRef(0)
+  const screen = await render({
+    setup: () => () =>
+      h(Rating as any, {
+        modelValue: 3,
+        motion: {
+          initial: { item: { scale: [1, 1.6, 1] } },
+          duration: 300,
+          stagger: 0.05,
+          replay: bursts.value,
+        },
+      }),
+  })
+  const stars = () => [...screen.container.querySelectorAll<HTMLElement>('.ui-rating-item')]
+  await new Promise((r) => setTimeout(r, 600))
+  const before = stars()
+  bursts.value++
+  await nextTick()
+  await expect.poll(() => stars()[4]!.getAnimations().length).toBeGreaterThan(0)
+  expect(stars()).toEqual(before)
+  expect(Math.round(Number(stars()[4]!.getAnimations()[0]!.effect!.getTiming().delay))).toBe(200)
+})
+
+test('appear: false keeps the stars still on mount; replay still plays them', async () => {
+  const { shallowRef, nextTick } = await import('vue')
+  const bursts = shallowRef(0)
+  const screen = await render({
+    setup: () => () =>
+      h(Rating as any, {
+        modelValue: 3,
+        motion: {
+          initial: { item: { opacity: 0 } },
+          duration: 300,
+          appear: false,
+          replay: bursts.value,
+        },
+      }),
+  })
+  const star = () => screen.container.querySelectorAll<HTMLElement>('.ui-rating-item')[0]!
+  await new Promise((r) => setTimeout(r, 100))
+  expect(getComputedStyle(star()).opacity).toBe('1')
+  bursts.value++
+  await nextTick()
+  await expect.poll(() => Number(getComputedStyle(star()).opacity)).toBeLessThan(0.9)
+})
+
+test('a replay after the first starts within the same update', async () => {
+  const { shallowRef, nextTick } = await import('vue')
+  const bursts = shallowRef(0)
+  const screen = await render({
+    setup: () => () =>
+      h(Rating as any, {
+        modelValue: 3,
+        motion: {
+          initial: { item: { scale: [1, 1.5, 1] } },
+          duration: 200,
+          appear: false,
+          replay: bursts.value,
+        },
+      }),
+  })
+  const star = () => screen.container.querySelectorAll<HTMLElement>('.ui-rating-item')[0]!
+  bursts.value++
+  await expect.poll(() => star().getAnimations().length).toBeGreaterThan(0)
+  await new Promise((r) => setTimeout(r, 400))
+  bursts.value++
+  await nextTick()
+  // Its batch flushes in a microtask, nothing more.
+  for (let i = 0; i < 4; i++) await Promise.resolve()
+  expect(
+    star()
+      .getAnimations()
+      .some((a) => a.playState === 'running'),
+  ).toBe(true)
 })

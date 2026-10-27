@@ -14,15 +14,28 @@ import { openDialog } from '../src/composables/useDialogService'
 
 // Real transitions: the test renderer stubs them by default.
 const options = { global: { stubs: { transition: false, 'transition-group': false } } }
+// Animating in, whoever plays it: the component's CSS (Vue's enter class) or the motion engine
+// (running animations under it, the engine's cold-start hold included).
+const entering = (el: Element | null | undefined) =>
+  !!el && (/-enter-active/.test(el.className) || el.getAnimations({ subtree: true }).length > 0)
+// Engine-driven (Dialog and what builds on it): the panel itself must really be moving, not just
+// carry a class (and not merely the focused close button fading its own opacity).
+const panelMoving = (panel = '.ui-dialog-panel') =>
+  (document.querySelector(panel)?.getAnimations().length ?? 0) > 0
+const engineDriven: Record<string, string> = {
+  Dialog: '.ui-dialog-panel',
+  Drawer: '.ui-dialog-panel',
+  Popover: '.ui-popover-panel',
+}
 const trigger = ({ setTriggerEl }: { setTriggerEl: (el: unknown) => void }) =>
   h('button', { ref: setTriggerEl }, 'Trigger')
 
 const cases: [string, () => unknown, string][] = [
-  ['Dialog', () => h(Dialog, { open: true, title: 'Dialog' }), '.ui-dialog'],
+  ['Dialog', () => h(Dialog as never, { open: true, title: 'Dialog' }), '.ui-dialog'],
   ['Drawer', () => h(Drawer, { open: true, title: 'Drawer' }), '.ui-dialog'],
   [
     'Popover',
-    () => h(Popover, { open: true }, { trigger, default: () => h('p', 'Body') }),
+    () => h(Popover as never, { open: true }, { trigger, default: () => h('p', 'Body') }),
     '.ui-popover-positioner',
   ],
   [
@@ -50,16 +63,17 @@ const cases: [string, () => unknown, string][] = [
 for (const [name, tree, selector] of cases) {
   test(`${name} mounted open plays its enter transition`, async () => {
     await render(defineComponent({ render: tree as never }), options)
-    expect(document.querySelector(selector)?.className).toMatch(/-enter-active/)
+    // The engine may still be loading on a cold start: give it a moment, then the panel moves.
+    const panel = engineDriven[name]
+    if (panel) await vi.waitFor(() => expect(panelMoving(panel)).toBe(true))
+    else expect(entering(document.querySelector(selector))).toBe(true)
   })
 }
 
 test('openDialog plays the enter transition', async () => {
   await render(defineComponent({ render: () => h(DialogHost) }), options)
   const handle = openDialog(defineComponent({ render: () => h('p', 'Body') }), { title: 'Code' })
-  await vi.waitFor(() =>
-    expect(document.querySelector('.ui-dialog')?.className).toMatch(/ui-dialog-enter-active/),
-  )
+  await vi.waitFor(() => expect(panelMoving()).toBe(true))
   handle.close()
   await handle.result
 })

@@ -8,6 +8,8 @@ import type { Align } from './useFloatingPosition'
 import { focusTargetIn, getFocusable } from './dom'
 import type { ElRef } from './dom'
 import { ssrDocument } from '../ssr'
+import { useCloseGuard } from './useCloseGuard'
+import type { BeforeClose } from '../motion/types'
 
 export type PopoverCloseReason = 'trigger' | 'escape' | 'outside' | 'programmatic'
 
@@ -32,7 +34,7 @@ export interface UsePopoverOptions {
   closeOnOutside?: MaybeRefOrGetter<boolean>
   onOpenChange?: (value: boolean, details: PopoverOpenChangeDetails) => void
   /** Getter so the underlying prop stays reactive without being invoked by `toValue`. */
-  beforeClose?: () => ((done: () => void) => void) | undefined
+  beforeClose?: () => BeforeClose<PopoverCloseReason> | undefined
   /** Region this popover is scoped to, for Escape-key layer ownership. Omit for page-level. */
   scope?: ElRef<HTMLElement | null>
   /** Tab from the trigger enters the panel, and Tab past its ends closes it and continues from the trigger. For panels that take focus (Popover, Menu); leave off where focus stays on the trigger (Combobox). */
@@ -50,11 +52,14 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     alignOffset: options.alignOffset,
     matchReferenceWidth: options.matchReferenceWidth,
     maxHeightCap: options.maxHeightCap,
+    holdFacingEdge: true,
   })
 
-  // Logically open but visually closing: exposes third state for animations.
-  const isClosing = shallowRef(false)
-  let pendingClose: symbol | null = null
+  const {
+    isClosing,
+    close: closeGuarded,
+    cancelClose,
+  } = useCloseGuard(open, () => options.beforeClose?.())
 
   function requestClose(reason: PopoverCloseReason, event?: Event) {
     if (!open.value) return
@@ -70,25 +75,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     options.onOpenChange?.(false, details)
     if (cancelled) return
 
-    const beforeClose = options.beforeClose?.()
-    if (!beforeClose) {
-      open.value = false
-      return
-    }
-    const token = Symbol('pending-close')
-    pendingClose = token
-    isClosing.value = true
-    beforeClose(() => {
-      if (pendingClose !== token) return
-      pendingClose = null
-      isClosing.value = false
-      open.value = false
-    })
-  }
-
-  function cancelClose() {
-    pendingClose = null
-    isClosing.value = false
+    closeGuarded(reason)
   }
 
   function close() {
@@ -109,7 +96,11 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     }
   }
 
-  const layer = useLayer({ scope: options.scope, content: options.positionerEl })
+  const layer = useLayer({
+    scope: options.scope,
+    content: options.positionerEl,
+    anchor: options.triggerEl,
+  })
   const isOpen = shallowRef(false)
 
   function onDocumentKeydown(event: KeyboardEvent) {
@@ -265,8 +256,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     isOpen.value = false
     if (wasOpen) restoreFocus()
     // Clear pending close on raw model writes mid-close.
-    pendingClose = null
-    isClosing.value = false
+    cancelClose()
   }
 
   watch(open, (value) => (value ? activate() : deactivate()), { flush: 'post' })

@@ -1,17 +1,13 @@
 <template>
-  <ConfigProvider :theme="theme" :size="uiSize" :motion-css="motion" :i18n="i18n">
-    <div class="app-shell" :style="primaryColor ? { '--docs-accent': primaryColor } : undefined">
+  <ConfigProvider
+    :theme="theme"
+    :size="uiSize"
+    :motion="motion ? (presetStyle ?? true) : false"
+    :loader-type="loaderType"
+    :i18n="i18n"
+  >
+    <div class="app-shell" :style="accent ? { '--docs-accent': accent } : undefined">
       <header class="app-header">
-        <Button
-          variant="ghost"
-          size="sm"
-          icon
-          class="mobile-nav-trigger"
-          :aria-label="t('nav.openMenu')"
-          @click="mobileNavOpen = true"
-        >
-          <PhList :size="18" />
-        </Button>
         <RouterLink to="/" class="brand">
           <Logo :size="22" class="brand-logo" />
           <span class="brand-text"
@@ -39,19 +35,22 @@
           </a>
         </nav>
         <div class="header-controls">
-          <SearchPalette class="header-search" />
+          <SiteSearch class="header-search" />
+          <SelectButton
+            v-model="defaultVariant"
+            size="sm"
+            class="header-variant"
+            :allow-empty="false"
+            :items="[
+              { label: t('component.vdom'), value: 'vdom' },
+              { label: t('component.vapor'), value: 'vapor' },
+            ]"
+            :aria-label="t('header.defaultMode')"
+          />
           <div class="header-desktop-controls">
-            <SelectButton
-              v-model="defaultVariant"
-              size="sm"
-              :allow-empty="false"
-              :items="[
-                { label: t('component.vdom'), value: 'vdom' },
-                { label: t('component.vapor'), value: 'vapor' },
-              ]"
-              :aria-label="t('header.defaultMode')"
-            />
-            <Popover v-model:open="themeOpen">
+            <MotionMenu v-model="motionPreset" v-model:tune="motionTune" @tour="startWhatsNew" />
+            <!-- Held open while a "Show me how" points into it, so you can change the setting right there. -->
+            <Popover v-model:open="themeOpen" :close-on-outside="!holdSettings">
               <template #trigger="{ setTriggerEl }">
                 <Button
                   :ref="setTriggerEl"
@@ -74,7 +73,6 @@
                     <span>{{ t('header.radius') }}</span>
                     <Select
                       :model-value="radiusChoice"
-                      size="sm"
                       class="radius-select"
                       :aria-label="t('header.radius')"
                       :items="radiusItems"
@@ -82,22 +80,24 @@
                     />
                   </label>
                   <label class="theme-row">
-                    <span>Font: {{ fontSize }}px</span>
-                    <Slider
-                      :model-value="fontSize"
-                      aria-label="Font size"
-                      :min="12"
-                      :max="18"
-                      :step="1"
-                      class="font-slider"
-                      @update:model-value="(v) => (fontSize = v as number)"
-                    />
+                    <span>{{ t('header.fontSize') }}</span>
+                    <span class="settings-slider">
+                      <span class="settings-value">{{ fontSize }}px</span>
+                      <Slider
+                        :model-value="fontSize"
+                        :aria-label="t('header.fontSize')"
+                        :min="12"
+                        :max="18"
+                        :step="1"
+                        class="font-slider"
+                        @update:model-value="(v) => (fontSize = v as number)"
+                      />
+                    </span>
                   </label>
                   <label class="theme-row">
                     <span>{{ t('header.size') }}</span>
                     <SelectButton
                       v-model="uiSize"
-                      size="sm"
                       :aria-label="t('header.size')"
                       :allow-empty="false"
                       :items="sizeItems"
@@ -105,8 +105,30 @@
                   </label>
                   <label class="theme-row">
                     <span>{{ t('header.animations') }}</span>
-                    <Switch v-model="motion" size="sm" />
+                    <Switch v-model="motion" />
                   </label>
+                  <div class="theme-row">
+                    <span class="loader-label">
+                      {{ t('header.loader') }}
+                      <Loader size="0.875rem" />
+                    </span>
+                    <Select
+                      v-model="loaderType"
+                      :items="loaderItems"
+                      :aria-label="t('header.loader')"
+                      class="loader-select"
+                    />
+                  </div>
+                  <div class="theme-row">
+                    <span>{{ t('dockTour.replayLabel') }}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      @click="((themeOpen = false), startWhatsNew())"
+                    >
+                      {{ t('motionDocs.tour.cta') }}
+                    </Button>
+                  </div>
                 </div>
               </template>
             </Popover>
@@ -123,10 +145,15 @@
               size="sm"
               icon
               :aria-label="t('header.colorScheme')"
-              @click="setMode(resolvedMode === 'dark' ? 'light' : 'dark')"
+              @click="
+                (event: MouseEvent) =>
+                  setMode(resolvedMode === 'dark' ? 'light' : 'dark', { from: event })
+              "
             >
-              <PhSun v-if="resolvedMode === 'dark'" :size="18" />
-              <PhMoon v-else :size="18" />
+              <!-- Both icons, picked by CSS: the prerendered HTML can't know the saved theme, so a
+                   v-if showed the light icon in dark mode until the app hydrated. -->
+              <PhSun class="mode-icon mode-icon--sun" :size="18" aria-hidden="true" />
+              <PhMoon class="mode-icon mode-icon--moon" :size="18" aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -134,8 +161,16 @@
       <div class="app-body">
         <Sidebar v-model:mobile-open="mobileNavOpen" />
         <main class="app-content">
+          <!-- A faint dither at the top of the page, feathering out; still, so it costs one draw. -->
+          <div v-if="pageDither" class="page-dither" aria-hidden="true">
+            <DitherBackground still />
+          </div>
+          <!-- And its echo at the bottom, feathering up, so the page ends the way it starts. -->
+          <div v-if="pageDither" class="page-dither page-dither--end" aria-hidden="true">
+            <DitherBackground still />
+          </div>
           <RouterView v-slot="{ Component }">
-            <Transition name="page" mode="out-in">
+            <Transition name="page" mode="out-in" @before-enter="pageEntered">
               <component :is="Component" />
             </Transition>
           </RouterView>
@@ -148,77 +183,117 @@
       :class="{ 'mobile-dock--hidden': dockHidden }"
       :inert="dockHidden"
       :items="mobileDockItems"
+      :base-size="narrowPhone ? 40 : 48"
       magnify
       tooltips
     />
+    <Tour v-model:open="dockTourOpen" :steps="dockTourSteps" :scroll-into-view="false" />
+    <Tour v-model:open="settingTourOpen" :steps="settingTourSteps" :scroll-into-view="false" />
+    <Tour v-model:open="whatsNewOpen" :steps="whatsNewSteps" />
 
-    <BottomSheet v-model:open="mobileSettingsOpen" :title="t('header.settings')" width="md">
+    <BottomSheet
+      v-model:open="mobileSettingsOpen"
+      :title="t('header.settings')"
+      width="md"
+      :snap-points="settingsSnapPoints"
+    >
       <div class="mobile-settings">
-        <div class="theme-row">
-          <span>{{ t('header.primaryColor') }}</span>
-          <ThemeSwatches />
-        </div>
-        <label class="theme-row">
-          <span>{{ t('header.radius') }}</span>
-          <Select
-            :model-value="radiusChoice"
-            size="sm"
-            class="radius-select"
-            :aria-label="t('header.radius')"
-            :items="radiusItems"
-            @update:model-value="onRadiusChange"
-          />
-        </label>
-        <label class="theme-row">
-          <span>Font: {{ fontSize }}px</span>
-          <Slider
-            :model-value="fontSize"
-            aria-label="Font size"
-            :min="12"
-            :max="18"
-            :step="1"
-            class="font-slider"
-            @update:model-value="(v) => (fontSize = v as number)"
-          />
-        </label>
-        <label class="theme-row">
-          <span>{{ t('header.size') }}</span>
-          <SelectButton
-            v-model="uiSize"
-            size="sm"
-            :allow-empty="false"
-            :items="sizeItems"
-            :aria-label="t('header.size')"
-          />
-        </label>
-        <label class="theme-row">
-          <span>{{ t('header.animations') }}</span>
-          <Switch v-model="motion" size="sm" />
-        </label>
-        <label class="theme-row">
-          <span>{{ t('header.locale') }}</span>
-          <Select
-            :model-value="locale"
-            size="sm"
-            class="locale-select"
-            :items="localeItems"
-            :aria-label="t('header.locale')"
-            @update:model-value="onLocaleChange"
-          />
-        </label>
-        <label class="theme-row">
-          <span>{{ t('header.defaultMode') }}</span>
-          <SelectButton
-            v-model="defaultVariant"
-            size="sm"
-            :allow-empty="false"
-            :items="[
-              { label: t('component.vdom'), value: 'vdom' },
-              { label: t('component.vapor'), value: 'vapor' },
-            ]"
-            :aria-label="t('header.defaultMode')"
-          />
-        </label>
+        <section class="settings-group" aria-labelledby="settings-appearance">
+          <h3 id="settings-appearance" class="settings-heading">{{ t('header.appearance') }}</h3>
+          <label class="theme-row">
+            <span>{{ t('header.mode') }}</span>
+            <SelectButton
+              :model-value="mode"
+              :allow-empty="false"
+              :items="appearanceItems"
+              :aria-label="t('header.mode')"
+              @update:model-value="(value) => setMode(value as ColorSchemeMode)"
+            />
+          </label>
+          <div class="theme-row">
+            <span>{{ t('header.primaryColor') }}</span>
+            <ThemeSwatches />
+          </div>
+          <label class="theme-row">
+            <span>{{ t('header.radius') }}</span>
+            <Select
+              :model-value="radiusChoice"
+              class="radius-select"
+              :aria-label="t('header.radius')"
+              :items="radiusItems"
+              @update:model-value="onRadiusChange"
+            />
+          </label>
+          <label class="theme-row">
+            <span>{{ t('header.fontSize') }}</span>
+            <span class="settings-slider">
+              <span class="settings-value">{{ fontSize }}px</span>
+              <Slider
+                :model-value="fontSize"
+                :aria-label="t('header.fontSize')"
+                :min="12"
+                :max="18"
+                :step="1"
+                class="font-slider"
+                @update:model-value="(v) => (fontSize = v as number)"
+              />
+            </span>
+          </label>
+          <label class="theme-row">
+            <span>{{ t('header.size') }}</span>
+            <SelectButton
+              v-model="uiSize"
+              :allow-empty="false"
+              :items="sizeItems"
+              :aria-label="t('header.size')"
+            />
+          </label>
+          <label class="theme-row">
+            <span>{{ t('header.animations') }}</span>
+            <Switch v-model="motion" />
+          </label>
+          <label class="theme-row">
+            <span>{{ t('motionDocs.presets.label') }}</span>
+            <Select
+              v-model="motionPreset"
+              :items="presetItems"
+              @update:model-value="motionTune = null"
+              :aria-label="t('motionDocs.presets.label')"
+              class="loader-select"
+            />
+          </label>
+          <div class="theme-row">
+            <span class="loader-label">
+              {{ t('header.loader') }}
+              <Loader size="0.875rem" />
+            </span>
+            <Select
+              v-model="loaderType"
+              :items="loaderItems"
+              :aria-label="t('header.loader')"
+              class="loader-select"
+            />
+          </div>
+        </section>
+        <section class="settings-group" aria-labelledby="settings-general">
+          <h3 id="settings-general" class="settings-heading">{{ t('header.general') }}</h3>
+          <label class="theme-row">
+            <span>{{ t('header.locale') }}</span>
+            <Select
+              :model-value="locale"
+              class="locale-select"
+              :items="localeItems"
+              :aria-label="t('header.locale')"
+              @update:model-value="onLocaleChange"
+            />
+          </label>
+          <div class="theme-row">
+            <span>{{ t('dockTour.replayLabel') }}</span>
+            <Button variant="outline" @click="replayDockTour">
+              {{ t('dockTour.replay') }}
+            </Button>
+          </div>
+        </section>
       </div>
     </BottomSheet>
 
@@ -236,16 +311,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, shallowRef, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, provide, shallowRef, watch, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useEventListener, useLocalStorage } from '@vueuse/core'
+import { useEventListener, useLocalStorage, useMediaQuery } from '@vueuse/core'
 import {
   PhGear,
-  PhGithubLogo,
   PhHeart,
   PhHouse,
-  PhList,
+  PhMagnifyingGlass,
+  PhSquaresFour,
   PhMoon,
   PhPalette,
   PhSun,
@@ -257,6 +332,8 @@ import {
   ConfigProvider,
   DialogHost,
   Dock,
+  Loader,
+  openPopover,
   Popover,
   PopoverHost,
   Select,
@@ -266,20 +343,49 @@ import {
   Tag,
   Toaster,
   TooltipHost,
+  Tour,
   useColorScheme,
 } from 'vael-ui'
-import type { DockItemData } from 'vael-ui'
+import type { ColorSchemeMode, DockItemData, LoaderType, TourStep } from 'vael-ui'
+import MotionMenu from './components/MotionMenu.vue'
+import DitherBackground from './components/DitherBackground.vue'
+import { MOTION_PRESETS, motionPresets, tunedStyle } from './motionPresets'
+import type { MotionPreset, MotionTune } from './motionPresets'
 import Sidebar from './components/Sidebar.vue'
-import SearchPalette from './components/SearchPalette.vue'
+import { pageEntered } from './router'
+import SiteSearch from './components/SiteSearch.vue'
+import { siteSearchOpen } from './siteSearch'
+import { docsSettingsKey } from './docsSettings'
+import SupportMenu from './components/SupportMenu.vue'
 import Logo from './components/Logo.vue'
 import { setLocale, SUPPORTED_LOCALES, type Locale } from './i18n'
-import { defaultVariant, primaryColor } from './preferences'
+import { defaultVariant, primaryColor, readableAccent } from './preferences'
 import { useHead } from '@unhead/vue'
 
 // Lazy: it pulls in motion, which the rest of the shell doesn't need up front.
 const ThemeSwatches = defineAsyncComponent(() => import('./components/ThemeSwatches.vue'))
 
 const version = shallowRef(__VAEL_UI_VERSION__)
+
+// Someone who visited before had the menu in the header and the scheme toggle
+// in the dock; a first visit has nothing to relearn. Read here, before the
+// shell and the sidebar write their own keys.
+const DOCK_TOUR_KEY = 'vael-ui-docs-dock-tour-seen'
+const isReturningVisitor = (() => {
+  if (typeof localStorage === 'undefined') return false
+  try {
+    return [
+      'vael-ui-docs-theme',
+      'vael-ui-docs-radius',
+      'vael-ui-docs-font-size',
+      'vael-ui-docs-motion',
+      'vael-ui-docs-sidebar-width',
+      'vael-ui-docs-sidebar-scroll',
+    ].some((key) => localStorage.getItem(key) !== null)
+  } catch {
+    return false
+  }
+})()
 
 onMounted(() => {
   const root = document.documentElement
@@ -368,6 +474,8 @@ useHead({
     },
   ],
 })
+// Home and the Motion overview have their own dither heroes.
+const pageDither = computed(() => route.name !== 'home' && route.name !== 'motion-overview')
 const isToasterPage = computed(() => route.name === 'component' && route.params.name === 'Toaster')
 
 const themeOpen = shallowRef(false)
@@ -377,7 +485,15 @@ const mobileSettingsOpen = shallowRef(false)
 const i18n = useI18n()
 const { t } = i18n
 const locale = useLocalStorage<Locale>('vael-ui-docs-locale', 'en')
-watch(locale, (l) => setLocale(l), { immediate: true })
+watch(
+  locale,
+  (l) => {
+    void setLocale(l)
+    // Screen readers and the browser's translate prompt read the page's language from here.
+    if (typeof document !== 'undefined') document.documentElement.lang = l
+  },
+  { immediate: true },
+)
 
 const localeItems = SUPPORTED_LOCALES.map((l) => ({
   label: l.toUpperCase(),
@@ -387,7 +503,7 @@ function onLocaleChange(value: string | number | (string | number)[] | null) {
   if (typeof value === 'string') locale.value = value as Locale
 }
 
-const { resolvedMode, setMode } = useColorScheme({
+const { mode, resolvedMode, setMode } = useColorScheme({
   persist: {
     get: () => localStorage.getItem('vael-ui-docs-theme'),
     set: (m) => localStorage.setItem('vael-ui-docs-theme', m ?? ''),
@@ -402,6 +518,22 @@ function updateBrowserThemeColor() {
 watch(resolvedMode, updateBrowserThemeColor)
 onMounted(updateBrowserThemeColor)
 
+// Taller than the default 60%: every setting shows on most phones, and it pulls up further.
+const settingsSnapPoints = [
+  { id: 'open', height: 0.75 },
+  { id: 'full', height: 0.92 },
+]
+
+const appearanceItems = computed(() => [
+  { label: t('header.light'), value: 'light' },
+  { label: t('header.dark'), value: 'dark' },
+  { label: t('header.system'), value: 'system' },
+])
+
+// The smallest phones, or a larger font: five 48px items plus the dock's padding outgrow the
+// screen, the browser zooms the page out and the dock lands below the visible area.
+const narrowPhone = useMediaQuery('(max-width: 359px)')
+
 const mobileDockItems = computed<DockItemData[]>(() => [
   {
     label: t('nav.home'),
@@ -409,9 +541,14 @@ const mobileDockItems = computed<DockItemData[]>(() => [
     onSelect: () => router.push('/'),
   },
   {
-    label: t('header.colorScheme'),
-    icon: resolvedMode.value === 'dark' ? PhSun : PhMoon,
-    onSelect: () => setMode(resolvedMode.value === 'dark' ? 'light' : 'dark'),
+    label: t('nav.components'),
+    icon: PhSquaresFour,
+    onSelect: () => (mobileNavOpen.value = true),
+  },
+  {
+    label: t('nav.searchShort'),
+    icon: PhMagnifyingGlass,
+    onSelect: openSearch,
   },
   {
     label: t('header.settings'),
@@ -419,16 +556,24 @@ const mobileDockItems = computed<DockItemData[]>(() => [
     onSelect: () => (mobileSettingsOpen.value = true),
   },
   {
-    label: t('nav.github'),
-    icon: PhGithubLogo,
-    onSelect: () => window.open('https://github.com/Mini-Sylar/vael-ui', '_blank', 'noreferrer'),
-  },
-  {
-    label: t('nav.sponsor'),
-    icon: PhHeart,
-    onSelect: () => window.open('https://github.com/sponsors/Mini-Sylar', '_blank', 'noreferrer'),
+    label: t('nav.support'),
+    // Filled and pink like the header's heart, so it stands out in the dock.
+    icon: () => h(PhHeart, { weight: 'fill', class: 'sponsor-heart' }),
+    onSelect: openSupportMenu,
   },
 ])
+
+// The same palette as the header's search and ⌘K, in reach of the thumb.
+function openSearch() {
+  siteSearchOpen.value = true
+}
+
+// GitHub and sponsoring share the heart: a small menu above it.
+function openSupportMenu() {
+  const items = document.querySelectorAll<HTMLElement>('.mobile-dock .ui-dock-item')
+  const heart = items[items.length - 1]
+  if (heart) openPopover(SupportMenu, { triggerEl: heart, side: 'top', align: 'end' })
+}
 
 // The mobile dock floats over the page, so it slides away while scrolling
 // down (reading, or reaching for a control under it) and returns on scroll up
@@ -448,6 +593,74 @@ useEventListener(
   },
   { passive: true },
 )
+
+// Once, on a phone, for a returning visitor: the menu moved into the dock and
+// the scheme toggle into Settings. Two steps on the dock itself.
+const dockTourOpen = shallowRef(false)
+const dockTourSteps = shallowRef<TourStep[]>([])
+let dockTourPending = false
+function openDockTour() {
+  const items = document.querySelectorAll<HTMLElement>('.mobile-dock .ui-dock-item')
+  const variant = document.querySelector<HTMLElement>('.header-variant')
+  if (items.length < 4 || !variant || dockHidden.value) return
+  dockTourPending = false
+  dockTourSteps.value = [
+    {
+      target: items[1]!,
+      side: 'top',
+      title: t('dockTour.componentsTitle'),
+      description: t('dockTour.componentsDescription'),
+    },
+    {
+      target: items[2]!,
+      side: 'top',
+      title: t('dockTour.searchTitle'),
+      description: t('dockTour.searchDescription'),
+    },
+    {
+      target: variant,
+      side: 'bottom',
+      title: t('dockTour.variantTitle'),
+      description: t('dockTour.variantDescription'),
+    },
+    {
+      target: items[3]!,
+      side: 'top',
+      title: t('dockTour.settingsTitle'),
+      description: t('dockTour.settingsDescription'),
+    },
+  ]
+  dockTourOpen.value = true
+  try {
+    localStorage.setItem(DOCK_TOUR_KEY, '1')
+  } catch {
+    // Private mode: it may show again next visit, which is harmless.
+  }
+}
+onMounted(() => {
+  try {
+    if (localStorage.getItem(DOCK_TOUR_KEY)) return
+    // Nothing moved for a first visit, so it never needs the tour.
+    if (!isReturningVisitor) return localStorage.setItem(DOCK_TOUR_KEY, '1')
+  } catch {
+    return
+  }
+  if (!window.matchMedia('(max-width: 850px)').matches) return
+  dockTourPending = true
+  // After the page settles, so it doesn't land on top of the first paint.
+  setTimeout(openDockTour, 1200)
+})
+// From Settings: close the sheet first, so the tour lands on the dock rather than under the sheet.
+function replayDockTour() {
+  mobileSettingsOpen.value = false
+  dockHidden.value = false
+  setTimeout(openDockTour, 450)
+}
+
+// The dock was scrolled away when the timer fired: show it once the dock is back.
+watch(dockHidden, (hidden) => {
+  if (!hidden && dockTourPending) openDockTour()
+})
 
 const radiusItems = [
   { label: t('header.radiusDefault'), value: 'default' },
@@ -492,19 +705,140 @@ watch(fontSize, (f) => {
 // ConfigProvider defaults, so every component on the site follows them.
 const uiSize = useLocalStorage<'sm' | 'md' | 'lg'>('vael-ui-docs-size', 'md')
 const motion = useLocalStorage('vael-ui-docs-motion', true)
+// The header's motion menu: a preset style on every component, unless animations are off.
+const motionPreset = useLocalStorage<MotionPreset>('vael-ui-docs-motion-preset', 'default')
+const motionTune = useLocalStorage<MotionTune | null>('vael-ui-docs-motion-tune', null, {
+  serializer: { read: (raw) => (raw ? JSON.parse(raw) : null), write: JSON.stringify },
+})
+const presetStyle = computed(() =>
+  motionTune.value
+    ? tunedStyle(motionPreset.value, motionTune.value)
+    : motionPreset.value === 'default'
+      ? undefined
+      : motionPresets[motionPreset.value],
+)
+const presetItems = computed(() =>
+  MOTION_PRESETS.map((id) => ({ label: t(`motionDocs.presets.${id}.label`), value: id })),
+)
+const LOADER_TYPES: LoaderType[] = ['ring', 'dots', 'bars', 'comet', 'dither']
+const storedLoader = useLocalStorage<LoaderType>('vael-ui-docs-loader', 'ring')
+// A stale or hand-edited value falls back to the ring rather than reaching the library.
+const loaderType = computed<LoaderType>({
+  get: () => (LOADER_TYPES.includes(storedLoader.value) ? storedLoader.value : 'ring'),
+  set: (value) => (storedLoader.value = value),
+})
+const loaderItems = computed(() =>
+  LOADER_TYPES.map((value) => ({
+    label: t(`header.loader${value.charAt(0).toUpperCase()}${value.slice(1)}`),
+    value,
+  })),
+)
+
+// The search palette's actions change these, so it gets them from here.
+// "Show me how": opens Settings where it lives on this screen, then points at the row once it's open.
+// What's new in motion, from the motion menu: on a component page, where every piece is.
+const whatsNewOpen = shallowRef(false)
+const whatsNewSteps = shallowRef<TourStep[]>([])
+async function startWhatsNew() {
+  if (route.name !== 'component') {
+    await router.push({ name: 'component', params: { name: 'Dialog' } })
+    await new Promise((resolve) => setTimeout(resolve, 700))
+  }
+  const find = (selector: string) =>
+    [...document.querySelectorAll<HTMLElement>(selector)].find((el) => el.offsetParent !== null)
+  const step = (selector: string, id: string, side: TourStep['side']) => ({
+    target: find(selector) as HTMLElement,
+    side,
+    title: t(`motionDocs.tour.${id}Title`),
+    description: t(`motionDocs.tour.${id}Body`),
+  })
+  whatsNewSteps.value = [
+    step('.motion-menu-trigger', 'menu', 'bottom'),
+    step('.mode-trigger', 'mode', 'right'),
+    step('.pg-inspector-head .ui-select-button', 'tab', 'left'),
+    step('.toc-link[data-toc="motion"]', 'section', 'left'),
+  ].filter((s) => !!s.target)
+  whatsNewOpen.value = true
+}
+const settingTourOpen = shallowRef(false)
+const settingTourSteps = shallowRef<TourStep[]>([])
+// The tour hands focus back as it closes; the panel stays until your own next click or key.
+const holdSettings = shallowRef(false)
+watch(settingTourOpen, (open) => {
+  if (open) holdSettings.value = true
+  else
+    for (const type of ['pointerdown', 'keydown'])
+      window.addEventListener(type, () => (holdSettings.value = false), {
+        capture: true,
+        once: true,
+      })
+})
+async function showSetting(name: 'loader') {
+  const phone = window.matchMedia('(max-width: 850px)').matches
+  if (phone) mobileSettingsOpen.value = true
+  else themeOpen.value = true
+  const panel = phone ? '.mobile-settings' : '.theme-panel'
+  // The panel's own entrance, so the step lands where the row comes to rest.
+  await new Promise((resolve) => setTimeout(resolve, phone ? 450 : 250))
+  const row = document.querySelector(`${panel} .loader-select`)?.closest<HTMLElement>('.theme-row')
+  if (!row) return
+  settingTourSteps.value = [
+    {
+      target: row,
+      side: phone ? 'top' : 'left',
+      title: t(`showMe.${name}Title`),
+      description: t(`showMe.${name}Description`),
+    },
+  ]
+  settingTourOpen.value = true
+}
+
+provide(docsSettingsKey, {
+  mode,
+  setMode,
+  size: uiSize,
+  motion,
+  loaderType,
+  locale,
+  motionStyle: presetStyle,
+  showSetting,
+})
 const sizeItems = computed(() => [
   { label: t('header.sizeSm'), value: 'sm' },
   { label: t('header.sizeMd'), value: 'md' },
   { label: t('header.sizeLg'), value: 'lg' },
 ])
 
+// The page gets a readable shade of the picked accent; the swatches keep showing the pick itself.
+const accent = computed(() =>
+  primaryColor.value ? readableAccent(primaryColor.value, resolvedMode.value === 'dark') : null,
+)
 const theme = computed(() => ({
-  ...(primaryColor.value ? { primary: primaryColor.value } : {}),
+  ...(accent.value ? { primary: accent.value } : {}),
   ...(radiusChoice.value !== 'default' ? { radius: radiusChoice.value } : {}),
 }))
 </script>
 
 <style scoped>
+/* Follows the same signals as the page's colours (index.html restores data-theme before paint). */
+.mode-icon--sun {
+  display: none;
+}
+:root[data-theme='dark'] .mode-icon--sun {
+  display: block;
+}
+:root[data-theme='dark'] .mode-icon--moon {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .mode-icon--sun {
+    display: block;
+  }
+  :root:not([data-theme='light']) .mode-icon--moon {
+    display: none;
+  }
+}
+
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -538,6 +872,17 @@ const theme = computed(() => ({
   backdrop-filter: blur(12px) saturate(1.4);
   z-index: 10;
 }
+/* A dotted seam along the header's lower edge, fading out at both ends. */
+.app-header::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  block-size: 4px;
+  background: radial-gradient(circle, var(--ui-text) 0.55px, transparent 0.85px) 0 0 / 4px 4px;
+  opacity: 0.18;
+  mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent);
+  pointer-events: none;
+}
 
 @media (prefers-reduced-transparency: reduce) {
   .app-header {
@@ -555,6 +900,14 @@ const theme = computed(() => ({
   font-size: 1.1rem;
   text-decoration: none;
   color: var(--ui-text);
+}
+
+/* On the narrowest phones the header keeps the logo and the Vue DOM and Vapor toggle; the
+   version tag would push it past the screen's edge. */
+@media (max-width: 399px) {
+  .brand :deep(.brand-version) {
+    display: none;
+  }
 }
 
 .brand-text {
@@ -585,6 +938,7 @@ const theme = computed(() => ({
 
 .main-nav a {
   font-size: 0.9rem;
+  white-space: nowrap;
   text-decoration: none;
   color: var(--ui-text-muted);
 }
@@ -597,6 +951,12 @@ const theme = computed(() => ({
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
+}
+
+/* On a narrower desktop the search gives way; the heart and the toggle keep their size. */
+.sponsor-link .sponsor-heart,
+.header-controls :deep(.header-variant) {
+  flex: none;
 }
 
 .main-nav a.router-link-active {
@@ -618,7 +978,8 @@ const theme = computed(() => ({
   gap: 0.75rem;
 }
 
-.sponsor-heart {
+.sponsor-heart,
+.mobile-dock :deep(.sponsor-heart) {
   color: #db61a2;
 }
 /* Two quick beats on hover or keyboard focus; never a loop that pulls focus from the docs. */
@@ -652,21 +1013,58 @@ const theme = computed(() => ({
   }
 }
 
-.mobile-nav-trigger {
-  display: none;
-  flex-shrink: 0;
-}
-
+/* Room for the placeholder and the shortcut badge; it gives way only on narrow screens.
+   Its height comes from the row (the Vue DOM and Vapor toggle), so the two always match. */
 :deep(.header-search) {
-  flex: 1 1 auto;
-  min-width: 5rem;
-  max-width: 14rem;
+  flex: 0 1 16rem;
+  min-width: 8rem;
+  align-self: stretch;
+  block-size: auto;
 }
 
 .mobile-settings {
   display: flex;
   flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Grouped like a phone's own settings: a quiet label, then rows of touch
+   height split by hairlines. Scoped here; the desktop popover keeps its rows. */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-heading {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+
+.mobile-settings .theme-row {
+  min-block-size: 3rem;
+  padding-block: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.mobile-settings .theme-row + .theme-row {
+  border-block-start: 1px solid var(--ui-border);
+}
+
+.settings-slider {
+  display: flex;
+  align-items: center;
   gap: 0.75rem;
+}
+
+.settings-value {
+  min-inline-size: 2.5rem;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-muted);
 }
 
 .mobile-dock {
@@ -693,12 +1091,31 @@ const theme = computed(() => ({
   width: 9rem;
 }
 
+.loader-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.loader-label :deep(.ui-loader) {
+  color: var(--ui-text-muted);
+}
+
+/* Select has more than one root, so its own scoped class never applies; reach it through the row. */
+.theme-row :deep(.loader-select) {
+  flex: none;
+  width: 9rem;
+}
+
 .font-slider {
   width: 8rem;
 }
 
-.locale-select {
-  width: 5rem;
+/* Select has more than one root, so a scoped class on it never applies: reach it through the
+   parent. As a flex item it was squeezed a pixel under its width, which cut "EN" to "E…". */
+.header-controls :deep(.locale-select),
+.mobile-settings :deep(.locale-select) {
+  flex: none;
 }
 
 .app-body {
@@ -707,9 +1124,26 @@ const theme = computed(() => ({
 }
 
 .app-content {
+  position: relative;
+  isolation: isolate;
   flex: 1;
   min-width: 0;
   padding: 2.5rem 3.5rem 4rem;
+}
+
+.page-dither {
+  position: absolute;
+  inset: 0 0 auto;
+  block-size: 15rem;
+  z-index: -1;
+  pointer-events: none;
+  --dither-alpha: 0.045;
+  mask-image: linear-gradient(to bottom, #000, transparent);
+}
+.page-dither--end {
+  inset: auto 0 0;
+  block-size: 10rem;
+  mask-image: linear-gradient(to top, #000, transparent);
 }
 
 @media (max-width: 850px) {
@@ -717,11 +1151,12 @@ const theme = computed(() => ({
     display: none;
   }
 
-  .mobile-nav-trigger {
-    display: inline-flex;
+  .header-desktop-controls {
+    display: none;
   }
 
-  .header-desktop-controls {
+  /* Search sits in the dock on a phone; the header keeps the Vue DOM and Vapor choice. */
+  :deep(.header-search) {
     display: none;
   }
 

@@ -16,6 +16,11 @@
     margin: 0;
     padding: 0;
   }
+  /* Server-rendered, before the indicator is measured: the current page draws its look. */
+  .ui-pagination:not([data-indicator-placed]) .ui-pagination-page-button--active {
+    --ui-button-bg: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
   .ui-pagination-indicator {
     position: absolute;
     z-index: -1;
@@ -40,6 +45,8 @@
     align-items: inherit;
     gap: inherit;
     pointer-events: none;
+    /* Hidden until placed, then clipped from script; a style binding would undo that in Vapor. */
+    clip-path: inset(0 100% 0 0);
     transition: clip-path var(--ui-duration-press) var(--ui-ease-in-out);
   }
   .ui-pagination-indicator-labels > span {
@@ -51,11 +58,19 @@
   .ui-pagination-labels-spacer {
     visibility: hidden;
   }
+  /* Hover and focus backgrounds are the sliding .ui-indicator behind the buttons. */
+  .ui-pagination-list
+    .ui-button--ghost:is(:hover, :focus-visible):not(:disabled):not(.ui-button--disabled):not(
+      .ui-button--loading
+    ) {
+    --ui-button-bg: transparent;
+  }
   @media (hover: hover) and (pointer: fine) {
     .ui-button--ghost.ui-pagination-page-button--active:hover:not(:disabled):not(
         .ui-button--disabled
       ):not(.ui-button--loading) {
-      background: transparent;
+      /* The indicator behind it is the active look; Button paints its box from this variable. */
+      --ui-button-bg: transparent;
     }
   }
   .ui-pagination--no-motion .ui-pagination-indicator,

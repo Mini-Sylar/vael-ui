@@ -5,6 +5,7 @@
     force-mount
     flush
     :before-close="beforeClose"
+    :motion="sheetMotion"
     position="bottom"
     :close-on-esc="closeOnEsc"
     :close-on-overlay="closeOnOverlay"
@@ -13,15 +14,27 @@
     :container="container"
     :teleport-to="teleportTo"
     :show-close="false"
+    :scroll-fade="false"
     :ui="dialogUi"
+    :aria-labelledby="title && !$slots.header ? titleId : undefined"
+    :initial-focus="initialFocus"
     v-bind="$attrs"
   >
     <div ref="handle" :class="handleZonePart.class" :style="handleZonePart.style">
-      <div :class="handlePart.class" :style="handlePart.style" aria-hidden="true" />
+      <button
+        v-if="resolvedSnapPoints.length > 1"
+        ref="handleButton"
+        type="button"
+        :class="handlePart.class"
+        :style="handlePart.style"
+        :aria-label="messages.bottomSheet.resize"
+        @keydown="onHandleKeydown"
+      />
+      <div v-else :class="handlePart.class" :style="handlePart.style" aria-hidden="true" />
     </div>
     <div v-if="title || $slots.header" :class="headerPart.class" :style="headerPart.style">
       <slot name="header" :close="requestDismiss">
-        <span :class="titlePart.class" :style="titlePart.style">{{ title }}</span>
+        <span :id="titleId" :class="titlePart.class" :style="titlePart.style">{{ title }}</span>
         <button
           type="button"
           :class="closePart.class"
@@ -42,6 +55,7 @@
     </div>
     <div
       ref="content"
+      v-scroll-mask="scrollFade"
       :class="contentPart.class"
       :style="contentPart.style"
       :data-dragging="isDragging || undefined"
@@ -61,7 +75,11 @@ import type { InjectionKey } from 'vue'
 import type { SheetSnapPoint } from '../../composables/useSheetDrag'
 import type { UiPartValue } from '../../classes'
 import type { DOMTarget } from '../../composables/dom'
+import type { BeforeClose, CloseContext, DialogMotion, Spring } from '../../motion/types'
+import type { DialogCloseReason } from '../../composables/useDialog'
 export type { SheetSnapPoint }
+/** Why the sheet is closing: a dialog's reasons, plus `'drag'` when it was dragged away. */
+export type SheetCloseReason = DialogCloseReason | 'drag'
 
 // Nested sheet announces open state; parent recedes Vaul-style (no consumer wiring).
 const nestingKey: InjectionKey<{ onNestedOpenChange: (open: boolean) => void }> =
@@ -73,7 +91,7 @@ const DEFAULT_SNAP_POINTS: SheetSnapPoint[] = [
 ]
 
 export interface BottomSheetProps {
-  /** Renders the default header with a built-in close button. */
+  /** Renders the default header with a built-in close button, and names the sheet. */
   title?: string
   /** Snap points, ordered smallest to largest. Unset, the sheet snaps at 60% and 92% of viewport height,
    * or fills it when `fullScreen` is set. */
@@ -92,6 +110,8 @@ export interface BottomSheetProps {
    * @default false
    */
   fullScreen?: boolean
+  /** Fades the content's top and bottom edges while there's more to scroll, like Dialog. @default true */
+  scrollFade?: boolean
   /** Closes the sheet when you press Escape. @default true */
   closeOnEsc?: boolean
   /** Closes the sheet when you click the overlay. @default true */
@@ -108,10 +128,18 @@ export interface BottomSheetProps {
    */
   closeOnHistoryBack?: boolean
   /**
-   * Runs before closing; call `done()` to finish. If your animation already moved the sheet off
-   * screen, it closes at once. Otherwise the built-in slide-out plays.
+   * Runs before the sheet closes. Return `true` to close it, `false` to keep it open, or a
+   * promise of either. `reason` is `'drag'` when it was dragged away, and `velocity` is the
+   * drag's release speed in px/s.
    */
-  beforeClose?: (done: () => void) => void
+  beforeClose?: BeforeClose<SheetCloseReason>
+  /**
+   * How the sheet moves. `false` makes it instant. Set your own `initial` and `exit` per part,
+   * `targets`, or `linked`: elements outside the sheet that follow it, such as the page receding
+   * while it's open. Linked elements follow a drag too. Your parts replace the built-in rise and
+   * slide-out.
+   */
+  motion?: DialogMotion
   /** Teleport target: a CSS selector. Wins over `container` either way. */
   teleportTo?: string
   /** Element to contain the sheet in, instead of the viewport. Snap points use its height. */
@@ -137,13 +165,29 @@ export interface BottomSheetProps {
 // Dialog import (and its CSS) must precede BottomSheet.css: this panel
 // carries both .ui-dialog-panel and .ui-bottom-sheet-panel, and the latter's
 // overrides (e.g. max-block-size) need to win the cascade.
-import { computed, inject, onScopeDispose, provide, shallowRef, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  inject,
+  provide,
+  shallowRef,
+  useId,
+  useTemplateRef,
+  watch,
+  watchEffect,
+} from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
+import type { DialogExposed } from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
-import { resolveDOMTarget } from '../../composables/dom'
-import { useUiMessages } from '../../messages'
+import { askGuard, closeContext } from '../../composables/useCloseGuard'
+import { flingTiming } from '../../motion/fling'
+import { gestureKey } from '../../motion/useComponentMotion'
+import type { LinkedGesture } from '../../motion/useComponentMotion'
+import { getFocusable, resolveDOMTarget } from '../../composables/dom'
+import { vScrollMask } from '../../directives/vScrollMask'
+import { useMessages, bottomSheetMessages, dialogMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 
@@ -156,10 +200,12 @@ const props = withDefaults(defineProps<BottomSheetProps>(), {
   dismissible: true,
   width: 'full',
   fullScreen: false,
+  scrollFade: true,
   closeOnEsc: true,
   closeOnOverlay: true,
   modal: true,
   closeOnHistoryBack: false,
+  motion: undefined,
 })
 
 const resolvedSnapPoints = computed<SheetSnapPoint[]>(
@@ -178,21 +224,17 @@ defineSlots<{
   header(props: { close: () => void }): unknown
 }>()
 
-const messages = useUiMessages()
-const dialog = useTemplateRef('dialog')
+const messages = useMessages({ bottomSheet: bottomSheetMessages, dialog: dialogMessages })
+const dialog = useTemplateRef<DialogExposed>('dialog')
 const handle = useTemplateRef<HTMLElement>('handle')
 const content = useTemplateRef<HTMLElement>('content')
+const handleButton = useTemplateRef<HTMLElement>('handleButton')
+const titleId = useId()
 
 const panelEl = computed(() => dialog.value?.panelEl ?? null)
 const isClosing = computed(() => dialog.value?.isClosing ?? false)
 function cancelClose() {
   dialog.value?.cancelClose()
-}
-
-function reducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
 }
 
 // Drag dismiss delegates to Dialog's close() — one owner of exit animation (drag/ESC/overlay click).
@@ -204,13 +246,19 @@ function requestDismiss() {
 const velocityAtClose = shallowRef(0)
 const releaseVelocity = computed(() => velocityAtClose.value)
 let dragVelocity = 0
+let fromDrag = false
 function dismissFromDrag(velocity: number) {
   dragVelocity = velocity
+  fromDrag = true
   requestDismiss()
   dragVelocity = 0
+  fromDrag = false
 }
 
-const { activeSnap, isDragging, setReceded } = useSheetDrag(open, {
+const gesture = shallowRef<LinkedGesture | null>(null)
+provide(gestureKey, () => gesture.value)
+
+const { activeSnap, isDragging, setReceded, settle } = useSheetDrag(open, {
   panelEl,
   handleEl: handle,
   contentEl: content,
@@ -218,64 +266,119 @@ const { activeSnap, isDragging, setReceded } = useSheetDrag(open, {
   initialSnap: () => props.initialSnap,
   dismissible: () => props.dismissible,
   onDismiss: dismissFromDrag,
+  // `linked` elements follow the drag, then the settle or the close.
+  onProgress: (progress, timing) =>
+    (gesture.value = progress === null ? { settle: timing ?? DRAWER } : { progress }),
   bounds: () => resolveDOMTarget(props.container ?? null),
 })
+
+// ArrowUp and ArrowDown on the handle step through the snap points; it never closes the sheet.
+function onHandleKeydown(event: KeyboardEvent) {
+  const step = event.key === 'ArrowUp' ? 1 : event.key === 'ArrowDown' ? -1 : 0
+  if (!step) return
+  event.preventDefault()
+  const list = resolvedSnapPoints.value
+  const index = list.findIndex((point) => point.id === activeSnap.value)
+  const next = list[Math.min(list.length - 1, Math.max(0, index + step))]
+  if (next) activeSnap.value = next.id
+}
+// Opening focuses the first control after the handle, so focus doesn't land on the resize grip.
+function initialFocus() {
+  const panel = panelEl.value
+  return panel ? getFocusable(panel).find((el) => el !== handleButton.value) : undefined
+}
 
 // Nesting auto-detected: instance tells ancestor when opening/closing.
 const parentSheet = inject(nestingKey, null)
 provide(nestingKey, { onNestedOpenChange: setReceded })
 watch(open, (value) => parentSheet?.onNestedOpenChange(value))
-// isClosing flips the instant a close is requested, well before `open` itself flips once the
-// exit animation finishes — un-recede the parent then, so both animate out together.
-watch(isClosing, (value) => {
-  if (value) parentSheet?.onNestedOpenChange(false)
+// Your guard, asked with the drag's release speed. While it decides, a dragged sheet stays where
+// it was let go; refused, it springs back to rest. Deciding only: the exit is the engine's.
+async function beforeClose(context: CloseContext<DialogCloseReason>) {
+  velocityAtClose.value = dragVelocity
+  const dragged = fromDrag
+  if (!props.beforeClose) return true
+  const ask = closeContext<SheetCloseReason>(dragged ? 'drag' : context.reason, {
+    velocity: dragVelocity * 1000,
+  })
+  const allowed = await askGuard(props.beforeClose, ask)
+  if (!allowed && dragged) settle()
+  return allowed
+}
+
+// The built-in look, played by the motion engine: the panel rises from below and goes back down,
+// its backdrop fading on the same curve. The engine moves `translate`; the drag owns `transform`.
+const DRAWER = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-drawer)' } as const
+const FADE = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-out)' } as const
+const DRAWER_EXIT = {
+  duration: 'var(--ui-duration-drawer-exit)',
+  easing: 'var(--ui-ease-drawer)',
+} as const
+// Every close leaves on one spring over what's left of the panel's height (your `motion.spring`,
+// or a fling's): a flick carries on at the finger's speed, the X or Escape start from rest. The
+// backdrop rides the same spring, so the two leave together.
+// What's left of the panel below the drag or snap point, measured as it starts to close: read
+// later, a closed panel is detached and measures 0.
+const leftAtClose = shallowRef<number | null>(null)
+watch(
+  open,
+  (value) => {
+    const panel = panelEl.value
+    if (value || !panel) return
+    const offset = new DOMMatrix(getComputedStyle(panel).transform).m42
+    leftAtClose.value = Math.max(0, panel.offsetHeight - offset)
+  },
+  { flush: 'sync' },
+)
+const sheetLook = computed<DialogMotion>(() => {
+  const speed = Math.max(0, velocityAtClose.value)
+  const yours = typeof props.motion === 'object' ? (props.motion.spring as Spring) : undefined
+  const left = leftAtClose.value
+  const leave = left === null ? DRAWER_EXIT : flingTiming(left, speed, yours)
+  return {
+    initial: {
+      panel: { y: { value: '100%', ...DRAWER } },
+      overlay: { opacity: { value: 0, ...FADE } },
+    },
+    exit: {
+      panel: { y: { value: left === null ? '100%' : `${left}px`, ...leave } },
+      overlay: { opacity: { value: 0, ...leave } },
+    },
+  }
 })
 
-let exitTimer: ReturnType<typeof setTimeout> | undefined
-onScopeDispose(() => clearTimeout(exitTimer))
-
-// Off screen means beforeClose ran its own exit. Still up means it only confirmed, so slide out.
-function beforeClose(done: () => void) {
-  velocityAtClose.value = dragVelocity
-  if (props.beforeClose) {
-    props.beforeClose(() => (isOffScreen() ? done() : animateClose(done)))
-    return
-  }
-  animateClose(done)
-}
-
-function isOffScreen() {
-  const panel = panelEl.value
-  const bottom = resolveDOMTarget(props.container ?? null)?.getBoundingClientRect().bottom
-  return !panel || panel.getBoundingClientRect().top >= (bottom ?? window.innerHeight) - 1
-}
-
-function animateClose(done: () => void) {
-  const panel = panelEl.value
-  if (!panel || reducedMotion()) {
-    done()
-    return
-  }
-  panel.style.transition =
-    'transform var(--ui-duration-drawer, 500ms) var(--ui-ease-drawer, cubic-bezier(0.32, 0.72, 0, 1))'
-  panel.style.transform = 'translateY(100%)'
-  clearTimeout(exitTimer)
-  exitTimer = setTimeout(done, 520)
-}
+// Yours over the built-in look: your parts replace its parts; the rest (`linked`, `targets`) adds.
+const sheetMotion = computed<DialogMotion>(() => {
+  const yours = props.motion
+  const look = sheetLook.value
+  if (yours === false) return false
+  if (typeof yours !== 'object' || typeof look !== 'object') return look
+  return {
+    ...look,
+    ...yours,
+    initial: { ...look.initial, ...yours.initial },
+    exit: { ...look.exit, ...yours.exit },
+  } as DialogMotion
+})
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.bottomSheet,
   () => props.ui,
 )
+// A closing sheet keeps the size it was open at, even when its width changes as it closes.
+const shownSize = shallowRef({ width: props.width, fullScreen: props.fullScreen })
+watchEffect(() => {
+  if (open.value) shownSize.value = { width: props.width, fullScreen: props.fullScreen }
+})
 // Forward to Dialog as { class, style } pair (bare string would drop style half).
 const panelPart = computed(() =>
   resolveUiPart(
     cx,
     themedUi()?.panel,
     'ui-bottom-sheet-panel',
-    props.width !== 'full' && `ui-bottom-sheet-panel--${props.width}`,
-    props.fullScreen && 'ui-bottom-sheet-panel--full-screen',
+    shownSize.value.width !== 'full' && `ui-bottom-sheet-panel--${shownSize.value.width}`,
+    shownSize.value.fullScreen && 'ui-bottom-sheet-panel--full-screen',
   ),
 )
 const overlayPart = computed(() =>
@@ -302,7 +405,7 @@ defineExpose({
   panelEl,
   /** Backdrop element. `null` when `modal` is `false`. */
   overlayEl: computed(() => dialog.value?.overlayEl ?? null),
-  /** `id` of the snap point the sheet rests at. */
+  /** `id` of the snap point the sheet rests at. Set it to move the sheet there. */
   activeSnap,
   /** Whether you're dragging the sheet. */
   isDragging,

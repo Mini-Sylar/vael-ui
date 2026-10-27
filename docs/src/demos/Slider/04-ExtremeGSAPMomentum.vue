@@ -1,13 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Extreme: GSAP momentum &amp; rubber-band release (gsap)</h3>
+    <h3>Extreme: the thumb overshoots when you let go (gsap)</h3>
     <p class="note">
-      Flick the thumb and let go, it overshoots past the release point and eases back, scaled to
-      release velocity. The thumb's real position is set via the standalone CSS
-      <code>translate</code> property; GSAP tweens a plain JS object (not the thumb element itself)
-      and each tick writes the result to the thumb's <code>transform</code>, a separate property
-      that composes additively with <code>translate</code> — handing GSAP the element directly would
-      have it clear <code>translate</code> to own the whole transform stack itself.
+      Flick the thumb and let go: it overshoots past where you released it and eases back, farther
+      for a faster flick. Slider places the thumb with the CSS <code>translate</code> property, so
+      GSAP tweens a plain object and writes each value to the <code>transform</code> of the exposed
+      <code>thumbEls</code>, which adds to <code>translate</code>. Given the thumb element itself,
+      GSAP would clear <code>translate</code> and take over the whole transform.
     </p>
     <div class="row slider-row">
       <Slider

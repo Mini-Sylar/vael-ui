@@ -13,8 +13,9 @@
         :data-disabled="isDisabled(item) ? '' : undefined"
       >
         <component
-          :is="nativeTag(isReachable(index, item) ? 'button' : 'div')"
-          :type="isReachable(index, item) ? 'button' : undefined"
+          :is="nativeTag(clickable ? 'button' : 'div')"
+          :type="clickable ? 'button' : undefined"
+          :disabled="clickable && !isReachable(index, item) ? true : undefined"
           :class="triggerPart.class"
           :style="triggerPart.style"
           :aria-disabled="isDisabled(item) ? 'true' : undefined"
@@ -35,7 +36,7 @@
               :completed="stateOf(index) === 'completed'"
               :disabled="isDisabled(item)"
             >
-              <Transition :name="props.motionCss ? 'ui-stepper-check' : undefined">
+              <Transition :name="props.motion ? 'ui-stepper-check' : undefined">
                 <svg
                   v-if="stateOf(index) === 'completed'"
                   key="check"
@@ -80,6 +81,9 @@
               >
             </slot>
           </span>
+          <span v-if="stateOf(index) === 'completed'" :style="visuallyHidden">{{
+            messages.stepper.completed
+          }}</span>
         </component>
       </li>
       <li
@@ -106,6 +110,7 @@ export interface StepperItem {
 import './Stepper.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { nativeTag } from '../../composables/dom'
 import { computed, ref, shallowReactive, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -113,6 +118,9 @@ import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useMessages, stepperMessages } from '../../messages'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { StepperMotion } from '../../motion/types'
 
 /** Index of the active step. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
@@ -132,11 +140,12 @@ const rawProps = withDefaults(
     /** `false` renders a display-only progress indicator with no click handling. @default true */
     clickable?: boolean
     /**
-     * Built-in transitions: the check swap, circle colors and connector fill. `false` makes them
-     * instant.
+     * How it moves: its parts' appearance, step by step (`{ initial: { step: { opacity: 0, y: 4 } }, stagger: 0.06 }`),
+     * over `root`, `step`, `circle`, `connector` and `content`. The built-in transitions are the
+     * check swap, circle colors and connector fill; `false` makes them instant.
      * @default true
      */
-    motionCss?: boolean
+    motion?: StepperMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -149,9 +158,9 @@ const rawProps = withDefaults(
       connector: UiPartValue
     }>
   }>(),
-  { orientation: 'horizontal', linear: true, clickable: true, motionCss: undefined },
+  { orientation: 'horizontal', linear: true, clickable: true, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when you click a step and it becomes active. */
@@ -204,7 +213,32 @@ function onStepClick(index: number, item: T) {
 
 const root = useTemplateRef<HTMLElement>('root')
 useFocusableScroller(root)
-// By index: a circle remounts when its step becomes clickable, and a v-for ref array would reorder.
+const parts = useStateMotion({
+  key: 'stepper',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-stepper',
+    step: '.ui-stepper-step',
+    circle: '.ui-stepper-circle',
+    connector: '.ui-stepper-connector',
+    content: '.ui-stepper-content',
+  },
+  states: () => ({}),
+  // Step by step: each step, circle and line plays its own states.
+  repeated: ['step', 'circle', 'connector', 'content'],
+  each: (part, _, index) =>
+    part === 'connector'
+      ? { completed: index < modelValue.value, upcoming: index >= modelValue.value }
+      : {
+          current: index === modelValue.value,
+          completed: index < modelValue.value,
+          upcoming: index > modelValue.value,
+          disabled: isDisabled(props.items[index]!),
+        },
+})
+// By index: a v-for ref array would reorder.
 const circleSlots = shallowReactive<(HTMLElement | null)[]>([])
 const labelSlots = shallowReactive<(HTMLElement | null)[]>([])
 const connectorSlots = shallowReactive<(HTMLElement | null)[]>([])
@@ -223,6 +257,16 @@ const connectorEls = computed(() =>
   connectorSlots.slice(0, Math.max(props.items.length - 1, 0)).filter(present),
 )
 const labelEls = computed(() => labelSlots.slice(0, props.items.length).filter(present))
+const messages = useMessages({ stepper: stepperMessages })
+// The check is drawn, not read: a completed step says so in words.
+const visuallyHidden = {
+  position: 'absolute',
+  inlineSize: '1px',
+  blockSize: '1px',
+  overflow: 'hidden',
+  clipPath: 'inset(50%)',
+  whiteSpace: 'nowrap',
+} as const
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.stepper,
@@ -234,7 +278,7 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-stepper',
     `ui-stepper--${props.orientation}`,
-    !props.motionCss && 'ui-stepper--no-anim',
+    !props.motion && 'ui-stepper--no-anim',
   ),
 )
 const stepPart = computed(() => resolveUiPart(cx, themedUi()?.step, 'ui-stepper-step'))
@@ -257,11 +301,15 @@ const connectorPart = computed(() =>
 defineExpose({
   /** Root element. */
   el: root,
-  /** Step circle elements, in order. A circle remounts when its step becomes clickable. */
+  /** Step circle elements, in order. */
   circleEls,
   /** Connector elements, one fewer than steps. Set `--ui-stepper-fill` (0 to 1) to drive a fill. */
   connectorEls,
   /** Step label elements, in order. Empty when the `item` slot replaces them. */
   labelEls,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

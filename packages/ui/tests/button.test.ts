@@ -249,7 +249,9 @@ test.each(['ghost', 'outline', 'secondary'] as const)(
       h(Button, { variant, 'aria-pressed': false, 'data-testid': 'off' }, () => 'Bold'),
       h(Button, { variant, 'aria-pressed': true, 'data-testid': 'on' }, () => 'Bold'),
     ])
-    const bg = (id: string) => getComputedStyle(screen.getByTestId(id).element()).backgroundColor
+    // The box is painted by the button's ::before layer.
+    const bg = (id: string) =>
+      getComputedStyle(screen.getByTestId(id).element(), '::before').backgroundColor
     const token = (name: string) => {
       const probe = document.createElement('span')
       probe.style.backgroundColor = `var(${name})`

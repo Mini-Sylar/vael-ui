@@ -1,6 +1,11 @@
 @layer ui-components {
   /* CascadeSelect: panel is a Menu instance. */
   /* Trigger fills row like Input. */
+  /* At least the field's width, up to a cap: on a long field a wider panel only puts the next
+     level further from the row that opens it. */
+  .ui-menu-panel.ui-cascade-select-panel {
+    min-inline-size: min(var(--ui-anchor-inline-size, 0px), 16rem);
+  }
   .ui-cascade-select .ui-menu-trigger {
     display: flex;
     inline-size: 100%;
@@ -37,23 +42,42 @@
     font-size: var(--ui-font-size);
     border-radius: var(--ui-radius);
   }
-  .ui-cascade-select-trigger:hover:not(.ui-cascade-select-trigger--disabled) {
-    border-color: var(--ui-border-strong);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-cascade-select-trigger:hover:not(.ui-cascade-select-trigger--disabled) {
+      border-color: var(--ui-border-strong);
+    }
   }
-  /* Div role="combobox" needs own focus-visible. */
-  .ui-cascade-select-trigger:focus-visible {
+  /* The button inside the frame fills its height; the frame rings while it has keyboard focus. */
+  .ui-cascade-select-control {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    align-self: stretch;
+    min-inline-size: 0;
+    outline: none;
+  }
+  .ui-cascade-select-trigger:has(> .ui-cascade-select-control:focus-visible) {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }
   .ui-cascade-select-trigger[data-invalid] {
     border-color: var(--ui-danger);
   }
-  .ui-cascade-select-trigger[data-invalid]:focus-visible {
+  .ui-cascade-select-trigger[data-invalid]:has(> .ui-cascade-select-control:focus-visible) {
     outline-color: var(--ui-danger);
   }
   .ui-cascade-select-trigger--disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  /* #start and #end: muted like the chevron, spaced by the trigger's gap. */
+  .ui-cascade-select-start,
+  .ui-cascade-select-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: none;
+    color: var(--ui-text-muted);
   }
   /* Same 24px target as Select's clear. */
   .ui-cascade-select-clear {
@@ -91,11 +115,15 @@
     inline-size: 0.85em;
     block-size: 0.85em;
   }
-  .ui-cascade-select-clear:hover {
-    color: var(--ui-text);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-cascade-select-clear:hover {
+      color: var(--ui-text);
+    }
   }
-  .ui-cascade-select-clear:hover::before {
-    background: var(--ui-muted);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-cascade-select-clear:hover::before {
+      background: var(--ui-muted);
+    }
   }
   .ui-cascade-select-value {
     flex: 1 1 auto;
@@ -105,10 +133,27 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  /* Clip room for a chip remove's 24px hit area. */
+  .ui-cascade-select-value .ui-animated-text-value {
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+  }
+  .ui-cascade-select-value .ui-animated-text[data-sizing] .ui-animated-text-value {
+    text-overflow: clip;
+  }
+  /* One row, so the placeholder sits beside the last chip while it collapses instead of under it.
+     The padding is clip room for a chip remove's 24px hit area. */
   .ui-cascade-select-value:has(> .ui-cascade-select-chips) {
+    display: flex;
+    align-items: center;
     padding-block: 4px;
     margin-block: -4px;
+  }
+  /* As in Select: the row clips what doesn't fit, so neither the chips nor the placeholder gives way. */
+  .ui-cascade-select-value > .ui-cascade-select-chips,
+  .ui-cascade-select-value > .ui-cascade-select-placeholder {
+    flex: none;
   }
   /* Chips clip horizontally within the fixed-height trigger, as in Select. */
   .ui-cascade-select-chips {
@@ -130,9 +175,10 @@
   .ui-cascade-select-chevron {
     flex: none;
     color: var(--ui-text-muted);
-    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
-  .ui-cascade-select-chevron svg {
+  /* The chevron is the svg itself: sized by the trigger's font-size, like Select's. */
+  svg.ui-cascade-select-chevron {
     inline-size: 1em;
     block-size: 1em;
   }
@@ -170,14 +216,6 @@
      teleported out of .ui-cascade-select, so this targets Menu's row directly. */
   .ui-menu-item[data-cascade-selected] {
     background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
-  }
-  .ui-menu-item[data-cascade-selected]:focus-visible {
-    background: var(--ui-muted);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-menu-item[data-cascade-selected]:hover {
-      background: var(--ui-muted);
-    }
   }
 
   @media (hover: none) and (pointer: coarse) {

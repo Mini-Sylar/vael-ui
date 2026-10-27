@@ -17,13 +17,23 @@ const SSR_BUGS =
   /\b(document|window|navigator|localStorage|requestAnimationFrame) is not defined|does not provide an export/
 
 const entry = `
-import { createSSRApp, h } from 'vue'
+import { createSSRApp, h, withDirectives } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import * as vdom from 'vael-ui'
 import * as vapor from 'vael-ui/vapor'
+import { vAnimate, vAnimateVapor } from 'vael-ui/motion'
 export const builds = { vdom, vapor }
+// A Vapor file renders through VDOM on the server, so vAnimateVapor must work there too.
+export const motions = { vAnimate, vAnimateVapor }
 export const render = (component) =>
   renderToString(createSSRApp({ render: () => h(component, null, () => 'x') }))
+// v-animate's first appearance as CSS, from either build's directive.
+export const appear = (directive) =>
+  renderToString(
+    createSSRApp({
+      render: () => withDirectives(h('p', 'x'), [[directive, { initial: { opacity: 0 } }]]),
+    }),
+  )
 `
 
 console.warn = () => {}
@@ -45,7 +55,10 @@ const vite = await createServer({
 const problems = []
 const rendered = {}
 try {
-  const { builds, render } = await vite.ssrLoadModule('virtual:verify-ssr')
+  const { builds, motions, render, appear } = await vite.ssrLoadModule('virtual:verify-ssr')
+  for (const [name, directive] of Object.entries(motions))
+    if (!(await appear(directive)).includes('data-ui-appear'))
+      problems.push(`${name} renders no first-paint appearance on the server`)
   for (const [label, lib] of Object.entries(builds)) {
     rendered[label] = new Set()
     const components = Object.keys(lib).filter(
@@ -80,10 +93,21 @@ try {
 // An SSR app with the `vapor` condition on its server imports 'vael-ui' and must get the Vapor
 // server build, not the browser one (which throws "does not provide an export" on the server).
 const vaporConditionEntry = `
-import { createSSRApp, h } from 'vue'
+import { createSSRApp, h, withDirectives } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { Button } from 'vael-ui'
+import { vAnimate, vAnimateVapor } from 'vael-ui/motion'
 export const html = () => renderToString(createSSRApp({ render: () => h(Button, null, () => 'x') }))
+export const appears = () =>
+  Promise.all(
+    [vAnimate, vAnimateVapor].map((directive) =>
+      renderToString(
+        createSSRApp({
+          render: () => withDirectives(h('p', 'x'), [[directive, { initial: { opacity: 0 } }]]),
+        }),
+      ),
+    ),
+  )
 `
 const vaporVite = await createServer({
   root: join(__dirname, '..'),
@@ -105,9 +129,11 @@ const vaporVite = await createServer({
   ],
 })
 try {
-  const { html } = await vaporVite.ssrLoadModule('virtual:verify-ssr-vapor')
+  const { html, appears } = await vaporVite.ssrLoadModule('virtual:verify-ssr-vapor')
   if (!(await html()).includes('ui-button'))
     problems.push("'vael-ui' with the vapor condition rendered no Button")
+  if (!(await appears()).every((out) => out.includes('data-ui-appear')))
+    problems.push("'vael-ui/motion' with the vapor condition renders no v-animate appearance")
 } catch (error) {
   problems.push(
     `'vael-ui' with the vapor condition failed on the server: ${String(error?.message ?? error).split('\n')[0]}`,

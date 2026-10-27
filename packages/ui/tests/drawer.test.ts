@@ -47,19 +47,20 @@ test('modal=false renders no overlay, does not lock scroll, does not steal focus
   await expect.element(screen.getByTestId('pinned-state')).toHaveTextContent('closed')
 })
 
-test('Drawer passes flush through, so a bottom drawer sits on the viewport edge', async () => {
+test('a bottom drawer sits on the viewport edge, with or without flush', async () => {
   const { h } = await import('vue')
   const { default: Drawer } = await import('../src/components/Drawer/Drawer.vue')
   await render({
     render: () => [
       h(Drawer, { open: true, side: 'bottom', title: 'Flush', flush: true }),
-      h(Drawer, { open: true, side: 'bottom', title: 'Floating', modal: false }),
+      h(Drawer, { open: true, side: 'bottom', title: 'Plain', modal: false }),
     ],
   })
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-dialog-panel').length).toBe(2))
-  const [flush, floating] = [...document.querySelectorAll<HTMLElement>('.ui-dialog-panel')]
-  expect(flush!.getBoundingClientRect().bottom).toBeCloseTo(window.innerHeight, 0)
-  expect(floating!.getBoundingClientRect().bottom).toBeLessThan(window.innerHeight - 8)
+  for (const panel of document.querySelectorAll<HTMLElement>('.ui-dialog-panel'))
+    await vi.waitFor(() =>
+      expect(panel.getBoundingClientRect().bottom).toBeCloseTo(window.innerHeight, 0),
+    )
 })
 
 test('Drawer forwards the overlay as overlayEl', async () => {
@@ -69,4 +70,62 @@ test('Drawer forwards the overlay as overlayEl', async () => {
   await render({ render: () => h(Drawer, { ref: drawer, open: true, title: 'Overlay' }) })
   await vi.waitFor(() => expect(drawer.value?.overlayEl).toBeInstanceOf(HTMLElement))
   expect(drawer.value!.overlayEl).toBe(document.querySelector('.ui-dialog-overlay'))
+})
+
+test('a closing drawer lets taps through to the page under it while it slides away', async () => {
+  // The exit is what this is about, so <Transition> runs for real.
+  const screen = await render(DrawerFixture, {
+    props: { position: 'left' },
+    global: { stubs: { transition: false } },
+  })
+  await screen.getByTestId('trigger-modal').click()
+  await vi.waitFor(() => expect(document.querySelector('.ui-dialog--left')).not.toBeNull())
+  await new Promise((r) => setTimeout(r, 400))
+  const outside = document.querySelector<HTMLElement>('[data-testid="outside"]')!
+  const box = outside.getBoundingClientRect()
+  const x = box.left + box.width / 2
+  const y = box.top + box.height / 2
+  // Open, the drawer is what's under that point.
+  expect(document.elementFromPoint(x, y)?.closest('.ui-dialog')).not.toBeNull()
+  // Hit-test the moment the exit starts: the click's round trip can outlast the
+  // whole slide on a slow runner, so checking after it returns would race.
+  let hitWhileLeaving: Element | null | undefined
+  const watch = new MutationObserver(() => {
+    if (hitWhileLeaving === undefined && document.querySelector('.ui-dialog[data-ui-leaving]'))
+      hitWhileLeaving = document.elementFromPoint(x, y)
+  })
+  watch.observe(document.body, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-ui-leaving'],
+  })
+  await screen.getByTestId('done').click()
+  await vi.waitFor(() => expect(hitWhileLeaving).not.toBeUndefined())
+  watch.disconnect()
+  // Still on screen and leaving, yet the button under it is what a tap would hit.
+  expect(hitWhileLeaving).toBe(outside)
+})
+
+test('a drawer leaves on a spring from rest, its backdrop on the same curve', async () => {
+  const screen = await render(DrawerFixture, {
+    props: { position: 'right' },
+    global: { stubs: { transition: false } },
+  })
+  await screen.getByTestId('trigger-modal').click()
+  await vi.waitFor(() => expect(document.querySelector('.ui-dialog--right')).not.toBeNull())
+  await new Promise((r) => setTimeout(r, 700))
+  const panel = document.querySelector<HTMLElement>('.ui-dialog--right .ui-dialog-panel')!
+  const overlay = document.querySelector<HTMLElement>('.ui-dialog-overlay')!
+  const timingOf = (el: HTMLElement, prop: string) =>
+    new RegExp(`${prop} (\\d+ms (?:[a-z-]+\\([^)]*\\)|[^ ,]+))`).exec(el.style.transition)?.[1] ??
+    ''
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(timingOf(panel, 'translate')).toMatch(/^\d+ms linear\(/))
+  // Below a straight line at its first sample: it starts from rest, it isn't thrown.
+  // WebKit leaves out each stop's place when they're evenly spaced: then it's its index.
+  const stops = /linear\(([^)]*)\)/.exec(timingOf(panel, 'translate'))![1]!.split(',')
+  const [value, at] = stops[1]!.trim().split(' ')
+  const share = at ? Number.parseFloat(at) / 100 : 1 / (stops.length - 1)
+  expect(Number(value) / share).toBeLessThan(1)
+  expect(timingOf(overlay, 'opacity')).toBe(timingOf(panel, 'translate'))
 })

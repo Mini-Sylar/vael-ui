@@ -68,10 +68,12 @@ export interface DynamicPopoverEntry {
   closeRequested: boolean
   /** Same function returned to the opener as `handle.close` — the injected popoverRef uses it too. */
   close: (result?: unknown) => void
+  /** Called on `after-leave`: the exit has finished, so the entry can go. */
+  left?: () => void
 }
 
-// Matches Dialog's own DIALOG_EXIT_MS — same rationale (CSS exit animation still in-flight).
-const POPOVER_EXIT_MS = 150
+// Only if `after-leave` never comes: the entry goes once its exit has finished, not on a guess.
+const EXIT_FALLBACK_MS = 4000
 
 let nextId = 0
 const queue = reactive<DynamicPopoverEntry[]>([])
@@ -86,8 +88,6 @@ export function openPopover<D = unknown, T = unknown, C extends Component = Comp
     return { result: Promise.resolve(undefined), close: () => {}, panelEl: computed(() => null) }
   const { props: componentProps = {}, data, onClose, ...popoverProps } = options
   const id = nextId++
-  const hasCustomBeforeClose = typeof popoverProps.beforeClose === 'function'
-
   let settled = false
   let resolveResult!: (value: T | undefined) => void
   const result = new Promise<T | undefined>((resolve) => {
@@ -130,13 +130,14 @@ export function openPopover<D = unknown, T = unknown, C extends Component = Comp
         if (isOpen) return
         scope.stop()
         settle(entry.pendingResult)
-        setTimeout(
-          () => {
-            const i = queue.findIndex((e) => e.id === id)
-            if (i !== -1) queue.splice(i, 1)
-          },
-          hasCustomBeforeClose ? 0 : POPOVER_EXIT_MS,
-        )
+        // Unmounting the entry mid-exit would cut the exit short: it goes on `after-leave`.
+        const remove = () => {
+          clearTimeout(fallback)
+          const i = queue.findIndex((e) => e.id === id)
+          if (i !== -1) queue.splice(i, 1)
+        }
+        const fallback = setTimeout(remove, EXIT_FALLBACK_MS)
+        entry.left = remove
       },
     ),
   )

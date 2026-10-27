@@ -1,9 +1,11 @@
 <template>
-  <div ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
+  <div ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="rootAttrs()">
     <div
       ref="viewport"
       :class="viewportPart.class"
       :style="viewportPart.style"
+      :role="attrs['aria-label'] || attrs['aria-labelledby'] ? 'region' : undefined"
+      v-bind="nameAttrs()"
       :data-scrolling="thumbRevealed ? '' : undefined"
       v-scroll-mask="scrollMaskValue"
     >
@@ -15,17 +17,26 @@
 <script setup lang="ts">
 import './ScrollArea.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, onScopeDispose, shallowRef, useAttrs, useTemplateRef } from 'vue'
-import { useResizeObserver, useScroll } from '@vueuse/core'
+import { useResizeObserver } from '@vueuse/core'
+import { useScrollState } from '../../composables/useScrollState'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { ScrollAreaMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// The name goes where the focus goes: the viewport, a region once named. Read each render: attrs aren't reactive.
+const isNameAttr = (key: string) => key === 'aria-label' || key === 'aria-labelledby'
+const rootAttrs = () =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isNameAttr(key)))
+const nameAttrs = () => Object.fromEntries(Object.entries(attrs).filter(([key]) => isNameAttr(key)))
 const props = withDefaults(
   defineProps<{
     /** Which axis (or axes) the viewport scrolls along. @default 'vertical' */
@@ -37,10 +48,13 @@ const props = withDefaults(
      * @default false
      */
     autoHide?: boolean
+    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`). `false` turns its own animation off. */
+    motion?: ScrollAreaMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; viewport: UiPartValue }>
   }>(),
-  { orientation: 'vertical', scrollFade: true, autoHide: false },
+  // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+  { orientation: 'vertical', scrollFade: true, autoHide: false, motion: undefined },
 )
 
 const emit = defineEmits<{
@@ -62,12 +76,15 @@ const scrollMaskValue = computed(() => {
 const root = useTemplateRef<HTMLElement>('root')
 const viewport = useTemplateRef<HTMLElement>('viewport')
 useFocusableScroller(viewport)
+// The scrollbar is the viewport's native one: no element of its own to animate.
+const parts = useStateMotion({
+  key: 'scrollArea',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({ root: root.value }),
+  states: () => ({}),
+})
 
-// useScroll's own reactive arrived/direction/isScrolling state replaces this component's former
-// hand-rolled scroll-position tracking. `isScrolling` in particular is what usePullToRefresh now
-// reads to avoid arming a pull while a nested ScrollArea's own momentum/rubber-band scroll
-// hasn't actually settled — a touchstart landing at scrollTop 0 mid-bounce used to arm
-// regardless, since a raw scrollTop read can't tell "settled" from "still animating through 0."
 // autoHide keeps the thumb shown for a moment after the last scroll event, like
 // an overlay scrollbar. Not `isScrolling`: an instant scroll fires scrollend in the
 // same frame, so the thumb would never paint.
@@ -90,18 +107,14 @@ const {
   arrivedState,
   directions,
   measure,
-} = useScroll(viewport, { onScroll })
+} = useScrollState(viewport, onScroll)
 
 const atTop = computed(() => arrivedState.top)
 const atBottom = computed(() => arrivedState.bottom)
 const atStart = computed(() => arrivedState.left)
 const atEnd = computed(() => arrivedState.right)
 
-// useScroll's own `observe` option (a MutationObserver, on by default) covers a DOM-mutation-
-// driven size change; this additionally catches a pure layout/CSS size change with no DOM
-// mutation (e.g. a height transition), so `measure()` never goes stale either way — same
-// guarantee the old hand-rolled ResizeObserver gave, via useResizeObserver instead of a bespoke
-// one (it already tracks the reactive `viewport` ref and disconnects on scope dispose).
+// A size change with no scroll (a height transition, new content) moves the edges too.
 useResizeObserver(viewport, () => measure())
 
 function scrollTo(options: ScrollToOptions) {
@@ -171,5 +184,9 @@ defineExpose({
   scrollToStart,
   /** Smooth-scrolls to the right edge. */
   scrollToEnd,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

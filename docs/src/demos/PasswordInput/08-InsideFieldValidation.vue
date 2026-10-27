@@ -1,7 +1,12 @@
 <template>
   <section class="demo">
     <h3>Inside a Field, with validation</h3>
-    <Field label="Password" description="At least 8 characters, one number." :error="fieldError">
+    <Field
+      style="max-inline-size: 16rem"
+      label="Password"
+      description="At least 8 characters, one number."
+      :error="fieldError"
+    >
       <PasswordInput v-model="fieldPassword" hint-placement="none" autocomplete="new-password" />
     </Field>
   </section>

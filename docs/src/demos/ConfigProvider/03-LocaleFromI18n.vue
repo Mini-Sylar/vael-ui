@@ -3,7 +3,7 @@
     <h3>Dates and numbers follow your i18n locale</h3>
     <p class="note">
       Pass your <code>useI18n()</code> as <code>i18n</code>. Its current <code>locale</code> formats
-      every calendar, date picker and number field inside, and they switch along with your language.
+      every calendar, date picker and number field inside, and they change with your language.
       Change the language at the top of this page to see it.
     </p>
     <ConfigProvider :i18n="i18n">

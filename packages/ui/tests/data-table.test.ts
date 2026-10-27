@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { beforeAll, expect, test, vi } from 'vitest'
-import { nextTick } from 'vue'
+import { h, nextTick, shallowRef } from 'vue'
 import { render } from 'vitest-browser-vue'
 import { loadSortableEngine } from '../src/composables/useLazySortable'
 import type { RenderResult } from 'vitest-browser-vue'
@@ -11,6 +11,7 @@ import DataTableExpansionFixture from './fixtures/DataTableExpansionFixture.vue'
 import DataTableVirtualizeFixture from './fixtures/DataTableVirtualizeFixture.vue'
 import DataTableDateSortFixture from './fixtures/DataTableDateSortFixture.vue'
 import type { UiPartValue } from '../src/classes'
+import DataTable from '../src/components/DataTable/DataTable.vue'
 
 // DataTable loads the drag engine on demand. Loading it up front means a test can drag as soon as
 // the table renders.
@@ -60,7 +61,7 @@ async function renderTable(props: {
   manualSort?: boolean
   lazy?: boolean
   total?: number
-  motionCss?: boolean
+  motion?: boolean
   ui?: Partial<{
     root: UiPartValue
     toolbar: UiPartValue
@@ -133,13 +134,13 @@ test('clicking a sortable header cycles none -> asc -> desc -> none and reorders
   expect(rows[0]!.textContent).toContain('Alice')
 })
 
-test('motionCss=false disables the row-move CSS transition (not just enter/leave)', async () => {
+test('motion=false disables the row-move CSS transition (not just enter/leave)', async () => {
   // Vue's TransitionGroup only gates enter/leave on the `css` prop — the move
   // (FLIP) animation is driven purely by whether `.ui-datatable-row-move`
   // resolves an actual transition, so DataTableBody has to disable that CSS
-  // rule itself via data-motion="off" for motionCss="false" to have any
+  // rule itself via data-motion="off" for motion="false" to have any
   // effect on a real reorder.
-  const screen = await renderTable({ rowCount: 4, showStatusColumn: false, motionCss: false })
+  const screen = await renderTable({ rowCount: 4, showStatusColumn: false, motion: false })
   const tbody = screen.container.querySelector('.ui-datatable-tbody')!
   expect(tbody.getAttribute('data-motion')).toBe('off')
 
@@ -154,7 +155,7 @@ test('motionCss=false disables the row-move CSS transition (not just enter/leave
   expect(duration).toBe('0s')
 })
 
-test('motionCss=true (default) leaves the row-move CSS transition active once settled', async () => {
+test('motion=true (default) leaves the row-move CSS transition active once settled', async () => {
   const screen = await renderTable({ rowCount: 4, showStatusColumn: false })
   const tbody = screen.container.querySelector('.ui-datatable-tbody')!
   expect(tbody.getAttribute('data-motion')).toBeNull()
@@ -1283,5 +1284,149 @@ test('a focusable scroll strip in the split layout is a rowgroup, not a stray ch
   expect(body.getAttribute('role')).toBe('rowgroup')
   expect(screen.container.querySelector('.ui-datatable-head-scroll')!.getAttribute('role')).toBe(
     'rowgroup',
+  )
+})
+
+test('selection controls keep their press layer in a small table and go static in one too big to animate', async () => {
+  const small = await renderTable({ rowCount: 3, builtinSelectable: true })
+  const box = () => small.container.querySelector<HTMLElement>('tbody .ui-checkbox-box')!
+  await vi.waitFor(() => expect(getComputedStyle(box()).willChange).toBe('transform'))
+  small.unmount()
+
+  // Above 150 rendered rows the body is data-motion="off".
+  const big = await renderTable({ rowCount: 200, builtinSelectable: true })
+  const tbody = big.container.querySelector<HTMLElement>(
+    'tbody.ui-datatable-tbody[data-motion="off"]',
+  )
+  expect(tbody).not.toBeNull()
+  expect(getComputedStyle(tbody!.querySelector<HTMLElement>('.ui-checkbox-box')!).willChange).toBe(
+    'auto',
+  )
+})
+
+test('motion hooks: rows that come and go go through your enter and leave as `row`, kept in the table', async () => {
+  const { default: DataTable } = await import('../src/components/DataTable/DataTable.vue')
+  const { default: Column } = await import('../src/components/Column.vue')
+  const rows = shallowRef([{ id: 1, name: 'One' }])
+  const entered: Element[] = []
+  const left: Element[] = []
+  const motion = {
+    enter: ({ row }: { row: HTMLElement }) => void entered.push(row),
+    leave: ({ row }: { row: HTMLElement }) => {
+      left.push(row)
+      return row.animate([{ opacity: 1 }, { opacity: 0 }], 200)
+    },
+  }
+  await render(
+    {
+      setup: () => () =>
+        h(DataTable as never, { data: rows.value, rowKey: 'id', motion }, () =>
+          h(Column as never, { field: 'name', header: 'Name' }),
+        ),
+    },
+    { global: { stubs: { 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(document.querySelectorAll('tbody tr')).toHaveLength(1))
+  rows.value = [...rows.value, { id: 2, name: 'Two' }]
+  await vi.waitFor(() => expect(entered).toHaveLength(1))
+  expect(entered[0]!.tagName).toBe('TR')
+  rows.value = rows.value.slice(1)
+  await vi.waitFor(() => expect(left).toHaveLength(1))
+  // In the table's flow while it leaves, then gone.
+  expect((left[0] as HTMLElement).style.position).toBe('')
+  expect(document.querySelectorAll('tbody tr')).toHaveLength(2)
+  await vi.waitFor(() => expect(document.querySelectorAll('tbody tr')).toHaveLength(1), {
+    timeout: 1000,
+  })
+})
+
+test('a page change swaps the rows at once; a removed row leaves the flow at once', async () => {
+  const people = Array.from({ length: 8 }, (_, i) => ({ id: `p${i}`, name: `Person ${i}` }))
+  const data = shallowRef(people)
+  const page = shallowRef(1)
+  const screen = await render(
+    {
+      setup: () => () =>
+        h(
+          DataTable as never,
+          { data: data.value, rowKey: 'id', rows: 4, page: page.value },
+          {
+            columns: ({ Column }: { Column: never }) => h(Column, { field: 'name', label: 'Name' }),
+          },
+        ),
+    },
+    { global: { stubs: { 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(bodyRows(screen.container)).toHaveLength(4))
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  page.value = 2
+  await nextTick()
+  // The same frame: only the new page, fully shown (no row still leaving, none fading in).
+  const rows = bodyRows(screen.container)
+  expect(rows.map((tr) => tr.textContent)).toEqual(['Person 4', 'Person 5', 'Person 6', 'Person 7'])
+  for (const tr of rows) expect(getComputedStyle(tr).opacity).toBe('1')
+
+  // Filtering one out keeps the rest: it fades nothing, and the leaving row takes no room.
+  data.value = people.filter((person) => person.id !== 'p5')
+  await nextTick()
+  const leaving = bodyRows(screen.container).find((tr) => tr.textContent === 'Person 5')
+  expect(getComputedStyle(leaving!).display).toBe('none')
+})
+
+test('with your row motion, a page change drops the old rows at once and brings the new ones in your way', async () => {
+  const people = Array.from({ length: 8 }, (_, i) => ({ id: `p${i}`, name: `Person ${i}` }))
+  const data = shallowRef(people)
+  const page = shallowRef(1)
+  const screen = await render(
+    {
+      setup: () => () =>
+        h(
+          DataTable as never,
+          {
+            data: data.value,
+            rowKey: 'id',
+            rows: 4,
+            page: page.value,
+            motion: {
+              initial: { row: { opacity: 0, y: -8 } },
+              exit: { row: { opacity: 0, x: 12 } },
+            },
+          },
+          {
+            columns: ({ Column }: { Column: never }) => h(Column, { field: 'name', label: 'Name' }),
+          },
+        ),
+    },
+    { global: { stubs: { 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(bodyRows(screen.container)).toHaveLength(4))
+  await new Promise((resolve) => setTimeout(resolve, 600))
+
+  page.value = 2
+  await nextTick()
+  // No old row held in the flow above the new page.
+  expect(bodyRows(screen.container).map((tr) => tr.textContent)).toEqual([
+    'Person 4',
+    'Person 5',
+    'Person 6',
+    'Person 7',
+  ])
+  // The new rows play your `initial`.
+  await vi.waitFor(() =>
+    expect(bodyRows(screen.container).every((tr) => tr.getAnimations().length > 0)).toBe(true),
+  )
+
+  // Your exit still plays for the next change: a removed row holds its place while it leaves.
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  data.value = people.filter((person) => person.id !== 'p5')
+  await nextTick()
+  expect(bodyRows(screen.container).map((tr) => tr.textContent)).toContain('Person 5')
+  await vi.waitFor(() =>
+    expect(bodyRows(screen.container).map((tr) => tr.textContent)).toEqual([
+      'Person 4',
+      'Person 6',
+      'Person 7',
+    ]),
   )
 })

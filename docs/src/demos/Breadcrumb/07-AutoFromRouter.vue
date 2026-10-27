@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Auto-populated from the router</h3>
+    <h3>Built from the current route</h3>
     <p class="note">
-      <code>useRoute()</code> plus a small computed is all it takes. This one is wired to
-      <em>this actual docs site</em>: use the sidebar or search to navigate anywhere, then look back
+      <code>useRoute()</code> and a <code>computed</code> build the trail from the path. This one
+      reads this docs site’s route: go to another page with the sidebar or search, then come back
       here.
     </p>
     <Breadcrumb :items="routeCrumbs" aria-label="Breadcrumb from the router" />

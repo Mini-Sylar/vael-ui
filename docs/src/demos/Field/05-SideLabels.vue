@@ -2,12 +2,11 @@
   <section class="demo">
     <h3>Side labels: <code>start</code> / <code>end</code></h3>
     <p class="note">
-      <code>label-placement="start"</code> puts the label beside the control. Add
-      <code>attached</code> to join them into one box. <code>label-width</code> lines up a column of
-      fields, and <code>label-align="end"</code> right-aligns plain labels next to the control.
-      Attached cells look better with the default <code>start</code>. On narrow screens the labels
-      move on top, because <code>label-placement</code> is bound to VueUse's
-      <code>useMediaQuery</code>.
+      <code>label-placement="start"</code> puts the label beside the control, and
+      <code>attached</code> joins them into one box. <code>label-width</code> lines up a column of
+      fields, and <code>label-align="end"</code> aligns plain labels toward the control. Attached
+      cells look better with the default <code>start</code>. On narrow screens the labels move on
+      top, because <code>label-placement</code> is bound to VueUse’s <code>useMediaQuery</code>.
     </p>
     <SelectButton v-model="look" :items="looks" size="sm" :allow-empty="false" class="look" />
     <div class="side-form">

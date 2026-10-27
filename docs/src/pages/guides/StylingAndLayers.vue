@@ -8,7 +8,7 @@
     <h2 id="cascade-layers">{{ t('stylingLayers.cascadeLayersTitle') }}</h2>
     <CodeBlock
       lang="css"
-      code="/* your app's main stylesheet, e.g. style.css */
+      code="/* your app's main stylesheet, such as style.css */
 @layer app-base, ui-components;
 
 @layer app-base {
@@ -144,8 +144,8 @@ html { font-size: 14px; }
       <CodeBlock
         lang="typescript"
         code="// main.ts
-import './style.css'        // your base layer, loads first
-import 'vael-ui/layers.css' // sorts after app-base, if you use it"
+import './style.css'       // your base layer, loads first
+import 'vael-ui/style.css' // every component's CSS at once"
         class="callout-code"
       />
     </Message>
@@ -377,6 +377,26 @@ const motionRows = computed<TokenRow[]>(() => [
     description: t('stylingLayers.rows.durationEnter'),
   },
   { name: '--ui-duration-exit', value: '150ms', description: t('stylingLayers.rows.durationExit') },
+  {
+    name: '--ui-duration-indicator',
+    value: '120ms',
+    description: t('stylingLayers.rows.durationIndicator'),
+  },
+  {
+    name: '--ui-duration-indicator-wide',
+    value: '200ms',
+    description: t('stylingLayers.rows.durationIndicatorWide'),
+  },
+  {
+    name: '--ui-ease-indicator',
+    value: 'var(--ui-ease-out)',
+    description: t('stylingLayers.rows.easeIndicator'),
+  },
+  {
+    name: '--ui-indicator-bg',
+    value: 'var(--ui-muted)',
+    description: t('stylingLayers.rows.indicatorBg'),
+  },
   {
     name: '--ui-duration-tooltip',
     value: '125ms',

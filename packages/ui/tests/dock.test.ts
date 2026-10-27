@@ -1,11 +1,12 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h } from 'vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import DockFixture from './fixtures/DockFixture.vue'
 import Dock from '../src/components/Dock/Dock.vue'
+import TooltipHost from '../src/components/TooltipHost/TooltipHost.vue'
 import {
   dockFalloff,
   dockItemOffsets,
@@ -111,6 +112,21 @@ test('dockItemOffsets: virtual re-layout preserves the real gap between every ad
     const rightEdge = centers[i]! + offsets[i]! + sizes[i]! / 2
     const leftEdge = centers[i + 1]! + offsets[i + 1]! - sizes[i + 1]! / 2
     expect(leftEdge - rightEdge).toBeCloseTo(gap, 5)
+  }
+})
+
+// Right to left, item 0 sits at the far end: spread in screen order, never index order.
+test('dockItemOffsets: right to left, the re-layout keeps the real gap in screen order', () => {
+  const options = { baseSize: 48, maxSize: 76, range: 150 }
+  const centers = [240, 180, 120, 60, 0]
+  const gap = 12
+  const sizes = dockItemSizes(120, centers, options)
+  const offsets = dockItemOffsets(sizes, centers, gap)
+  // Item i+1 is to the left of item i on screen.
+  for (let i = 0; i < sizes.length - 1; i++) {
+    const leftEdgeOfI = centers[i]! + offsets[i]! - sizes[i]! / 2
+    const rightEdgeOfNext = centers[i + 1]! + offsets[i + 1]! + sizes[i + 1]! / 2
+    expect(leftEdgeOfI - rightEdgeOfNext).toBeCloseTo(gap, 5)
   }
 })
 
@@ -323,6 +339,27 @@ test('magnify=false disables the size effect entirely, without disabling the doc
   await expect.element(screen.getByTestId('selected')).toHaveTextContent('mail')
 })
 
+test("magnify=false leaves the items' styles to you: moving and leaving never clear your transform", async () => {
+  const screen = await render(DockFixture, { props: { magnify: false } })
+  const buttons = itemButtons(screen)
+  const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+  // Your own animation, as with itemEls().
+  for (const button of buttons) button.style.transform = 'translateX(4px) scale(1.5)'
+  const rect = buttons[2].getBoundingClientRect()
+  for (const type of ['pointermove', 'pointermove', 'pointerleave']) {
+    root.dispatchEvent(
+      new PointerEvent(type, {
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height / 2,
+        pointerType: 'mouse',
+        bubbles: true,
+      }),
+    )
+    for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
+    for (const button of buttons) expect(button.style.transform).toBe('translateX(4px) scale(1.5)')
+  }
+})
+
 function contains(outer: DOMRect, inner: DOMRect) {
   return (
     inner.left >= outer.left - 0.5 &&
@@ -375,20 +412,37 @@ test('grow: items change real size and the dock grows to hold them', async () =>
   expect(root.getBoundingClientRect().height).toBeCloseTo(restRoot.height, 0)
 })
 
-test('without grow the dock keeps its size: items scale with transforms', async () => {
+test('without grow, items scale with transforms and the bar widens around where it rests', async () => {
   const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
   const rest = buttons[0].offsetWidth
   const restRoot = root.getBoundingClientRect()
+  const last = buttons[buttons.length - 1]
+  const lastRest = last.getBoundingClientRect()
+  const overLast = () =>
+    root.dispatchEvent(
+      new PointerEvent('pointermove', {
+        clientX: lastRest.left + lastRest.width / 2,
+        clientY: lastRest.top + lastRest.height / 2,
+        bubbles: true,
+      }),
+    )
+  await expect.poll(() => (overLast(), scaleOf(last))).toBeGreaterThan(1.3)
+  // Settled: the end item stays on the bar instead of hanging off its end.
   await expect
-    .poll(() => {
-      hoverItem(root, buttons[0])
-      return scaleOf(buttons[0])
-    })
-    .toBeGreaterThan(1.3)
-  expect(buttons[0].offsetWidth).toBe(rest)
-  expect(root.getBoundingClientRect().width).toBeCloseTo(restRoot.width, 0)
+    .poll(
+      () => (overLast(), root.getBoundingClientRect().right - last.getBoundingClientRect().right),
+    )
+    .toBeGreaterThan(0)
+  expect(last.offsetWidth).toBe(rest)
+  const widened = root.getBoundingClientRect()
+  expect(widened.width).toBeGreaterThan(restRoot.width + 10)
+  // Around its resting center, so nothing beside it moves.
+  expect((widened.left + widened.right) / 2).toBeCloseTo((restRoot.left + restRoot.right) / 2, 0)
+  root.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }))
+  await expect.poll(() => root.getBoundingClientRect().width).toBeCloseTo(restRoot.width, 0)
+  expect(root.style.getPropertyValue('--ui-dock-spread')).toBe('')
 })
 
 test('a narrow container shrinks the items instead of letting the dock overflow', async () => {
@@ -406,4 +460,199 @@ test('a narrow container shrinks the items instead of letting the dock overflow'
     expect(rect.width).toBeLessThan(48)
     expect(rect.height).toBeCloseTo(rect.width, 0)
   }
+})
+
+test('the tooltip opens past the room an item can magnify into, and stays put while it grows', async () => {
+  const screen = await render({
+    components: { Dock, TooltipHost },
+    setup: () => ({ items: [{ label: 'Finder' }, { label: 'Mail' }, { label: 'Notes' }] }),
+    template: `<div style="padding: 140px 80px"><TooltipHost :open-delay="0" /><Dock :items="items" :base-size="48" :max-size="76" /></div>`,
+  })
+  const item = screen.container.querySelectorAll<HTMLElement>('.ui-dock-item')[1]!
+  const rest = item.getBoundingClientRect()
+  await userEvent.hover(item)
+  await vi.waitFor(() => expect(item.getBoundingClientRect().height).toBeGreaterThan(74))
+  const clearOfMagnified = rest.top - (76 - 48) - 8
+  await vi.waitFor(() => {
+    const panel = document.querySelector<HTMLElement>('.ui-tooltip-panel')!
+    expect(panel).not.toBeNull()
+    expect(Math.abs(panel.getBoundingClientRect().bottom - clearOfMagnified)).toBeLessThan(1.5)
+  })
+  const magnified = item.getBoundingClientRect()
+  const panel = document.querySelector<HTMLElement>('.ui-tooltip-panel')!.getBoundingClientRect()
+  expect(panel.bottom).toBeLessThanOrEqual(magnified.top - 7)
+})
+
+test('the tooltip travelling to the next item follows it as the magnification spreads, with no late jump', async () => {
+  const screen = await render({
+    components: { Dock, TooltipHost },
+    setup: () => ({
+      items: [{ label: 'Finder' }, { label: 'Mail' }, { label: 'Notes' }, { label: 'Music' }],
+    }),
+    template: `<div style="padding: 160px 80px"><TooltipHost :open-delay="0" /><Dock :items="items" /></div>`,
+  })
+  const items = screen.container.querySelectorAll<HTMLElement>('.ui-dock-item')
+  await userEvent.hover(items[1]!)
+  await vi.waitFor(() => expect(document.querySelector('.ui-tooltip-panel')).not.toBeNull())
+  for (let i = 0; i < 30; i++) await new Promise((r) => requestAnimationFrame(r))
+  const panel = document.querySelector<HTMLElement>('.ui-tooltip-panel')!
+  await userEvent.hover(items[2]!)
+  let last = panel.getBoundingClientRect().left
+  let biggestBackStep = 0
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => requestAnimationFrame(r))
+    const left = panel.getBoundingClientRect().left
+    // Heading right toward the new item; any step back left is the correction, and it must glide.
+    if (left < last) biggestBackStep = Math.max(biggestBackStep, last - left)
+    last = left
+  }
+  expect(biggestBackStep).toBeLessThan(4)
+  const item = items[2]!.getBoundingClientRect()
+  const rect = panel.getBoundingClientRect()
+  expect(Math.abs(rect.left + rect.width / 2 - (item.left + item.width / 2))).toBeLessThan(1.5)
+})
+
+test('a finger sliding along the dock magnifies while it is down and settles when it lifts', async () => {
+  const screen = await render(DockFixture, {})
+  const buttons = itemButtons(screen)
+  const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+  const firstRect = buttons[0].getBoundingClientRect()
+  const secondRect = buttons[1].getBoundingClientRect()
+  const touch = (type: string, rect: DOMRect, buttons: number, dx = 0) =>
+    root.dispatchEvent(
+      new PointerEvent(type, {
+        clientX: rect.left + rect.width / 2 + dx,
+        clientY: rect.top + rect.height / 2,
+        bubbles: true,
+        pointerType: 'touch',
+        buttons,
+      }),
+    )
+  // A tap: down and a move within the slide threshold does not magnify.
+  touch('pointerdown', firstRect, 1)
+  touch('pointermove', firstRect, 1, 3)
+  await new Promise((r) => requestAnimationFrame(r))
+  expect(scaleOf(buttons[0])).toBe(1)
+  touch('pointerup', firstRect, 0)
+  // A slide: down on the first item, moving past the threshold onto the second, magnifies it.
+  touch('pointerdown', firstRect, 1)
+  await expect
+    .poll(() => {
+      touch('pointermove', secondRect, 1)
+      return scaleOf(buttons[1])
+    })
+    .toBeGreaterThan(1)
+  // Lifted: settles back to rest.
+  touch('pointerup', secondRect, 0)
+  await expect.poll(() => scaleOf(buttons[1]), { timeout: 2000 }).toBe(1)
+})
+
+test('a tap on an item bounces it instead of magnifying, and the bounce clears when it ends', async () => {
+  const screen = await render(DockFixture, {})
+  const buttons = itemButtons(screen)
+  const rect = buttons[1].getBoundingClientRect()
+  const touch = (type: string, buttons_: number) =>
+    buttons[1].dispatchEvent(
+      new PointerEvent(type, {
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height / 2,
+        bubbles: true,
+        pointerType: 'touch',
+        buttons: buttons_,
+      }),
+    )
+  touch('pointerdown', 1)
+  touch('pointerup', 0)
+  await vi.waitFor(() => expect(buttons[1].hasAttribute('data-bounce')).toBe(true))
+  // The bounce is the CSS animation; no magnification was written to the item.
+  expect(buttons[1].style.transform).toBe('')
+  await vi.waitFor(() => expect(buttons[1].hasAttribute('data-bounce')).toBe(false), {
+    timeout: 2000,
+  })
+})
+
+// Mirrored, the magnified items must still spread apart, not pile onto each other.
+for (const grow of [false, true])
+  test(`right to left${grow ? ', growing' : ''}: hovering spreads the items without any overlapping`, async () => {
+    document.documentElement.dir = 'rtl'
+    try {
+      const screen = await render(DockFixture, { props: { grow } })
+      const buttons = itemButtons(screen)
+      const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+      // Off the middle: hovering the exact middle is symmetric, so a reversed spread looks right.
+      const middle = buttons[1]!
+      const rest = middle.offsetWidth
+      await expect
+        .poll(() => {
+          hoverItem(root, middle)
+          return middle.getBoundingClientRect().width
+        })
+        .toBeGreaterThan(rest + 10)
+      // A resting pointer converges instead of feeding back into the layout it grew.
+      const widths: number[] = []
+      for (let i = 0; i < 30; i++) {
+        hoverItem(root, middle)
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        widths.push(middle.getBoundingClientRect().width)
+      }
+      expect(Math.abs(widths.at(-1)! - widths.at(-2)!)).toBeLessThanOrEqual(1)
+      // The hovered item is the biggest, and on screen no item reaches into the next one.
+      const boxes = buttons.map((b) => b.getBoundingClientRect()).sort((a, b) => a.left - b.left)
+      for (let i = 0; i < boxes.length - 1; i++)
+        expect(boxes[i + 1]!.left - boxes[i]!.right).toBeGreaterThan(-0.5)
+      const widest = Math.max(...buttons.map((b) => b.getBoundingClientRect().width))
+      expect(middle.getBoundingClientRect().width).toBeCloseTo(widest, 0)
+    } finally {
+      document.documentElement.dir = ''
+    }
+  })
+
+test('magnification chases the pointer on motion.spring, overshoot included; without one it never overshoots', async () => {
+  const items = [1, 2, 3, 4, 5].map((n) => ({ label: `App ${n}`, value: `${n}` }))
+  const peakOf = async (motion?: object) => {
+    const screen = await render(() => h(Dock as never, { items, motion }))
+    await expect.poll(() => screen.container.querySelectorAll('.ui-dock-item').length).toBe(5)
+    const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+    const first = itemButtons(screen)[0]!
+    const box = first.getBoundingClientRect()
+    const move = () =>
+      root.dispatchEvent(
+        new PointerEvent('pointermove', {
+          clientX: box.left + box.width / 2,
+          clientY: box.top + box.height / 2,
+          pointerType: 'mouse',
+          bubbles: true,
+        }),
+      )
+    await expect.poll(() => (move(), first.style.transform)).not.toBe('')
+    expect(getComputedStyle(first).transitionDuration).toBe('0s')
+    let peak = 1
+    for (let i = 0; i < 60; i++) {
+      peak = Math.max(
+        peak,
+        parseFloat(first.style.transform.match(/scale\(([\d.]+)\)/)?.[1] ?? '1'),
+      )
+      await new Promise(requestAnimationFrame)
+    }
+    const settled = parseFloat(first.style.transform.match(/scale\(([\d.]+)\)/)?.[1] ?? '1')
+    screen.unmount()
+    return { peak, settled }
+  }
+  const eased = await peakOf()
+  expect(eased.peak).toBeLessThanOrEqual(eased.settled + 1e-3)
+  const sprung = await peakOf({ spring: { damping: 0.4, response: 0.3 } })
+  expect(sprung.settled).toBeCloseTo(eased.settled, 2)
+  expect(sprung.peak).toBeGreaterThan(sprung.settled + 0.05)
+})
+
+test('a mouse click keeps the magnification; a finger lifting settles it', async () => {
+  const screen = await render(DockFixture, {})
+  const buttons = itemButtons(screen)
+  const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+  await expect.poll(() => (hoverItem(root, buttons[0]), scaleOf(buttons[0]))).toBeGreaterThan(1.3)
+  root.dispatchEvent(new PointerEvent('pointerup', { pointerType: 'mouse', bubbles: true }))
+  for (let i = 0; i < 10; i++) await new Promise(requestAnimationFrame)
+  expect(scaleOf(buttons[0])).toBeGreaterThan(1.3)
+  root.dispatchEvent(new PointerEvent('pointerup', { pointerType: 'touch', bubbles: true }))
+  await expect.poll(() => scaleOf(buttons[0])).toBeCloseTo(1, 1)
 })

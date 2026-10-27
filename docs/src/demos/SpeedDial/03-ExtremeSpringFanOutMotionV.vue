@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Extreme: actions spring out of the trigger (motion-v)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> hands the actions to <code>@action-enter</code> and
-      <code>@action-leave</code>. They spring out of the trigger one after another and pull back in
-      reverse. The exposed <code>iconEl</code> turns on the same spring.
+      <code>enter</code> and <code>leave</code> hooks in <code>motion</code> animate the actions
+      with motion-v's <code>animate()</code>. They spring out of the trigger one after another and
+      return in reverse order. The exposed <code>iconEl</code> turns on the same spring.
     </p>
     <div class="speed-dial-stage">
       <SpeedDial
@@ -13,9 +13,7 @@
         aria-label="Quick actions"
         direction="quarter-circle"
         :items="items"
-        :motion-css="false"
-        @action-enter="onEnter"
-        @action-leave="onLeave"
+        :motion="actions"
       />
     </div>
   </section>
@@ -26,7 +24,7 @@ import { onBeforeUnmount, shallowRef, useTemplateRef, watch } from 'vue'
 import { animate } from 'motion-v'
 import type { ValueAnimationTransition } from 'motion-v'
 import { SpeedDial } from 'vael-ui'
-import type { SpeedDialItem } from 'vael-ui'
+import type { SpeedDialItem, SpeedDialMotion } from 'vael-ui'
 import { PhChatCircleDots, PhFilePlus, PhImage, PhLink } from '@phosphor-icons/vue'
 
 const items: SpeedDialItem[] = [
@@ -69,22 +67,16 @@ function release(el: HTMLElement) {
 }
 
 function fly(
-  el: Element,
-  done: () => void,
+  node: HTMLElement,
   to: 0 | 1,
   options: (index: number, count: number, p: number) => ValueAnimationTransition<number>,
 ) {
-  const node = el as HTMLElement
   const label = node.getAttribute('aria-label') ?? ''
   const prev = flights.get(label)
   prev?.stop()
   flights.delete(label)
   const root = dial.value?.el
-  if (reduce() || !root) {
-    release(node)
-    done()
-    return
-  }
+  if (!root) return
 
   // Measure the rest spot without any of our offset applied.
   release(node)
@@ -108,11 +100,12 @@ function fly(
     onComplete: () => {
       flights.delete(label)
       release(node)
-      done()
     },
   })
   flight.stop = () => controls.stop()
   flights.set(label, flight)
+  // Returned, so the SpeedDial waits for it.
+  return controls
 }
 
 const SPRING_OUT = { type: 'spring', visualDuration: 0.13, bounce: 0.2 } as const
@@ -144,21 +137,14 @@ watch(open, (isOpen) => {
 })
 onBeforeUnmount(() => stopTurn())
 
-// An action caught halfway out waits less for its turn, so a reopen never stalls mid-air.
-function onEnter(el: Element, done: () => void) {
-  fly(el, done, 1, (index, _count, p) => ({
-    ...SPRING_OUT,
-    delay: index * 0.04 * (1 - p),
-  }))
-}
-
-// Last out goes back first. A plain tween, because a spring's settling tail would keep the
-// actions in the DOM well after they look gone.
-function onLeave(el: Element, done: () => void) {
-  fly(el, done, 0, (index, count) => ({
-    ...TWEEN_IN,
-    delay: (count - 1 - index) * 0.01,
-  }))
+const actions: SpeedDialMotion = {
+  // An action caught halfway out waits less for its turn, so a reopen never stalls mid-air.
+  enter: ({ action }) =>
+    fly(action, 1, (index, _count, p) => ({ ...SPRING_OUT, delay: index * 0.04 * (1 - p) })),
+  // Last out goes back first. A plain tween, because a spring's settling tail would keep the
+  // actions in the DOM well after they look gone.
+  leave: ({ action }) =>
+    fly(action, 0, (index, count) => ({ ...TWEEN_IN, delay: (count - 1 - index) * 0.01 })),
 }
 </script>
 

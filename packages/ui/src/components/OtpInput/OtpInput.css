@@ -5,8 +5,37 @@
     display: inline-flex;
   }
   .ui-otp-cells {
+    position: relative;
     display: flex;
     gap: 0.5rem;
+  }
+  .ui-otp-ring {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    border: 1px solid var(--ui-primary);
+    pointer-events: none;
+    transition:
+      translate var(--ui-duration-indicator) var(--ui-ease-indicator),
+      inline-size var(--ui-duration-indicator) var(--ui-ease-indicator),
+      opacity var(--ui-duration-indicator) var(--ui-ease-indicator);
+  }
+  .ui-otp--sm .ui-otp-ring {
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-otp--md .ui-otp-ring {
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-otp--lg .ui-otp-ring {
+    border-radius: var(--ui-radius);
+  }
+  .ui-otp[data-state='invalid'] .ui-otp-ring {
+    border-color: var(--ui-danger);
+  }
+  .ui-otp--field .ui-otp-ring {
+    border-color: transparent;
   }
   .ui-otp-separator {
     display: grid;
@@ -49,14 +78,14 @@
     font-size: calc(var(--ui-font-size) * 1.125);
     border-radius: var(--ui-radius);
   }
-  .ui-otp-cell[data-active] {
+  .ui-otp-cell--custom[data-active] {
     border-color: var(--ui-primary);
   }
   /* Only the next EMPTY cell gets the blinking caret — an active but
      already-filled cell (editing back into typed digits) would otherwise
      draw the line through the character itself. A caret, not decorative
      motion — kept as-is under reduced motion. */
-  .ui-otp-cell[data-active]:not([data-filled])::after {
+  .ui-otp-ring[data-caret]::after {
     content: '';
     position: absolute;
     inset-inline-start: 50%;
@@ -96,12 +125,49 @@
     /* This is the REAL, actually-focused element — full row width, not any one cell's shape. Without this, the browser's own default focus ring renders on ITS bounding box regardless of what the synthetic data-active/data-focus-visible per-cell styling below does, which is exactly the "square outline" bug: a native rectangular ring around the whole row, sitting on top of whatever shape (circular, in the custom-cell demo) the visible cells actually are. The per-cell data-focus-visible outline above is the library's own, deliberate replacement for this. */
     outline: none;
   }
+  /* `mask` makes it a password field: no Edge reveal button over the last cell. */
+  .ui-otp-input::-ms-reveal {
+    display: none;
+  }
   .ui-otp[data-state='invalid'] .ui-otp-cell {
     border-color: var(--ui-danger);
   }
-  .ui-otp[data-focus-visible] .ui-otp-cell[data-active] {
+  .ui-otp-cell-char--placeholder {
+    color: var(--ui-text-muted);
+    opacity: 0.6;
+  }
+  /* field: one box around the code, like a phone's verification field; the cells are letter
+     positions inside it, so focus, invalid and the caret belong to the box. */
+  .ui-otp--field .ui-otp-cells {
+    gap: 0;
+    padding-inline: 0.5rem;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    transition: border-color var(--ui-duration-press) ease;
+  }
+  .ui-otp--field .ui-otp-cell,
+  .ui-otp--field .ui-otp-cell[data-active] {
+    border-color: transparent;
+    border-radius: 0;
+    background: none;
+  }
+  .ui-otp--field:focus-within .ui-otp-cells {
+    border-color: var(--ui-primary);
+  }
+  .ui-otp--field[data-state='invalid'] .ui-otp-cells {
+    border-color: var(--ui-danger);
+  }
+  .ui-otp--field[data-focus-visible] .ui-otp-cells {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
+  }
+  .ui-otp[data-focus-visible] .ui-otp-ring {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-otp--field[data-focus-visible] .ui-otp-ring {
+    outline: none;
   }
   /* The wrapper's own border-radius (a square-ish rounded-rect) has nothing to do with whatever shape the custom slot content actually is — a circular custom cell got a squared-off outline traced around its square wrapper. Full markup swap means focus indication is the custom content's job too, same reasoning as the border/background/caret suppression above. */
   .ui-otp[data-focus-visible] .ui-otp-cell--custom[data-active] {
@@ -112,6 +178,15 @@
   }
   .ui-otp--disabled .ui-otp-input {
     cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-otp-ring[data-caret]::after {
+      animation-duration: 2s;
+    }
+    .ui-otp-ring {
+      transition-property: opacity;
+    }
   }
 
   @keyframes ui-otp-caret-blink {

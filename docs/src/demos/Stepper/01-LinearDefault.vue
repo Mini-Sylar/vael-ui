@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Linear (default): back is always allowed, ahead only once reached</h3>
+    <h3>Linear (default): go back anytime, forward only to steps you've reached</h3>
     <Stepper v-model="linearStep" :items="checkoutSteps" class="stepper-demo" />
     <div class="row">
       <Button variant="outline" :disabled="linearStep === 0" @click="linearStep--">Back</Button>

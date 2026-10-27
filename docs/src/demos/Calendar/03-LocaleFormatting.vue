@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Locale formatting</h3>
     <p class="note">
-      <code>locale</code> drives month/weekday names and the week's start day via
-      <code>Intl.DateTimeFormat</code>, no separate i18n data files to ship. <code>fr-FR</code>
-      below starts the week on Monday; compare it to the plain calendars above, which default to the
-      runtime's own locale.
+      <code>locale</code> sets the month and weekday names and the first day of the week through
+      <code>Intl.DateTimeFormat</code>, so there are no i18n data files to ship.
+      <code>fr-FR</code> starts the week on Monday. Compare it with the calendars above, which
+      follow this site’s language.
     </p>
     <div class="row">
       <Calendar v-model="localeValue" locale="fr-FR" />

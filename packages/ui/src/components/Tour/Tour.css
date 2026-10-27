@@ -11,6 +11,8 @@
     transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
     /* TourSpotlight writes the path here, so your inline clip-path wins. */
     clip-path: var(--ui-tour-cutout);
+    /* It also sets the box, every glide frame, for your own ring: --ui-tour-cutout-x, -y, -width,
+       -height and -radius (px). */
   }
   .ui-tour-spotlight-enter-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
@@ -135,5 +137,19 @@
     .ui-tour-next:active {
       transform: none;
     }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-tour-back,
+  .ui-tour-next,
+  .ui-tour-skip {
+    position: relative;
+  }
+  .ui-tour-back:active::after,
+  .ui-tour-next:active::after,
+  .ui-tour-skip:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

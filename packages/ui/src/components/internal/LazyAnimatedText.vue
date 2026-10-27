@@ -1,0 +1,32 @@
+<template>
+  <component :is="loaded" v-if="loaded" :value="value" :motion="motion" />
+  <span v-else class="ui-animated-text"
+    ><span class="ui-animated-text-value">{{ value }}</span></span
+  >
+</template>
+
+<script lang="ts">
+import { markRaw } from 'vue'
+import type { Component } from 'vue'
+
+// One request for the whole page, however many fields use it; once it's in, later mounts use it at
+// once, so text that mounts and changes in the same moment (a Combobox pick) still crossfades.
+let request: Promise<Component> | undefined
+let ready: Component | undefined
+const load = () =>
+  (request ??= import('../AnimatedText/AnimatedText.vue').then(
+    (mod) => (ready = markRaw(mod.default)),
+  ))
+</script>
+
+<!-- AnimatedText, split out of the bundle: the same markup as plain text until it loads after mount. -->
+<script setup lang="ts">
+import '../AnimatedText/AnimatedText.css'
+import { onMounted, shallowRef } from 'vue'
+
+// Unset, not false: AnimatedText then follows the nearest ConfigProvider.
+withDefaults(defineProps<{ value: string; motion?: boolean }>(), { motion: undefined })
+
+const loaded = shallowRef<Component | null>(ready ?? null)
+onMounted(() => void load().then((component) => (loaded.value = component)))
+</script>

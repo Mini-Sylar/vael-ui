@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <Transition name="ui-tooltip" :css="!forceMount">
+    <Transition name="ui-tooltip" v-bind="tooltipTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -12,17 +12,19 @@
         :data-side="resolvedSide"
         :data-instant="instant || undefined"
         :data-traveling="traveling || undefined"
-        :data-sizing-locked="travelActive || undefined"
+        :data-morphing="morphing || undefined"
       >
         <div
           :id="tooltipId"
           ref="panel"
           role="tooltip"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelStyle, panelPart.style]"
           v-bind="$attrs"
         >
-          <slot :content="content" :side="resolvedSide">{{ content }}</slot>
+          <span class="ui-tooltip-content">
+            <slot :content="content" :side="resolvedSide">{{ content }}</slot>
+          </span>
         </div>
       </div>
     </Transition>
@@ -40,10 +42,19 @@ export interface TooltipHostProps {
   openDelay?: number
   /** Grace period after the pointer leaves, in milliseconds, so it can move onto the tooltip. @default 100 */
   closeDelay?: number
-  /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ beforeClose }"`. */
-  beforeClose?: (done: () => void) => void
+  /**
+   * The `beforeClose` for every `v-tooltip` target; set `v-tooltip="{ beforeClose }"` to override one.
+   * Return `true` to close the tooltip, `false` to keep it open, or a promise of either. The
+   * tooltip stays open while the promise is pending.
+   */
+  beforeClose?: BeforeClose<TooltipCloseReason>
   /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ forceMount }"`. @default false */
   forceMount?: boolean
+  /**
+   * How every `v-tooltip` moves, like Tooltip's `motion`: `false` shows and hides them at once, an
+   * object moves them your way. Warm opens stay instant either way.
+   */
+  motion?: TooltipMotion
   /** Class and style overrides for each part. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
@@ -51,8 +62,12 @@ export interface TooltipHostProps {
 
 <!-- Singleton behind v-tooltip; document delegation to every target -->
 <script setup lang="ts">
+import { useTooltipMotion } from '../../composables/useTooltipMotion'
+import type { TooltipCloseReason } from '../../composables/useTooltip'
+import type { BeforeClose, TooltipMotion } from '../../motion/types'
 import '../shared/tooltip.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   inject,
@@ -73,7 +88,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
-const props = defineProps<TooltipHostProps>()
+const props = withDefaults(defineProps<TooltipHostProps>(), { motion: undefined })
 
 defineSlots<{
   /** Custom tooltip body; defaults to the text `content`. */
@@ -92,16 +107,39 @@ const core = useTooltipCore(open, {
   positionerEl,
   side: () => config.value?.side ?? props.side ?? 'top',
   align: () => config.value?.align ?? 'center',
+  // 8 is the core's own default gap.
+  sideOffset: () => {
+    const offset = config.value?.sideOffset
+    return (typeof offset === 'function' ? offset() : offset) ?? 8
+  },
   openDelay: () => config.value?.openDelay ?? props.openDelay ?? 400,
   closeDelay: () => config.value?.closeDelay ?? props.closeDelay ?? 100,
   beforeClose: () => config.value?.beforeClose ?? props.beforeClose,
 })
-const { positionerStyle, placement, transformOrigin, isClosing, instant, traveling, travelActive } =
-  core
+const {
+  positionerStyle,
+  panelStyle,
+  placement,
+  transformOrigin,
+  isClosing,
+  instant,
+  traveling,
+  morphing,
+} = core
 
 const content = computed(() => config.value?.content ?? '')
 // Per-target override with host default (like side/openDelay/closeDelay).
 const forceMount = computed(() => config.value?.forceMount ?? props.forceMount ?? false)
+const tooltipTransition = useTooltipMotion({
+  name: 'TooltipHost',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => currentEl.value,
+  forceMount: () => forceMount.value,
+  instant: () => instant.value,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
 
 function findTarget(node: EventTarget | null): HTMLElement | null {
   if (!(node instanceof Element)) return null

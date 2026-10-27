@@ -44,7 +44,11 @@ function release(el: HTMLElement) {
  * elsewhere), nothing inside `root` needs to stay reachable, so the whole of it goes inert.
  */
 function collectInertTargets(root: HTMLElement, contents: HTMLElement[]): HTMLElement[] {
-  const insideContents = contents.filter((content) => root.contains(content))
+  const inRoot = contents.filter((content) => root.contains(content))
+  // A content inside another is kept by the outer one's subtree; walking it would inert its siblings.
+  const insideContents = inRoot.filter(
+    (content) => !inRoot.some((other) => other !== content && other.contains(content)),
+  )
 
   if (insideContents.length === 0) {
     const targets: HTMLElement[] = []
@@ -99,6 +103,7 @@ export interface UseInertOptions {
 
 export type UseInertReturn = WritableComputedRef<boolean>
 
+/** @internal Not public API; used by vael-ui's own components and may change. */
 export function useInert(options: UseInertOptions): UseInertReturn {
   const { root, content, initial = false } = options
 

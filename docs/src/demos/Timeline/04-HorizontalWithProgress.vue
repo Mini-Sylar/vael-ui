@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Horizontal orientation, advancing via <code>current</code></h3>
+    <h3>Horizontal, advancing with <code>current</code></h3>
     <p class="note">
-      <code>current</code> is a plain number, not a v-model — Timeline never advances it itself.
-      Bind your own ref and step it however fits your UI; <code>completed</code>/<code>active</code>
-      fall out of the comparison automatically, no derivation function needed for a straight line
-      like this one.
+      <code>current</code> is a plain number, not a <code>v-model</code>: Timeline never changes it.
+      Bind your own ref and step it as your UI needs. On a straight line like this one,
+      <code>completed</code> and <code>active</code> follow from <code>current</code>, so you don't
+      write those functions.
     </p>
     <Timeline :items="stages" orientation="horizontal" :current="current">
       <template #item="{ item }">

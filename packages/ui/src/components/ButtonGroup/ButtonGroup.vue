@@ -31,10 +31,13 @@ export const buttonGroupKey: InjectionKey<ButtonGroupContext> = Symbol('ui-butto
 <script setup lang="ts">
 import './ButtonGroup.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, provide, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { ButtonGroupMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -51,6 +54,8 @@ const props = withDefaults(
     /** With `v-model`, one at a time: clicking the button that's on turns it off. Set `false` for
      * a choice that always has one (text alignment). @default true */
     allowEmpty?: boolean
+    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`); its buttons keep their own `motion`. `false` turns its own animation off. */
+    motion?: ButtonGroupMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
@@ -60,6 +65,8 @@ const props = withDefaults(
     multiple: false,
     allowEmpty: true,
     ui: undefined,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 
@@ -98,6 +105,14 @@ defineSlots<{
 }>()
 
 const root = useTemplateRef<HTMLElement>('root')
+const parts = useStateMotion({
+  key: 'buttonGroup',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-button-group' },
+  states: () => ({}),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.buttonGroup,
@@ -116,5 +131,9 @@ const rootPart = computed(() =>
 defineExpose({
   /** Root element. */
   el: root,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

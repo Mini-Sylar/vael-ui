@@ -2,6 +2,7 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, nextTick, shallowRef } from 'vue'
 import SelectFixture from './fixtures/SelectFixture.vue'
 import SelectFormFixture from './fixtures/SelectFormFixture.vue'
 import Select from '../src/components/Select/Select.vue'
@@ -120,7 +121,7 @@ test('maxLabels collapses extra selections into a "+N" chip', async () => {
   expect(overflow?.textContent?.trim()).toBe('+2')
 })
 
-test('motionCss=false disables the chip transition, including its move (reflow) animation', async () => {
+test('motion=false disables the chip transition, including its move (reflow) animation', async () => {
   const screen = await render(Select, {
     props: {
       items: [
@@ -129,7 +130,7 @@ test('motionCss=false disables the chip transition, including its move (reflow) 
       ],
       multiple: true,
       modelValue: ['apple', 'banana'],
-      motionCss: false,
+      motion: false,
     },
     global: { stubs: { 'transition-group': false } },
   })
@@ -234,8 +235,10 @@ test('panel inline-size matches the trigger width (matchReferenceWidth)', async 
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
 
   const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
+  // The panel matches the trigger's frame, which holds the combobox and its clear button.
+  const frame = trigger.element().closest('.ui-select-trigger')!
   await vi.waitFor(() => {
-    const triggerWidth = trigger.element().getBoundingClientRect().width
+    const triggerWidth = frame.getBoundingClientRect().width
     const panelWidth = panel.getBoundingClientRect().width
     expect(Math.abs(triggerWidth - panelWidth)).toBeLessThan(1)
   })
@@ -254,6 +257,29 @@ test('clearable resets the model and hides once empty', async () => {
   expect(document.querySelector('.ui-select-clear')).toBeNull()
 })
 
+test('the clear button gives its room back on the side that keeps it in place', async () => {
+  const leaveMargins = async (style: string) => {
+    const screen = await render(Select, {
+      props: { items: [{ label: 'Apple', value: 'apple' }], modelValue: 'apple', clearable: true },
+      attrs: { style },
+      global: { stubs: { transition: false } },
+    })
+    const clear = screen.container.querySelector<HTMLButtonElement>('.ui-select-clear')!
+    clear.click()
+    await vi.waitFor(() => expect(clear.classList.contains('ui-clear-leave-active')).toBe(true))
+    const start = parseFloat(clear.style.getPropertyValue('--ui-clear-start'))
+    const end = parseFloat(clear.style.getPropertyValue('--ui-clear-end'))
+    screen.unmount()
+    return { start, end }
+  }
+  // Fixed width: the value area widens under it.
+  const fixed = await leaveMargins('inline-size: 16rem')
+  expect(fixed.start).toBeLessThan(0)
+  expect(fixed.end).toBe(0)
+  // Sized to its content: the row closes up after it.
+  expect((await leaveMargins('inline-size: max-content')).end).toBeLessThan(0)
+})
+
 test('invalid sets data-invalid on the trigger (not just a class) — the animation-agnostic hook every other control uses', async () => {
   const screen = await render(Select, {
     props: {
@@ -262,7 +288,8 @@ test('invalid sets data-invalid on the trigger (not just a class) — the animat
     },
   })
   const el = screen.getByRole('combobox').element() as HTMLElement
-  expect(el.hasAttribute('data-invalid')).toBe(true)
+  // The frame carries the styling hook, the combobox inside it the state.
+  expect(el.closest('.ui-select-trigger')!.hasAttribute('data-invalid')).toBe(true)
   expect(el.getAttribute('aria-invalid')).toBe('true')
 })
 
@@ -550,4 +577,122 @@ test('Enter on a chip remove button removes the chip without opening the panel',
   expect(
     screen.container.querySelector('[role="combobox"]')!.getAttribute('aria-expanded'),
   ).not.toBe('true')
+})
+
+test('removing the last chip eases a content-sized trigger to the placeholder width, with the placeholder beside the collapsing chip', async () => {
+  const items = [
+    { label: 'Apple', value: 'a' },
+    { label: 'Banana', value: 'b' },
+  ]
+  const screen = await render(
+    {
+      components: { Select },
+      data: () => ({ model: ['a'] }),
+      template: `<div style="display: flex"><Select v-model="model" :items="items" multiple placeholder="Pick fruit" /></div>`,
+      setup: () => ({ items }),
+    },
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  const row = screen.container.querySelector<HTMLElement>('.ui-select-value')!
+  const trigger = screen.container.querySelector<HTMLElement>('.ui-select-trigger')!
+  const before = trigger.getBoundingClientRect().width
+  screen.container.querySelector<HTMLElement>('.ui-chip-remove')!.click()
+  await vi.waitFor(() => expect(row.style.transition).toContain('inline-size'))
+  // The placeholder is already in the row, waiting behind the chip's edge.
+  const placeholder = screen.container.querySelector<HTMLElement>('.ui-select-placeholder')!
+  expect(placeholder.getBoundingClientRect().left).toBeGreaterThan(row.getBoundingClientRect().left)
+  await vi.waitFor(() => expect(row.style.inlineSize).toBe(''))
+  expect(trigger.getBoundingClientRect().width).toBeLessThan(before)
+  expect(Math.round(placeholder.getBoundingClientRect().left)).toBe(
+    Math.round(row.getBoundingClientRect().left),
+  )
+})
+
+// Select loads AnimatedText after mount and shows plain text until then; the same import resolves
+// once it has, whichever test runs first.
+async function animatedTextLoaded() {
+  await import('../src/components/AnimatedText/AnimatedText.vue')
+  await nextTick()
+}
+
+test('a new selection crossfades the label; motion false swaps it at once', async () => {
+  const items = [
+    { label: 'Ghana', value: 'gh' },
+    { label: 'South Africa', value: 'za' },
+  ]
+  const value = shallowRef('gh')
+  const motion = shallowRef(true)
+  const screen = await render(
+    {
+      render: () => h(Select as never, { items, modelValue: value.value, motion: motion.value }),
+    },
+    { global: { stubs: { transition: false } } },
+  )
+  await animatedTextLoaded()
+  const labels = () => screen.container.querySelectorAll('.ui-animated-text-value')
+  expect(labels()).toHaveLength(1)
+  value.value = 'za'
+  await nextTick()
+  expect(labels()).toHaveLength(2)
+  await vi.waitFor(() => expect(labels()).toHaveLength(1))
+  expect(labels()[0]!.textContent).toBe('South Africa')
+  motion.value = false
+  await nextTick()
+  value.value = 'gh'
+  await nextTick()
+  expect(labels()).toHaveLength(1)
+  expect(labels()[0]!.textContent).toBe('Ghana')
+})
+
+// The placeholder and the value are one text, so every change of what the trigger says crossfades.
+const fruits = [
+  { label: 'Apple', value: 'apple' },
+  { label: 'Banana', value: 'banana' },
+]
+// Both texts on screen at once: the old one leaving while the new one comes in.
+async function sawCrossfade(from: string, to: string) {
+  const seen = new Set<string>()
+  const start = performance.now()
+  while (performance.now() - start < 500) {
+    const texts = [...document.querySelectorAll('.ui-select-value .ui-animated-text-value')].map(
+      (el) => el.textContent?.trim(),
+    )
+    if (texts.length === 2) seen.add(texts.join(' / '))
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  return [...seen].some((pair) => pair.includes(from) && pair.includes(to))
+}
+
+test('the first choice crossfades out of the placeholder, and clearing crossfades back', async () => {
+  const value = shallowRef<string | null>(null)
+  await render(
+    {
+      setup: () => () =>
+        h(Select as never, {
+          modelValue: value.value,
+          'onUpdate:modelValue': (v: string | null) => (value.value = v),
+          items: fruits,
+          placeholder: 'Pick a fruit',
+          clearable: true,
+        }),
+    },
+    { global: { stubs: { transition: false } } },
+  )
+  await animatedTextLoaded()
+  expect(document.querySelector('.ui-select-placeholder')?.textContent?.trim()).toBe('Pick a fruit')
+  value.value = 'apple'
+  expect(await sawCrossfade('Pick a fruit', 'Apple')).toBe(true)
+  expect(document.querySelector('.ui-select-placeholder')).toBeNull()
+  value.value = null
+  expect(await sawCrossfade('Apple', 'Pick a fruit')).toBe(true)
+  expect(document.querySelector('.ui-select-placeholder')?.textContent?.trim()).toBe('Pick a fruit')
+})
+
+test('a Select that mounts with a value shows it at once, without crossfading from the placeholder', async () => {
+  await render(
+    () => h(Select as never, { modelValue: 'banana', items: fruits, placeholder: 'Pick a fruit' }),
+    { global: { stubs: { transition: false } } },
+  )
+  expect(await sawCrossfade('Pick a fruit', 'Banana')).toBe(false)
+  expect(document.querySelector('.ui-select-value')?.textContent?.trim()).toBe('Banana')
 })

@@ -14,7 +14,9 @@ import '../src/components/internal/TimeField.css'
 import '../src/components/CommandPalette/CommandPalette.css'
 
 function bgOf(testId: string) {
-  return getComputedStyle(document.querySelector(`[data-testid="${testId}"]`)!).backgroundColor
+  // The button's box is painted by its ::before layer.
+  return getComputedStyle(document.querySelector(`[data-testid="${testId}"]`)!, '::before')
+    .backgroundColor
 }
 function colorOf(testId: string) {
   return getComputedStyle(document.querySelector(`[data-testid="${testId}"]`)!).color
@@ -92,14 +94,15 @@ test('theme.fontSize scales component text within its scope, and leaves the touc
   const touchFontSize = () =>
     getComputedStyle(input).getPropertyValue('--ui-touch-font-size').trim()
 
-  await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('17.5px'))
+  // Button rounds its text to whole pixels (its box sits on the pixel grid); Input scales exactly.
+  await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('18px'))
   expect(getComputedStyle(input).fontSize).toBe('17.5px')
   expect(getComputedStyle(plain).fontSize).toBe('20px')
   expect(touchFontSize()).toBe('0px')
   expect(getComputedStyle(document.documentElement).fontSize).toBe('16px')
 
   await screen.rerender({ theme: { fontSize: '12px' } })
-  await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('10.5px'))
+  await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('11px'))
   expect(getComputedStyle(input).fontSize).toBe('10.5px')
   expect(getComputedStyle(plain).fontSize).toBe('12px')
   expect(touchFontSize()).toBe('0px')
@@ -113,7 +116,7 @@ test('the document root font size also scales component text', async () => {
   const input = screen.container.querySelector('[data-testid="themed-input"]')!
   try {
     document.documentElement.style.fontSize = '20px'
-    await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('17.5px'))
+    await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('18px'))
     expect(getComputedStyle(input).fontSize).toBe('17.5px')
   } finally {
     document.documentElement.style.fontSize = originalFontSize
@@ -251,4 +254,17 @@ test('setting or clearing a theme keeps the subtree mounted (focus and DOM ident
   expect(document.activeElement).toBe(before)
   await screen.rerender({ theme: undefined })
   expect(screen.container.querySelector('[data-testid="inner"]')).toBe(before)
+})
+
+test('native parts follow the theme: color-scheme is dark with the dark tokens, light otherwise', () => {
+  const root = document.documentElement
+  const scheme = () => getComputedStyle(document.body).colorScheme
+  try {
+    root.setAttribute('data-theme', 'dark')
+    expect(scheme()).toBe('dark')
+    root.setAttribute('data-theme', 'light')
+    expect(scheme()).toBe('light')
+  } finally {
+    root.removeAttribute('data-theme')
+  }
 })

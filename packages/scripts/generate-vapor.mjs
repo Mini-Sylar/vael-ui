@@ -22,13 +22,44 @@ const UI_INDEX_PATH = join(__dirname, '../ui/src/index.ts')
 
 // Modules the vdom build ships as their own files. Vapor components import these by path and the
 // Vapor build points them at the vdom files, so both builds share one copy.
-const SHARED_MODULES = new Set(Object.keys(collectBarrelEntries(UI_INDEX_PATH, UI_SRC_DIR)))
+const SHARED_MODULES = new Set([
+  ...Object.keys(collectBarrelEntries(UI_INDEX_PATH, UI_SRC_DIR)),
+  // Shared but not public (src/internal.ts).
+  ...Object.keys(collectBarrelEntries(join(UI_SRC_DIR, 'internal.ts'), UI_SRC_DIR)),
+  // vael-ui/motion.
+  ...Object.keys(collectBarrelEntries(join(UI_SRC_DIR, 'motion/index.ts'), UI_SRC_DIR, 'motion/')),
+])
 // Stateless helpers each build may bundle on its own.
 const PER_BUILD_MODULES = new Set([
   'composables/useLazySortable',
+  'composables/panelWidth',
+  'composables/valueSwap',
   'composables/useFocusableScroller',
   'composables/selectGroups',
+  'composables/useRememberedSelection',
+  'composables/useVirtualTree',
+  'composables/lazyVirtualTree',
+  'composables/indicatorStretch',
+  'composables/dateText',
+  'composables/useFormReset',
+  'motion/springNames',
   'composables/useEasedHeight',
+  'composables/useFold',
+  'composables/tourGlide',
+  'composables/useChipRowWidth',
+  'composables/useChipTransition',
+  'composables/useSelectPanelMotion',
+  'composables/useTooltipMotion',
+  'composables/useMessageMotion',
+  'composables/useIndicatorMotion',
+  'composables/componentHaptic',
+  'composables/lazyParts',
+  'composables/sortableSettle',
+  'composables/loaderType',
+  'composables/numberParts',
+  'composables/useTextOverlay',
+  'motion/styleHolder',
+  'motion/hook',
 ])
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
 
@@ -65,6 +96,7 @@ function resolveModuleId(name) {
 // rather than '../composables/...'.
 const REWRITABLE_BASENAMES = [
   'composables/',
+  'motion/',
   'classes',
   'theme',
   'messages',
@@ -128,6 +160,10 @@ const NON_COMPONENT_EXPORTS_EXCLUDED = new Set([
   'vScrollMaskVapor',
   'vDraggable',
   'vDraggableVapor',
+  'vAnimate',
+  'vAnimateVapor',
+  'vHoverIndicator',
+  'vHoverIndicatorVapor',
   'confirmAction',
 ])
 
@@ -166,7 +202,8 @@ function collectNonComponentExports(indexSource) {
 // '../internal/StatusIcon.vue', not './internal/StatusIcon.vue'.
 function findSiblingModuleIds(source, fromId) {
   const ids = new Set()
-  const re = /from\s+'(\.\.?\/[^']+)\.vue'/g
+  // Static (`from './X.vue'`) and lazy (`import('./X.vue')`) alike: a lazy one still ships.
+  const re = /(?:from\s+|import\(\s*)'(\.\.?\/[^']+)\.vue'/g
   const fromDir = dirname(fromId) // 'Message/Message' -> 'Message'; 'Select' -> '.'
   let match
   while ((match = re.exec(source))) {
@@ -203,18 +240,44 @@ function copyCssImports(source, origFileDir, outFileDir) {
   const importLineRe = /^import\s+'([^']+\.css)'\s*$/gm
   return source.replace(importLineRe, (_full, relPath) => {
     const absSrc = resolve(origFileDir, relPath)
-    const mirroredRel = relative(UI_COMPONENTS_DIR, absSrc)
-    const absOut = join(OUT_DIR, mirroredRel)
-    writeIfChanged(absOut, readFileSync(absSrc, 'utf8'))
+    // Outside components (motion's timing.css): the original, so every build shares one file.
+    const absOut = relative(UI_COMPONENTS_DIR, absSrc).startsWith('..') ? absSrc : copyCss(absSrc)
     let newRel = relative(outFileDir, absOut).split('\\').join('/')
     if (!newRel.startsWith('.')) newRel = `./${newRel}`
     return `import '${newRel}'`
   })
 }
 
+// Any @imports point back at the originals from the copy.
+function copyCss(absSrc) {
+  const absOut = join(OUT_DIR, relative(UI_COMPONENTS_DIR, absSrc))
+  const css = readFileSync(absSrc, 'utf8').replace(
+    /^@import\s+'(\.[^']+\.css)'/gm,
+    (_full, relPath) =>
+      `@import '${relative(dirname(absOut), resolve(dirname(absSrc), relPath))
+        .split('\\')
+        .join('/')}'`,
+  )
+  writeIfChanged(absOut, css)
+  return absOut
+}
+
 // Vapor ignores v-memo and warns about it at build time, so the copies drop it.
 function stripVMemo(source) {
   return source.replace(/\s+v-memo="[^"]*"/g, '')
+}
+
+// A VDOM async wrapper around a Vapor component renders nothing and hides its ref; Vapor has its own.
+function useVaporAsync(source) {
+  return source.replace(/import\s*\{([^}]*)\}\s*from\s*'vue'/, (full, names) =>
+    full.replace(
+      names,
+      names.replace(
+        /\bdefineAsyncComponent\b/,
+        'defineVaporAsyncComponent as defineAsyncComponent',
+      ),
+    ),
+  )
 }
 
 function injectVaporMarker(source, moduleId) {
@@ -236,6 +299,8 @@ const VAPOR_ALIASES = {
   vTooltip: ['vTooltipVapor', 'directives/vTooltip'],
   vScrollMask: ['vScrollMaskVapor', 'directives/vScrollMask'],
   vDraggable: ['vDraggableVapor', 'directives/vDraggable'],
+  vAnimate: ['vAnimateVapor', 'motion/vAnimate'],
+  vHoverIndicator: ['vHoverIndicatorVapor', 'directives/vHoverIndicator'],
   // See useSlotRelay.ts: a plain functional component forwarding a captured
   // slot renders as [object Object] under vaporInteropPlugin
   // (https://github.com/vuejs/core/issues/15596) — the vapor build needs the
@@ -289,7 +354,10 @@ function rewriteImports(source, moduleId) {
     // imports of the vdom build's own files, so both builds share one copy of their state.
     const lines = [...directiveLines]
     if (otherNames.length > 0) {
+      // Forward slashes, as the module lists spell them, on Windows too.
       const sourcePath = relative(UI_SRC_DIR, resolve(UI_COMPONENTS_DIR, fromDir, specifier))
+        .split('\\')
+        .join('/')
       const typesOnly = typeOnly || otherNames.every((n) => n.startsWith('type '))
       if (!typesOnly && !SHARED_MODULES.has(sourcePath) && !PER_BUILD_MODULES.has(sourcePath)) {
         throw new Error(
@@ -357,7 +425,7 @@ function main() {
       const outPath = join(OUT_DIR, `${moduleId}.vue`)
       mkdirSync(dirname(outPath), { recursive: true }) // for internal/*.vue
       source = copyCssImports(source, dirname(srcPath), dirname(outPath))
-      source = stripVMemo(source)
+      source = useVaporAsync(stripVMemo(source))
       source = injectVaporMarker(source, moduleId)
       source = rewriteImports(source, moduleId)
       writeIfChanged(outPath, source)
@@ -399,6 +467,7 @@ function main() {
     `export { vTooltipVapor as vTooltip } from '${relativeImportPath('directives/vTooltip')}'`,
     `export { vScrollMaskVapor as vScrollMask } from '${relativeImportPath('directives/vScrollMask')}'`,
     `export { vDraggableVapor as vDraggable } from '${relativeImportPath('directives/vDraggable')}'`,
+    `export { vHoverIndicatorVapor as vHoverIndicator } from '${relativeImportPath('directives/vHoverIndicator')}'`,
     `export { confirmAction } from './composables/confirmAction'`,
     `export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'`,
   )
@@ -417,6 +486,24 @@ function main() {
   }
 
   writeIfChanged(join(OUT_DIR, 'index.ts'), barrelLines.join('\n') + '\n')
+
+  // vael-ui/motion under the `vapor` condition: `vAnimate` is the Vapor form (also as
+  // `vAnimateVapor`); the rest is shared code.
+  const motionSource = readFileSync(join(UI_SRC_DIR, 'motion/index.ts'), 'utf8')
+  const motionLines = []
+  for (const [, typeOnly, clause, spec] of motionSource.matchAll(
+    /export\s+(type\s+)?\{([^}]+)\}\s+from\s+'([^']+)'/g,
+  )) {
+    const path = relativeImportPath(join('motion', spec))
+    const names = clause
+      .split(',')
+      .map((name) => name.trim())
+      .filter((name) => name && name !== 'vAnimate')
+      .map((name) => (name === 'vAnimateVapor' ? 'vAnimateVapor as vAnimate, vAnimateVapor' : name))
+    if (names.length)
+      motionLines.push(`export ${typeOnly ?? ''}{ ${names.join(', ')} } from '${path}'`)
+  }
+  writeIfChanged(join(OUT_DIR, 'motion.ts'), motionLines.join('\n') + '\n')
   removeStale(OUT_DIR)
   console.log(
     `\ngenerated src/generated/index.ts (${COMPONENTS.length} public component(s), ${toGenerate.size} file(s) total, ${composableCount} composable(s)/utilit(y/ies))`,

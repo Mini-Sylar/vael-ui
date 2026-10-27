@@ -109,13 +109,13 @@
           <Checkbox
             v-if="!single"
             :model-value="isSelected(tableRowEntries[virtualRow.index]!.row)"
-            :aria-label="messages.dataTable.selectRow"
+            :aria-labelledby="`${selectLabelId} ${rowLabelId(tableRowEntries[virtualRow.index]!.row)}`"
             @update:model-value="() => onToggleSelect(tableRowEntries[virtualRow.index]!.row)"
           />
           <Radio
             v-else
             :value="getRowKey(tableRowEntries[virtualRow.index]!.row)"
-            :aria-label="messages.dataTable.selectRow"
+            :aria-labelledby="`${selectLabelId} ${rowLabelId(tableRowEntries[virtualRow.index]!.row)}`"
           />
         </td>
         <td
@@ -150,7 +150,8 @@
               height="12"
               fill="none"
               aria-hidden="true"
-              class="ui-datatable-expand-chevron"
+              :class="expandChevronPart.class"
+              :style="expandChevronPart.style"
               :data-state="isExpanded(tableRowEntries[virtualRow.index]!.row) ? 'open' : 'closed'"
             >
               <path
@@ -176,6 +177,11 @@
           :style="[tdPart().style, columnStyle(col), columnFrozenStyle(colIndex)]"
           :data-label="col.label ?? String(col.field)"
           :data-column-field="String(col.field)"
+          :id="
+            colIndex === 0 && selectColumnRendered
+              ? rowLabelId(tableRowEntries[virtualRow.index]!.row)
+              : undefined
+          "
         >
           <component
             :is="col.cellRelay"
@@ -218,17 +224,16 @@
 
   <TransitionGroup
     v-else
+    ref="rowsGroup"
     tag="tbody"
     :role="roles.group"
-    name="ui-datatable-row"
-    :css="rowCss"
+    v-bind="rowsTransition"
     :class="tbodyPart.class"
     :style="tbodyPart.style"
     :data-motion="rowCss && rowMotionReady ? undefined : 'off'"
     @before-enter="beforeEnterHook"
+    @after-enter="afterEnterHook"
     @before-leave="beforeLeaveHook"
-    @enter="rowEnterHook"
-    @leave="rowLeaveHook"
   >
     <tr
       :role="roles.row"
@@ -262,10 +267,14 @@
           <Checkbox
             v-if="!single"
             :model-value="isSelected(entry.row)"
-            :aria-label="messages.dataTable.selectRow"
+            :aria-labelledby="`${selectLabelId} ${rowLabelId(entry.row)}`"
             @update:model-value="() => onToggleSelect(entry.row)"
           />
-          <Radio v-else :value="getRowKey(entry.row)" :aria-label="messages.dataTable.selectRow" />
+          <Radio
+            v-else
+            :value="getRowKey(entry.row)"
+            :aria-labelledby="`${selectLabelId} ${rowLabelId(entry.row)}`"
+          />
         </td>
         <td
           :role="roles.cell"
@@ -293,7 +302,8 @@
               height="12"
               fill="none"
               aria-hidden="true"
-              class="ui-datatable-expand-chevron"
+              :class="expandChevronPart.class"
+              :style="expandChevronPart.style"
               :data-state="isExpanded(entry.row) ? 'open' : 'closed'"
             >
               <path
@@ -319,6 +329,7 @@
           :style="[tdPart().style, columnStyle(col), columnFrozenStyle(colIndex)]"
           :data-label="col.label ?? String(col.field)"
           :data-column-field="String(col.field)"
+          :id="colIndex === 0 && selectColumnRendered ? rowLabelId(entry.row) : undefined"
         >
           <component
             :is="col.cellRelay"
@@ -352,10 +363,11 @@ import Checkbox from '../Checkbox/Checkbox.vue'
 import Radio from '../Radio/Radio.vue'
 import Button from '../Button/Button.vue'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
-import { computed, TransitionGroup } from 'vue'
+import { computed, nextTick, TransitionGroup, useTemplateRef, watch } from 'vue'
+import { prefersReducedMotion } from '../../composables/dom'
 import type { ComponentPublicInstance } from 'vue'
 import type { VirtualRow } from '../../composables/useVirtualizer'
-import { useUiMessages } from '../../messages'
+import { useMessages, dataTableMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 
@@ -396,14 +408,16 @@ const props = defineProps<{
   onRowFocus: (row: T, event: FocusEvent) => void
   onRowKeydown: (row: T, event: KeyboardEvent) => void
   expansionId: (row: T) => string
+  rowLabelId: (row: T) => string
+  selectLabelId: string
   onToggleSelect: (row: T) => void
   onToggleExpand: (row: T) => void
   onRowClick: (row: T, event: MouseEvent) => void
-  motionCss: boolean
+  motion: boolean
   /** False until the first measurement render has passed; row move stays off. */
   rowMotionReady: boolean
-  onRowEnter: (el: Element, done: () => void) => void
-  onRowLeave: (el: Element, done: () => void) => void
+  /** Your rows' motion (the motion system's TransitionGroup props), or none: the built-in CSS. */
+  rowTransition?: Record<string, unknown>
   /** scrollHeight layout: head and body are separate tables joined by ARIA roles. */
   split: boolean
   ui?: Partial<{
@@ -412,14 +426,15 @@ const props = defineProps<{
     td: UiPartValue
     expansionRow: UiPartValue
     expansionContent: UiPartValue
+    expandChevron: UiPartValue
   }>
 }>()
 
 // In the split layout the tables are presentational and these roles rebuild one table.
-// The scroll strip is the rowgroup, since a table can't hold a focusable div.
+// The scroll strip is the rowgroup, since a table can't hold a focusable div. Selectable, it's a grid.
 const roles = computed(() =>
   props.split
-    ? { group: 'presentation', row: 'row', cell: 'cell' }
+    ? { group: 'presentation', row: 'row', cell: props.selectable ? 'gridcell' : 'cell' }
     : { group: undefined, row: undefined, cell: undefined },
 )
 
@@ -434,6 +449,9 @@ function tdPart(...extra: (string | false | undefined)[]) {
 const expansionRowPart = computed(() =>
   resolveUiPart(cx, props.ui?.expansionRow, 'ui-datatable-expansion-rows'),
 )
+const expandChevronPart = computed(() =>
+  resolveUiPart(cx, props.ui?.expandChevron, 'ui-datatable-expand-chevron'),
+)
 const expansionContentPart = computed(() =>
   resolveUiPart(cx, props.ui?.expansionContent, 'ui-datatable-expansion-inner'),
 )
@@ -444,7 +462,7 @@ defineSlots<{
   expansion(props: { row: T }): any
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ dataTable: dataTableMessages })
 
 function ariaSelected(row: T): 'true' | 'false' | undefined {
   if (!props.selectable) return undefined
@@ -460,19 +478,64 @@ const rowMotionFits = computed<{ count: number; fits: boolean }>((previous) => {
     fits: count <= ROW_MOTION_LIMIT && (previous?.count ?? 0) <= ROW_MOTION_LIMIT,
   }
 })
-const rowCss = computed(() => props.motionCss && rowMotionFits.value.fits)
+const rowCss = computed(() => props.motion && rowMotionFits.value.fits)
+// A change that keeps no row (a page change, new data) shows at once: every row fading in flashes.
+const rowSwap = computed<{ keys: Set<string>; swap: boolean }>((previous) => {
+  const keys = new Set(props.tableRowEntries.map((entry) => entry.key))
+  const kept = previous ? [...keys].some((key) => previous.keys.has(key)) : true
+  return { keys, swap: !kept && (previous?.keys.size ?? 0) > 0 }
+})
+const rowFade = computed(() => rowCss.value && !rowSwap.value.swap)
 
-// A JS hook and Vue's CSS end detection can't coexist, so hooks only wire when motionCss is off.
-const rowEnterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowEnter(el, done),
+// Rows coming and going slide the rest; the table's box eases its height with them, on their
+// timing. Otherwise a group folding left its rows hanging past a box that had already shrunk
+// (clipped), and one unfolding opened an empty band under rows still sliding down. A swap snaps.
+const rowsGroup = useTemplateRef<ComponentPublicInstance>('rowsGroup')
+let heightRun: Animation | undefined
+watch(
+  () => props.tableRowEntries,
+  () => {
+    // The scroll strip: it clips the rows (the table's box follows its height).
+    const table = (rowsGroup.value?.$el as HTMLElement | undefined)?.closest<HTMLElement>(
+      '.ui-datatable-scroll-x',
+    )
+    if (!table || !rowFade.value || prefersReducedMotion()) return
+    // Where it shows now, mid-ease included.
+    const from = table.getBoundingClientRect().height
+    void nextTick(() => {
+      heightRun?.cancel()
+      heightRun = undefined
+      const to = table.getBoundingClientRect().height
+      if (Math.abs(to - from) < 0.5) return
+      // The rows' own move timing, read off the same tokens.
+      const style = getComputedStyle(table)
+      const raw = style.getPropertyValue('--ui-duration-enter').trim()
+      const duration = raw.endsWith('ms') ? Number.parseFloat(raw) : Number.parseFloat(raw) * 1000
+      if (!(duration > 0)) return
+      heightRun = table.animate([{ blockSize: `${from}px` }, { blockSize: `${to}px` }], {
+        duration,
+        easing: style.getPropertyValue('--ui-ease-in-out').trim() || 'ease-in-out',
+      })
+    })
+  },
+  { flush: 'pre' },
 )
-const rowLeaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowLeave(el, done),
+
+// Yours plays through the motion system, the built-in look through CSS; past the limit, neither.
+// On a swap your old rows go at once, as they'd leave in the table's flow and stack above the new
+// page; the new rows still come in your way.
+const leaveAtOnce = (_el: Element, done: () => void) => done()
+const rowsTransition = computed(() =>
+  props.rowTransition && rowMotionFits.value.fits
+    ? rowSwap.value.swap
+      ? { ...props.rowTransition, onLeave: leaveAtOnce }
+      : props.rowTransition
+    : { name: 'ui-datatable-row', css: rowFade.value },
 )
 
 // A px max-block-size, not 0fr/1fr rows: fr interpolates unevenly and reads as a stall.
 function beforeEnterHook(el: Element) {
-  if (!rowCss.value) return
+  if (!rowFade.value) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
   if (!wrap) return
   wrap.style.maxBlockSize = '0px'
@@ -480,8 +543,13 @@ function beforeEnterHook(el: Element) {
     wrap.style.maxBlockSize = `${wrap.scrollHeight}px`
   })
 }
+// Released once open, so rows that grow later (async content) aren't clipped.
+function afterEnterHook(el: Element) {
+  const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
+  if (wrap) wrap.style.maxBlockSize = ''
+}
 function beforeLeaveHook(el: Element) {
-  if (!rowCss.value) return
+  if (!rowFade.value) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
   if (!wrap) return
   wrap.style.maxBlockSize = `${wrap.scrollHeight}px`

@@ -20,9 +20,6 @@
             <template #start>
               <PhMagnifyingGlass :size="16" />
             </template>
-            <template #end>
-              <Kbd class="dash-search-kbd">⌘K</Kbd>
-            </template>
           </Input>
           <Button
             id="dash-tour-trigger"
@@ -45,7 +42,14 @@
           >
             <PhBell :size="18" />
           </Button>
-          <Menu :items="accountMenuItems" align="end" data-dash-overlay @select="onAccountSelect">
+          <!-- Teleported into the shell so the panel never leaves the frame. -->
+          <Menu
+            :items="accountMenuItems"
+            align="end"
+            :teleport-to="dashShell ?? undefined"
+            data-dash-overlay
+            @select="onAccountSelect"
+          >
             <template #trigger>
               <!-- The name starts with the initials shown, so it matches what you see. -->
               <Button
@@ -71,13 +75,14 @@
 
     <CommandPalette
       v-model:open="paletteOpen"
-      shortcut="mod+k"
       placeholder="Search or jump to…"
       :items="paletteItems"
       :container="dashShell"
       @select="onPaletteSelect"
     />
     <Tour v-model:open="tourOpen" :steps="tourSteps" :container="dashShell" />
+    <!-- The showcase's own toasts stay inside its frame, like its palette and tour. -->
+    <Toaster name="dashboard" aria-label="Showcase notifications" :container="dashShell" />
   </div>
 </template>
 
@@ -89,8 +94,8 @@ import {
   Button,
   CommandPalette,
   Input,
-  Kbd,
   Menu,
+  Toaster,
   Tour,
   toast,
   vTooltip,
@@ -161,7 +166,7 @@ const accountMenuItems: MenuItemData[] = [
   { label: 'Sign out', value: 'signout', danger: true },
 ]
 function onAccountSelect(item: MenuItemData) {
-  toast(`"${item.label}" isn't wired to a real action in this showcase.`)
+  toast(`"${item.label}" isn't wired to a real action in this showcase.`, { toaster: 'dashboard' })
 }
 
 const paletteOpen = shallowRef(false)
@@ -258,7 +263,7 @@ function onPaletteSelect(item: DashboardCommand) {
   }
   if (item.kind === 'customer') {
     activePage.value = 'customers'
-    toast(`Opening ${item.label}'s profile isn't wired in this showcase.`)
+    toast(`Opening ${item.label}'s profile isn't wired in this showcase.`, { toaster: 'dashboard' })
     return
   }
   if (item.id === 'action-tour') {
@@ -266,7 +271,7 @@ function onPaletteSelect(item: DashboardCommand) {
     return
   }
   if (item.id === 'action-signout') {
-    toast('Signed out (nothing actually happens in this demo).')
+    toast('Signed out (nothing actually happens in this demo).', { toaster: 'dashboard' })
   }
 }
 
@@ -286,14 +291,14 @@ const tourSteps = computed<TourStep[]>(() => [
     title: 'Your workspace',
     description:
       variant.value === 'repo'
-        ? 'Jump between Overview, Pull requests, and Files from here.'
-        : 'Jump between Overview, Orders, and Customers from here.',
+        ? 'Jump between Overview, Pull requests and Files from here.'
+        : 'Jump between Overview, Orders and Customers from here.',
     side: 'right',
   },
   {
     target: '#dash-search-trigger',
     title: 'Search or jump to anything',
-    description: 'Press ⌘K (or Ctrl+K) from anywhere in the dashboard to open this instantly.',
+    description: 'Search pages, orders and customers, or jump straight to one.',
     side: 'bottom',
   },
   {
@@ -305,7 +310,7 @@ const tourSteps = computed<TourStep[]>(() => [
   {
     target: '#dash-account-trigger',
     title: 'Your account',
-    description: 'Profile, billing, and signing out all live in this menu.',
+    description: 'Profile, billing and sign out are in this menu.',
     side: 'bottom',
     align: 'end',
   },
@@ -313,7 +318,7 @@ const tourSteps = computed<TourStep[]>(() => [
     ? {
         target: '#dash-activity',
         title: 'Recent activity',
-        description: 'Merges, reviews and deploys land here the moment they happen.',
+        description: 'Merges, reviews and deploys show up here as they happen.',
         side: 'left',
         onBeforeEnter: async () => {
           if (activePage.value !== 'overview') activePage.value = 'overview'
@@ -323,7 +328,7 @@ const tourSteps = computed<TourStep[]>(() => [
     : {
         target: '#dash-view-all-link',
         title: 'Recent activity',
-        description: 'Every new order lands on this list — click through for the full history.',
+        description: 'Every new order shows up in this list. Click through for the full history.',
         side: 'bottom',
         onBeforeEnter: async () => {
           if (activePage.value !== 'overview') activePage.value = 'overview'
@@ -417,10 +422,6 @@ defineExpose({
 .dash-search:active {
   transform: scale(0.99);
 }
-.dash-search-kbd {
-  font-size: 0.6875rem;
-}
-
 .dash-content {
   flex: 1 1 auto;
   padding: 0.875rem;

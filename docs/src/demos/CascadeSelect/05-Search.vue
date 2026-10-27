@@ -2,13 +2,13 @@
   <section class="demo">
     <h3>Search</h3>
     <p class="note">
-      <code>filter</code> adds a search box. Type a city, a country or both, like
-      <code>ghana ku</code>, and the levels become one list of matching cities, each with where it
-      lives. Arrow keys move through the results and Enter picks; Enter in the search box picks the
-      first one.
+      <code>filter</code> adds a search box. Type a city, a country or both, such as
+      <code>ghana ku</code>, and the levels become one list of matching cities, each with its
+      location. The arrow keys move through the results and Enter picks one; Enter in the search box
+      picks the first.
     </p>
     <div class="row">
-      <Field label="City">
+      <Field style="inline-size: 16rem" label="City">
         <CascadeSelect v-model="city" :items="geography" filter placeholder="Pick a city" />
       </Field>
       <output class="panel-text">{{ city ?? '(none)' }}</output>

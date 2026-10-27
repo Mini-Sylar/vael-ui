@@ -1,4 +1,4 @@
-import { onScopeDispose, watch } from 'vue'
+import { onMounted, onScopeDispose, watch } from 'vue'
 import type { Ref, WatchSource } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import { animate, motionValue } from 'motion-v'
@@ -46,12 +46,25 @@ export function useGlidingIndicator(
       placed = false
       return
     }
-    const boxRect = box.getBoundingClientRect()
-    const rect = target.getBoundingClientRect()
-    const nextTop = rect.top - boxRect.top + box.scrollTop
-    const nextBottom = nextTop + rect.height
+    // Where layout puts the item, not where a transform shows it (a list sliding in).
+    let left = 0
+    let nextTop = 0
+    for (let at: HTMLElement | null = target; at && at !== box;) {
+      left += at.offsetLeft
+      nextTop += at.offsetTop
+      const parent = at.offsetParent as HTMLElement | null
+      if (parent !== box && box.contains(parent)) {
+        left += parent?.clientLeft ?? 0
+        nextTop += parent?.clientTop ?? 0
+      }
+      at = parent && box.contains(parent) ? parent : null
+    }
+    const nextBottom = nextTop + target.offsetHeight
+    // The first placement shows the bar at once, as the prerendered page did; later ones fade.
+    const first = !placed
+    if (first) el.style.transition = 'none'
     el.style.opacity = '1'
-    if (offsetX !== undefined) el.style.left = `${rect.left - boxRect.left + offsetX}px`
+    if (offsetX !== undefined) el.style.left = `${left + offsetX}px`
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     // The first placement (and any placement under reduced motion) jumps
@@ -61,6 +74,10 @@ export function useGlidingIndicator(
       bottom.jump(nextBottom)
       placed = true
       paint()
+      if (first) {
+        void getComputedStyle(el).opacity
+        el.style.transition = ''
+      }
       return
     }
     const movingDown = nextTop > top.get()
@@ -68,6 +85,8 @@ export function useGlidingIndicator(
     animate(bottom, nextBottom, movingDown ? LEAD : TRAIL)
   }
 
+  // Placed in the mount's own frame, so the first paint already has the bar.
+  onMounted(update)
   watch(source, () => requestAnimationFrame(update), { flush: 'post' })
   useResizeObserver(container, () => requestAnimationFrame(update))
   onScopeDispose(() => unsubscribe.forEach((stop) => stop()))

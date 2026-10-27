@@ -31,6 +31,8 @@
     margin: 0;
     opacity: 0;
     cursor: pointer;
+    /* A sideways drag moves the thumb; a vertical one still scrolls the page. */
+    touch-action: pan-y;
   }
   .ui-switch-track {
     position: absolute;
@@ -61,7 +63,20 @@
       0 0 0 1px rgb(0 0 0 / 0.06),
       0 1px 2px rgb(0 0 0 / 0.15);
     translate: 0 -50%;
-    transition: translate var(--ui-duration-press) var(--ui-ease-out);
+    transform-origin: 0% 50%;
+    transition:
+      translate var(--ui-duration-press) var(--ui-ease-out),
+      scale var(--ui-duration-press) var(--ui-ease-out);
+    /* Own layer, so the press can't shift the thumb at fractional zoom (e.g. Windows scaling). */
+    will-change: transform;
+  }
+  /* Dragged, the thumb tracks the pointer with no lag; it eases home on release. */
+  .ui-switch[data-dragging] .ui-switch-thumb {
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  /* Pressed, the thumb stretches toward where it's going. */
+  .ui-switch-input:active:not(:disabled) + .ui-switch-track .ui-switch-thumb {
+    scale: 1.15 1;
   }
   .ui-switch[data-state='checked'] .ui-switch-track {
     background: var(--ui-primary);
@@ -73,6 +88,19 @@
        far side matches the rest position exactly, whatever the thumb's own
        size (it cancels out of the subtraction). */
     translate: calc(var(--ui-switch-track-w) - var(--ui-switch-track-h)) -50%;
+    transform-origin: 100% 50%;
+  }
+  /* Right to left, the thumb starts on the right and travels left. */
+  .ui-switch-thumb:dir(rtl) {
+    transform-origin: 100% 50%;
+  }
+  .ui-switch[data-state='checked'] .ui-switch-thumb:dir(rtl) {
+    translate: calc(var(--ui-switch-track-h) - var(--ui-switch-track-w)) -50%;
+    transform-origin: 0% 50%;
+  }
+  /* The checked side flips mid-drag, so the stretch stays centred instead of swapping edges. */
+  .ui-switch[data-dragging] .ui-switch-track .ui-switch-thumb {
+    transform-origin: 50% 50%;
   }
   .ui-switch-input:focus-visible + .ui-switch-track {
     outline: 2px solid var(--ui-primary);
@@ -100,6 +128,9 @@
   @media (prefers-reduced-motion: reduce) {
     .ui-switch-thumb {
       transition: none;
+    }
+    .ui-switch-input:active:not(:disabled) + .ui-switch-track .ui-switch-thumb {
+      scale: 1;
     }
   }
 }

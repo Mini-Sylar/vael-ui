@@ -6,6 +6,8 @@
     initial-value: 0px;
   }
   :root {
+    /* Native parts (scrollbars, form controls) follow the theme too. */
+    color-scheme: light;
     --ui-primary: #18181b;
     --ui-primary-hover: #27272a;
     --ui-primary-contrast: #fafafa;
@@ -45,22 +47,6 @@
     --ui-panel-shadow:
       0 0 0 1px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.12), 0 24px 48px rgb(0 0 0 / 0.08);
 
-    --ui-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-    --ui-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-    /* Slight overshoot for things arriving (a new count). Never for exits. */
-    --ui-ease-pop: cubic-bezier(0.34, 1.36, 0.64, 1);
-
-    --ui-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-    --ui-duration-drawer: 500ms;
-    --ui-duration-press: 160ms;
-    --ui-duration-enter: 200ms;
-    --ui-duration-exit: 150ms;
-    --ui-duration-tooltip: 125ms;
-    --ui-duration-tooltip-exit: 100ms;
-    --ui-duration-toast: 400ms;
-    --ui-duration-toast-exit: 200ms;
-    --ui-duration-pulse: 1.2s;
-    --ui-ease-toast: var(--ui-ease-out);
     --ui-toast-offset: 1rem;
   }
 
@@ -69,6 +55,29 @@
   ::after {
     -webkit-tap-highlight-color: transparent;
     --ui-radius-surface: min(var(--ui-radius), 1rem);
+  }
+
+  /* Two quick taps on a stepper, a calendar arrow or a tab are two presses:
+     without this, iOS takes them as a double tap and zooms the page. Pinch
+     zoom still works. Zero specificity, so a drag surface's own touch-action
+     wins. */
+  :where(
+    button,
+    label,
+    summary,
+    [role='button'],
+    [role='option'],
+    [role='menuitem'],
+    [role='menuitemradio'],
+    [role='menuitemcheckbox'],
+    [role='tab'],
+    [role='treeitem'],
+    [role='switch'],
+    [role='checkbox'],
+    [role='radio'],
+    [role='slider']
+  ):where([class^='ui-'], [class*=' ui-']) {
+    touch-action: manipulation;
   }
 
   /* Components are sized border-box, as under every common reset; this keeps
@@ -80,6 +89,15 @@
     box-sizing: border-box;
   }
 
+  /* One button padding in every browser: Safari's default is 2px above and 3px below, which
+     set icons in stepper and close buttons half a pixel or more off centre. These are
+     Chromium's defaults, which the components are drawn to. Zero specificity: a component's
+     own padding and your styles still win. */
+  :where(button):where([class^='ui-'], [class*=' ui-']) {
+    padding-block: 1px;
+    padding-inline: 6px;
+  }
+
   @property --ui-dialog-t {
     syntax: '<number>';
     inherits: false;
@@ -88,6 +106,7 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) {
+      color-scheme: dark;
       --ui-primary: #fafafa;
       --ui-primary-hover: #e4e4e7;
       --ui-primary-contrast: #18181b;
@@ -123,6 +142,7 @@
   }
 
   :root[data-theme='dark'] {
+    color-scheme: dark;
     --ui-primary: #fafafa;
     --ui-primary-hover: #e4e4e7;
     --ui-primary-contrast: #18181b;

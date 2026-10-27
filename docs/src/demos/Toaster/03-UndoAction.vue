@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Undo with an action</h3>
     <p class="note">
-      A toast can carry one action button; clicking it runs <code>onClick</code> and closes the
+      A toast can have one action button. Clicking it runs <code>onClick</code> and closes the
       toast.
     </p>
     <ul class="inbox">

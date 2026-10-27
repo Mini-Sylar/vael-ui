@@ -3,10 +3,10 @@
     <h3>Option groups</h3>
     <p class="note">
       Put <code>{ label, items }</code> entries in <code>items</code> to list options under a group
-      label, like a native <code>&lt;optgroup&gt;</code>. Arrow keys and typing move through every
-      group, the search box hides groups with no match, and screen readers announce each group's
-      name. To show more than the name, such as an icon or a count, use the
-      <code>#group-label</code> slot; the extreme examples below show how.
+      label, like a native <code>&lt;optgroup&gt;</code>. The arrow keys and typing move through
+      every group, search hides groups with no match, and screen readers announce each group's name.
+      To show more than the name, such as an icon or a count, use the
+      <code>#group-label</code> slot, as the extreme examples below do.
     </p>
     <div class="row">
       <Field label="Office">

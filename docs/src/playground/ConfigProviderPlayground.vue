@@ -14,7 +14,7 @@
 
     <div class="playground-body">
       <div class="playground-preview">
-        <component :is="ConfigProviderComp" :theme="theme" :size="size" :motion-css="motionCss">
+        <component :is="ConfigProviderComp" :theme="theme" :size="size" :motion="motion">
           <div class="preview-row">
             <component :is="InputComp" placeholder="Search" class="preview-input" />
             <component :is="SwitchComp" v-model="switchOn" aria-label="Notifications" />
@@ -30,9 +30,7 @@
       <div class="playground-controls">
         <div class="control-row">
           <label for="cp-color">primary</label>
-          <span class="color-swatch">
-            <input id="cp-color" :value="primary" type="color" @input="onColorInput" />
-          </span>
+          <ColorPicker id="cp-color" v-model="primary" size="sm" label="primary" />
         </div>
         <div class="control-row">
           <label id="cp-radius-label" for="cp-radius">radius</label>
@@ -71,8 +69,8 @@
           />
         </div>
         <div class="control-row">
-          <label for="cp-motion">motionCss</label>
-          <Switch id="cp-motion" v-model="motionCss" size="sm" aria-label="motionCss" />
+          <label for="cp-motion">motion</label>
+          <Switch id="cp-motion" v-model="motion" size="sm" aria-label="motion" />
         </div>
       </div>
     </div>
@@ -84,7 +82,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, type Component } from 'vue'
 import * as VaelUi from 'vael-ui'
-import { Select, SelectButton, Switch } from 'vael-ui'
+import { ColorPicker, Select, SelectButton, Switch } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import { defaultVariant } from '../preferences'
 import { useVaporComponents } from '../composables/useVaporComponents'
@@ -105,7 +103,7 @@ const primary = shallowRef('#ea580c')
 const radius = shallowRef('12px')
 const fontSize = shallowRef('14px')
 const size = shallowRef<'sm' | 'md' | 'lg'>('md')
-const motionCss = shallowRef(true)
+const motion = shallowRef(true)
 const switchOn = shallowRef(true)
 const sizeItems = [
   { label: 'sm', value: 'sm' },
@@ -130,10 +128,6 @@ const fontSizeItems = [
   { label: 'Large (18px)', value: '18px' },
 ]
 
-function onColorInput(e: Event) {
-  primary.value = (e.target as HTMLInputElement).value
-}
-
 function onRadiusChange(v: string | number | (string | number)[] | null) {
   if (typeof v === 'string') radius.value = v
 }
@@ -152,7 +146,7 @@ const code = computed(() => {
   const attrs = [
     `:theme="{ primary: '${primary.value}', radius: '${radius.value}', fontSize: '${fontSize.value}' }"`,
     size.value !== 'md' ? `size="${size.value}"` : '',
-    motionCss.value ? '' : ':motion-css="false"',
+    motion.value ? '' : ':motion="false"',
   ].filter(Boolean)
   return `<ConfigProvider\n  ${attrs.join('\n  ')}\n>\n  <YourApp />\n</ConfigProvider>`
 })
@@ -241,25 +235,6 @@ const code = computed(() => {
   .playground-body {
     grid-template-columns: 1fr;
   }
-}
-
-.color-swatch {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  border: 1px solid var(--ui-border);
-  overflow: hidden;
-  display: inline-flex;
-  cursor: pointer;
-}
-
-.color-swatch input[type='color'] {
-  width: 150%;
-  height: 150%;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transform: translate(-15%, -15%);
 }
 
 .playground :deep(.code-block) {

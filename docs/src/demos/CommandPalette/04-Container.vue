@@ -2,8 +2,8 @@
   <section class="demo">
     <h3><code>container</code></h3>
     <p class="note">
-      Forwarded straight to the underlying <code>Dialog</code> too. Scopes the palette to one pane
-      instead of the whole viewport, the rest of the page stays interactive while it's open.
+      Also passed to the underlying <code>Dialog</code>. It scopes the palette to one pane instead
+      of the whole viewport, and the rest of the page keeps working while it’s open.
     </p>
     <div ref="paletteContainer" class="palette-container">
       <p class="note" style="margin: 0">A pane with its own content.</p>

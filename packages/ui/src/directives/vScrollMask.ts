@@ -1,5 +1,6 @@
 import '../components/shared/scroll-fade.css'
 import '../components/shared/tokens.css'
+import '../motion/timing.css'
 import { watchEffect } from 'vue'
 import type { Directive, DirectiveBinding } from 'vue'
 
@@ -53,9 +54,51 @@ function resolveAxis(value: ScrollMaskValue): ScrollMaskAxis {
   return value === 'x' || value === 'y' || value === 'both' ? value : 'y'
 }
 
+// The scrollbar's strip, kept out of the fade (a mask covers the whole box, scrollbar included).
+// Only a scrollbar that takes room has one: content runs under an overlay scrollbar, so a strip
+// there would leave a column of content unfaded.
+function measureBars(el: HTMLElement) {
+  const style = getComputedStyle(el)
+  const hidden = style.scrollbarWidth === 'none'
+  const border = (a: string, b: string) => Number.parseFloat(a) + Number.parseFloat(b)
+  const y = el.offsetWidth - el.clientWidth - border(style.borderLeftWidth, style.borderRightWidth)
+  const x =
+    el.offsetHeight - el.clientHeight - border(style.borderTopWidth, style.borderBottomWidth)
+  el.style.setProperty('--ui-scroll-bar-y', `${hidden ? 0 : Math.max(y, 0)}px`)
+  el.style.setProperty('--ui-scroll-bar-x', `${hidden ? 0 : Math.max(x, 0)}px`)
+}
+
+// A sliding highlight (a positioned, aria-hidden decoration) swinging past the end isn't content to
+// scroll to: it doesn't make the box scroll, or fade its edges mid-glide. Measured by the rest.
+function overflowsX(el: HTMLElement): boolean {
+  if (el.scrollWidth <= el.clientWidth) return false
+  const content = [...el.children].filter(
+    (child) =>
+      !(
+        child.getAttribute('aria-hidden') === 'true' &&
+        getComputedStyle(child).position === 'absolute'
+      ),
+  )
+  if (content.length === el.children.length) return true
+  let start = Infinity
+  let end = -Infinity
+  for (const child of content) {
+    const box = child.getBoundingClientRect()
+    if (!box.width && !box.height) continue
+    start = Math.min(start, box.left)
+    end = Math.max(end, box.right)
+  }
+  if (start === Infinity) return false
+  const style = getComputedStyle(el)
+  const padding = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight)
+  return end - start + padding > el.clientWidth + 0.5
+}
+
 function check(el: HTMLElement, axis: ScrollMaskAxis) {
   if (axis !== 'x') el.classList.toggle('scroll-fade', el.scrollHeight > el.clientHeight)
-  if (axis !== 'y') el.classList.toggle('scroll-fade-x', el.scrollWidth > el.clientWidth)
+  if (axis !== 'y') el.classList.toggle('scroll-fade-x', overflowsX(el))
+  if (el.classList.contains('scroll-fade') || el.classList.contains('scroll-fade-x'))
+    measureBars(el)
   if (state.get(el)?.onScroll) applyManualFade(el, axis)
 }
 
@@ -104,6 +147,8 @@ function stop(el: HTMLElement) {
   }
   state.delete(el)
   el.classList.remove('scroll-fade', 'scroll-fade-x', 'scroll-fade-manual')
+  el.style.removeProperty('--ui-scroll-bar-y')
+  el.style.removeProperty('--ui-scroll-bar-x')
 }
 
 export const vScrollMask: Directive<HTMLElement, ScrollMaskValue> = {

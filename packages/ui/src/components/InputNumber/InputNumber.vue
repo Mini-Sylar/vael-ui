@@ -3,7 +3,7 @@
     ref="inputRef"
     v-model="displayValue"
     type="text"
-    inputmode="decimal"
+    :inputmode="inputMode"
     autocomplete="off"
     role="spinbutton"
     :size="props.size"
@@ -16,7 +16,13 @@
     :aria-valuenow="modelValue ?? undefined"
     :aria-valuemin="min"
     :aria-valuemax="max"
+    :data-ui-roll="animated || undefined"
+    :data-ui-scrub="scrubPx ? (scrubbing ? 'active' : '') : undefined"
     @beforeinput="onBeforeInput"
+    @pointerdown="onInputPointerdown"
+    @pointermove="onScrubMove"
+    @pointerup="onScrubEnd"
+    @pointercancel="onScrubEnd"
     @keydown="onKeydown"
     @focus="onFocus"
     @blur="onBlur"
@@ -40,6 +46,21 @@
           <path d="M2 5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
         </svg>
       </button>
+    </template>
+    <template v-if="$slots.display || animated" #display="displayProps">
+      <slot name="display" v-bind="displayProps">
+        <template v-if="rolling"
+          >{{ prefix
+          }}<LazyAnimatedNumber
+            :value="modelValue!"
+            :locale="props.locale"
+            :format="numberFormat.formatOptions.value"
+            :roll-in="rollIn && !!props.motion"
+          />{{ suffix }}</template
+        >
+        <span v-else-if="displayValue">{{ displayValue }}</span>
+        <span v-else class="ui-input-display-placeholder">{{ placeholder }}</span>
+      </slot>
     </template>
     <template #end>
       <slot name="end" />
@@ -122,14 +143,18 @@
 import './InputNumber.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import Input from '../Input/Input.vue'
+import LazyAnimatedNumber from '../internal/LazyAnimatedNumber.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useNumberFormat } from '../../composables/useNumberFormat'
-import { useUiMessages } from '../../messages'
+import { useMessages, inputNumberMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { InputNumberMotion } from '../../motion/types'
 
 /** Numeric value; `null` when the field is empty. @default null */
 const modelValue = defineModel<number | null>({ default: null })
@@ -179,6 +204,24 @@ const rawProps = withDefaults(
     placeholder?: string
     /** Native `name` on the input; a plain `<form>` submits the formatted text. */
     name?: string
+    /**
+     * Drag sideways on the field, while you're not typing in it, to change the value: one `step`
+     * per this many pixels, ten with Shift held. `true` is 4 px. A click without a drag still
+     * focuses the field for typing.
+     * @default false
+     */
+    scrub?: boolean | number
+    /**
+     * Rolls the digits to each new value from the steppers, the arrow keys or your code, like
+     * AnimatedNumber. Typing shows the plain input. @default false
+     */
+    animated?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`) and its states
+     * (`{ states: { invalid: { root: { x: [0, -6, 6, 0] } } } }`). `false` turns its own animation
+     * off.
+     */
+    motion?: InputNumberMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -197,15 +240,24 @@ const rawProps = withDefaults(
     disabled: false,
     readonly: false,
     invalid: false,
+    animated: false,
+    scrub: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', locale: undefined })
+const props = withProviderDefaults(rawProps, { size: 'md', locale: undefined, motion: true })
 
 defineSlots<{
   /** Inline leading content, before the value and the `'split'` mode decrement button. */
   start(): unknown
   /** Inline trailing content, before the stepper buttons. */
   end(): unknown
+  /**
+   * Draws the text yourself over the field's own text, as Input's `#display`; it replaces the
+   * rolling digits of `animated`. `value` is the formatted text.
+   */
+  display(props: { value: string; placeholder: string; focused: boolean }): unknown
 }>()
 
 const numberFormat = useNumberFormat({
@@ -219,19 +271,31 @@ const numberFormat = useNumberFormat({
   suffix: () => props.suffix,
 })
 
-const messages = useUiMessages()
+const messages = useMessages({ inputNumber: inputNumberMessages })
 const fieldControl = useFieldControl()
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
+// iPhone number pads have no minus key, so a range that may go negative gets the full keyboard.
+const inputMode = computed(() => {
+  if (props.min === undefined || props.min < 0) return 'text'
+  if (props.maxFractionDigits === 0 && props.min !== undefined) return 'numeric'
+  return 'decimal'
+})
 
 const displayValue = shallowRef(numberFormat.format(modelValue.value))
 const isFocused = shallowRef(false)
+// Typing shows the plain input; a step, Home/End, Enter or blur hands back to the rolling digits.
+const typing = shallowRef(false)
+const rollIn = shallowRef(false)
 
 // Resync on external model writes and on format changes (locale, currency); skip if focused (avoid fighting caret).
 watch(
   () => numberFormat.format(modelValue.value),
   (text) => {
-    if (!isFocused.value) displayValue.value = text
+    if (!isFocused.value) {
+      displayValue.value = text
+      typing.value = false
+    }
   },
 )
 
@@ -245,6 +309,7 @@ watch(displayValue, (text) => {
 })
 
 function onBeforeInput(event: InputEvent) {
+  typing.value = true
   if (isDisabled.value || props.readonly || !event.data) return
   const target = event.target as HTMLInputElement
   const start = target.selectionStart ?? target.value.length
@@ -276,8 +341,12 @@ function applyStep(delta: number) {
   if (isDisabled.value || props.readonly) return
   const decimals = decimalPlaces.value
   const scale = 10 ** decimals
-  const base = modelValue.value ?? props.min ?? 0
+  // From empty, as a native number input: 0 and a step, kept within min and max.
+  const base = modelValue.value ?? 0
   const next = clamp(Math.round(base * scale + delta * scale) / scale)
+  // A first value comes in rolling up from 0.
+  rollIn.value = modelValue.value === null
+  typing.value = false
   modelValue.value = next
   displayValue.value = numberFormat.format(next)
 }
@@ -287,6 +356,51 @@ function increment() {
 }
 function decrement() {
   applyStep(-props.step)
+}
+
+// Scrub: a drag from an unfocused field steps the value; a click without one focuses it.
+const scrubPx = computed(() => (props.scrub === true ? 4 : props.scrub || 0))
+const scrubbing = shallowRef(false)
+let drag: { x: number; base: number; moved: boolean } | null = null
+function onInputPointerdown(event: PointerEvent) {
+  const canScrub =
+    scrubPx.value && !isFocused.value && !isDisabled.value && !props.readonly && event.button === 0
+  if (!canScrub) {
+    typing.value = true
+    return
+  }
+  event.preventDefault()
+  try {
+    ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  } catch {
+    // An untrusted event has no active pointer to capture.
+  }
+  drag = { x: event.clientX, base: modelValue.value ?? clamp(0), moved: false }
+}
+function onScrubMove(event: PointerEvent) {
+  if (!drag) return
+  const dx = event.clientX - drag.x
+  if (!drag.moved && Math.abs(dx) < 3) return
+  drag.moved = true
+  scrubbing.value = true
+  const steps = Math.trunc(dx / scrubPx.value) * (event.shiftKey ? 10 : 1)
+  const decimals = decimalPlaces.value
+  const scale = 10 ** decimals
+  const next = clamp(Math.round(drag.base * scale + steps * props.step * scale) / scale)
+  if (next === modelValue.value) return
+  typing.value = false
+  modelValue.value = next
+  displayValue.value = numberFormat.format(next)
+}
+function onScrubEnd(event: PointerEvent) {
+  if (!drag) return
+  const clicked = !drag.moved && event.type === 'pointerup'
+  drag = null
+  scrubbing.value = false
+  if (clicked) {
+    typing.value = true
+    inputEl.value?.focus()
+  }
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -303,6 +417,7 @@ function onKeydown(event: KeyboardEvent) {
     case 'Home':
       if (props.min !== undefined) {
         event.preventDefault()
+        typing.value = false
         modelValue.value = props.min
         displayValue.value = numberFormat.format(props.min)
       }
@@ -313,6 +428,7 @@ function onKeydown(event: KeyboardEvent) {
     case 'End':
       if (props.max !== undefined) {
         event.preventDefault()
+        typing.value = false
         modelValue.value = props.max
         displayValue.value = numberFormat.format(props.max)
       }
@@ -365,6 +481,7 @@ function commit() {
     }
   }
   displayValue.value = numberFormat.format(value)
+  typing.value = false
 }
 
 const showColumnControls = computed(() => props.controls && props.stepperPosition === 'end')
@@ -380,6 +497,27 @@ const atMin = computed(
 const inputRef = useTemplateRef('inputRef')
 const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
+const parts = useStateMotion({
+  key: 'inputNumber',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => el.value,
+  selectors: {
+    root: '.ui-input',
+    input: '.ui-input-el',
+    increment: '.ui-input-number-stepper--inc',
+    decrement: '.ui-input-number-stepper--dec',
+  },
+  states: () => ({ invalid: isInvalid.value, disabled: isDisabled.value }),
+})
+
+const rolling = computed(
+  () =>
+    props.animated &&
+    !typing.value &&
+    modelValue.value !== null &&
+    displayValue.value === numberFormat.format(modelValue.value),
+)
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(
@@ -417,5 +555,9 @@ defineExpose({
   increment,
   /** Subtracts one `step`, clamped to `min`. No-op when disabled or read-only. */
   decrement,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3><code>hintPlacement</code>: inline vs popover vs none</h3>
+    <h3><code>hintPlacement</code>: inline, popover or none</h3>
     <p class="note">
-      <code>inline</code> stays visible below the field, like <code>Field</code>'s own
-      description/error. <code>popover</code> (same as "Basic usage" above, spelled out here
-      explicitly) floats it instead, only while focused. <code>none</code> drops the hint entirely —
-      just the input and the reveal toggle.
+      <code>inline</code> keeps the hint visible below the field, like a <code>Field</code>'s
+      description or error. <code>popover</code>, the default from “Basic usage”, floats it beside
+      the field only while it's focused. <code>none</code> drops the hint and leaves the input and
+      the reveal button.
     </p>
     <div class="example-grid example-grid--3">
       <div class="example">

@@ -26,13 +26,13 @@ const exitRan = shallowRef(false)
 const dlg = useTemplateRef('dlg')
 
 /**
- * The imperative exit fallback: forceMount disables the internal Transition,
- * beforeClose holds the model open until the WAAPI animation finishes.
+ * The imperative exit fallback: forceMount disables the internal Transition, and beforeClose
+ * holds the model open until the WAAPI animation finishes, then allows the close.
  * (Same shape works with GSAP or motion's animate().)
  */
-function beforeClose(done: () => void) {
+async function beforeClose() {
   const panel = dlg.value?.panelEl
-  if (!panel) return done()
+  if (!panel) return true
   const animation = panel.animate(
     [
       { opacity: 1, transform: 'scale(1)' },
@@ -40,9 +40,8 @@ function beforeClose(done: () => void) {
     ],
     { duration: 400, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
   )
-  animation.finished.then(() => {
-    exitRan.value = true
-    done()
-  })
+  await animation.finished
+  exitRan.value = true
+  return true
 }
 </script>

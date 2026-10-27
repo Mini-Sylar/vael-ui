@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Fluid slider: CSS and spring (motion-v)</h3>
     <p class="note">
-      Same slider twice. The first draws its fill straight from the <code>#track</code> slot's
-      <code>percents</code>. The second runs the fill through a spring, swells while held, and
-      stretches with resistance when you drag past either end, using the exposed
+      The same slider twice. The first draws its fill from the <code>#track</code> slot's
+      <code>percents</code>. The second runs the fill through a motion-v spring, grows while you
+      hold it and stretches with resistance when you drag past either end, using the exposed
       <code>trackEl</code> and <code>dragging</code>.
     </p>
     <div class="pair">

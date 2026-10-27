@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Fixed header/footer around a scrolling list</h3>
+    <h3>A fixed header and footer around a scrolling list</h3>
     <p class="note">
-      A workspace switcher: the current-account header and the "Add another account" footer stay put
-      while the 20-row list scrolls between them — the panel is a flex column, and the item list is
-      the one flexible, scrollable child.
+      A workspace switcher: the account header and the “Add another account” footer stay fixed while
+      the 20 rows scroll between them. The panel is a flex column, and the list is its only
+      scrolling child.
     </p>
     <div class="row">
       <Menu :items="workspaceItems" @select="onSelect">

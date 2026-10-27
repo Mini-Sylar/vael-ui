@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Style every component from one place</h3>
     <p class="note">
-      <code>theme</code> takes a <code>ui</code> override per component, the same shape as each
-      component's own <code>ui</code> prop. Set it once on <code>ConfigProvider</code> and every
-      Button, Card, Input and Tag inside picks it up. A component's own <code>ui</code> still layers
-      on top, like the <strong>Skip</strong> button here.
+      <code>theme</code> takes a <code>ui</code> override for each component, in the same shape as
+      that component’s own <code>ui</code> prop. Set it once on <code>ConfigProvider</code> and
+      every Button, Card, Input and Tag inside uses it. A component’s own <code>ui</code> still
+      applies on top, like the <strong>Skip</strong> button here.
     </p>
     <div class="row" style="margin-bottom: 1rem">
       <SelectButton v-model="look" :items="looks" :allow-empty="false" size="sm" />

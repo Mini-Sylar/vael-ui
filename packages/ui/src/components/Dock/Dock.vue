@@ -6,8 +6,11 @@
     :class="rootPart.class"
     :style="[sizeStyle, rootPart.style]"
     :data-orientation="orientation"
+    @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerleave="onPointerLeave"
+    @pointerup="onPointerLeave"
+    @pointercancel="onPointerLeave"
     v-bind="attrs"
   >
     <button
@@ -17,10 +20,21 @@
       type="button"
       :class="itemPart.class"
       :style="itemPart.style"
-      :tabindex="index === activeIndex ? 0 : -1"
+      :tabindex="index === tabStop ? 0 : -1"
       :disabled="item.disabled"
+      :data-bounce="bouncing === index || undefined"
+      @pointerup="onItemPointerUp($event, index)"
+      @animationend="onItemAnimationEnd(index)"
       :aria-label="item.badge != null ? `${item.label}, ${item.badge}` : item.label"
-      v-tooltip="tooltips ? { content: item.label, side: resolvedTooltipSide } : undefined"
+      v-tooltip="
+        tooltips
+          ? {
+              content: item.label,
+              side: resolvedTooltipSide,
+              sideOffset: () => tooltipOffset(index),
+            }
+          : undefined
+      "
       @click="onItemSelect(item, index)"
       @keydown="onItemKeydown($event, index)"
       @focus="activeIndex = index"
@@ -42,15 +56,22 @@
 <script setup lang="ts">
 import './Dock.css'
 import '../shared/tokens.css'
-import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import '../../motion/timing.css'
+import { computed, inject, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import type { Component } from 'vue'
 import type { Side } from '@floating-ui/dom'
+import { inlineKey } from '../../composables/dom'
 import { useDock } from '../../composables/useDock'
 import type { DockOrientation } from '../../composables/useDock'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { vTooltip } from '../../directives/vTooltip'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { DockMotion, Spring } from '../../motion/types'
+import { springOf } from '../../motion/springNames'
+import { useMotionStyle } from '../../motion/context'
+import { defaultsKey } from '../../config'
 
 defineOptions({ inheritAttrs: false })
 
@@ -105,6 +126,8 @@ const props = withDefaults(
     tooltipSide?: Side
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
+    /** How it moves: its appearance, item by item (`{ initial: { item: { opacity: 0, y: 8 } }, stagger: 0.04 }`), and the `spring` magnification follows the pointer on (`{ spring: 'bouncy' }`). `false` turns its own animation off. */
+    motion?: DockMotion
   }>(),
   {
     orientation: 'horizontal',
@@ -115,6 +138,8 @@ const props = withDefaults(
     grow: false,
     tooltips: true,
     tooltipSide: undefined,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 
@@ -125,7 +150,35 @@ const emit = defineEmits<{
 
 const rootEl = useTemplateRef<HTMLElement>('rootEl')
 
-const { setItemEl, onPointerMove, onPointerLeave, remeasure } = useDock(
+const picked = shallowRef(-1)
+const parts = useStateMotion({
+  key: 'dock',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => rootEl.value,
+  selectors: { root: '.ui-dock', item: '.ui-dock-item' },
+  states: () => ({ disabled: props.disabled }),
+  // Item by item: hover, press, focus, and `selected` for a moment as one is picked (a launch hop).
+  repeated: ['item'],
+  each: (_, __, index) => ({
+    disabled: props.disabled || !!props.items[index]?.disabled,
+    selected: index === picked.value,
+  }),
+})
+
+// Magnification chases the pointer on your spring: your own, then the style's, then the app's.
+const motionStyle = useMotionStyle()
+const providerDefaults = inject(defaultsKey, undefined)
+function magnifySpring() {
+  const own = props.motion
+  return springOf(
+    ((typeof own === 'object' && own.spring) ||
+      motionStyle?.value?.spring ||
+      providerDefaults?.value.spring) as Spring | undefined,
+  )
+}
+
+const { setItemEl, onPointerDown, onPointerMove, onPointerLeave, touchSlid, remeasure } = useDock(
   rootEl,
   () => props.items.length,
   {
@@ -136,6 +189,7 @@ const { setItemEl, onPointerMove, onPointerLeave, remeasure } = useDock(
     disabled: () => props.disabled,
     magnify: () => props.magnify,
     grow: () => props.grow,
+    spring: () => magnifySpring(),
   },
 )
 
@@ -145,9 +199,48 @@ const sizeStyle = computed(() => ({
   '--ui-dock-max-size': `${props.maxSize}px`,
 }))
 
+// A tap (a finger or pen that did not slide) bounces the item it landed on: the magnification
+// never ran, so this is the feedback that the tap was taken.
+const bouncing = shallowRef<number | null>(null)
+function onItemPointerUp(event: PointerEvent, index: number) {
+  if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+  if (touchSlid() || props.disabled) return
+  bouncing.value = index
+}
+function onItemAnimationEnd(index: number) {
+  if (bouncing.value === index) bouncing.value = null
+}
+
 const resolvedTooltipSide = computed<Side>(
   () => props.tooltipSide ?? (props.orientation === 'vertical' ? 'right' : 'top'),
 )
+
+/** The tooltip's own default gap, plus the room the item can still magnify into on that side. */
+const TOOLTIP_GAP = 8
+// Read each time the tooltip is positioned, so whenever it opens it lands past the item's
+// magnified edge and stays put while the item grows under it, instead of riding up with it or
+// being overlapped. Horizontal items grow upward from their base; otherwise they grow around
+// their centre.
+function tooltipOffset(index: number): number {
+  const el = itemButtons[index]
+  if (!el || !props.magnify) return TOOLTIP_GAP
+  const rect = el.getBoundingClientRect()
+  const vertical = props.orientation === 'vertical'
+  const side = resolvedTooltipSide.value
+  const growX = props.maxSize - rect.width
+  const growY = props.maxSize - rect.height
+  const room =
+    side === 'top'
+      ? vertical
+        ? growY / 2
+        : growY
+      : side === 'bottom'
+        ? vertical
+          ? growY / 2
+          : 0
+        : growX / 2
+  return TOOLTIP_GAP + Math.max(0, room)
+}
 
 // Roving tabindex (APG toolbar): one tab stop, arrow keys move focus, Enter/Space native to buttons.
 const activeIndex = shallowRef(0)
@@ -156,6 +249,11 @@ watch(
   (length) => {
     if (activeIndex.value >= length) activeIndex.value = Math.max(0, length - 1)
   },
+)
+
+// A disabled item can't take focus, so the tab stop falls to the first enabled one.
+const tabStop = computed(() =>
+  props.items[activeIndex.value]?.disabled ? (enabledIndices()[0] ?? -1) : activeIndex.value,
 )
 
 const itemButtons: (HTMLButtonElement | null)[] = []
@@ -193,8 +291,9 @@ function onItemKeydown(event: KeyboardEvent, index: number) {
   const backwardKey = props.orientation === 'vertical' ? 'ArrowUp' : 'ArrowLeft'
   const enabled = enabledIndices()
   let nextIndex: number | undefined
-  if (event.key === forwardKey) nextIndex = step(index, 1)
-  else if (event.key === backwardKey) nextIndex = step(index, -1)
+  const key = inlineKey(event.key, event.currentTarget as Element)
+  if (key === forwardKey) nextIndex = step(index, 1)
+  else if (key === backwardKey) nextIndex = step(index, -1)
   else if (event.key === 'Home') nextIndex = enabled[0]
   else if (event.key === 'End') nextIndex = enabled[enabled.length - 1]
   else return
@@ -207,6 +306,9 @@ function onItemKeydown(event: KeyboardEvent, index: number) {
 function onItemSelect(item: DockItemData, index: number) {
   if (item.disabled) return
   activeIndex.value = index
+  // On for a frame: each pick plays `selected` again, the same item included.
+  picked.value = index
+  requestAnimationFrame(() => (picked.value = -1))
   item.onSelect?.()
   emit('select', item, index)
 }
@@ -235,5 +337,9 @@ defineExpose({
   itemEls: () => itemButtons.filter((el): el is HTMLButtonElement => !!el),
   /** Re-measures item positions for magnification, after a layout change the dock can't detect. */
   remeasure,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

@@ -2,9 +2,9 @@
   <section class="demo">
     <h3><code>container</code>: scoped to a pane</h3>
     <p class="note">
-      Forwarded straight to the underlying <code>Dialog</code>, same as everywhere else. The panel
-      slides in from the pane's own edge instead of the viewport's, and only the pane is blocked,
-      the rest of the page stays interactive.
+      Passed to the underlying <code>Dialog</code>, as on every overlay. The panel slides in from
+      the pane’s edge instead of the viewport’s, and only the pane is blocked; the rest of the page
+      keeps working.
     </p>
     <div ref="drawerPane" class="drawer-pane">
       <p class="note" style="margin: 0">A pane with its own content.</p>

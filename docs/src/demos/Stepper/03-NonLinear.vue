@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3><code>linear=false</code>: jump to any non-disabled step</h3>
+    <h3><code>linear=false</code>: jump to any enabled step</h3>
     <Stepper v-model="freeStep" :items="checkoutSteps" :linear="false" class="stepper-demo" />
   </section>
 </template>

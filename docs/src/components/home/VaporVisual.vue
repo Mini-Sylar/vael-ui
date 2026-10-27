@@ -56,7 +56,7 @@ useTicker(
 }
 
 .str {
-  color: color-mix(in oklch, var(--ui-info) 85%, var(--ui-text));
+  color: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 85%, var(--ui-text));
 }
 
 .suffix {

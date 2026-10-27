@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3><code>scrollFade</code> off</h3>
-    <p class="note">No edge mask, just a plain scrollbar.</p>
+    <p class="note">No edge fade, only a plain scrollbar.</p>
     <ScrollArea :scroll-fade="false" class="scroll-demo scroll-demo--vertical">
       <ul class="scroll-list">
         <li v-for="n in 24" :key="n">Item {{ n }}</li>

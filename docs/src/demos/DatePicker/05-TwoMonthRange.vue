@@ -2,10 +2,11 @@
   <section class="demo">
     <h3>Two months side by side</h3>
     <p class="note">
-      <code>:months="2"</code> shows two months next to each other, so a range that crosses into the
-      next month stays in view. The arrows move both together, and on a narrow screen they stack.
+      <code>:months="2"</code> shows two months side by side, so a range that crosses into the next
+      month stays in view. The arrows move both months together, and on a narrow screen they stack.
     </p>
     <DatePicker
+      style="max-inline-size: 20rem"
       v-model="rangeValue"
       :locale="currentLocale"
       selection-mode="range"

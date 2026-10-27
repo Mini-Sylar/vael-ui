@@ -25,18 +25,32 @@
             class="pg-presets"
           />
           <div class="pg-stage-tools">
-            <button
+            <SelectButton
+              v-if="isSortable"
+              v-model="sortableLayout"
+              size="sm"
+              :items="SORTABLE_LAYOUTS"
+              :allow-empty="false"
+              aria-label="Lists"
+            />
+            <Button
               v-if="frameWidth !== null"
-              type="button"
+              variant="outline"
+              size="sm"
+              pill
               class="pg-width"
               aria-label="Reset preview width"
               @click="frameWidth = null"
             >
               {{ Math.round(frameWidth) }}px
-              <PhX :size="10" weight="bold" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
+              <template #trailing>
+                <PhX :size="10" weight="bold" aria-hidden="true" />
+              </template>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon
               class="pg-tool"
               :aria-pressed="stageBg === 'plain'"
               :aria-label="stageBg === 'dots' ? 'Plain background' : 'Dotted background'"
@@ -45,7 +59,9 @@
             >
               <PhDotsNine v-if="stageBg === 'dots'" :size="15" aria-hidden="true" />
               <PhSquare v-else :size="15" aria-hidden="true" />
-            </button>
+            </Button>
+            <!-- Its parts, outlined on the stage and listed under it, each with its `ui` key. -->
+            <AnatomyToggle v-if="hasAnatomy" v-model:shown="anatomyOn" />
           </div>
         </div>
         <div
@@ -56,7 +72,9 @@
           "
           :data-sized="(next && frameWidth !== null) || undefined"
         >
-          <p v-if="needsContext" class="playground-error">{{ needsContext }}</p>
+          <!-- Anatomy shows a specimen: every part there, its panels open inside the stage. -->
+          <component :is="specimen" v-if="anatomyOn && specimen" />
+          <p v-else-if="needsContext" class="playground-error">{{ needsContext }}</p>
           <PlaygroundErrorBoundary v-else :reset-key="resetKey">
             <template v-if="isOpenModel">
               <Button variant="outline" @click="openModelValue = !openModelValue">
@@ -318,6 +336,19 @@
                 :container="previewEl"
               />
             </template>
+            <!-- Two lists sharing a group, for the options that act between lists. -->
+            <div v-else-if="isSortable && sortableLayout === 'group'" class="pg-sortable-group">
+              <component
+                :is="activeComponent"
+                v-for="column in SORTABLE_COLUMNS"
+                :key="`${resetKey}-${column}`"
+                v-bind="groupColumnProps"
+                v-model:items="groupItems[column]"
+                :group="sortableBoard"
+                :group-id="column"
+                :aria-label="`List ${column.toUpperCase()}`"
+              />
+            </div>
             <template v-else>
               <!-- No default slot in these two: some components override data-driven rendering with any default slot content, even empty. -->
               <component
@@ -394,6 +425,23 @@
               </component>
             </template>
           </PlaygroundErrorBoundary>
+          <p v-if="dragHint" class="playground-drag-hint">{{ dragHint }}</p>
+          <!-- What the prop you just changed does, in its own words. -->
+          <Transition name="pg-hint">
+            <p v-if="changeHint" :key="changeHint.name" class="playground-drag-hint pg-change-hint">
+              <code>{{ changeHint.name }}</code> <RichText :text="changeHint.text" />
+            </p>
+          </Transition>
+          <!-- The note, then its action on a line of its own, not run into the sentence. -->
+          <div v-if="name === 'Loader'" class="playground-drag-hint playground-note">
+            <p>
+              ConfigProvider's <code>loader-type</code> sets every loader in an app at once, the
+              ones inside buttons, lists and toasts too.
+            </p>
+            <Button variant="link" size="sm" @click="docsSettings?.showSetting('loader')">
+              Show me how
+            </Button>
+          </div>
           <span
             v-if="next"
             class="pg-handle"
@@ -412,25 +460,55 @@
             @keydown="onHandleKey"
           />
         </div>
+        <AnatomyOverlay
+          v-if="hasAnatomy && previewEl"
+          :root="previewEl"
+          :component="name"
+          :parts="anatomyParts"
+          :slots="anatomySlots"
+          :shown="anatomyOn"
+        />
       </div>
 
       <div v-if="controls.length > 0 || showDataPreset" class="playground-controls">
         <div v-if="next" class="pg-inspector-head">
-          <span>
+          <SelectButton
+            v-if="motionInfo"
+            v-model="inspector"
+            size="sm"
+            aria-label="Edit"
+            :allow-empty="false"
+            :items="[
+              { label: `Props ${controls.length + (showDataPreset ? 1 : 0)}`, value: 'props' },
+              { label: 'Motion', value: 'motion' },
+            ]"
+          />
+          <span v-else>
             Props
             <span class="pg-count">{{ controls.length + (showDataPreset ? 1 : 0) }}</span>
           </span>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             class="pg-reset-all"
-            :disabled="changedCount === 0"
+            :disabled="changedCount === 0 && motionTab.look === 'default'"
             @click="resetAll"
           >
-            <PhArrowCounterClockwise :size="12" aria-hidden="true" />
+            <template #leading>
+              <PhArrowCounterClockwise :size="12" aria-hidden="true" />
+            </template>
             Reset
-          </button>
+          </Button>
         </div>
-        <div ref="rowsEl" class="pg-rows" v-scroll-mask="next" @scroll.passive="updateMore">
+        <PlaygroundMotion
+          v-if="next && motionInfo && inspector === 'motion'"
+          v-model="motionTab"
+          v-scroll-mask
+          class="pg-rows"
+          :info="motionInfo"
+          @replay="motionRevision++"
+        />
+        <div v-else ref="rowsEl" class="pg-rows" v-scroll-mask="next" @scroll.passive="updateMore">
           <div v-if="showDataPreset" class="control-row">
             <label id="ctl-data-preset-label" for="ctl-data-preset">Data</label>
             <!-- A <label for> can't name a div combobox, so Select points back at it. -->
@@ -455,11 +533,18 @@
               <label :id="`ctl-${control.name}-label`" :for="`ctl-${control.name}`">
                 {{ control.name }}
                 <RouterLink
-                  v-if="CONTROL_HELP[control.name]"
-                  to="/docs/guides/animation-integration"
+                  v-if="CONTROL_HELP[control.name] && CONTROL_GUIDE[control.name]"
+                  :to="CONTROL_GUIDE[control.name]!"
                   v-tooltip="CONTROL_HELP[control.name]"
                   class="control-hint"
                   >?</RouterLink
+                >
+                <span
+                  v-else-if="CONTROL_HELP[control.name]"
+                  v-tooltip="CONTROL_HELP[control.name]"
+                  tabindex="0"
+                  class="control-hint"
+                  >?</span
                 >
               </label>
 
@@ -503,21 +588,28 @@
                 :model-value="values[control.name] as string"
                 @update:model-value="(v) => (values[control.name] = v)"
               />
-              <button
+              <Button
                 v-if="next"
-                type="button"
+                variant="ghost"
+                size="sm"
+                icon
                 class="pg-row-reset"
                 :disabled="!isChanged(control.name)"
                 :aria-label="`Reset ${control.name}`"
                 @click="resetControl(control.name)"
               >
                 <PhArrowCounterClockwise :size="12" aria-hidden="true" />
-              </button>
+              </Button>
             </div>
           </template>
         </div>
         <Transition name="pg-more">
-          <button v-if="next && moreBelow > 0" type="button" class="pg-more" @click="scrollRows">
+          <button
+            v-if="next && moreBelow > 0 && inspector === 'props'"
+            type="button"
+            class="pg-more"
+            @click="scrollRows"
+          >
             <PhArrowDown :size="12" weight="bold" aria-hidden="true" />
             {{ moreBelow }} more
           </button>
@@ -551,7 +643,9 @@
 import {
   computed,
   h,
+  inject,
   reactive,
+  ref,
   shallowRef,
   nextTick,
   toRaw,
@@ -562,8 +656,18 @@ import {
 } from 'vue'
 import { RouterLink } from 'vue-router'
 import * as VaelUi from 'vael-ui'
-import { Button, Input, InputNumber, Select, SelectButton, Switch, vScrollMask } from 'vael-ui'
-import type { TreeNode } from 'vael-ui'
+import {
+  Button,
+  Input,
+  InputNumber,
+  Select,
+  SelectButton,
+  Switch,
+  useSortableGroup,
+  vScrollMask,
+} from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
+import type { ProgressSegment, TreeNode } from 'vael-ui'
 import { useResizeObserver } from '@vueuse/core'
 import {
   PhArrowCounterClockwise,
@@ -573,13 +677,23 @@ import {
   PhSquare,
   PhX,
 } from '@phosphor-icons/vue'
+import AnatomyOverlay from '../components/AnatomyOverlay.vue'
+import AnatomyToggle from '../components/AnatomyToggle.vue'
+import { partsOf, slotsOf, specimenOf } from '../anatomyOf'
 import CodeBlock from '../components/CodeBlock.vue'
 import { layoutNext as next } from '../layoutNext'
 import PlaygroundErrorBoundary from './PlaygroundErrorBoundary.vue'
+import PlaygroundMotion from './PlaygroundMotion.vue'
+import { freshMotionTab, motionFromTab } from './PlaygroundMotion.vue'
+import type { MotionTabState } from './PlaygroundMotion.vue'
+import RichText from '../components/RichText.vue'
+import motionMeta from '../generated/motion-meta.json'
+import type { MotionInfo } from '../components/MotionTable.vue'
 import { inferControl, defaultControlValue, type PlaygroundControl } from './inferControl'
 import componentMeta from '../generated/component-meta.json'
 import type { ComponentMetaEntry } from '../types'
 import { defaultVariant } from '../preferences'
+import { docsSettingsKey } from '../docsSettings'
 import { useVaporComponents } from '../composables/useVaporComponents'
 
 const props = defineProps<{ name: string }>()
@@ -588,6 +702,23 @@ const meta = computed(() => (componentMeta as Record<string, ComponentMetaEntry>
 
 const vaelUiVapor = useVaporComponents()
 const vaelUi = VaelUi as unknown as Record<string, Component | undefined>
+
+// Sortable's preview can show one list or two in a group, for the options that act between lists.
+const isSortable = computed(() => props.name === 'Sortable')
+const SORTABLE_LAYOUTS = [
+  { label: 'One list', value: 'single' },
+  { label: 'Lists in a group', value: 'group' },
+]
+const SORTABLE_COLUMNS = ['a', 'b'] as const
+type SortableColumn = (typeof SORTABLE_COLUMNS)[number]
+const sortableLayout = shallowRef<'single' | 'group'>('single')
+const groupItems = reactive<Record<SortableColumn, unknown[]>>({ a: [], b: [] })
+const sortableBoard = useSortableGroup({
+  onTransfer: (_value, from, to) => {
+    const [moved] = groupItems[from.groupId as SortableColumn].splice(from.index, 1)
+    groupItems[to.groupId as SortableColumn].splice(to.index, 0, moved)
+  },
+})
 
 const activeComponent = computed<Component | null>(() => {
   const vaporExport = vaelUiVapor.value[props.name]
@@ -661,6 +792,7 @@ const isAccordion = computed(() => props.name === 'Accordion')
 const isCollapsible = computed(() => props.name === 'Collapsible')
 const isSeparator = computed(() => props.name === 'Separator')
 const isDock = computed(() => props.name === 'Dock')
+const isProgress = computed(() => props.name === 'Progress')
 const isSpeedDial = computed(() => props.name === 'SpeedDial')
 const isTabs = computed(() => props.name === 'Tabs')
 const TABS_PLACEHOLDER_ITEMS = ['Overview', 'Activity', 'Settings']
@@ -812,12 +944,20 @@ const radioGroupValue = shallowRef<string | number | null>(null)
 const previewEl = useTemplateRef<HTMLElement>('previewEl')
 
 const CONTROL_HELP: Record<string, string> = {
-  motionCss:
+  motion:
     'Turn off the built-in CSS transition to animate this yourself with GSAP, motion-v, or plain CSS.',
   forceMount:
     'Keeps this mounted while closed, so your animation library runs the exit instead of Vue removing it.',
+  previewMode:
+    'clone floats a copy and leaves the original in the list as a placeholder, which moves to where the row will land. Sortable hides the placeholder by default; it shows dashed here. In an open list the two look alike; clone matters in a list that scrolls or clips its rows.',
   filter:
     'Off leaves filter unset, so the component default applies. On sets filter="true" for built-in matching. filter="false" lets you filter the items yourself. It needs a third state, so it has no toggle here. See the prop docs.',
+}
+
+// Where a hint's "?" leads, for the props a guide covers.
+const CONTROL_GUIDE: Record<string, string> = {
+  motion: '/docs/guides/animation-integration',
+  forceMount: '/docs/guides/animation-integration',
 }
 
 interface NamedControl {
@@ -843,8 +983,22 @@ const COMPONENT_OVERRIDES: Record<
   }
 > = {
   Avatar: { string: { name: 'Ada Lovelace' } },
-  Loader: { select: { size: ['1rem', '1.5rem', '2rem'] } },
+  // Something to show and swap: empty, it renders nothing at all.
+  AnimatedText: { string: { value: 'Saved' } },
+  // Starts without one: the generic "Type here…" would fill every empty cell with "T". Typing a
+  // character in the control shows what `placeholder` does.
+  OtpInput: { string: { placeholder: '' } },
+  // `type` also takes your own component, so it can't be inferred: the built-in five. Unset, it
+  // follows ConfigProvider (this site's Loader setting).
+  Loader: {
+    select: {
+      size: ['1rem', '1.5rem', '2rem'],
+      type: [UNSET_OPTION, 'ring', 'dots', 'bars', 'comet', 'dither'],
+    },
+  },
   Pagination: { number: { total: 132 } },
+  // Room to drag both ways, with limits you can feel: 0 and Infinity leave nothing to play with.
+  Resizable: { number: { size: 200, min: 120, max: 280 } },
   // No static default in defineProps (real default is computed: baseSize * 3.5)
   // — seeding to 0 makes dockFalloff's `range <= 0` guard kill magnification entirely.
   Dock: { number: { range: 168 } },
@@ -860,16 +1014,25 @@ const COMPONENT_OVERRIDES: Record<
   },
 }
 
+const GROUP_ONLY_PROPS = new Set(['groupId'])
+// Sortable options that only act between lists: shown once the preview has two.
+const GROUP_MODE_PROPS = new Set(['restrictToList'])
+const hasGroupProp = computed(() => Boolean(meta.value?.props.some((p) => p.name === 'group')))
 const controls = computed<NamedControl[]>(() => {
   if (!meta.value) return []
   const overrides = COMPONENT_OVERRIDES[props.name]
   const list: NamedControl[] = []
   for (const prop of meta.value.props) {
     if (prop.name === 'modelValue') continue
+    if (prop.name === 'value' && progressSegments.value) continue
     // A generic control for `open`/`maximized` would seed a static value that fights the component's own state.
     if (prop.name === 'open' || prop.name === 'maximized') continue
     // Always on in the preview: off, the trigger does nothing until you wire a click yourself.
     if (prop.name === 'openOnTriggerClick') continue
+    // Only acts across lists that share a `group` handle; one preview never has one, so a control
+    // for it would do nothing.
+    if (hasGroupProp.value && GROUP_ONLY_PROPS.has(prop.name)) continue
+    if (GROUP_MODE_PROPS.has(prop.name) && sortableLayout.value !== 'group') continue
     const selectOverride = overrides?.select?.[prop.name]
     if (selectOverride) {
       // Listing UNSET_OPTION makes the override start unset, so the snippet omits it.
@@ -907,13 +1070,20 @@ const hasItemsProp = computed(
 // These previews pass their own fixed items, so a data picker would change nothing.
 const showDataPreset = computed(
   () =>
-    hasItemsProp.value &&
-    !isDock.value &&
-    !isSpeedDial.value &&
-    !isTabs.value &&
-    !isCommandPalette.value,
+    isProgress.value ||
+    (hasItemsProp.value &&
+      !isDock.value &&
+      !isSpeedDial.value &&
+      !isTabs.value &&
+      !isCommandPalette.value),
 )
-const hasTriggerSlot = computed(() => Boolean(meta.value?.slots.some((s) => s.name === 'trigger')))
+// These draw their own trigger (ColorPicker's swatch); the slot only replaces it, so the playground
+// shows the component as it ships instead of a stand-in Button.
+const OWN_TRIGGER = new Set(['ColorPicker'])
+const hasTriggerSlot = computed(
+  () =>
+    !OWN_TRIGGER.has(props.name) && Boolean(meta.value?.slots.some((s) => s.name === 'trigger')),
+)
 // Popover: the trigger toggles it, no ref or click wiring. Tooltip opens on hover and focus by itself.
 const togglesOnTriggerClick = computed(() =>
   Boolean(meta.value?.props.some((p) => p.name === 'openOnTriggerClick')),
@@ -980,11 +1150,31 @@ const TREE_PRESETS: Record<string, TreeNode[]> = {
   ],
 }
 
+// Progress: one value from the number control, or stacked segments.
+const PROGRESS_SINGLE = 'One value'
+const PROGRESS_PRESETS: Record<string, ProgressSegment[]> = {
+  'Storage breakdown': [
+    { value: 42, label: 'Apps' },
+    { value: 23, label: 'Photos' },
+    { value: 11, label: 'Documents' },
+  ],
+  'Ticket outcomes': [
+    { value: 38, label: 'Resolved', variant: 'success' },
+    { value: 9, label: 'Waiting', variant: 'warning' },
+    { value: 5, label: 'Escalated', variant: 'danger' },
+  ],
+}
+const progressSegments = computed(() =>
+  isProgress.value && dataPreset.value !== PROGRESS_SINGLE
+    ? PROGRESS_PRESETS[dataPreset.value]
+    : undefined,
+)
+
 const presetItems = computed(() =>
-  Object.keys(isTreeShaped.value ? TREE_PRESETS : FLAT_PRESETS).map((key) => ({
-    label: key,
-    value: key,
-  })),
+  (isProgress.value
+    ? [PROGRESS_SINGLE, ...Object.keys(PROGRESS_PRESETS)]
+    : Object.keys(isTreeShaped.value ? TREE_PRESETS : FLAT_PRESETS)
+  ).map((key) => ({ label: key, value: key })),
 )
 const dataPreset = shallowRef(presetItems.value[0]?.value ?? '')
 
@@ -1004,7 +1194,10 @@ const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
 // just without built-in matching, so a toggle that could only ever produce
 // `false`/`true` could never show the box actually disappearing.
 // FileUpload's `capture`: `true` opens the camera, so it starts unset too.
-const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter', 'capture'])
+// Select/Combobox's `virtualize`: unset means automatic (on past 100 items), `true` forces it.
+// Button's `pressed`: any value, `false` too, makes the button a toggle, so a click in the stage
+// left it switched on with the pressed tint. Off is no toggle at all.
+const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter', 'capture', 'virtualize', 'pressed'])
 
 function setBooleanControl(name: string, checked: boolean) {
   values[name] = !checked && BOOLEAN_UNSET_WHEN_OFF.has(name) ? undefined : checked
@@ -1102,12 +1295,26 @@ watch(
 function isChanged(name: string): boolean {
   return !Object.is(values[name], initialValues.value[name])
 }
+
+// Props that only act during a drag: changing one shows nothing until you drag, so the preview says so.
+const DRAG_TIME_PROPS: Record<string, string[]> = {
+  Sortable: ['previewMode', 'restrictToList', 'autoScroll', 'touchDragDelay', 'motion'],
+}
+const docsSettings = inject(docsSettingsKey, undefined)
+const dragHint = computed(() => {
+  const changed = (DRAG_TIME_PROPS[props.name] ?? []).filter((name) => isChanged(name))
+  if (!changed.length) return null
+  const list =
+    changed.length > 1 ? `${changed.slice(0, -1).join(', ')} and ${changed.at(-1)}` : changed[0]
+  return `Drag a row to see ${list}: ${changed.length > 1 ? 'they act' : 'it acts'} only while you drag.`
+})
 const changedCount = computed(() => controls.value.filter((c) => isChanged(c.name)).length)
 
 function resetControl(name: string) {
   values[name] = initialValues.value[name]
 }
 function resetAll() {
+  motionTab.value = freshMotion()
   for (const c of controls.value) values[c.name] = initialValues.value[c.name]
 }
 
@@ -1172,6 +1379,17 @@ const activePreset = computed<string | null>({
 
 const stageBg = shallowRef<'dots' | 'plain'>('dots')
 
+// Anatomy: this component's parts (and its items', such as AccordionItem's), found by class.
+const anatomyOn = shallowRef(false)
+const anatomyParts = computed(() => partsOf(props.name))
+const anatomySlots = computed(() => slotsOf(props.name))
+const hasAnatomy = computed(() => anatomyParts.value.length > 0)
+const specimen = computed(() => specimenOf(props.name))
+watch(
+  () => props.name,
+  () => (anatomyOn.value = false),
+)
+
 // How many props sit below the fold of the scrolling panel, so a long list says
 // so instead of relying on a fade the eye can miss.
 const rowsEl = useTemplateRef<HTMLElement>('rowsEl')
@@ -1213,10 +1431,35 @@ useResizeObserver(
   () => previewEl.value?.parentElement,
   () => (stageInlineSize.value = stageWidth()),
 )
+// The narrowest the frame got before its content spilled out. Content that can't wrap, like a row
+// of OTP cells, would otherwise slide off-centre and under the grip. Learned from real overflow,
+// not min-content, so a component that adapts to its width (Toolbar, DataTable) still narrows.
+let overflowFloor = 0
 function clampFrame(width: number): number | null {
   const max = stageWidth()
-  return width >= max - 1 ? null : Math.max(MIN_FRAME, width)
+  return width >= max - 1 ? null : Math.max(MIN_FRAME, overflowFloor, width)
 }
+// A frame later, once anything that sizes itself from a ResizeObserver has settled.
+function checkOverflow() {
+  requestAnimationFrame(() => {
+    const el = previewEl.value
+    if (!el || frameWidth.value === null) return
+    const excess = el.scrollWidth - el.clientWidth
+    if (excess <= 1) return
+    overflowFloor = Math.ceil(el.getBoundingClientRect().width + excess)
+    frameWidth.value = clampFrame(frameWidth.value)
+  })
+}
+watch(frameWidth, (width) => width !== null && checkOverflow(), { flush: 'post' })
+// New props can make the content narrower or wider than the frame it was measured in.
+watch(
+  [values, () => props.name],
+  () => {
+    overflowFloor = 0
+    if (frameWidth.value !== null) checkOverflow()
+  },
+  { deep: true, flush: 'post' },
+)
 function onHandleDown(event: PointerEvent) {
   const handle = event.currentTarget as HTMLElement
   const startX = event.clientX
@@ -1246,6 +1489,12 @@ function onHandleKey(event: KeyboardEvent) {
 // attribute per line once it stops fitting on one.
 function metaDefault(name: string): unknown {
   const raw = meta.value?.props.find((p) => p.name === name)?.default
+  // A boolean left `undefined` takes its value from ConfigProvider (motion), which is on, so
+  // the playground seeds it on too; only turning it off is worth showing in the snippet.
+  const control = controls.value.find((c) => c.name === name)
+  if (raw === 'undefined' && control?.kind === 'boolean' && !BOOLEAN_UNSET_WHEN_OFF.has(name)) {
+    return true
+  }
   if (raw === undefined || raw === 'undefined') return undefined
   const quoted = /^(['"`])(.*)\1$/.exec(raw)
   if (quoted) return quoted[2]
@@ -1261,6 +1510,7 @@ const codeNext = computed(() => {
   for (const c of controls.value) {
     const v = values[c.name]
     const d = metaDefault(c.name)
+    if (c.name === 'motion' && motionValue.value !== undefined) continue
     if (v === undefined || v === '' || v === null) continue
     if (c.kind === 'boolean' && v === false && (d === undefined || d === false)) continue
     if (Object.is(v, d) || String(v) === String(d)) continue
@@ -1268,8 +1518,11 @@ const codeNext = computed(() => {
     else if (c.kind === 'number') attrs.push(`:${c.name}="${v}"`)
     else attrs.push(`${c.name}="${v}"`)
   }
+  if (motionValue.value !== undefined) attrs.push(`:motion="${motionLiteral(motionValue.value)}"`)
+  if (isSortable.value && sortableLayout.value === 'group') return sortableGroupSnippet(attrs)
   if (previewLabel.value) attrs.push(`aria-label="${previewLabel.value}"`)
   if (hasItemsProp.value) attrs.push(':items="items"')
+  if (progressSegments.value) attrs.push(':value="segments"')
   if (modelProp.value) attrs.push('v-model="value"')
   const { extraAttrs = '', imports = [] } = snippetParts.value
   // A list control's default slot isn't its label, so the name-as-content filler misleads.
@@ -1312,6 +1565,64 @@ const previewLabel = computed(() => {
   return PREVIEW_LABELS[props.name]
 })
 
+// The Motion tab: a look for the `motion` prop, written into the preview and the snippet.
+const motionInfo = computed(() => (motionMeta as Record<string, MotionInfo>)[props.name])
+const inspector = shallowRef<'props' | 'motion'>('props')
+const freshMotion = () => freshMotionTab(motionInfo.value)
+// Deep: the panel edits its fields in place.
+const motionTab = ref<MotionTabState>(freshMotion())
+watch(
+  () => props.name,
+  () => {
+    motionTab.value = freshMotion()
+    inspector.value = 'props'
+  },
+)
+const motionValue = computed(() => motionFromTab(motionTab.value))
+// `{ spring: { damping: 0.85 } }`: the object as you'd write it in a template.
+function motionLiteral(value: unknown): string {
+  if (typeof value === 'string') return `'${value}'`
+  if (value === null || typeof value !== 'object') return String(value)
+  const entries = Object.entries(value).map(([k, v]) => `${k}: ${motionLiteral(v)}`)
+  return `{ ${entries.join(', ')} }`
+}
+// A new look replays: the preview remounts once the sliders rest.
+const motionRevision = shallowRef(0)
+let motionTimer: ReturnType<typeof setTimeout> | undefined
+watch(motionValue, () => {
+  clearTimeout(motionTimer)
+  motionTimer = setTimeout(() => motionRevision.value++, 250)
+})
+
+// What a prop does, from its own description, for a few seconds after you change it.
+const changeHint = shallowRef<{ name: string; text: string } | null>(null)
+let hintTimer: ReturnType<typeof setTimeout> | undefined
+let lastValues: Record<string, unknown> = {}
+watch(
+  () => ({ ...values }),
+  (now) => {
+    const changed = Object.keys(now).find((k) => !Object.is(now[k], lastValues[k]))
+    lastValues = now
+    // Seeding a prop's starting value isn't a change you made.
+    if (!changed || Object.is(now[changed], initialValues.value[changed])) return
+    // Back to the live component: the specimen doesn't take the props.
+    if (specimen.value) anatomyOn.value = false
+    const text = meta.value?.props.find((p) => p.name === changed)?.description
+    if (!text) return
+    changeHint.value = { name: changed, text: text.split(/(?<=\.)\s/)[0]! }
+    clearTimeout(hintTimer)
+    hintTimer = setTimeout(() => (changeHint.value = null), 4000)
+  },
+  { immediate: true },
+)
+watch(
+  () => props.name,
+  () => {
+    lastValues = {}
+    changeHint.value = null
+  },
+)
+
 const boundProps = computed(() => ({
   // A cleared text control means unset; an empty string would render an empty aria-label.
   ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== '')),
@@ -1321,13 +1632,39 @@ const boundProps = computed(() => ({
         items: isTreeShaped.value ? TREE_PRESETS[dataPreset.value] : FLAT_PRESETS[dataPreset.value],
       }
     : {}),
+  ...(progressSegments.value ? { value: progressSegments.value } : {}),
+  ...(motionValue.value !== undefined ? { motion: motionValue.value } : {}),
 }))
+
+// Each column takes half of the chosen data, fresh whenever the data or the layout changes.
+const groupColumnProps = computed(() => {
+  const {
+    items: _items,
+    'aria-label': _label,
+    ...rest
+  } = boundProps.value as Record<string, unknown>
+  return rest
+})
+watch(
+  [sortableLayout, dataPreset],
+  () => {
+    if (!isSortable.value) return
+    const items = [...(FLAT_PRESETS[dataPreset.value] ?? [])]
+    const half = Math.ceil(items.length / 2)
+    groupItems.a = items.slice(0, half)
+    groupItems.b = items.slice(half)
+    if (sortableLayout.value === 'single') {
+      for (const name of GROUP_MODE_PROPS) values[name] = initialValues.value[name]
+    }
+  },
+  { immediate: true },
+)
 
 function onModelUpdate(v: unknown) {
   values.modelValue = v
 }
 
-const resetKey = computed(() => `${props.name}:${defaultVariant.value}`)
+const resetKey = computed(() => `${props.name}:${defaultVariant.value}:${motionRevision.value}`)
 
 // A whole SFC rather than an import line plus loose markup: it pastes straight
 // into a .vue file, and the highlighter only colors markup inside <template>.
@@ -1444,6 +1781,9 @@ function snippetState(body: string) {
     )
   }
   if (uses('rows')) lines.push(`const rows = ${literal(SNIPPET_ROWS, '', icons)}`)
+  if (uses('segments') && progressSegments.value) {
+    lines.push(`const segments = ${literal(progressSegments.value, '', icons)}`)
+  }
   if (uses('steps')) lines.push(`const steps = ${literal(SNIPPET_STEPS, '', icons)}`)
   if (uses('active')) {
     refs = true
@@ -1489,6 +1829,7 @@ const code = computed(() => {
     })
     .filter(Boolean)
     .join(' ')
+  if (isSortable.value && sortableLayout.value === 'group') return sortableGroupSnippet(attrs)
   const labelAttr = previewLabel.value ? `aria-label="${previewLabel.value}"` : ''
   const itemsAttr = hasItemsProp.value ? ' :items="items"' : ''
   const modelAttr = modelProp.value ? 'v-model="value"' : ''
@@ -1508,6 +1849,53 @@ const code = computed(() => {
         : `<${openTag}>\n${children.map((line) => `  ${line}`).join('\n')}\n</${props.name}>`
   return sfcSnippet(names, pkg, body)
 })
+
+function sortableGroupSnippet(attrs: string | string[]): string {
+  const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
+  const column = (items: unknown[]) =>
+    `[\n${items
+      .slice(0, 2)
+      .map(
+        (item) =>
+          `    { ${Object.entries(item as Record<string, unknown>)
+            .map(([key, v]) => `${key}: ${typeof v === 'string' ? `'${v}'` : String(v)}`)
+            .join(', ')} },`,
+      )
+      .join('\n')}\n  ]`
+  const tag = [
+    '<Sortable',
+    'v-for="(items, id) in columns"',
+    ':key="id"',
+    'v-model:items="columns[id]"',
+    ':group="board"',
+    ':group-id="id"',
+    ...(Array.isArray(attrs) ? attrs : [attrs]),
+  ]
+    .filter(Boolean)
+    .join('\n      ')
+  return `<script setup lang="ts">
+import { reactive } from 'vue'
+import { Sortable, useSortableGroup } from '${pkg}'
+
+const columns = reactive({
+  a: ${column(groupItems.a)},
+  b: ${column(groupItems.b)},
+})
+const board = useSortableGroup({
+  onTransfer: (value, from, to) => {
+    const [moved] = columns[from.groupId as 'a' | 'b'].splice(from.index, 1)
+    columns[to.groupId as 'a' | 'b'].splice(to.index, 0, moved!)
+  },
+})
+${SCRIPT_CLOSE}
+
+<template>
+  <div class="board">
+    ${tag}
+    />
+  </div>
+</template>`
+}
 
 // Mirrors the preview branches above, so the snippet shows the same slot
 // content the preview renders (and none when the preview has none).
@@ -1719,6 +2107,18 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
     sans-serif;
 }
 
+/* Sortable with previewMode "clone": the original stays as the placeholder, moving to where the
+   row will land. Sortable hides it by default, so clone would look the same as element here;
+   dashed, the floating copy and the placeholder read as two things. */
+.playground-preview :deep(.ui-sortable-item[data-sortable-source]) {
+  visibility: visible;
+  border-style: dashed;
+  background: transparent;
+}
+.playground-preview :deep(.ui-sortable-item[data-sortable-source] > *) {
+  opacity: 0.45;
+}
+
 .playground-preview::before {
   content: '';
   position: absolute;
@@ -1909,6 +2309,58 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   font-size: 0.85rem;
 }
 
+.pg-sortable-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.pg-sortable-group > :deep(.ui-sortable) {
+  inline-size: 11rem;
+}
+
+/* Pinned to the foot of the preview, out of its flow: a hint coming or going never moves the
+   component. */
+.playground-drag-hint {
+  position: absolute;
+  inset-inline: 1rem;
+  inset-block-end: 0.5rem;
+  margin: 0;
+  text-wrap: balance;
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+.playground-note {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.playground-note p {
+  margin: 0;
+}
+
+.pg-change-hint :deep(code),
+.pg-change-hint > code {
+  font-size: 0.92em;
+}
+.pg-hint-enter-active,
+.pg-hint-leave-active {
+  transition:
+    opacity var(--ui-duration-enter) var(--ui-ease-out),
+    translate var(--ui-duration-enter) var(--ui-ease-out);
+}
+.pg-hint-enter-from {
+  opacity: 0;
+  translate: 0 4px;
+}
+.pg-hint-leave-to {
+  opacity: 0;
+}
+
 .playground-error {
   color: var(--ui-text-muted);
   font-size: 0.9rem;
@@ -1962,8 +2414,11 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   grid-area: stage;
   position: relative;
   isolation: isolate;
-  display: flex;
-  justify-content: center;
+  /* The preview fills the stage; the anatomy's parts list, when on, sits under it. */
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  row-gap: 0.75rem;
   padding: 3.25rem 1rem 1rem;
 }
 
@@ -2016,60 +2471,28 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   margin-inline-start: auto;
 }
 
+/* vael-ui Buttons, kept quiet: muted until hovered. */
 .pg-tool,
 .pg-width,
 .pg-row-reset,
 .pg-reset-all {
-  border: none;
-  background: none;
   color: var(--ui-text-muted);
-  font: inherit;
-  cursor: pointer;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease,
-    transform 120ms var(--ui-ease-out);
-}
-
-.pg-tool {
-  display: grid;
-  place-items: center;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
-  border-radius: 7px;
-}
-
-.pg-width {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  block-size: 1.5rem;
-  padding-inline: 0.5rem;
-  border-radius: 999px;
-  background: var(--ui-surface);
-  box-shadow: 0 0 0 1px var(--ui-border);
-  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 0.6875rem;
-  font-variant-numeric: tabular-nums;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .pg-tool:hover,
+  .pg-width:hover,
   .pg-row-reset:hover,
   .pg-reset-all:hover:not(:disabled) {
-    background: var(--ui-muted-hover);
-    color: var(--ui-text);
-  }
-  .pg-width:hover {
     color: var(--ui-text);
   }
 }
 
-.pg-tool:active,
-.pg-width:active,
-.pg-row-reset:active,
-.pg-reset-all:active:not(:disabled) {
-  transform: scale(0.96);
+.pg-width {
+  --ui-btn-px: 0.625rem;
+  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
 }
 
 /* The frame's resize grip: quiet until you're over the stage. */
@@ -2232,25 +2655,13 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
 }
 
 .pg-reset-all {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3125rem;
-  block-size: 1.625rem;
-  padding-inline: 0.5rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.pg-reset-all:disabled {
-  opacity: 0.45;
-  cursor: default;
+  --ui-btn-px: 0.5rem;
 }
 
 .playground--next .control-row {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 8.75rem 1.5rem;
+  grid-template-columns: minmax(0, 1fr) 8.75rem 1.75rem;
   align-items: center;
   gap: 0.75rem;
   min-block-size: 2.5rem;
@@ -2284,14 +2695,6 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
 
 .playground--next .control-row :deep(.ui-switch) {
   justify-self: start;
-}
-
-.pg-row-reset {
-  display: grid;
-  place-items: center;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border-radius: 6px;
 }
 
 .pg-row-reset:disabled {
@@ -2337,7 +2740,7 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
     overflow: visible;
   }
   .playground--next .control-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem) 1.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem) 1.75rem;
   }
 }
 
@@ -2346,7 +2749,7 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
     grid-template-columns: minmax(0, 1fr) 20rem;
   }
   .playground--next .control-row {
-    grid-template-columns: minmax(0, 1fr) 7.5rem 1.5rem;
+    grid-template-columns: minmax(0, 1fr) 7.5rem 1.75rem;
   }
 }
 

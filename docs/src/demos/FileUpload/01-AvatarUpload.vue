@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Avatar upload (single file, image preview)</h3>
+    <h3>Avatar upload: one file with an image preview</h3>
     <p class="note">
-      <code>:multiple="false"</code> replaces the model on each pick instead of appending. The
-      <code>#item</code> slot renders an object-URL preview of the picked image plus a real
-      <code>Button</code> to clear it, the library still owns the row's mount/unmount transition.
+      <code>:multiple="false"</code> replaces the file on each pick instead of adding to the list.
+      The <code>#item</code> slot shows an object-URL preview of the image and a
+      <code>Button</code> that removes it, while FileUpload still animates the row in and out.
     </p>
     <FileUpload v-model:files="avatarFile" :multiple="false" accept="image/*">
       <template #item="{ file, remove }">

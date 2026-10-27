@@ -1,15 +1,13 @@
 <template>
   <section class="demo">
     <h3>
-      Exposed: <code>scrollToTop</code>/<code>scrollToBottom</code>, reactive
-      <code>atTop</code>/<code>atBottom</code>
+      Exposed <code>scrollToTop</code>, <code>scrollToBottom</code>, <code>atTop</code> and
+      <code>atBottom</code>
     </h3>
     <p class="note">
-      Also exposes <code>scrollTop</code>/<code>scrollLeft</code>/<code>atStart</code>/<code
-        >atEnd</code
-      >
-      and a generic <code>scrollTo(options)</code> — enough to build a "back to top" button or a
-      scroll-position-synced companion visual without reaching into the DOM yourself.
+      ScrollArea also exposes <code>scrollTop</code>, <code>scrollLeft</code>, <code>atStart</code>,
+      <code>atEnd</code> and <code>scrollTo(options)</code>. That's enough for a “back to top”
+      button or a visual that follows the scroll, without reading the DOM yourself.
     </p>
     <div class="row">
       <Button

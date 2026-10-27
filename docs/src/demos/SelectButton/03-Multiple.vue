@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Multiple, per-option background, no shared indicator</h3>
+    <h3>Multiple: each selected option gets its own background</h3>
     <SelectButton v-model="days" :items="dayItems" multiple />
     <p class="demo-status">Selected: {{ days.length ? days.join(', ') : '(none)' }}</p>
   </section>

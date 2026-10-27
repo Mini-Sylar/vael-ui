@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>v-draggable: a plain list with a handle</h3>
+    <h3><code>v-draggable</code>: a plain list with a handle</h3>
     <p>A <code>handle</code> selector limits where a drag can start.</p>
     <ul v-draggable="filesDraggable" class="draggable-files">
       <li v-for="file in files" :key="file.id" class="draggable-file">

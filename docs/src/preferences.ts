@@ -53,3 +53,35 @@ watch(primaryColor, (color) => {
   if (color) localStorage.setItem(PRIMARY_STORAGE_KEY, color)
   else localStorage.removeItem(PRIMARY_STORAGE_KEY)
 })
+
+// A picked accent can be unusable against the page (white in light mode, near-black in dark):
+// buttons and links would vanish. Below a 3:1 contrast with the surface, the accent is pulled
+// toward readable, darker on light, lighter on dark, and that shade is what the page gets.
+function luminance(hex: string): number {
+  const channel = (i: number) => {
+    const c = Number.parseInt(hex.slice(i, i + 2), 16) / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5)
+}
+function mix(hex: string, toward: number, amount: number): string {
+  const part = (i: number) => {
+    const c = Number.parseInt(hex.slice(i, i + 2), 16)
+    return Math.round(c + (toward - c) * amount)
+      .toString(16)
+      .padStart(2, '0')
+  }
+  return `#${part(1)}${part(3)}${part(5)}`
+}
+export function readableAccent(hex: string, dark: boolean): string {
+  const surface = dark ? 0.004 : 1
+  const contrast = (color: string) => {
+    const l = luminance(color)
+    return (Math.max(l, surface) + 0.05) / (Math.min(l, surface) + 0.05)
+  }
+  let color = hex
+  for (let step = 0.1; step <= 1 && contrast(color) < 3; step += 0.1) {
+    color = mix(hex, dark ? 255 : 0, step)
+  }
+  return color
+}

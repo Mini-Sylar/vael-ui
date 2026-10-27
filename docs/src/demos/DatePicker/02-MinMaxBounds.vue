@@ -1,8 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Min/max bounds and disabled dates</h3>
-    <p class="note">Bounded to this month, with every weekend disabled via a predicate.</p>
+    <h3>Min and max dates, and disabled dates</h3>
+    <p class="note">
+      <code>min-date</code> and <code>max-date</code> limit it to this month, and a
+      <code>disabled-dates</code> function disables weekends.
+    </p>
     <DatePicker
+      style="max-inline-size: 16rem"
       v-model="boundedValue"
       :locale="currentLocale"
       :min-date="minDate"

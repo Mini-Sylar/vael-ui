@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="expect" href="#painted" blocking="render" />
     <!-- Pins @layer order first, before Vite's chunked component CSS can establish it wrong. -->
     <link rel="stylesheet" href="/layer-order.css" />
     <meta name="theme-color" content="#ffffff" />
@@ -55,10 +56,141 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link
+      rel="search"
+      type="application/opensearchdescription+xml"
+      title="vael-ui"
+      href="/opensearch.xml"
+    />
     <title>Vael-ui</title>
   </head>
   <body>
     <div id="app"></div>
+    <!-- Puts the prerendered sidebar where the app will: saved width and scroll, the current row
+         in view with its bar, and seen "new" dots hidden, so hydration changes nothing. -->
+    <script>
+      try {
+        ;(function () {
+          var shell = document.querySelector('.sidebar-shell')
+          var box = shell && shell.querySelector('.sidebar-scroll')
+          if (!box) return
+          var width = Number(localStorage.getItem('vael-ui-docs-sidebar-width'))
+          if (width > 0) shell.style.inlineSize = width + 'px'
+          var seen = JSON.parse(localStorage.getItem('vael-ui-docs-seen-new-components') || '[]')
+          var row = box.querySelector('[aria-current="page"]')
+          var hide = seen.map(function (key) {
+            return '.sidebar-shell [data-new-key="' + key + '"]'
+          })
+          if (row) hide.push('.sidebar-shell [aria-current="page"] [data-new-key]')
+          var style = document.createElement('style')
+          style.textContent = hide.join(',') + '{display:none}'
+          if (hide.length) document.head.appendChild(style)
+          box.scrollTop = Number(localStorage.getItem('vael-ui-docs-sidebar-scroll')) || 0
+          if (!row) box.scrollTop = 0
+          else {
+            var rowRect = row.getBoundingClientRect()
+            var boxRect = box.getBoundingClientRect()
+            if (rowRect.top < boxRect.top || rowRect.bottom > boxRect.bottom)
+              box.scrollTop += rowRect.top - boxRect.top - boxRect.height / 3
+          }
+          // The edge fade, as v-scroll-mask sets it.
+          if (box.scrollHeight > box.clientHeight) {
+            var boxStyle = getComputedStyle(box)
+            var barWidth =
+              box.offsetWidth -
+              box.clientWidth -
+              parseFloat(boxStyle.borderLeftWidth) -
+              parseFloat(boxStyle.borderRightWidth)
+            box.style.setProperty(
+              '--ui-scroll-bar-y',
+              (boxStyle.scrollbarWidth === 'none' ? 0 : Math.max(barWidth, 12)) + 'px',
+            )
+            box.classList.add('scroll-fade')
+            if (!CSS.supports('animation-timeline: scroll()')) {
+              var progress = box.scrollTop / (box.scrollHeight - box.clientHeight)
+              box.classList.add('scroll-fade-manual')
+              box.style.setProperty('--fade-top-end', Math.min(1, box.scrollTop / 40) * 9 + '%')
+              box.style.setProperty(
+                '--fade-bottom-start',
+                91 + Math.min(1, Math.max(0, (progress - 0.9) / 0.1)) * 9 + '%',
+              )
+            }
+          }
+          if (!row) return
+          // MenuList's own background on the current row, as it places it.
+          var list = row.closest('.ui-menu-list')
+          var fill = list && list.querySelector(':scope > .ui-menu-list-indicator')
+          if (fill) {
+            var listRect = list.getBoundingClientRect()
+            var rowBox = row.getBoundingClientRect()
+            fill.style.translate = '0px ' + (rowBox.top - listRect.top - list.clientTop) + 'px'
+            fill.style.transitionDuration = '0ms'
+            fill.style.blockSize = rowBox.height + 'px'
+          }
+          // The bar, placed as useGlidingIndicator places it, without its fade.
+          var bar = box.querySelector('.sidebar-indicator')
+          var left = 0
+          var top = 0
+          for (var at = row; at && at !== box;) {
+            left += at.offsetLeft
+            top += at.offsetTop
+            var parent = at.offsetParent
+            if (parent !== box && box.contains(parent)) {
+              left += parent.clientLeft
+              top += parent.clientTop
+            }
+            at = parent && box.contains(parent) ? parent : null
+          }
+          bar.style.transition = 'none'
+          bar.style.opacity = '1'
+          bar.style.left = left - 8 + 'px'
+          bar.style.transform = 'translateY(' + top + 'px)'
+          bar.style.height = row.offsetHeight + 'px'
+          getComputedStyle(bar).opacity
+          bar.style.transition = ''
+        })()
+      } catch (e) {}
+    </script>
+    <!-- Draws the prerendered dither canvases as DitherBackground's first frame does, so they're
+         there from the first paint and the app's own drawing replaces them unchanged. -->
+    <script>
+      try {
+        ;(function () {
+          var bayer = [
+            [0, 8, 2, 10],
+            [12, 4, 14, 6],
+            [3, 11, 1, 9],
+            [15, 7, 13, 5],
+          ]
+          document.querySelectorAll('.dither-canvas').forEach(function (canvas) {
+            var box = canvas.parentElement.getBoundingClientRect()
+            var style = getComputedStyle(canvas)
+            var dpr = Math.min(window.devicePixelRatio || 1, 2)
+            var cell = parseFloat(style.getPropertyValue('--dither-cell')) || 8
+            canvas.width = Math.ceil(box.width * dpr)
+            canvas.height = Math.ceil(box.height * dpr)
+            var ctx = canvas.getContext('2d')
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+            ctx.fillStyle =
+              style.getPropertyValue('--dither-color').trim() ||
+              style.getPropertyValue('--ui-text').trim() ||
+              '#000'
+            ctx.globalAlpha = parseFloat(style.getPropertyValue('--dither-alpha')) || 0.05
+            for (var y = 0; y < Math.ceil(box.height / cell); y++) {
+              for (var x = 0; x < Math.ceil(box.width / cell); x++) {
+                var noise = 0.5 + 0.25 * Math.sin(x * 0.09) + 0.25 * Math.sin(y * 0.07 + x * 0.02)
+                if (noise > (bayer[y % 4][x % 4] + 0.5) / 16) {
+                  ctx.fillRect(x * cell, y * cell, cell - 1, cell - 1)
+                }
+              }
+            }
+          })
+        })()
+      } catch (e) {}
+    </script>
+    <!-- The first paint waits for the scripts above it (Chromium; others paint as before). -->
+    <span id="painted" hidden></span>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

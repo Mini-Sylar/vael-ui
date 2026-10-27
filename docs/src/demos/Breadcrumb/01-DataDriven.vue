@@ -1,12 +1,11 @@
 <template>
   <section class="demo">
-    <h3><code>items</code>: data-driven, with icons</h3>
+    <h3>Built from <code>items</code>, with icons</h3>
     <p class="note">
-      The last item defaults to <code>current</code> if you don't set it explicitly.
-      <code>attrs</code> forwards anything extra straight to <code>BreadcrumbItem</code> —
-      deliberately not a dedicated <code>href</code> field, since the right prop name depends on
-      <code>as</code> (<code>href</code> for a plain link, <code>to</code> for a router one); baking
-      in one would silently break the other.
+      The last item is <code>current</code> unless you set it. <code>attrs</code> passes extra
+      attributes to each <code>BreadcrumbItem</code>. There’s no <code>href</code> field, because
+      the link prop depends on <code>as</code>: <code>href</code> for a plain link,
+      <code>to</code> for a router link.
     </p>
     <Breadcrumb :items="itemsData" aria-label="Breadcrumb with icons" />
   </section>

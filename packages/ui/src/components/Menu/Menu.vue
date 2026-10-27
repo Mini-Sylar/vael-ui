@@ -9,7 +9,12 @@
     <slot name="trigger" :open="open" />
   </span>
   <Teleport :to="teleportTo">
-    <Transition name="ui-menu" appear :css="!forceMount">
+    <Transition
+      name="ui-menu"
+      appear
+      v-bind="motionHooks"
+      :css="!forceMount && motionTransition.css !== false"
+    >
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -24,8 +29,14 @@
         <div
           ref="panel"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
+          :style="[
+            { transformOrigin },
+            panelMaxHeightStyle,
+            panelWidthStyle(panelWidth),
+            panelPart.style,
+          ]"
           :data-level="level"
+          data-ui-presence
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
@@ -35,6 +46,8 @@
             ref="list"
             :id="menuId"
             role="menu"
+            :aria-label="ownLabel"
+            :aria-labelledby="ownLabel ? undefined : labelledBy"
             class="ui-menu-body"
             v-scroll-mask="scrollFade"
             :data-virtual="virtualActive || undefined"
@@ -43,6 +56,12 @@
             @keydown="onListKeydown"
             @focusin="onListFocusin"
           >
+            <div
+              ref="indicatorEl"
+              class="ui-indicator ui-menu-indicator"
+              :style="indicatorStyle"
+              aria-hidden="true"
+            />
             <!-- Custom slot ignores `items` — consumer owns the markup. -->
             <slot
               v-if="$slots.default"
@@ -90,14 +109,19 @@
                   v-bind="entry.attrs"
                 >
                   <slot name="item" :item="entry">
-                    <span v-if="entry.icon" class="ui-menu-item-icon">
+                    <span v-if="entry.icon" :class="iconPart.class" :style="iconPart.style">
                       <component :is="entry.icon" />
                     </span>
                     <span class="ui-menu-item-label">{{ entry.label }}</span>
                     <span v-if="entry.shortcut" class="ui-menu-item-shortcut">
                       {{ entry.shortcut }}
                     </span>
-                    <span v-if="entry.items" class="ui-menu-item-chevron" aria-hidden="true">
+                    <span
+                      v-if="entry.items"
+                      :class="chevronPart.class"
+                      :style="chevronPart.style"
+                      aria-hidden="true"
+                    >
                       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
                         <path
                           d="M6 4l4 4-4 4"
@@ -148,7 +172,7 @@
                   :trigger-el="rowEls[i]"
                   v-model:open="submenuOpen[i]"
                   :open-path="revealedRow === i ? openPath?.slice(1) : undefined"
-                  side="right"
+                  :side="submenuSide()"
                   align="start"
                   :teleport-to="positionerEl"
                   :ui="props.ui"
@@ -176,6 +200,8 @@
 
 <script lang="ts">
 import type { Component, InjectionKey } from 'vue'
+import { panelWidthStyle } from '../../composables/panelWidth'
+import type { PanelWidth } from '../../composables/panelWidth'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
 import type { UiPartValue } from '../../classes'
@@ -215,7 +241,7 @@ export interface MenuItemData {
   onSelect?: () => void
   /**
    * Nested rows; the row becomes a submenu trigger that opens on hover intent, click, Enter/Space or
-   * ArrowRight. Nested levels don't support custom item types. In MenuList, the row becomes an inert
+   * ArrowRight (ArrowLeft right to left, where the submenu opens to the left). Nested levels don't support custom item types. In MenuList, the row becomes an inert
    * group label with its `items` rendered beneath it (see the `isGroup` prop of the `#item` slot).
    */
   items?: ReadonlyArray<MenuEntry<MenuItemData>>
@@ -247,10 +273,16 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
   closeOnEsc?: boolean
   /** Clicking outside the panel closes it. @default true */
   closeOnOutside?: boolean
-  /** Custom exit animation; call `done()` to finish closing. */
-  beforeClose?: (done: () => void) => void
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Runs before the menu closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The menu stays open while the promise is pending. */
+  beforeClose?: BeforeClose<PopoverCloseReason>
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, your own
+   * `initial` and `exit` for the panel, or `targets` for the rows (`select: '.ui-menu-item'`).
+   * Unset, it follows the nearest ConfigProvider's style.
+   */
+  motion?: MenuMotion
   /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
   /**
@@ -260,6 +292,12 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
   scrollFade?: boolean
   /** Caps the panel's height in pixels; the item list scrolls past it. Unset, only the viewport limits it. */
   maxPanelHeight?: number
+  /**
+   * The panel's width: `'trigger'` for at least its trigger's width, as a select's is (longer rows
+   * still widen it), or a width in px or any CSS length (`'20rem'`). Unset, it fits its rows.
+   * Submenus keep their own width.
+   */
+  panelWidth?: PanelWidth
   /**
    * Row path to reveal on open, as each row's `value` (or `label`): every submenu along it opens and
    * its last row takes focus instead of the first, e.g. to show the current selection.
@@ -271,14 +309,21 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
     panel: UiPartValue
     header: UiPartValue
     footer: UiPartValue
+    /** The icon at the start of an item. */
+    icon: UiPartValue
+    /** The chevron at the end of an item that opens a submenu. */
+    chevron: UiPartValue
   }>
 }
 </script>
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, MenuMotion } from '../../motion/types'
 import './Menu.css'
 import '../shared/tick.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   inject,
@@ -295,7 +340,7 @@ import {
   watch,
   watchEffect,
 } from 'vue'
-import { useAttrListeners } from '../../composables/forwardedListeners'
+import { omitAttrs, useAttrListeners } from '../../composables/forwardedListeners'
 import type { VNodeChild } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { createSlotRelay } from '../../composables/useSlotRelay'
@@ -305,11 +350,20 @@ import { createSlotRelay } from '../../composables/useSlotRelay'
 // circular import resolves fine: the default export is defined by instantiation time, long after
 // this module finishes evaluating.
 import MenuSelf from './Menu.vue'
-import { resolvePastDisplayContents, nativeTag, useSlotPresence } from '../../composables/dom'
+import {
+  isRtl,
+  resolvePastDisplayContents,
+  nativeTag,
+  useSlotPresence,
+} from '../../composables/dom'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'
 import { useVirtualizer } from '../../composables/useVirtualizer'
+import { useComponentMotion } from '../../motion/useComponentMotion'
+import { whenPlaced } from '../../composables/useSelectPanelMotion'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
+import '../shared/indicator.css'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
@@ -330,6 +384,7 @@ const props = withDefaults(defineProps<MenuProps<T>>(), {
   forceMount: false,
   teleportTo: 'body',
   scrollFade: true,
+  motion: undefined,
 })
 
 const emit = defineEmits<{
@@ -337,7 +392,7 @@ const emit = defineEmits<{
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
   /** Fires when a data-driven row is activated, including rows in submenus. */
   select: [item: T]
-  /** Fires on ArrowLeft inside the menu; a parent menu uses it to close this submenu. */
+  /** Fires on ArrowLeft inside the menu (ArrowRight right to left); a parent menu uses it to close this submenu. */
   collapse: []
   /** Fires when the pointer enters or leaves any submenu row or panel in this subtree; a parent menu uses it to stay open. */
   active: [value: boolean]
@@ -438,12 +493,24 @@ function onTriggerKeydown(event: KeyboardEvent) {
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+// A submenu opens toward the end of the line: to the left, right to left.
+const submenuSide = (): MenuSide => (isRtl(panelEl.value) ? 'left' : 'right')
 const attrs = useAttrs()
+// Your `aria-label` names the menu itself, not the panel around it.
+const ownLabel = computed(() => attrs['aria-label'] as string | undefined)
 const panelAttrs = useAttrListeners(
   () => panelEl.value,
-  () => attrs,
+  () => omitAttrs(attrs, ['aria-label']),
 )
 const listEl = useTemplateRef<HTMLElement>('list')
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+// The hover and keyboard highlight slides between rows; a submenu's rows have their own.
+const { style: indicatorStyle } = useHoverIndicator(listEl, {
+  itemSelector: '.ui-menu-item',
+  scope: '.ui-menu-body',
+  scroller: true,
+  indicatorEl,
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.menu,
@@ -476,7 +543,41 @@ const {
   closeOnOutside: () => props.closeOnOutside,
   beforeClose: () => props.beforeClose,
   maxHeightCap: () => props.maxPanelHeight,
+  matchReferenceWidth: () => props.panelWidth === 'trigger',
   onOpenChange: (value, details) => emit('open-change', value, details),
+})
+
+const motion = useComponentMotion({
+  name: 'Menu',
+  role: 'overlay',
+  key: 'menu',
+  mainPart: 'panel',
+  parts: () => ({ positioner: positionerEl.value, panel: panelEl.value }),
+  root: () => panelEl.value,
+  motion: () => props.motion,
+  // The built-in look as data: it opens from a touch further than it closes to, scaling from the
+  // trigger via the panel's own transform-origin, on the enter tokens. forceMount leaves it to you.
+  defaults: () => ({ panel: { opacity: 0, scale: '0.97' } }),
+  exitDefaults: () => ({ panel: { opacity: 0, scale: '0.99' } }),
+  timing: () => ({ duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' }),
+  owns: () => !props.forceMount,
+  trigger: () => triggerElRef.value,
+  ready: () => whenPlaced(() => positionerStyle.value.visibility === 'visible'),
+})
+const { phase } = motion
+const motionTransition = motion.transition
+const motionHooks = computed(() => {
+  const { css: _css, ...hooks } = motionTransition.value
+  return {
+    ...hooks,
+    onBeforeEnter: (el: Element) => {
+      hooks.onBeforeEnter?.(el)
+      phase.value = 'entering'
+    },
+    onAfterEnter: () => (phase.value = 'entered'),
+    onBeforeLeave: () => (phase.value = 'leaving'),
+    onAfterLeave: () => (phase.value = 'left'),
+  }
 })
 
 // Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
@@ -647,11 +748,21 @@ const { onKeydown, focusFirst, focusItem } = useMenu({
 // Set the popup state on the slot's trigger, preferring a root that is itself the control.
 const TRIGGER_SELECTOR = 'button, [role="button"], [role="combobox"], a[href]'
 const menuId = useId()
+const triggerId = useId()
+const labelledBy = shallowRef<string>()
 watchEffect(() => {
   const root = resolvedTriggerEl.value
+  // A marked control wins over buttons placed before it, like CascadeSelect's `#start`.
+  const marked = triggerWrapper.value?.querySelector<HTMLElement>('[data-menu-trigger]')
   const trigger = root?.matches(TRIGGER_SELECTOR)
     ? root
-    : (triggerWrapper.value?.querySelector<HTMLElement>(TRIGGER_SELECTOR) ?? root)
+    : (marked ?? triggerWrapper.value?.querySelector<HTMLElement>(TRIGGER_SELECTOR) ?? root)
+  // The menu is named by what opens it: the trigger, a `triggerEl`, or a submenu's row.
+  // One hidden from screen readers (ContextMenu's anchor) can't name it.
+  const shown = props.triggerEl !== undefined ? triggerElRef.value : trigger
+  const label = shown?.getAttribute('aria-hidden') === 'true' ? undefined : shown
+  if (label && !label.id) label.id = triggerId
+  labelledBy.value = label?.id || undefined
   if (!trigger) return
   trigger.setAttribute('aria-haspopup', 'menu')
   trigger.setAttribute('aria-expanded', String(open.value))
@@ -885,6 +996,8 @@ const positionerPart = computed(() =>
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-menu-panel'))
 const headerPart = computed(() => resolveUiPart(cx, themedUi()?.header, 'ui-menu-header'))
 const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-menu-footer'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-menu-item-icon'))
+const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-menu-item-chevron'))
 
 // Resolved placement after floating-ui flips (e.g., "top" becomes "bottom" if no room).
 const resolvedSide = computed(() => placement.value.split('-')[0] as MenuSide)
@@ -900,6 +1013,8 @@ defineExpose({
   positionerEl,
   /** Item list element (null while closed). */
   listEl,
+  /** The hover and keyboard highlight, sliding between rows (null while closed). Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
+  highlightEl: indicatorEl,
   /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,
   /** Inline positioning style applied to the positioner. */

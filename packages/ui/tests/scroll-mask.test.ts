@@ -8,7 +8,10 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function mountScroller(axis: 'x' | 'y') {
+function mountScroller(
+  axis: 'x' | 'y',
+  extra: { style?: string; dir?: string; class?: string } = {},
+) {
   const Scroller = defineComponent({
     setup: () => () =>
       withDirectives(
@@ -16,10 +19,12 @@ function mountScroller(axis: 'x' | 'y') {
           'div',
           {
             'data-testid': 'scroller',
+            dir: extra.dir,
+            class: extra.class,
             style:
-              axis === 'x'
+              (axis === 'x'
                 ? 'width: 200px; overflow-x: auto; white-space: nowrap'
-                : 'height: 200px; overflow-y: auto',
+                : 'height: 200px; overflow-y: auto') + (extra.style ?? ''),
           },
           axis === 'x'
             ? h('div', { style: 'display: inline-block; width: 1000px; height: 20px' })
@@ -104,4 +109,33 @@ test('a child that grows through its style turns the fade on', async () => {
   // Change the child's style directly, as a child component's own re-render would.
   el.firstElementChild!.setAttribute('style', 'height: 600px')
   await vi.waitFor(() => expect(el.classList.contains('scroll-fade')).toBe(true))
+})
+
+test("the scrollbar's strip stays out of the fade: its own width, none when hidden, on the left right to left", async () => {
+  const scroller = (screen: { container: Element }) =>
+    screen.container.querySelector<HTMLElement>('[data-testid="scroller"]')!
+  {
+    // A border is not a scrollbar.
+    const bordered = await mountScroller('y', {
+      style: '; border: 30px solid; scrollbar-width: thin',
+    })
+    await nextTick()
+    const own = scroller(bordered)
+    const bar = own.offsetWidth - own.clientWidth - 60
+    // An overlay scrollbar (0 here) takes no room, so content runs under it: no strip.
+    expect(own.style.getPropertyValue('--ui-scroll-bar-y')).toBe(`${bar}px`)
+    bordered.unmount()
+    expect(own.style.getPropertyValue('--ui-scroll-bar-y')).toBe('')
+
+    const hidden = await mountScroller('x', { style: '; scrollbar-width: none' })
+    await nextTick()
+    expect(scroller(hidden).style.getPropertyValue('--ui-scroll-bar-x')).toBe('0px')
+    hidden.unmount()
+
+    // Right to left, the vertical scrollbar (and its strip) sits on the left.
+    const rtl = await mountScroller('y', { dir: 'rtl' })
+    await nextTick()
+    expect(getComputedStyle(scroller(rtl)).maskPosition).toBe('100% 0%, 0% 0%')
+    rtl.unmount()
+  }
 })

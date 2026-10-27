@@ -244,10 +244,10 @@
     transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
 
-  /* `motionCss: false` turns off exactly what reduced-motion does below: the dot's color/scale
+  /* `motion: false` turns off exactly what reduced-motion does below: the dot's color/scale
      transition, the pulse, and the connector's fill sweep — the animations that actually play
      when you advance through EXISTING items (current/status changing). TransitionGroup's own
-     :css="motionCss" binding never touched these; it only gates add/remove/reorder of the list
+     :css="motion" binding never touched these; it only gates add/remove/reorder of the list
      itself, which left this prop doing half its job. */
   .ui-timeline--no-motion .ui-timeline-dot {
     transition: background-color var(--ui-duration-press) ease;

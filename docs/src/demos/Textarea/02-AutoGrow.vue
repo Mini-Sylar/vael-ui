@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
-    <h3>Auto-grow, native <code>field-sizing: content</code>, capped at <code>maxRows</code></h3>
-    <p class="note">Type past the visible rows and watch it grow, up to 8 rows, then scroll.</p>
+    <h3>Auto-grow with <code>field-sizing: content</code>, capped at <code>maxRows</code></h3>
+    <p class="note">Type past the visible rows: the box grows up to 8 rows, then scrolls.</p>
     <Textarea
       v-model="growValue"
       auto-grow

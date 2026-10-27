@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import '../shared/confirm-popover.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { shallowRef, type Component } from 'vue'
 import type { ComponentProps } from 'vue-component-type-helpers'
 import Button from '../Button/Button.vue'

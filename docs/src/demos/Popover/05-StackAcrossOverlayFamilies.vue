@@ -1,13 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Six overlay families deep, all open at once, Tour still on top of everything</h3>
+    <h3>Five overlays open at once, with a Tour on top</h3>
     <p class="note">
-      Unlike the stress test above (one overlay at a time, previous one closed first), every one of
-      these stays open: Popover, Menu, Drawer, Combobox, and BottomSheet, each opened from a button
-      inside the last. They all share the same open-order layer stack, so it doesn't matter how many
-      are stacked or which kinds they are. Starting the Tour at the end targets the very first
-      button in the chain - buried under all five - and its callout still renders on top of every
-      one of them.
+      Every overlay here stays open: Popover, Menu, Drawer, Combobox and BottomSheet, each opened
+      from a button in the one before. They share one layer stack in open order, so the number and
+      kind of overlays don't matter. The Tour at the end targets the first button in the chain,
+      under all five, and its callout still shows above them.
     </p>
 
     <Popover v-model:open="popoverOpen">

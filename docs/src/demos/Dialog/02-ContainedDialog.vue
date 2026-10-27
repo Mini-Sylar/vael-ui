@@ -3,16 +3,16 @@
     <h3>Contained dialog</h3>
     <p class="note">
       <code>container</code> scopes a dialog to one element instead of the viewport. The overlay
-      dims only that box, the modality applies only inside it, and the rest of this page stays live
-      — while the dialog below is open you can still scroll the page and press the buttons above it.
-      Inside the pane, everything but the dialog is <code>inert</code>: not clickable, skipped by
-      Tab, hidden from screen readers.
+      dims only that box and the dialog is modal only inside it, so while the dialog below is open,
+      you can still scroll the page and press the buttons above it. Inside the pane, everything
+      except the dialog is <code>inert</code>: not clickable, skipped by Tab and hidden from screen
+      readers.
     </p>
     <p class="note">
-      <code>scroll-target</code> is the pane's inner scroller, which is what gets locked. Keeping it
-      separate from <code>container</code> means the container itself never scrolls, so the panel
-      can be positioned against it with plain <code>inset: 0</code>. Escape is routed by focus, so a
-      contained dialog only answers to Escape pressed inside its own container.
+      <code>scroll-target</code> is the pane’s inner scroller, which is the element that gets
+      locked. Because it’s separate from <code>container</code>, the container never scrolls, so the
+      panel can sit against it with <code>inset: 0</code>. Escape follows focus, so a contained
+      dialog closes only on an Escape pressed inside its container.
     </p>
 
     <div ref="pane" class="contained-pane">

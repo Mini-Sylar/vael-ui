@@ -311,6 +311,7 @@ test('typing digits into the hour field commits immediately; out-of-range values
   })
   await screen.getByRole('combobox').click()
   const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  await expect.element(hourField).toBeVisible()
   await hourField.fill('')
   await userEvent.type(hourField, '9')
   await expect.element(screen.getByTestId('model-time')).toHaveTextContent('09:00')
@@ -322,6 +323,7 @@ test('a complete typed hour moves on to the minutes like a native time input: "1
   })
   await screen.getByRole('combobox').click()
   const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  await expect.element(hourField).toBeVisible()
   ;(hourField.element() as HTMLElement).focus()
   await userEvent.keyboard('1830')
   await expect.element(screen.getByTestId('model-time')).toHaveTextContent('18:30')
@@ -336,7 +338,8 @@ test('a complete typed hour moves on to the minutes like a native time input: "1
 
 test('Enter in a time field commits and closes the time-only panel, returning focus to the input', async () => {
   const screen = await render(DatePickerFixture, { props: { timeOnly: true, hourFormat: '24' } })
-  await screen.getByRole('combobox').click()
+  // The button moves focus into the panel; a click in the input leaves it there for typing.
+  await screen.getByRole('button', { name: 'Choose date' }).click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
   await vi.waitFor(() =>
     expect(document.activeElement).toBe(screen.getByRole('spinbutton', { name: 'Hour' }).element()),
@@ -356,6 +359,7 @@ test('ArrowUp wraps the hour past 23 back to 0, and past 0 back to 23 on ArrowDo
   })
   await screen.getByRole('combobox').click()
   const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  await expect.element(hourField).toBeVisible()
   ;(hourField.element() as HTMLElement).focus()
   await userEvent.keyboard('{ArrowUp}')
   await expect.element(screen.getByTestId('model-time')).toHaveTextContent('00:00')
@@ -370,6 +374,7 @@ test('12h mode wraps hour 12 -> 1 on increment, not 12 -> 0', async () => {
   })
   await screen.getByRole('combobox').click()
   const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  await expect.element(hourField).toBeVisible()
   ;(hourField.element() as HTMLElement).focus()
   await userEvent.keyboard('{ArrowUp}')
   // 12 PM + 1 hour = 1 PM = 13:00 in 24h storage.
@@ -382,6 +387,9 @@ test('clicking the minute stepper increments by minuteStep, and the AM/PM toggle
     props: { showTime: true, hourFormat: '12', minuteStep: 15, initialValue: nineAM },
   })
   await screen.getByRole('combobox').click()
+  // The time row loads with the picker; wait for it and the AM/PM toggle.
+  await expect.element(screen.getByRole('spinbutton', { name: 'Minute' })).toBeVisible()
+  await vi.waitFor(() => expect(document.querySelector('.ui-date-picker-ampm')).not.toBeNull())
 
   const minuteField = document.querySelector('.ui-time-field:has([aria-label="Minute"])')!
   const incButton = minuteField.querySelector<HTMLButtonElement>('.ui-time-field-stepper')!
@@ -424,4 +432,30 @@ test('focusing the trigger (Tab) does not open it; Enter does, and a pick return
   await userEvent.click(cellByIso('2024-06-20')!)
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
   await vi.waitFor(() => expect(document.activeElement).toBe(trigger))
+})
+
+test('a wider panel stretches the calendar, its days growing to fill it', async () => {
+  const { default: DatePicker } = await import('../src/components/DatePicker/DatePicker.vue')
+  const screen = await render(DatePicker, {
+    props: {
+      modelValue: new Date(2026, 9, 9),
+      'aria-label': 'Visit date',
+      ui: { panel: { style: { inlineSize: '24rem' } } },
+    },
+  })
+  await userEvent.click(screen.getByRole('combobox'))
+  // Throws until it's there, so waitFor retries.
+  const found = (selector: string) =>
+    vi.waitFor(() => {
+      const el = document.querySelector<HTMLElement>(selector)
+      if (!el) throw new Error(`no ${selector}`)
+      return el
+    })
+  const panel = await found('.ui-date-picker-panel')
+  const calendar = await found('.ui-date-picker-panel .ui-calendar-root')
+  const day = await found('.ui-date-picker-panel .ui-calendar-cell:not(.ui-calendar-cell--blank)')
+  await vi.waitFor(() =>
+    expect(calendar.getBoundingClientRect().width).toBeCloseTo(panel.clientWidth, 0),
+  )
+  expect(day.getBoundingClientRect().width).toBeGreaterThan(40)
 })

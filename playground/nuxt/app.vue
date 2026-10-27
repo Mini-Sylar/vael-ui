@@ -16,6 +16,22 @@
     </section>
 
     <section>
+      <h2>Motion on first paint</h2>
+      <p>
+        Server-rendered: these come in from CSS before any script, and hydration never replays them.
+      </p>
+      <Card
+        v-for="(label, i) in ['One', 'Two', 'Three']"
+        :key="label"
+        v-animate="appear"
+        :style="{ '--i': i, padding: '0.75rem', marginBlock: '0.5rem' }"
+        :data-testid="`appear-${i}`"
+      >
+        {{ label }}
+      </Card>
+    </section>
+
+    <section>
       <h2>Interactive (verifies hydration, not just SSR markup)</h2>
       <p>
         <Checkbox v-model="checked" data-testid="checkbox" />
@@ -36,4 +52,11 @@
 const checked = ref(false)
 const toggled = ref(true)
 const count = ref(0)
+// A fade up with a 60ms stagger, read from each card's --i.
+const appear = {
+  initial: { opacity: 0, y: 12 },
+  stagger: 0.06,
+  duration: 400,
+  easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
+}
 </script>
