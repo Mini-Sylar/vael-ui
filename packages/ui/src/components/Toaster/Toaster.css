@@ -177,6 +177,7 @@
     flex: none;
     inline-size: 1.5rem;
     block-size: 1.5rem;
+    padding: 0;
     border: 0;
     border-radius: 6px;
     background: transparent;
@@ -190,6 +191,13 @@
   }
   .ui-toast-close:active {
     transform: scale(0.96);
+  }
+
+  /* A size of its own, so the icon is centred with or without a page's button and svg reset. */
+  .ui-toast-close svg {
+    display: block;
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
   }
 
   @media (hover: hover) and (pointer: fine) {
