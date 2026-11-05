@@ -7,37 +7,37 @@ allowBuilds:
   sharp: true
 overrides:
   brace-expansion: '>=5.0.8'
-  vue: 3.6.0-rc.13
-  '@vue/compiler-core': 3.6.0-rc.13
-  '@vue/compiler-dom': 3.6.0-rc.13
-  '@vue/compiler-sfc': 3.6.0-rc.13
-  '@vue/compiler-ssr': 3.6.0-rc.13
-  '@vue/compiler-vapor': 3.6.0-rc.13
-  '@vue/reactivity': 3.6.0-rc.13
-  '@vue/runtime-core': 3.6.0-rc.13
-  '@vue/runtime-dom': 3.6.0-rc.13
-  '@vue/runtime-vapor': 3.6.0-rc.13
-  '@vue/server-renderer': 3.6.0-rc.13
-  '@vue/shared': 3.6.0-rc.13
+  vue: 3.6.0-rc.14
+  '@vue/compiler-core': 3.6.0-rc.14
+  '@vue/compiler-dom': 3.6.0-rc.14
+  '@vue/compiler-sfc': 3.6.0-rc.14
+  '@vue/compiler-ssr': 3.6.0-rc.14
+  '@vue/compiler-vapor': 3.6.0-rc.14
+  '@vue/reactivity': 3.6.0-rc.14
+  '@vue/runtime-core': 3.6.0-rc.14
+  '@vue/runtime-dom': 3.6.0-rc.14
+  '@vue/runtime-vapor': 3.6.0-rc.14
+  '@vue/server-renderer': 3.6.0-rc.14
+  '@vue/shared': 3.6.0-rc.14
 minimumReleaseAgeExclude:
   - '@vue/language-core@3.3.8 || 3.3.10'
   - vue-tsc@3.3.8 || 3.3.10
   - lint-staged@17.2.0
   - vue-component-type-helpers@3.3.8 || 3.3.10
-  - vue@3.6.0-rc.13
-  - '@vue/compiler-core@3.6.0-rc.13'
-  - '@vue/compiler-dom@3.6.0-rc.13'
-  - '@vue/compiler-sfc@3.6.0-rc.13'
-  - '@vue/compiler-ssr@3.6.0-rc.13'
-  - '@vue/compiler-vapor@3.6.0-rc.13'
-  - '@vue/reactivity@3.6.0-rc.13'
-  - '@vue/runtime-core@3.6.0-rc.13'
-  - '@vue/runtime-dom@3.6.0-rc.13'
-  - '@vue/runtime-vapor@3.6.0-rc.13'
-  - '@vue/server-renderer@3.6.0-rc.13'
-  - '@vue/shared@3.6.0-rc.13'
+  - vue@3.6.0-rc.14
+  - '@vue/compiler-core@3.6.0-rc.14'
+  - '@vue/compiler-dom@3.6.0-rc.14'
+  - '@vue/compiler-sfc@3.6.0-rc.14'
+  - '@vue/compiler-ssr@3.6.0-rc.14'
+  - '@vue/compiler-vapor@3.6.0-rc.14'
+  - '@vue/reactivity@3.6.0-rc.14'
+  - '@vue/runtime-core@3.6.0-rc.14'
+  - '@vue/runtime-dom@3.6.0-rc.14'
+  - '@vue/runtime-vapor@3.6.0-rc.14'
+  - '@vue/server-renderer@3.6.0-rc.14'
+  - '@vue/shared@3.6.0-rc.14'
   - vue-component-meta@3.3.10
-  - motion-v@2.4.0 || 2.4.4
+  - motion-v@2.4.0 || 2.4.4 || 2.11.1
   - '@intlify/core-base@11.4.12'
   - '@intlify/devtools-types@11.4.12'
   - '@intlify/message-compiler@11.4.12'
