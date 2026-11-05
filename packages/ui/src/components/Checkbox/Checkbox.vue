@@ -5,6 +5,8 @@
     :style="rootPart.style"
     :data-state="dataState"
     :data-invalid="isInvalid || undefined"
+    @focusin="focusEvents.onFocusin"
+    @focusout="focusEvents.onFocusout"
     v-bind="rootAttrs"
   >
     <span :class="controlClass">
@@ -23,7 +25,7 @@
         @change="onNativeChange"
         @focus="onNativeFocus"
         @blur="onNativeBlur"
-        v-bind="inputAttrs"
+        v-bind="ownInputAttrs"
       />
       <span ref="boxEl" :class="boxPart.class" :style="boxPart.style" aria-hidden="true">
         <svg
@@ -76,7 +78,7 @@ import {
 } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'
-import { useControlAttrs } from '../../composables/forwardedListeners'
+import { useControlAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -85,7 +87,10 @@ import type { CheckboxMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
-const { rootAttrs, inputAttrs } = useControlAttrs(useAttrs())
+const attrs = useAttrs()
+const { rootAttrs, inputAttrs } = useControlAttrs(attrs)
+const ownInputAttrs = computed(() => fieldControl.own(inputAttrs.value))
+const focusEvents = useFocusEvents(attrs, () => root.value)
 /**
  * Checked state. Bind an array to add or remove this checkbox's `value` in it (checkbox group).
  * @default false

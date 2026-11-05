@@ -799,7 +799,7 @@
         },
         "grid": {
           "title": "跨越网格",
-          "body": "同一名称下一起进入的元素会按各自所在的位置依次出现。在网格中，<code>stagger: 'center'</code> 从中间的单元格开始向外扩散，<code>'edges'</code> 从四角开始向内收拢。只有一行或一列时，按页面顺序进行。"
+          "body": "同一名称下一起进入的元素会按各自所在的位置依次出现。在网格中，<code>stagger: 'center'</code> 从中间的单元格开始向外扩散，<code>'edges'</code> 从四角开始向内收拢。只有一行或一列时，按页面顺序进行。<code>'random'</code> 每次按新的随机顺序。"
         },
         "inView": {
           "title": "在视野中时",
@@ -807,7 +807,7 @@
         },
         "progress": {
           "title": "跟随滚动",
-          "body": "<code>useScrollProgress()</code> 以 0 到 1 的 ref 返回页面的滚动，或元素穿过屏幕的进度。把它作为 getter 传给 <code>progress</code>（<code>progress: () => scroll</code>），关键帧就会跟随滚动，而不会重新渲染你的组件。<code>offset</code> 决定起点和终点：<code>['start end', 'end start']</code> 表示从进入到离开。"
+          "body": "<code>useScrollProgress()</code> 以 0 到 1 的 ref 返回页面的滚动，或元素穿过屏幕的进度。把它作为 getter 传给 <code>progress</code>（<code>progress: () => scroll</code>），关键帧就会跟随滚动，而不会重新渲染你的组件。<code>offset</code> 决定起点和终点：<code>['start end', 'end start']</code> 表示从进入到离开。<code>useScrollLength()</code> 以 px 给出可滚动的距离，所以 <code>scroll.value * length.value</code> 就是已滚动的距离。"
         },
         "replay": {
           "title": "再播一次",
@@ -835,11 +835,11 @@
         },
         "turn": {
           "title": "3D 翻转",
-          "body": "<code>rotateX</code> 和 <code>rotateY</code> 让元素朝向你或远离你转动，<code>perspective</code> 决定看起来有多深：翻转卡片就是 <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>。<code>skewX</code> 和 <code>skewY</code> 让它倾斜，<code>scaleX</code> 和 <code>scaleY</code> 只缩放一个轴，比如从底部长出来的柱条。"
+          "body": "<code>rotateX</code> 和 <code>rotateY</code> 让元素朝向你或远离你转动，<code>perspective</code> 决定看起来有多深：翻转卡片就是 <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>。<code>skewX</code> 和 <code>skewY</code> 让它倾斜，<code>scaleX</code> 和 <code>scaleY</code> 只缩放一个轴，比如从底部长出来的柱条。<code>scaleZ</code> 只缩放深度，在 <code>perspective</code> 下可见。"
         },
         "draw": {
           "title": "绘制线条",
-          "body": "<code>pathLength</code> 把 SVG 线条从 0（无）画到 1（全部）：<code>initial: {'{'} pathLength: 0 {'}'}</code> 会画出一个对勾。<code>pathOffset</code> 移动绘制部分的起点。 <code>animate()</code> 会在路径上设置 <code>pathLength=\"1\"</code>，因此 <code>pathOffset</code> 和你在 CSS 中设置的虚线都是其长度的比例。"
+          "body": "<code>pathLength</code> 把 SVG 线条从 0（无）画到 1（全部）：<code>initial: {'{'} pathLength: 0 {'}'}</code> 会画出一个对勾。<code>pathOffset</code> 移动绘制部分的起点。 <code>animate()</code> 会在路径上设置 <code>pathLength=\"1\"</code>，因此 <code>pathOffset</code> 和你在 CSS 中设置的虚线都是其长度的比例。<code>pathSpacing</code> 设置绘制部分之后的间隔，让一段短笔画沿路径重复。"
         },
         "size": {
           "title": "跟随内容",
@@ -847,7 +847,7 @@
         },
         "fromCode": {
           "title": "从代码中",
-          "body": "对于由事件触发的动效，比如输入了错误的代码或把商品加入购物车，<code>animate(el, values, options)</code> 会在代码中播放与 <code>v-animate</code> 相同的值和时序，并把终点留作元素自身的样式。可以用 await 等待它，或用 <code>pause()</code>、<code>reverse()</code>、<code>time</code> 和 <code>speed</code> 控制它。<code>useAnimate(useTemplateRef('row'))</code> 把选择器限定在一个元素内，并在组件卸载时停止它启动的动画。它遵循应用的弹簧、<code>motion: false</code> 和减弱动态效果设置。"
+          "body": "对于由事件触发的动效，比如输入了错误的代码或把商品加入购物车，<code>animate(el, values, options)</code> 会在代码中播放与 <code>v-animate</code> 相同的值和时序，并把终点留作元素自身的样式。可以用 await 等待它，或用 <code>pause()</code>、<code>reverse()</code>、<code>time</code> 和 <code>speed</code> 控制它。<code>useAnimate(useTemplateRef('row'))</code> 把选择器限定在一个元素内，并在组件卸载时停止它启动的动画。它遵循应用的弹簧、<code>motion: false</code> 和减弱动态效果设置。要按顺序播放多个，传入一个步骤列表（见编排）。"
         },
         "tween": {
           "title": "补间一个数字",
@@ -932,7 +932,19 @@
       },
       "choreography": {
         "title": "编排",
-        "intro": "在对话框或弹出框里，你自己的元素也能加入它的动效。先给它们命名，再安排它们彼此之间以及与面板的时间关系。",
+        "intro": "在对话框或弹出框里，你自己的元素也能加入它的动效。先给它们命名，再安排它们彼此之间以及与面板的时间关系。在代码中，<code>animate()</code> 按顺序播放一个步骤列表。",
+        "which": {
+          "title": "该用哪个",
+          "body": "取决于是什么启动了动效，以及元素外面有没有组件：",
+          "items": [
+            "一起出现的元素，在页面上或在 <code>v-if</code> 中：用 <code>v-animate:name</code> 给每个命名，并给它一个 <code>after</code>。只需模板，不用代码。",
+            "多个相同的，比如行或卡片：一个名字加 <code>stagger</code>。",
+            "在对话框、抽屉或弹出层中：在它的 <code>targets</code> 中命名，<code>after</code> 让它们彼此之间以及与面板对齐时间。",
+            "一个元素经过几个停靠点：<code>steps</code>。",
+            "由事件启动的动效，比如点击、表单保存或验证码错误：在代码中用 <code>animate([…])</code>，或用 <code>useAnimate()</code> 把它限定在一个组件内。",
+            "你自己的 GSAP 或 motion 时间线：一个返回它的 <code>enter</code> 钩子。"
+          ]
+        },
         "after": {
           "title": "依次进行",
           "body": "在 <code>targets</code> 中为元素命名，并用插槽提供的 <code>target('name')</code> 或 <code>v-animate:name</code> 标记它们。<code>after: 'summary:60%'</code> 会在摘要进入到 60% 时开始播放各行。 没有被组件包裹的元素，在一起出现时也可以互相等待：<code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>。 组件根据数据渲染的行无法打标记：请改为给它们的名称设置 <code>select</code>，例如 <code>targets: {'{'} rows: {'{'} select: 'tr' {'}'} {'}'}</code>。"
@@ -950,9 +962,24 @@
             "<code>'tag'</code>：页面上已有的元素，在它当前播放的动画结束时"
           ]
         },
+        "page": {
+          "title": "在页面上",
+          "body": "你的元素外面不需要组件。一起出现的元素按名字互相等待：<code>v-animate:lede=\"{'{'} initial: {'{'} opacity: 0 {'}'}, after: 'title:50%' {'}'}\"</code> 在标题入场到一半时开始导语。同一个名字下，列表依次出现，它的 <code>after</code> 等待它指定的名字。上面的每个时刻在这里也都适用。重新挂载，它们会再次入场。"
+        },
         "steps": {
           "title": "途中的停靠点",
           "body": "<code>steps</code> 让元素经过一系列停靠点。它会在每一处停住，直到该停靠点的 <code>after</code> 时刻到来。"
+        },
+        "sequence": {
+          "title": "在代码中按顺序",
+          "body": "<code>animate()</code> 也接受一个步骤列表，每一步是 <code>[target, values, options]</code>，用应用的弹簧一个接一个播放。除非 <code>at</code> 另有指定，每一步在上一步结束时开始。控制项操控整个序列：await 它、<code>pause()</code>、用 <code>time</code> 定位或 <code>reverse()</code>。同一元素上的两步会接着上一步的结尾继续，每个结尾都保留为元素自己的样式。在 <code>at</code> 中，TypeScript 会提示你的步骤声明的名字，并标出不存在的名字。",
+          "items": [
+            "<code>'+0.2'</code>：上一步结束后 0.2 秒。",
+            "<code>'-0.15'</code>：结束前 0.15 秒，两者重叠。",
+            "<code>'50%'</code>：上一步的一半处。",
+            "<code>1.2</code>：从开始起 1.2 秒。",
+            "<code>'card'</code>：与 <code>name: 'card'</code> 的步骤同时，或 <code>'card:60%'</code>：在它的 60% 处。"
+          ]
         },
         "own": {
           "title": "你自己的时间线",
@@ -1134,7 +1161,8 @@
         "code": "在代码中",
         "app": "应用的整体动效",
         "other": "其他"
-      }
+      },
+      "reference": "参考"
     }
   },
   "recipes": {

@@ -9,6 +9,8 @@
     :data-range="isRangeModel || undefined"
     :data-invalid="isInvalid || undefined"
     :aria-disabled="isDisabled || undefined"
+    @focusin="focusEvents.onFocusin"
+    @focusout="focusEvents.onFocusout"
     v-bind="rootAttrs"
   >
     <div
@@ -74,7 +76,7 @@ import '../shared/tokens.css'
 import '../../motion/timing.css'
 import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
-import { omitAttrs } from '../../composables/forwardedListeners'
+import { omitAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import {
   clearFocusVisible,
   markFocusVisible,
@@ -140,17 +142,16 @@ const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const messages = useMessages({ slider: sliderMessages })
 
+const focusEvents = useFocusEvents(attrs, () => root.value)
+
 // The label and description name the focusable thumbs, so the wrapper doesn't get them.
 const rootAttrs = computed(() =>
-  omitAttrs(attrs, ['aria-label', 'aria-labelledby', 'aria-describedby']),
+  omitAttrs(attrs, ['aria-label', 'aria-labelledby', 'aria-describedby', 'onFocus', 'onBlur']),
 )
 const labelledBy = computed(
   () => (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy(),
 )
-const describedBy = computed(
-  () =>
-    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
-)
+const describedBy = computed(() => fieldControl.describedBy())
 
 const isRangeModel = computed(() => Array.isArray(modelValue.value))
 const thumbValues = computed<number[]>(() =>

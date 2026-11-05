@@ -27,14 +27,48 @@ export function omitAttrs(attrs: Record<string, unknown>, keys: readonly string[
   return rest
 }
 
+// `@focus` and `@blur` on a control are heard through `useFocusEvents`, not on its root, where
+// they would never fire.
+const FOCUS_LISTENERS = ['onFocus', 'onBlur']
+
 // Wrapper-rooted controls send `id` and `aria-*` to the inner input, where a label can name it.
 export function useControlAttrs(attrs: Record<string, unknown>) {
   const isControlAttr = (key: string) => key === 'id' || key.startsWith('aria-')
   const pick = (control: boolean) =>
     computed(() =>
-      Object.fromEntries(Object.entries(attrs).filter(([key]) => isControlAttr(key) === control)),
+      Object.fromEntries(
+        Object.entries(attrs).filter(
+          ([key]) => isControlAttr(key) === control && (control || !FOCUS_LISTENERS.includes(key)),
+        ),
+      ),
     )
   return { rootAttrs: pick(false), inputAttrs: pick(true) }
+}
+
+/**
+ * Makes a consumer's `@focus` and `@blur` mean what they do on a native input, for a control whose
+ * root is not the input: focus entered or left the whole control. Bind `onFocusin` and `onFocusout`
+ * to the root (they bubble from the real input; `focus` and `blur` don't), and keep `onFocus` and
+ * `onBlur` out of the attrs the root spreads. A move between two parts of the control is neither.
+ * @internal Not public API; used by vael-ui's own components and may change.
+ */
+export function useFocusEvents(
+  attrs: Record<string, unknown>,
+  root: () => Element | null | undefined,
+) {
+  const forward = useForwardedListener(attrs)
+  const outside = (event: FocusEvent) => {
+    const other = event.relatedTarget
+    return !(other instanceof Node && root()?.contains(other))
+  }
+  return {
+    onFocusin(event: FocusEvent) {
+      if (outside(event)) forward('onFocus', event)
+    },
+    onFocusout(event: FocusEvent) {
+      if (outside(event)) forward('onBlur', event)
+    },
+  }
 }
 
 const LISTENER = /^on[A-Z]/

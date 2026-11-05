@@ -45,6 +45,21 @@ function cellsAway(all: readonly Element[], from: 'center' | 'edges', el: Elemen
   return from === 'center' ? away[at]! : Math.max(...away) - away[at]!
 }
 
+// 'random': one shuffle per group, so every element has its own step while the group plays.
+const shuffles = new WeakMap<readonly Element[], number[]>()
+function shuffled(all: readonly Element[], count: number): number[] {
+  let order = shuffles.get(all)
+  if (!order || order.length !== count) {
+    order = Array.from({ length: count }, (_, i) => i)
+    for (let i = count - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[order[i], order[j]] = [order[j]!, order[i]!]
+    }
+    shuffles.set(all, order)
+  }
+  return order
+}
+
 export function staggerAt(
   stagger: TargetMotion['stagger'],
   index: number,
@@ -67,11 +82,15 @@ export function staggerAt(
       ? grid
       : stagger === 'end'
         ? last - index
-        : stagger === 'center'
-          ? Math.abs(index - last / 2)
-          : stagger === 'edges'
-            ? last / 2 - Math.abs(index - last / 2)
-            : index
+        : stagger === 'random'
+          ? all
+            ? shuffled(all, count)[index]!
+            : Math.floor(Math.random() * count)
+          : stagger === 'center'
+            ? Math.abs(index - last / 2)
+            : stagger === 'edges'
+              ? last / 2 - Math.abs(index - last / 2)
+              : index
   return steps * (Number.isFinite(each) ? each : 0.04)
 }
 

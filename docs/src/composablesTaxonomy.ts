@@ -36,9 +36,11 @@ export const composableCategories: ComposableCategory[] = [
     key: 'motion',
     name: 'Motion',
     items: [
+      'useAnimate',
       'useSpringValue',
       'useTween',
       'useScrollProgress',
+      'useScrollLength',
       'settled',
       'useTabIndicator',
       'useHoverIndicator',
@@ -57,6 +59,7 @@ export const allComposables = composableCategories.flatMap((c) => c.items)
 // Composable name -> the date it shipped or was improved; the sidebar shows a "new" dot until the
 // page is visited, like NEW_COMPONENTS.
 export const NEW_COMPOSABLES: Record<string, string> = {
+  useAnimate: '2026-11-05',
   useColorScheme: '2026-10-21',
   useFileDrop: '2026-10-21',
   useFloatingPosition: '2026-10-21',
@@ -64,6 +67,7 @@ export const NEW_COMPOSABLES: Record<string, string> = {
   useHoverIndicator: '2026-10-21',
   useNumberFormat: '2026-10-21',
   useScrollProgress: '2026-10-25',
+  useScrollLength: '2026-11-05',
   settled: '2026-10-25',
   useSpringValue: '2026-10-21',
   useTween: '2026-10-26',

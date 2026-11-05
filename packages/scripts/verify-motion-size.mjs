@@ -113,12 +113,14 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // where each element sits across a grid (measured once per group, needed as soon as an entrance
 // starts), and `swap: 'wait'`, which notes what's leaving under each name for a page that waits.
 // The states player shares the stagger code. Measured 9546 and 7978 B.
+// up front 9.4 → 9.5 KB, states 7.85 → 7.95 KB (2026-11-05): `stagger: 'random'`, one shuffle per
+// group in the shared stagger code. Measured 9663 and 8081 B.
 const BUDGET = {
-  upFront: 9.4 * 1024,
+  upFront: 9.5 * 1024,
   runtime: 7.55 * 1024,
   morph: 1.55 * 1024,
   button: 1.38 * 1024,
-  states: 7.85 * 1024,
+  states: 7.95 * 1024,
   linked: 3.1 * 1024,
 }
 

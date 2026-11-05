@@ -799,7 +799,7 @@
         },
         "grid": {
           "title": "Sur une grille",
-          "body": "Les éléments sous un même nom qui arrivent ensemble se décalent selon leur place. Dans une grille, <code>stagger: 'center'</code> part de la cellule du milieu et s'étend vers l'extérieur, et <code>'edges'</code> part des coins et se resserre. Sur une seule ligne ou colonne, ils suivent l'ordre de la page."
+          "body": "Les éléments sous un même nom qui arrivent ensemble se décalent selon leur place. Dans une grille, <code>stagger: 'center'</code> part de la cellule du milieu et s'étend vers l'extérieur, et <code>'edges'</code> part des coins et se resserre. Sur une seule ligne ou colonne, ils suivent l'ordre de la page. <code>'random'</code> suit un ordre mélangé, nouveau à chaque fois."
         },
         "inView": {
           "title": "Tant qu'il est visible",
@@ -807,7 +807,7 @@
         },
         "progress": {
           "title": "Lié au défilement",
-          "body": "<code>useScrollProgress()</code> donne le défilement de la page, ou le passage d'un élément à l'écran, sous forme de ref de 0 à 1. Passez-le à <code>progress</code> comme getter, <code>progress: () => scroll</code>, et les keyframes suivent le défilement sans re-rendre votre composant. <code>offset</code> fixe le début et la fin : <code>['start end', 'end start']</code> va de l'entrée à la sortie."
+          "body": "<code>useScrollProgress()</code> donne le défilement de la page, ou le passage d'un élément à l'écran, sous forme de ref de 0 à 1. Passez-le à <code>progress</code> comme getter, <code>progress: () => scroll</code>, et les keyframes suivent le défilement sans re-rendre votre composant. <code>offset</code> fixe le début et la fin : <code>['start end', 'end start']</code> va de l'entrée à la sortie. <code>useScrollLength()</code> donne jusqu'où on peut défiler, en px, donc <code>scroll.value * length.value</code> est la distance défilée."
         },
         "replay": {
           "title": "Le rejouer",
@@ -835,11 +835,11 @@
         },
         "turn": {
           "title": "Tourner en 3D",
-          "body": "<code>rotateX</code> et <code>rotateY</code> font pivoter un élément vers toi ou loin de toi, et <code>perspective</code> règle la profondeur : retourner une carte, c'est <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> et <code>skewY</code> l'inclinent, et <code>scaleX</code> et <code>scaleY</code> mettent un seul axe à l'échelle, comme une barre qui pousse depuis sa base."
+          "body": "<code>rotateX</code> et <code>rotateY</code> font pivoter un élément vers toi ou loin de toi, et <code>perspective</code> règle la profondeur : retourner une carte, c'est <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> et <code>skewY</code> l'inclinent, et <code>scaleX</code> et <code>scaleY</code> mettent un seul axe à l'échelle, comme une barre qui pousse depuis sa base. <code>scaleZ</code> met à l'échelle la profondeur seule ; visible sous <code>perspective</code>."
         },
         "draw": {
           "title": "Tracer un trait",
-          "body": "<code>pathLength</code> trace un trait SVG de 0 (rien) à 1 (tout) : <code>initial: {'{'} pathLength: 0 {'}'}</code> trace une coche. <code>pathOffset</code> déplace le début de la partie tracée. <code>animate()</code> pose <code>pathLength=\"1\"</code> sur le path : <code>pathOffset</code> et tout tiret défini en CSS sont donc des fractions de sa longueur."
+          "body": "<code>pathLength</code> trace un trait SVG de 0 (rien) à 1 (tout) : <code>initial: {'{'} pathLength: 0 {'}'}</code> trace une coche. <code>pathOffset</code> déplace le début de la partie tracée. <code>animate()</code> pose <code>pathLength=\"1\"</code> sur le path : <code>pathOffset</code> et tout tiret défini en CSS sont donc des fractions de sa longueur. <code>pathSpacing</code> fixe l'espace qui suit, pour qu'un trait court se répète le long du tracé."
         },
         "size": {
           "title": "Suivre son contenu",
@@ -847,7 +847,7 @@
         },
         "fromCode": {
           "title": "Depuis le code",
-          "body": "Pour un mouvement déclenché par un événement, comme un code erroné ou un article ajouté au panier, <code>animate(el, values, options)</code> joue les mêmes valeurs et le même timing que <code>v-animate</code> depuis votre code, et laisse la fin comme style propre de l'élément. Attendez-le avec await, ou pilotez-le avec <code>pause()</code>, <code>reverse()</code>, <code>time</code> et <code>speed</code>. <code>useAnimate(useTemplateRef('row'))</code> limite les sélecteurs à un élément et arrête ce qu'il a lancé quand le composant est démonté. Il suit le ressort de l'app, <code>motion: false</code> et le mouvement réduit."
+          "body": "Pour un mouvement déclenché par un événement, comme un code erroné ou un article ajouté au panier, <code>animate(el, values, options)</code> joue les mêmes valeurs et le même timing que <code>v-animate</code> depuis votre code, et laisse la fin comme style propre de l'élément. Attendez-le avec await, ou pilotez-le avec <code>pause()</code>, <code>reverse()</code>, <code>time</code> et <code>speed</code>. <code>useAnimate(useTemplateRef('row'))</code> limite les sélecteurs à un élément et arrête ce qu'il a lancé quand le composant est démonté. Il suit le ressort de l'app, <code>motion: false</code> et le mouvement réduit. Pour en jouer plusieurs dans l'ordre, donnez-lui une liste d'étapes (voir Chorégraphie)."
         },
         "tween": {
           "title": "Animer un nombre",
@@ -932,7 +932,19 @@
       },
       "choreography": {
         "title": "Chorégraphie",
-        "intro": "Dans un dialogue ou un popover, vos propres éléments peuvent rejoindre son animation. Vous les nommez, puis vous les calez les uns sur les autres et sur le panneau.",
+        "intro": "Dans un dialogue ou un popover, vos propres éléments peuvent rejoindre son animation. Vous les nommez, puis vous les calez les uns sur les autres et sur le panneau. Depuis votre code, <code>animate()</code> joue une liste d'étapes dans l'ordre.",
+        "which": {
+          "title": "Lequel utiliser",
+          "body": "Ce qui lance le mouvement décide, et s'il y a un composant autour de vos éléments :",
+          "items": [
+            "Des éléments qui arrivent ensemble, sur la page ou dans un <code>v-if</code> : nommez chacun avec <code>v-animate:name</code> et donnez-lui un <code>after</code>. Template seul, sans code.",
+            "Plusieurs identiques, comme des lignes ou des cartes : un nom et <code>stagger</code>.",
+            "Dans une boîte de dialogue, un drawer ou un popover : nommez-les dans ses <code>targets</code>, et <code>after</code> les cale entre eux et sur le panneau.",
+            "Un élément par plusieurs étapes : <code>steps</code>.",
+            "Un mouvement lancé par un événement, comme un clic, un formulaire enregistré ou un code erroné : <code>animate([…])</code> depuis votre code, ou <code>useAnimate()</code> pour le limiter à un composant.",
+            "Votre propre timeline GSAP ou motion : un hook <code>enter</code> qui la renvoie."
+          ]
+        },
         "after": {
           "title": "L'un après l'autre",
           "body": "Nommez vos éléments dans <code>targets</code> et marquez-les avec <code>target('name')</code> du slot, ou avec <code>v-animate:name</code>. <code>after: 'summary:60%'</code> lance les lignes quand le résumé est arrivé à 60 %. Des éléments sans composant autour peuvent aussi s'attendre quand ils apparaissent ensemble : <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>. Les lignes qu'un composant affiche à partir de données ne peuvent pas porter de marque : donne plutôt un <code>select</code> à leur nom, comme <code>targets: {'{'} rows: {'{'} select: 'tr' {'}'} {'}'}</code>."
@@ -950,9 +962,24 @@
             "<code>'tag'</code>, un élément déjà sur la page : quand ce qu'il joue en ce moment se termine"
           ]
         },
+        "page": {
+          "title": "Sur la page",
+          "body": "Vos éléments n'ont pas besoin d'un composant autour. Des éléments qui arrivent ensemble s'attendent par nom : <code>v-animate:lede=\"{'{'} initial: {'{'} opacity: 0 {'}'}, after: 'title:50%' {'}'}\"</code> lance le chapeau à mi-chemin de l'entrée du titre. Sous un nom, une liste s'échelonne, et son <code>after</code> attend ce qu'il nomme. Tous les moments ci-dessus marchent ici aussi. Remontez-les et ils rejouent leur entrée."
+        },
         "steps": {
           "title": "Des étapes en chemin",
           "body": "<code>steps</code> fait passer un élément par une série d'arrêts. Il reste à chaque arrêt jusqu'à ce que le moment <code>after</code> de cet arrêt arrive."
+        },
+        "sequence": {
+          "title": "Dans l’ordre, depuis le code",
+          "body": "<code>animate()</code> accepte aussi une liste d'étapes, chacune <code>[target, values, options]</code>, et les joue l'une après l'autre, sur le ressort de l'app. Chaque étape commence quand la précédente finit, sauf si son <code>at</code> dit autre chose. Les contrôles pilotent toute la séquence : attendez-la, <code>pause()</code>, cherchez avec <code>time</code> ou <code>reverse()</code>. Deux étapes sur un élément se suivent, et chaque fin reste comme style propre de l'élément. Dans <code>at</code>, TypeScript propose les noms que déclarent vos étapes et signale un nom qui n'existe pas.",
+          "items": [
+            "<code>'+0.2'</code> : 0,2 seconde après la fin de l'étape précédente.",
+            "<code>'-0.15'</code> : 0,15 seconde avant sa fin, pour qu'elles se chevauchent.",
+            "<code>'50%'</code> : à mi-chemin de l'étape précédente.",
+            "<code>1.2</code> : 1,2 seconde après le début.",
+            "<code>'card'</code> : avec l'étape nommée <code>name: 'card'</code>, ou <code>'card:60%'</code> : à 60 % de celle-ci."
+          ]
         },
         "own": {
           "title": "Votre propre timeline",
@@ -1134,7 +1161,8 @@
         "code": "Depuis ton code",
         "app": "Le mouvement de ton app",
         "other": "Autres"
-      }
+      },
+      "reference": "Référence"
     }
   },
   "recipes": {

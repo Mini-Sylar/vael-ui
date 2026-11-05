@@ -4,6 +4,8 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="dataState"
+    @focusin="focusEvents.onFocusin"
+    @focusout="focusEvents.onFocusout"
     v-bind="rootAttrs"
   >
     <span class="ui-radio-frame">
@@ -56,7 +58,7 @@ import {
   useTemplateRef,
 } from 'vue'
 import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
-import { useControlAttrs } from '../../composables/forwardedListeners'
+import { useControlAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -65,7 +67,9 @@ import type { RadioMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
-const { rootAttrs, inputAttrs } = useControlAttrs(useAttrs())
+const attrs = useAttrs()
+const { rootAttrs, inputAttrs } = useControlAttrs(attrs)
+const focusEvents = useFocusEvents(attrs, () => root.value)
 const rawProps = withDefaults(
   defineProps<{
     /** Value the parent RadioGroup's model takes when this radio is selected. */

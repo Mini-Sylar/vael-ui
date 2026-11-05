@@ -15,7 +15,7 @@ import { vHighlightCode } from '../composables/vHighlightCode'
 import { vScrollableTables } from '../composables/vScrollableTables'
 
 defineProps<{
-  links: { id: string; label: string }[]
+  links: { id: string; label: string; apis?: string[] }[]
   /** A gallery page: one wide column, no table of contents. */
   wide?: boolean
 }>()
@@ -26,10 +26,16 @@ defineProps<{
    pinned left on wide screens. */
 .guide-layout {
   display: grid;
-  grid-template-columns: minmax(0, 50rem) 13rem;
+  /* One width on every guide, room for the longest row (a section and its API, in any language),
+     so the prose never shifts between pages. */
+  grid-template-columns: minmax(0, 50rem) 18rem;
   justify-content: center;
   gap: 4rem;
   align-items: start;
+}
+
+.guide-layout > :deep(.on-this-page) {
+  justify-self: start;
 }
 
 .guide-layout--wide {

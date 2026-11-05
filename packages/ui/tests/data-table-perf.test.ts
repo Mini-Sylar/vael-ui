@@ -5,6 +5,7 @@ import { render } from 'vitest-browser-vue'
 import { classMergerKey } from '../src/classes'
 import DataTableFixture from './fixtures/DataTableFixture.vue'
 import DataTableVirtualizeFixture from './fixtures/DataTableVirtualizeFixture.vue'
+import { budget } from './utils/budget'
 
 // Budgets carry wide headroom so a slow CI box doesn't flake.
 
@@ -59,7 +60,7 @@ test('sorting 1000 rows with the default row motion stays fast', async () => {
     (tr) => Number(tr.children[1]!.textContent),
   )
   expect(ages).toEqual([...ages].sort((a, b) => a - b))
-  expect(elapsed).toBeLessThan(200)
+  expect(elapsed).toBeLessThan(budget(200))
 })
 
 test('a large table turns row motion off; a small one keeps it', async () => {
@@ -90,7 +91,7 @@ test('select-all on 1000 rows builds the selection once and emits once', async (
   expect(screen.getByTestId('selection-change-count').element().textContent).toBe('1000')
   expect(selectAll.checked).toBe(true)
   // ~80ms on a laptop and ~350ms on CI; the old per-row selection took over four times as long.
-  expect(elapsed).toBeLessThan(800)
+  expect(elapsed).toBeLessThan(budget(800))
 
   await timeUpdate(screen, () => selectAll.click())
   expect(screen.getByTestId('selection-emit-count').element().textContent).toBe('2')
@@ -154,7 +155,7 @@ test('dragging a column resize handle does not re-render every body cell per mov
     Math.round(nameHeader.getBoundingClientRect().width),
   )
   expect(nameHeader.getBoundingClientRect().width).toBeGreaterThan(rect.width + 100)
-  expect(slowest).toBeLessThan(150)
+  expect(slowest).toBeLessThan(budget(150))
 })
 
 test('a resize applies the last pointer position even when pointerup lands in the same frame', async () => {

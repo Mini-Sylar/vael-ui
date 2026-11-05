@@ -6,6 +6,7 @@ import type {
   TimelineMotion,
   ToasterMotion,
 } from '../../src/motion/types'
+import { animate } from '../../src/motion/animate'
 
 // Every component takes a stagger for its repeated parts and its lists, in words or seconds.
 export const progress: ProgressMotion = { initial: { fill: { scale: '0 1' } }, stagger: true }
@@ -44,3 +45,20 @@ export const numbers: ButtonMotion = {
 }
 
 export const later: AnimateDirectiveValue = { initial: { opacity: 0 }, appear: 'later' }
+
+// A sequence's `at` takes the names its steps declare, and nothing else.
+export const named = () =>
+  animate([
+    ['.card', { opacity: 1 }, { name: 'card' }],
+    ['.check', { pathLength: 1 }, { at: 'card:60%' }],
+    ['.title', { opacity: 1 }, { at: '-0.15' }],
+    // @ts-expect-error no step is named 'crad'
+    ['.note', { opacity: 1 }, { at: 'crad' }],
+  ])
+// With no names, `at` takes only times and shares.
+export const unnamed = () =>
+  animate([
+    ['.a', { opacity: 1 }],
+    // @ts-expect-error no step has a name
+    ['.b', { opacity: 1 }, { at: 'a' }],
+  ])

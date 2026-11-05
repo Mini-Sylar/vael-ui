@@ -107,3 +107,51 @@ export function useScrollProgress(
   })
   return progress
 }
+
+/**
+ * How far it can scroll, in px: the page, or a scrolling `container`, along `axis`. It follows the
+ * content growing or shrinking, as rows loading in.
+ */
+export function useScrollLength(
+  container?: Target,
+  options: { axis?: 'x' | 'y' } = {},
+): Readonly<Ref<number>> {
+  const length = shallowRef(0)
+  if (typeof window === 'undefined') return length
+  const vertical = options.axis !== 'x'
+  let frame = 0
+  function measure() {
+    frame = 0
+    const box = toValue(container) ?? null
+    const scroller = box ?? document.scrollingElement ?? document.documentElement
+    length.value = Math.max(
+      0,
+      vertical
+        ? scroller.scrollHeight - (box ? box.clientHeight : window.innerHeight)
+        : scroller.scrollWidth - (box ? box.clientWidth : window.innerWidth),
+    )
+  }
+  const schedule = () => (frame ||= requestAnimationFrame(measure))
+  let stop: (() => void) | undefined
+  watch(
+    () => toValue(container),
+    (box) => {
+      stop?.()
+      window.addEventListener('resize', schedule, { passive: true })
+      const sizes = new ResizeObserver(schedule)
+      const root = box ?? document.body
+      for (const node of [root, ...root.children]) sizes.observe(node)
+      stop = () => {
+        window.removeEventListener('resize', schedule)
+        sizes.disconnect()
+      }
+      measure()
+    },
+    { immediate: true, flush: 'post' },
+  )
+  onScopeDispose(() => {
+    stop?.()
+    if (frame) cancelAnimationFrame(frame)
+  })
+  return length
+}

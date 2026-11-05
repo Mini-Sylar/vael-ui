@@ -705,6 +705,107 @@ const { mode, resolvedMode, setMode } = useColorScheme({
     ],
   },
 
+  useAnimate: {
+    description:
+      "Plays motion from your code, for something an event starts: a wrong code shaking, an item flying to the cart, a success card building in. `animate(target, values, options)` takes the same values and timing as `v-animate`, follows the app's spring, `motion: false` and reduced motion, and leaves the end as the element's own style. Give it a list of steps instead and it plays them one after another as one sequence. `useAnimate()` is the same `animate` scoped to a component: selectors match inside its element, and whatever it started stops when the component unmounts. For motion that plays when elements come in, use `v-animate` with `after` and `stagger` in the template instead.",
+    installNames: ['useAnimate', 'animate'],
+    exampleCode: `import { useTemplateRef } from 'vue'
+import { useAnimate } from 'vael-ui/motion'
+
+const { animate } = useAnimate(useTemplateRef('card'))
+
+// One element: shake it.
+function wrong() {
+  animate('.field', { x: [0, -8, 8, -4, 0] }, { duration: 300 })
+}
+
+// A sequence: each step after the one before, unless its \`at\` says otherwise.
+async function sent() {
+  await animate([
+    ['.card', { opacity: [0, 1], scale: [0.92, 1] }, { name: 'card' }],
+    ['.check path', { pathLength: [0, 1] }, { at: 'card:60%' }],
+    ['.title', { opacity: [0, 1], y: [6, 0] }, { at: '-0.15' }],
+  ])
+}`,
+    params: [
+      {
+        name: 'element',
+        type: 'Readonly<ShallowRef<Element | ComponentPublicInstance | null>>',
+        description:
+          '`useAnimate` only: the element selectors match inside. Leave it out and bind the returned `scope` with `ref="scope"`.',
+      },
+      {
+        name: 'target',
+        type: 'Element | ComponentPublicInstance | string | ArrayLike<Element>',
+        description:
+          'What moves: an element, a component, a list of elements, or a selector (inside the scope, with `useAnimate`).',
+      },
+      {
+        name: 'values',
+        type: 'MotionValues',
+        description:
+          'Where it moves to: `x`, `y`, `scale`, `rotate`, `opacity`, `pathLength`, any CSS property. An array is keyframes, from the first to the last. From wherever it is when there is no first.',
+      },
+      {
+        name: 'options.spring / duration / easing',
+        type: 'SpringName | Spring / number / string',
+        description:
+          "Its timing: a spring by name or numbers, or a `duration` in ms and an `easing`. Unset, the app's spring.",
+      },
+      {
+        name: 'options.delay',
+        type: 'number',
+        description: 'Seconds before it starts.',
+      },
+      {
+        name: 'options.stagger',
+        type: "boolean | number | 'end' | 'center' | 'edges' | 'random'",
+        description:
+          'With several elements, one after another: `true`, seconds between each, or an order.',
+      },
+      {
+        name: 'options.times / repeat / repeatType / repeatDelay',
+        type: "number[] / number / 'loop' | 'reverse' | 'mirror' / number",
+        description:
+          'Keyframes: where each falls (0 to 1), how many more times they play (`Infinity` loops), how they repeat and the seconds held between runs.',
+      },
+      {
+        name: 'steps',
+        type: 'SequenceStep[]',
+        description:
+          'Instead of a target: a sequence, each step `[target, values, options]`. A step takes the options above plus `at` and `name`.',
+      },
+      {
+        name: 'step options.at',
+        type: 'SequenceAt',
+        description:
+          "Where the step starts. Unset: when the step before ends. `'+0.2'` / `'-0.15'`: seconds after or before that. `'50%'`: halfway through the step before. `1.2`: seconds from the start. `'card'`: with the step named `card`; `'card:60%'`: 60% of the way through it. TypeScript suggests the names your steps declare.",
+      },
+      {
+        name: 'step options.name',
+        type: 'string',
+        description: "A name for the step, for a later step's `at`.",
+      },
+    ],
+    returns: [
+      {
+        name: 'controls',
+        type: 'AnimationControls',
+        description:
+          'Await it for the end (never for an endless loop), or steer it: `pause()`, `play()`, `reverse()`, `finish()`, `stop()`, and `time` (ms) and `speed` to read or set. A sequence is steered as one.',
+      },
+      {
+        name: 'scope',
+        type: 'ShallowRef<Element | null>',
+        description: '`useAnimate` only: the scope element, the one you passed or one to bind.',
+      },
+      {
+        name: 'animate',
+        type: 'typeof animate',
+        description: '`useAnimate` only: `animate`, scoped to the element and stopped on unmount.',
+      },
+    ],
+  },
   useScrollProgress: {
     description:
       "Scroll progress as a ref from 0 to 1: the page's, from top to bottom, or an element's way through the screen (or a scrolling container). Pass it to `v-animate`'s `progress` as a getter, `progress: () => scroll.value`, and keyframes follow the scroll without re-rendering the component. It measures on the next frame after a scroll or resize, and stops when its scope ends.",
@@ -739,6 +840,31 @@ const { mode, resolvedMode, setMode } = useColorScheme({
         name: 'progress',
         type: 'Readonly<Ref<number>>',
         description: 'From 0 to 1, clamped. `0` on the server.',
+      },
+    ],
+  },
+  useScrollLength: {
+    description:
+      'How far the page, or a scrolling container, can scroll, in px, as a ref. It follows the content growing or shrinking, as rows loading in, and the window resizing. Pair it with `useScrollProgress` to turn progress into a distance: `progress.value * length.value`.',
+    installNames: ['useScrollLength'],
+    params: [
+      {
+        name: 'container',
+        type: 'MaybeRefOrGetter<Element | null | undefined>',
+        description: 'A scrolling element. Leave it out for the page.',
+      },
+      {
+        name: 'options.axis',
+        type: "'x' | 'y'",
+        description: "Which way it scrolls. Default `'y'`.",
+      },
+    ],
+    returns: [
+      {
+        name: 'length',
+        type: 'Readonly<Ref<number>>',
+        description:
+          'The scrollable distance in px: the content past what shows. `0` on the server.',
       },
     ],
   },

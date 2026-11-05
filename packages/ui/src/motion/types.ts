@@ -98,6 +98,8 @@ interface Shorthands {
   /** Scales one axis only: a bar growing from its base (`scaleY`), a line drawing across (`scaleX`). */
   scaleX?: number | (string & {})
   scaleY?: number | (string & {})
+  /** Scales depth only; it shows under `perspective`. */
+  scaleZ?: number | (string & {})
   /** Slants it, in degrees. */
   skewX?: number | (string & {})
   skewY?: number | (string & {})
@@ -263,11 +265,11 @@ export type MotionStep<N extends string = string> = MotionTiming & {
 }
 
 /** Where a stagger's wave starts, other than the first element. */
-export type StaggerFrom = 'end' | 'center' | 'edges'
+export type StaggerFrom = 'end' | 'center' | 'edges' | 'random'
 
 /**
  * Elements one after another: `true` spaces them by the stagger token (40 ms) in page order;
- * `'end'`, `'center'` or `'edges'` start the wave there instead (across a grid, `'center'` and
+ * `'end'`, `'center'` or `'edges'` start the wave there instead, and `'random'` shuffles the order (across a grid, `'center'` and
  * `'edges'` go by where each sits: from the middle cell, or from the corners). A number is the
  * seconds between them; a function gives each its own start: `(index, count) => seconds`.
  */

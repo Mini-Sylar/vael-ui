@@ -16,7 +16,15 @@
         <dl class="mo-list">
           <div v-for="option in group.options" :key="option.name" class="mo-row">
             <dt>
-              <code>{{ option.name }}</code>
+              <!-- A name with a reference page links there: its every option, type and default. -->
+              <RouterLink
+                v-if="API_REFERENCE[option.name]"
+                :to="API_REFERENCE[option.name]"
+                class="mo-name"
+                :title="t('motionDocs.options.reference')"
+                ><code>{{ option.name }}</code></RouterLink
+              >
+              <code v-else>{{ option.name }}</code>
             </dt>
             <dd>
               <RouterLink
@@ -42,7 +50,12 @@ import { useI18n } from 'vue-i18n'
 import { useHead } from '@unhead/vue'
 import { Input } from 'vael-ui'
 import GuideLayout from '../../components/GuideLayout.vue'
-import { MOTION_CHAPTERS, OPTION_GROUPS, SECTION_OPTIONS } from '../../motionChapters'
+import {
+  API_REFERENCE,
+  MOTION_CHAPTERS,
+  OPTION_GROUPS,
+  SECTION_OPTIONS,
+} from '../../motionChapters'
 
 const { t } = useI18n()
 useHead({ title: () => t('motionDocs.options.title') })
@@ -147,6 +160,18 @@ const tocLinks = computed(() =>
   color: var(--ui-text);
   text-decoration: none;
   border-radius: 4px;
+}
+.mo-name {
+  text-decoration: none;
+  border-radius: 4px;
+}
+.mo-name:hover code {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.mo-name:focus-visible {
+  outline: 2px solid var(--ui-ring, var(--ui-primary));
+  outline-offset: 2px;
 }
 .mo-link:hover .mo-title {
   text-decoration: underline;

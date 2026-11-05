@@ -6,29 +6,32 @@ on:
   pull_request:
     branches: [main]
 
+# A newer push to the same branch or PR stops the run it replaces.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# The jobs run side by side: the unit tests in three shards, the build with what runs on it (the
+# Vapor and interop tests, the changeset check), and the typecheck.
 jobs:
   test:
+    name: test (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     # Playwright's image has Chromium and every library it needs, so nothing is downloaded or
     # apt-installed per run. Keep its tag at the lockfile's Playwright version (checked below).
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
     strategy:
+      fail-fast: false
       matrix:
-        node-version: ['24']
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      # In the container the checkout belongs to another user, and git won't read a repository it
-      # doesn't own (changesets needs it to find where the branch left main).
-      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '24'
           cache: 'pnpm'
-
       - run: pnpm install
 
       # The image's Playwright must be the lockfile's, or its browser won't be found.
@@ -40,11 +43,44 @@ jobs:
             exit 1
           fi
 
-      - run: pnpm test
+      - run: pnpm --filter vael-ui test --shard=${{ matrix.shard }}/3
+
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # In the container the checkout belongs to another user, and git won't read a repository it
+      # doesn't own (changesets needs it to find where the branch left main).
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+      - run: pnpm install
+
       - run: pnpm build
-      - run: pnpm typecheck:only
       - run: pnpm test:vapor:only
       - run: pnpm test:vapor-interop:only
       - name: Check for missing changeset
         if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/')
         run: pnpm exec changeset status --since=origin/${{ github.base_ref }}
+
+  # No browser: no container. It reads the build, so it builds first.
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+      - run: pnpm install
+
+      - run: pnpm build
+      - run: pnpm typecheck:only

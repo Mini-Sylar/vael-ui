@@ -5,6 +5,7 @@ import { nextTick } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import TreeFixture from './fixtures/TreeFixture.vue'
 import type { TreeNode } from '../src/components/Tree/Tree.vue'
+import { budget } from './utils/budget'
 
 // 12 x 30 = 372 rows expanded: the most a tree keeps as nested rows (past 500 it's a flat list
 // that renders only what's in view; see tree-virtual.test.ts). Counts are the main assertion;
@@ -101,7 +102,7 @@ test('selecting one row re-renders only the rows whose selection changed', async
 
   expect(first.updates).toBeLessThanOrEqual(1)
   expect(second.updates).toBeLessThanOrEqual(2)
-  expect(second.ms).toBeLessThan(100)
+  expect(second.ms).toBeLessThan(budget(100))
 })
 
 test('checkbox mode: checking one leaf re-renders only that leaf and its folder', async () => {

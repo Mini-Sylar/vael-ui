@@ -260,21 +260,20 @@ const dataState = computed(() => (isInvalid.value ? 'invalid' : 'idle'))
 const attrs = useAttrs()
 const forward = useForwardedListener(attrs)
 const restAttrs = computed(() =>
-  omitAttrs(attrs, [
-    'class',
-    'style',
-    'aria-describedby',
-    'onInput',
-    'onChange',
-    'onFocus',
-    'onBlur',
-  ]),
+  fieldControl.own(
+    omitAttrs(attrs, [
+      'class',
+      'style',
+      'aria-describedby',
+      'onInput',
+      'onChange',
+      'onFocus',
+      'onBlur',
+    ]),
+  ),
 )
 // Yours first, then the Field's description and error.
-const describedBy = computed(
-  () =>
-    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
-)
+const describedBy = computed(() => fieldControl.describedBy())
 
 const root = useTemplateRef<HTMLElement>('root')
 useFormReset(modelValue, () => root.value)

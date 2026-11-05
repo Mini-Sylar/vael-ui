@@ -3,6 +3,7 @@
     v-if="links.length > 0"
     ref="nav"
     class="on-this-page"
+    :class="{ 'on-this-page--apis': links.some((link) => link.apis) }"
     :aria-label="t('component.onThisPage')"
   >
     <!-- One rail for the page, branching out to a section's own links and back; the indicator is
@@ -20,13 +21,17 @@
       <a
         :href="`#${link.id}`"
         class="toc-link"
-        :class="{ 'toc-link-active': link.id === activeId }"
+        :class="{ 'toc-link-active': link.id === activeId, 'toc-link-api': link.apis?.length }"
         :data-toc="link.id"
         :data-text="link.label"
         :aria-current="link.id === activeId ? 'location' : undefined"
         @click="onLinkClick(link.id)"
       >
-        {{ link.label }}
+        <span class="toc-label">{{ link.label }}</span>
+        <!-- The section's main API, set like a menu's shortcut; the heading lists them all. -->
+        <code v-if="link.apis?.length" class="toc-api" :title="link.apis.join(', ')">{{
+          link.apis[0]
+        }}</code>
         <span v-if="link.isNew" class="toc-new" :aria-label="t('component.new')" />
         <!-- The lit stretch and its dither as the prerendered page draws them, on the link. -->
         <template v-if="link.id === staticId">
@@ -79,6 +84,8 @@ interface TocLink {
   isNew?: boolean
   /** Shown under it while it or one of them is the current section. */
   children?: { id: string; label: string }[]
+  /** The API names the section uses, in small code under its label. */
+  apis?: string[]
 }
 const props = defineProps<{ links: TocLink[] }>()
 const route = useRoute()
@@ -388,6 +395,22 @@ onMounted(() => {
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('scrollend', releaseHold)
 })
+// Taller than the screen, the list scrolls on its own: keep the current section in it.
+watch(
+  activeId,
+  (id) => {
+    const box = nav.value
+    const link = id ? box?.querySelector<HTMLElement>(`[data-toc="${CSS.escape(id)}"]`) : null
+    if (!box || !link || box.scrollHeight <= box.clientHeight) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    box.scrollTo({
+      top: link.offsetTop - box.clientHeight / 3,
+      behavior: reduced ? 'auto' : 'smooth',
+    })
+  },
+  { flush: 'post' },
+)
+
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
   window.removeEventListener('scrollend', releaseHold)
@@ -399,6 +422,10 @@ onUnmounted(() => {
 .on-this-page {
   position: sticky;
   top: calc(var(--docs-header-height) + 1.5rem);
+  max-block-size: calc(100dvh - var(--docs-header-height) - 3rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -500,6 +527,44 @@ onUnmounted(() => {
 .toc-link-active {
   color: var(--ui-primary);
   font-weight: 600;
+}
+
+/* As wide as its longest row: every label and its tag on one line. */
+.on-this-page--apis {
+  width: max-content;
+}
+
+/* With an API: the tag follows the label, as the heading's chips follow its text. */
+.toc-link-api {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  white-space: nowrap;
+}
+.toc-link-api::after {
+  display: none;
+}
+/* Current by colour alone, beside the lit rail: bold would move its tag. */
+.toc-link-api.toc-link-active {
+  font-weight: inherit;
+}
+
+.toc-api {
+  padding: 0 0.3125rem;
+  border-radius: 999px;
+  background: var(--ui-muted);
+  color: var(--ui-text-muted);
+  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  line-height: 1.45;
+  transition-property: color, background-color;
+  transition-duration: var(--ui-duration-press);
+  transition-timing-function: var(--ui-ease-out);
+}
+.toc-link-active .toc-api {
+  background: color-mix(in oklab, var(--ui-primary) 12%, transparent);
+  color: var(--ui-primary);
 }
 
 .toc-new {

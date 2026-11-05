@@ -799,7 +799,7 @@
         },
         "grid": {
           "title": "グリッド全体に",
-          "body": "同じ名前で一緒に入ってくる要素は、それぞれの位置に応じて時間差で現れます。グリッドでは、<code>stagger: 'center'</code> は中央のセルから外側へ広がり、<code>'edges'</code> は四隅から内側へ進みます。1 行や 1 列だけのときは、ページ上の順番どおりです。"
+          "body": "同じ名前で一緒に入ってくる要素は、それぞれの位置に応じて時間差で現れます。グリッドでは、<code>stagger: 'center'</code> は中央のセルから外側へ広がり、<code>'edges'</code> は四隅から内側へ進みます。1 行や 1 列だけのときは、ページ上の順番どおりです。<code>'random'</code> は毎回シャッフルされた順番で進みます。"
         },
         "inView": {
           "title": "画面に入っている間",
@@ -807,7 +807,7 @@
         },
         "progress": {
           "title": "スクロールに連動",
-          "body": "<code>useScrollProgress()</code> はページのスクロール、または要素が画面を通る進み具合を 0〜1 の ref で返します。<code>progress</code> にゲッターとして渡すと（<code>progress: () => scroll</code>）、キーフレームはコンポーネントを再レンダリングせずにスクロールに追従します。<code>offset</code> で始まりと終わりを決めます：<code>['start end', 'end start']</code> は入ってから出るまでです。"
+          "body": "<code>useScrollProgress()</code> はページのスクロール、または要素が画面を通る進み具合を 0〜1 の ref で返します。<code>progress</code> にゲッターとして渡すと（<code>progress: () => scroll</code>）、キーフレームはコンポーネントを再レンダリングせずにスクロールに追従します。<code>offset</code> で始まりと終わりを決めます：<code>['start end', 'end start']</code> は入ってから出るまでです。<code>useScrollLength()</code> はスクロールできる距離を px で返すので、<code>scroll.value * length.value</code> がスクロールした距離になります。"
         },
         "replay": {
           "title": "もう一度再生する",
@@ -835,11 +835,11 @@
         },
         "turn": {
           "title": "3D で回す",
-          "body": "<code>rotateX</code> と <code>rotateY</code> は要素を手前や奥へ回転させ、<code>perspective</code> で奥行きの見え方を決めます。カードをめくるなら <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code> です。<code>skewX</code> と <code>skewY</code> は傾け、<code>scaleX</code> と <code>scaleY</code> は片方の軸だけを拡大縮小します。根元から伸びるバーなどに使えます。"
+          "body": "<code>rotateX</code> と <code>rotateY</code> は要素を手前や奥へ回転させ、<code>perspective</code> で奥行きの見え方を決めます。カードをめくるなら <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code> です。<code>skewX</code> と <code>skewY</code> は傾け、<code>scaleX</code> と <code>scaleY</code> は片方の軸だけを拡大縮小します。根元から伸びるバーなどに使えます。<code>scaleZ</code> は奥行きだけを拡大縮小し、<code>perspective</code> の下で見えます。"
         },
         "draw": {
           "title": "線を描く",
-          "body": "<code>pathLength</code> は SVG の線を 0（なし）から 1（全部）まで描きます：<code>initial: {'{'} pathLength: 0 {'}'}</code> でチェックマークが描かれます。<code>pathOffset</code> は描かれる部分の始まりを動かします。 <code>animate()</code> はパスに <code>pathLength=\"1\"</code> を設定するため、<code>pathOffset</code> や CSS で指定した破線は長さに対する割合になります。"
+          "body": "<code>pathLength</code> は SVG の線を 0（なし）から 1（全部）まで描きます：<code>initial: {'{'} pathLength: 0 {'}'}</code> でチェックマークが描かれます。<code>pathOffset</code> は描かれる部分の始まりを動かします。 <code>animate()</code> はパスに <code>pathLength=\"1\"</code> を設定するため、<code>pathOffset</code> や CSS で指定した破線は長さに対する割合になります。<code>pathSpacing</code> は描かれた部分の後ろの間隔を決めるので、短い線がパスに沿って繰り返されます。"
         },
         "size": {
           "title": "中身に合わせる",
@@ -847,7 +847,7 @@
         },
         "fromCode": {
           "title": "コードから",
-          "body": "誤ったコードやカートへの追加のように、イベントがきっかけで動かすときは、<code>animate(el, values, options)</code> が <code>v-animate</code> と同じ値とタイミングをコードから再生し、終わりを要素自身のスタイルとして残します。await で待つことも、<code>pause()</code>、<code>reverse()</code>、<code>time</code>、<code>speed</code> で操作することもできます。<code>useAnimate(useTemplateRef('row'))</code> はセレクターを一つの要素の中に限定し、コンポーネントのアンマウント時に始めたものを止めます。アプリのスプリング、<code>motion: false</code>、視差効果を減らす設定に従います。"
+          "body": "誤ったコードやカートへの追加のように、イベントがきっかけで動かすときは、<code>animate(el, values, options)</code> が <code>v-animate</code> と同じ値とタイミングをコードから再生し、終わりを要素自身のスタイルとして残します。await で待つことも、<code>pause()</code>、<code>reverse()</code>、<code>time</code>、<code>speed</code> で操作することもできます。<code>useAnimate(useTemplateRef('row'))</code> はセレクターを一つの要素の中に限定し、コンポーネントのアンマウント時に始めたものを止めます。アプリのスプリング、<code>motion: false</code>、視差効果を減らす設定に従います。複数を順番に再生するには、ステップのリストを渡します（コレオグラフィーを参照）。"
         },
         "tween": {
           "title": "数値をトゥイーンする",
@@ -932,7 +932,19 @@
       },
       "choreography": {
         "title": "コレオグラフィー",
-        "intro": "ダイアログやポップオーバーの中では、自分の要素もそのモーションに加われます。要素に名前を付け、要素同士やパネルに合わせてタイミングを決めます。",
+        "intro": "ダイアログやポップオーバーの中では、自分の要素もそのモーションに加われます。要素に名前を付け、要素同士やパネルに合わせてタイミングを決めます。コードからは、<code>animate()</code> がステップのリストを順番に再生します。",
+        "which": {
+          "title": "どれを使うか",
+          "body": "何が動きを始めるか、そして要素の周りにコンポーネントがあるかで決まります。",
+          "items": [
+            "一緒に現れる要素（ページ上や <code>v-if</code> の中）：それぞれに <code>v-animate:name</code> で名前を付け、<code>after</code> を指定します。テンプレートだけで、コードは不要です。",
+            "行やカードなど同じものが複数：一つの名前と <code>stagger</code>。",
+            "ダイアログ、ドロワー、ポップオーバーの中：その <code>targets</code> で名前を付けると、<code>after</code> が要素同士とパネルに合わせてタイミングを取ります。",
+            "一つの要素を複数の段階で動かす：<code>steps</code>。",
+            "クリック、フォームの保存、間違ったコードなど、イベントが始める動き：コードから <code>animate([…])</code>、コンポーネントに限定するなら <code>useAnimate()</code>。",
+            "自分の GSAP や motion のタイムライン：それを返す <code>enter</code> フック。"
+          ]
+        },
         "after": {
           "title": "順番に",
           "body": "<code>targets</code> で要素に名前を付け、スロットの <code>target('name')</code> か <code>v-animate:name</code> で印を付けます。<code>after: 'summary:60%'</code> は、サマリーが 60% 入ったところで行を動かし始めます。 コンポーネントの外にある要素どうしも、一緒に表示されるなら互いを待てます: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>。 コンポーネントがデータから描画する行には印を付けられません。代わりに名前に <code>select</code> を指定します：<code>targets: {'{'} rows: {'{'} select: 'tr' {'}'} {'}'}</code>。"
@@ -950,9 +962,24 @@
             "<code>'tag'</code>：すでにページにある要素なら、いま再生中のものが終わったとき"
           ]
         },
+        "page": {
+          "title": "ページ上で",
+          "body": "要素の周りにコンポーネントは要りません。一緒に現れる要素は名前でお互いを待ちます：<code>v-animate:lede=\"{'{'} initial: {'{'} opacity: 0 {'}'}, after: 'title:50%' {'}'}\"</code> は、タイトルの登場の半分でリードを始めます。一つの名前の下ではリストが順に現れ、その <code>after</code> は指定した名前を待ちます。上のすべてのモーメントがここでも使えます。マウントし直すと、もう一度登場します。"
+        },
         "steps": {
           "title": "途中の停止点",
           "body": "<code>steps</code> は要素を複数の停止点へ順に動かします。各停止点では、その <code>after</code> のタイミングが来るまで止まります。"
+        },
+        "sequence": {
+          "title": "コードから順番に",
+          "body": "<code>animate()</code> はステップのリストも受け取ります。各ステップは <code>[target, values, options]</code> で、アプリのスプリングで一つずつ順に再生されます。各ステップは、<code>at</code> で別の指定がない限り、前のステップが終わったときに始まります。コントロールはシーケンス全体を操作します：await する、<code>pause()</code>、<code>time</code> でシーク、<code>reverse()</code>。同じ要素の二つのステップは前の終わりから続き、各終わりは要素自身のスタイルとして残ります。<code>at</code> では、TypeScript がステップで宣言した名前を候補に出し、存在しない名前はエラーにします。",
+          "items": [
+            "<code>'+0.2'</code>：前のステップが終わって 0.2 秒後。",
+            "<code>'-0.15'</code>：終わる 0.15 秒前。二つが重なります。",
+            "<code>'50%'</code>：前のステップの半分の時点。",
+            "<code>1.2</code>：開始から 1.2 秒。",
+            "<code>'card'</code>：<code>name: 'card'</code> のステップと同時、<code>'card:60%'</code> はその 60% の時点。"
+          ]
         },
         "own": {
           "title": "自分のタイムライン",
@@ -1134,7 +1161,8 @@
         "code": "コードから",
         "app": "アプリ全体のモーション",
         "other": "その他"
-      }
+      },
+      "reference": "リファレンス"
     }
   },
   "recipes": {

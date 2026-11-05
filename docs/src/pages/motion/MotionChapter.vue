@@ -9,9 +9,12 @@
         {{ t(`motionDocs.chapters.${chapter.id}.${section.id}.title`) }}
         <!-- The options it teaches, so a page can be scanned for a name such as morph. -->
         <span v-if="SECTION_OPTIONS[`${chapter.id}.${section.id}`]" class="mc-options">
-          <code v-for="name in SECTION_OPTIONS[`${chapter.id}.${section.id}`]" :key="name">{{
-            name
-          }}</code>
+          <template v-for="name in SECTION_OPTIONS[`${chapter.id}.${section.id}`]" :key="name">
+            <RouterLink v-if="API_REFERENCE[name]" :to="API_REFERENCE[name]" class="mc-option">
+              <code>{{ name }}</code>
+            </RouterLink>
+            <code v-else class="mc-option">{{ name }}</code>
+          </template>
         </span>
       </h2>
       <p v-html="t(`motionDocs.chapters.${chapter.id}.${section.id}.body`)" />
@@ -36,7 +39,7 @@ import { useI18n } from 'vue-i18n'
 import GuideLayout from '../../components/GuideLayout.vue'
 import MotionDemo from '../../components/MotionDemo.vue'
 import CodeBlock from '../../components/CodeBlock.vue'
-import { MOTION_CHAPTERS, SECTION_OPTIONS } from '../../motionChapters'
+import { API_REFERENCE, MOTION_CHAPTERS, SECTION_OPTIONS } from '../../motionChapters'
 
 const { t, tm, rt } = useI18n()
 const route = useRoute()
@@ -55,6 +58,7 @@ const tocLinks = computed(() =>
   (chapter.value?.sections ?? []).map((section) => ({
     id: section.id,
     label: t(`motionDocs.chapters.${chapter.value!.id}.${section.id}.title`),
+    apis: SECTION_OPTIONS[`${chapter.value!.id}.${section.id}`],
   })),
 )
 </script>
@@ -67,6 +71,14 @@ const tocLinks = computed(() =>
   gap: 0.25rem;
   margin-inline-start: 0.5rem;
   vertical-align: middle;
+}
+.mc-options a {
+  display: inline-flex;
+  text-decoration: none;
+}
+.mc-options a:hover code {
+  color: var(--ui-text);
+  background: var(--ui-border);
 }
 .mc-options code {
   padding: 0.0625rem 0.375rem;
