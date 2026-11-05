@@ -1,5 +1,13 @@
 # vael-ui
 
+## 0.5.3
+
+### Patch Changes
+
+- [#104](https://github.com/Mini-Sylar/vael-ui/pull/104) [`c8fa103`](https://github.com/Mini-Sylar/vael-ui/commit/c8fa103066af5ee4e3ff096de75c4cc5a397cec6) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - ## Fixes
+
+  - **Motion:** a `v-animate` entrance plays when its element is placed in the page after it was created, as a route coming in through `<Transition mode="out-in">` is in Vapor. Before, it was measured while still detached, counted as off-screen and shown without its entrance, and with `after` it could stay hidden. It now stays unseen until it is placed, then plays with the rest of its page.
+
 ## 0.5.2
 
 ### Patch Changes
