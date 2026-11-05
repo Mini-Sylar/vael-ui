@@ -910,3 +910,20 @@ test('a collapsed back card leaving recedes into the stack, where the front card
   expect(await moveOf('a')).toBeLessThan(-2)
   expect(await moveOf('c')).toBeGreaterThan(2)
 })
+
+test('the close icon sits inside its button, centred, with no button or svg reset on the page', async () => {
+  const screen = await render(ToasterFixture)
+  toast('Saved')
+  await vi.waitFor(() =>
+    expect(screen.container.ownerDocument.querySelector('.ui-toast-close')).toBeTruthy(),
+  )
+  const close = document.querySelector<HTMLElement>('.ui-toast-close')!
+  const box = close.getBoundingClientRect()
+  const icon = close.querySelector('svg')!.getBoundingClientRect()
+  // The browser's own button padding (1px 6px) used to leave 9px for a 16px icon, pushing it out.
+  expect(getComputedStyle(close).paddingLeft).toBe('0px')
+  expect(icon.left).toBeGreaterThanOrEqual(box.left)
+  expect(icon.right).toBeLessThanOrEqual(box.right)
+  expect(Math.abs(icon.left + icon.width / 2 - (box.left + box.width / 2))).toBeLessThan(0.5)
+  expect(Math.abs(icon.top + icon.height / 2 - (box.top + box.height / 2))).toBeLessThan(0.5)
+})
