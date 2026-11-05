@@ -5,6 +5,8 @@
     :style="rootPart.style"
     :data-state="dataState"
     :data-focus-visible="focusVisible || undefined"
+    @focusin="focusEvents.onFocusin"
+    @focusout="focusEvents.onFocusout"
     v-bind="rootAttrs"
   >
     <div ref="cellsEl" class="ui-otp-cells" aria-hidden="true">
@@ -96,7 +98,7 @@ import {
 import { useSlotPresence } from '../../composables/dom'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useFieldControl } from '../../composables/useFieldControl'
-import { omitAttrs } from '../../composables/forwardedListeners'
+import { omitAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -196,14 +198,13 @@ const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 
+const focusEvents = useFocusEvents(attrs, () => root.value)
+
 // The label and description name the input, so the wrapper doesn't get them.
 const rootAttrs = computed(() =>
-  omitAttrs(attrs, ['aria-label', 'aria-labelledby', 'aria-describedby']),
+  omitAttrs(attrs, ['aria-label', 'aria-labelledby', 'aria-describedby', 'onFocus', 'onBlur']),
 )
-const describedBy = computed(
-  () =>
-    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
-)
+const describedBy = computed(() => fieldControl.describedBy())
 
 const slots = useSlots()
 const hasSlot = useSlotPresence(slots)

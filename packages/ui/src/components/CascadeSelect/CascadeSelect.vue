@@ -860,9 +860,14 @@ const attrs = useAttrs()
 const forward = useForwardedListener(attrs)
 // Your `aria-label` names it through a hidden copy (below): on the button it would replace the value.
 const restAttrs = computed(() =>
-  omitAttrs(attrs, ['class', 'style', 'onClick', 'onKeydown', 'onFocus', 'onBlur', 'aria-label']),
+  fieldControl.own(
+    omitAttrs(attrs, ['class', 'style', 'onClick', 'onKeydown', 'onFocus', 'onBlur', 'aria-label']),
+  ),
 )
-const controlId = computed(() => (attrs.id as string | undefined) ?? fieldControl.id)
+// Inside a Field its label points at the Field's id, so that one wins.
+const controlId = computed(() =>
+  fieldControl.inField ? fieldControl.id : ((attrs.id as string | undefined) ?? fieldControl.id),
+)
 // A button is named by its label, so the label leads and its own text (the value) follows. Your
 // `aria-label` takes the label's place, through a hidden copy, so the value still follows it.
 const ownLabel = computed(() => attrs['aria-label'] as string | undefined)

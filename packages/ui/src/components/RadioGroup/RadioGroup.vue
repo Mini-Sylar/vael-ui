@@ -10,7 +10,9 @@
     :aria-describedby="fieldControl.describedBy()"
     :aria-invalid="isInvalid || undefined"
     :aria-required="fieldControl.required() || undefined"
-    v-bind="attrs"
+    @focusin="focusEvents.onFocusin"
+    @focusout="focusEvents.onFocusout"
+    v-bind="rootAttrs"
   >
     <slot />
   </div>
@@ -38,6 +40,7 @@ import './RadioGroup.css'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
 import { computed, provide, useAttrs, useId, useTemplateRef } from 'vue'
+import { omitAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -49,6 +52,8 @@ import type { RadioGroupMotion } from '../../motion/types'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+const rootAttrs = computed(() => fieldControl.own(omitAttrs(attrs, ['onFocus', 'onBlur'])))
+const focusEvents = useFocusEvents(attrs, () => root.value)
 
 /** Value of the selected Radio, or `null` when none is selected. @default null */
 const modelValue = defineModel<string | number | null>({ default: null })

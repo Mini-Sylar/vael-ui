@@ -11,7 +11,9 @@
     :aria-describedby="fieldControl.describedBy()"
     :aria-invalid="isInvalid || undefined"
     :aria-required="fieldControl.required() || undefined"
-    v-bind="attrs"
+    @focusin="focusEvents.onFocusin"
+    @focusout="focusEvents.onFocusout"
+    v-bind="rootAttrs"
   >
     <span
       ref="hoverEl"
@@ -67,6 +69,7 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
+import { omitAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'
@@ -80,6 +83,8 @@ import type { SelectButtonMotion } from '../../motion/types'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+const rootAttrs = computed(() => fieldControl.own(omitAttrs(attrs, ['onFocus', 'onBlur'])))
+const focusEvents = useFocusEvents(attrs, () => root.value)
 
 /** Selected value, an array of values with `multiple`, or `null` when nothing is selected. @default null */
 const modelValue = defineModel<string | number | (string | number)[] | null>({ default: null })

@@ -141,10 +141,7 @@ const rootAttrs = computed(() =>
 const labelledBy = computed(
   () => (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy(),
 )
-const describedBy = computed(
-  () =>
-    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
-)
+const describedBy = computed(() => fieldControl.describedBy())
 
 const root = useTemplateRef<HTMLElement>('root')
 useFormReset(modelValue, () => root.value)

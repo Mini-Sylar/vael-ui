@@ -205,10 +205,7 @@ const rootAttrs = computed(() =>
 const labelledBy = computed(
   () => (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy(),
 )
-const describedBy = computed(
-  () =>
-    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
-)
+const describedBy = computed(() => fieldControl.describedBy())
 const isBounded = computed(() => props.min !== undefined && props.max !== undefined)
 
 const displayValue = computed(() => {

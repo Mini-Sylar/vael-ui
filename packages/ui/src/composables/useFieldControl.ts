@@ -1,4 +1,4 @@
-import { inject, onBeforeUnmount, onMounted, toValue, useId, watchEffect } from 'vue'
+import { inject, onBeforeUnmount, onMounted, toValue, useAttrs, useId, watchEffect } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
 import { fieldKey } from './fieldContext'
 
@@ -15,8 +15,15 @@ export interface UseFieldControlReturn {
   /** Bind to the control's own `id` attribute. Field's `controlId` when
    * present (so its `<label for>` resolves), otherwise a fresh `useId()`. */
   id: string
-  /** Bind to `aria-describedby`. */
+  /** Whether a Field wraps this control. */
+  inField: boolean
+  /** Bind to `aria-describedby`: what was passed, then the Field's description and error. */
   describedBy: () => string | undefined
+  /**
+   * The passed attrs a control spreads, without what it binds itself: `aria-describedby` (merged
+   * above) and, inside a Field, `id`, which the Field's label points at.
+   */
+  own: (passed: Record<string, unknown>) => Record<string, unknown>
   /** Bind to `aria-labelledby` on group-shaped controls (RadioGroup) that
    * have no single native input for Field's `<label for>` to target. `undefined`
    * when the Field shows no label. */
@@ -36,6 +43,7 @@ export interface UseFieldControlReturn {
 export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldControlReturn {
   const ctx = inject(fieldKey, undefined)
   const ownId = useId()
+  const attrs = useAttrs()
 
   const filled = options.filled
   if (filled !== undefined) {
@@ -61,7 +69,14 @@ export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldC
 
   return {
     id: ctx?.controlId ?? ownId,
-    describedBy: () => ctx?.describedBy(),
+    inField: !!ctx,
+    describedBy: () =>
+      [attrs['aria-describedby'], ctx?.describedBy()].filter(Boolean).join(' ') || undefined,
+    own: (passed) => {
+      const { 'aria-describedby': _describedBy, ...rest } = passed
+      if (ctx) delete rest.id
+      return rest
+    },
     // No label rendered: nothing to point at.
     labelledBy: () => (ctx && (ctx.hasLabel?.() ?? true) ? ctx.labelId : undefined),
     invalid: () => ctx?.invalid() ?? false,

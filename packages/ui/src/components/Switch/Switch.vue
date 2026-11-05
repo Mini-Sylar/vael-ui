@@ -6,6 +6,8 @@
     :data-state="dataState"
     :data-invalid="isInvalid || undefined"
     :data-dragging="dragging || undefined"
+    @focusin="focusEvents.onFocusin"
+    @focusout="focusEvents.onFocusout"
     v-bind="rootAttrs"
   >
     <span class="ui-switch-control">
@@ -30,7 +32,7 @@
         @pointerup="onDragEnd"
         @pointercancel="onDragCancel"
         @click="onInputClick"
-        v-bind="inputAttrs"
+        v-bind="ownInputAttrs"
       />
       <span ref="trackEl" :class="trackPart.class" :style="trackPart.style" aria-hidden="true">
         <span ref="thumbEl" :class="thumbPart.class" :style="thumbPart.style" />
@@ -52,7 +54,7 @@ import { computed, nextTick, onMounted, shallowRef, useAttrs, useTemplateRef } f
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'
-import { useControlAttrs } from '../../composables/forwardedListeners'
+import { useControlAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -61,7 +63,10 @@ import type { SwitchMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
-const { rootAttrs, inputAttrs } = useControlAttrs(useAttrs())
+const attrs = useAttrs()
+const { rootAttrs, inputAttrs } = useControlAttrs(attrs)
+const ownInputAttrs = computed(() => fieldControl.own(inputAttrs.value))
+const focusEvents = useFocusEvents(attrs, () => root.value)
 
 /** Whether the switch is on. @default false */
 const modelValue = defineModel<boolean>({ default: false })

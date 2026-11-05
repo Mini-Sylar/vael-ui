@@ -10,6 +10,8 @@
     :data-invalid="isInvalid || undefined"
     @click="onTriggerClick"
     @focus="focusControl"
+    @focusin="focusEvents.onFocusin"
+    @focusout="focusEvents.onFocusout"
   >
     <!-- Start and end sit outside the combobox, so they don't join its accessible name. -->
     <span v-if="$slots.start" :class="startPart.class" :style="startPart.style"
@@ -296,7 +298,7 @@ import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
 import { computed, inject, nextTick, provide, useAttrs, useId, useTemplateRef, watch } from 'vue'
-import { useAttrListeners } from '../../composables/forwardedListeners'
+import { useAttrListeners, useFocusEvents } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
 import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
@@ -319,19 +321,24 @@ import { useRememberedSelection } from '../../composables/useRememberedSelection
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+const focusEvents = useFocusEvents(attrs, () => triggerEl.value)
 // id, aria-* and data-* name and identify the combobox, so they go on the
 // trigger; the panel keeps the rest (class, style, listeners) as before.
 const isTriggerAttr = (key: string) =>
   key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
 const panelOwnAttrs = computed(() =>
-  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+  Object.fromEntries(
+    Object.entries(attrs).filter(
+      ([key]) => !isTriggerAttr(key) && key !== 'onFocus' && key !== 'onBlur',
+    ),
+  ),
 )
 const panelAttrs = useAttrListeners(
   () => panelEl.value,
   () => panelOwnAttrs.value,
 )
 const triggerAttrs = computed(() =>
-  Object.fromEntries(Object.entries(attrs).filter(([key]) => isTriggerAttr(key))),
+  fieldControl.own(Object.fromEntries(Object.entries(attrs).filter(([key]) => isTriggerAttr(key)))),
 )
 
 /** Selected value, or an array of values when `multiple`. @default null */
