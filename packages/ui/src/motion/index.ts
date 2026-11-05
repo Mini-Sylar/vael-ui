@@ -3,9 +3,15 @@
 // in vael-ui outside this folder (verify-motion-boundary.mjs), so it can stand on its own one day.
 export { vAnimate, vAnimateVapor } from './vAnimate'
 export { animate, useAnimate } from './animate'
-export type { AnimateTarget, AnimationControls } from './animate'
+export type {
+  AnimateTarget,
+  AnimationControls,
+  SequenceAt,
+  SequenceStep,
+  SequenceStepOptions,
+} from './animate'
 export { useMotion } from './useMotion'
-export { useScrollProgress } from './useScrollProgress'
+export { useScrollLength, useScrollProgress } from './useScrollProgress'
 export type { ScrollProgressOptions } from './useScrollProgress'
 export { settled } from './settled'
 export { springEasing } from './springEasing'

@@ -19,6 +19,34 @@ export type AnimateTarget =
   | string
   | ArrayLike<Element>
 
+/**
+ * Where a step of a sequence starts. Unset: when the step before ends. `'+0.2'` / `'-0.2'`: that
+ * many seconds after or before it ends. `'50%'`: that far through it (`'0%'`: with it). A number:
+ * seconds from the sequence's start. A step's `name`: with it; `'cards:60%'`: that far through it.
+ */
+export type SequenceAt<Name extends string = string> =
+  | number
+  | `+${number}`
+  | `-${number}`
+  | `${number}%`
+  | Name
+  | `${Name}:${number}%`
+
+/** A step's options: its timing, as `animate()`'s, with where it starts and a name to start from. */
+export type SequenceStepOptions<Name extends string = string> = AnimateOptions & {
+  /** Where this step starts; a name here must be one the sequence's steps declare. */
+  at?: SequenceAt<NoInfer<Name>>
+  /** A name for this step, for a later step's `at` (`'cards'`, `'cards:60%'`). */
+  name?: Name
+}
+
+/** One step of a sequence: what moves, to what, and how. */
+export type SequenceStep<Name extends string = string> = [
+  target: AnimateTarget,
+  values: MotionValues,
+  options?: SequenceStepOptions<Name>,
+]
+
 /** A running `animate()`: await it for the end, or steer it while it plays. */
 export interface AnimationControls extends PromiseLike<void> {
   /** Plays on after `pause()`. */
@@ -50,10 +78,13 @@ function elementsOf(target: AnimateTarget, scope: Element | null | undefined): H
   return el ? [el as HTMLElement] : []
 }
 
+const isSequence = (target: unknown): target is readonly SequenceStep[] =>
+  Array.isArray(target) && Array.isArray(target[0])
+
 function start(
   scope: Element | null | undefined,
-  target: AnimateTarget,
-  values: MotionValues,
+  target: AnimateTarget | readonly SequenceStep[],
+  values?: MotionValues,
   options: AnimateOptions = {},
 ): AnimationControls {
   let runs: Animation[] = []
@@ -65,13 +96,16 @@ function start(
   let done!: () => void
   const finished = new Promise<void>((resolve) => (done = resolve))
   const each = (act: (run: Animation) => void) => runs.forEach(act)
-  const els = elementsOf(target, scope)
-  if (!els.length || typeof window === 'undefined') done()
+  const sequence = isSequence(target) ? target : undefined
+  const els = sequence ? [] : elementsOf(target as AnimateTarget, scope)
+  if ((!sequence && !els.length) || typeof window === 'undefined') done()
   else
     void loadPlayer().then(
       (kit) => {
         if (stopped) return
-        runs = els.flatMap((el, i) => kit.playOn(el, values, options, i, els.length, els))
+        runs = sequence
+          ? kit.playSequence(sequence, (each) => elementsOf(each, scope), options.delay)
+          : els.flatMap((el, i) => kit.playOn(el, values!, options, i, els.length, els))
         // Steered before it loaded: applied now.
         each((run) => {
           run.playbackRate = rate
@@ -80,6 +114,7 @@ function start(
           if (paused) run.pause()
         })
         const finite = runs.filter((run) => Number.isFinite(run.effect?.getTiming().iterations))
+        if (runs.length && finite.length < runs.length && sequence) return
         if (runs.length && !finite.length) return
         void Promise.allSettled(finite.map((run) => run.finished)).then(() => done())
       },
@@ -136,8 +171,25 @@ export function animate(
   target: AnimateTarget,
   values: MotionValues,
   options?: AnimateOptions,
+): AnimationControls
+/**
+ * A sequence: steps one after another, each `[target, values, options]`. A step's `at` moves its
+ * start (see `SequenceAt`); the controls steer the whole sequence. `delay` holds all of it.
+ *
+ * @example animate([['.card', { y: [20, 0] }], ['.title', { opacity: 1 }, { at: '-0.1' }]])
+ */
+export function animate<Name extends string = never>(
+  steps: readonly SequenceStep<Name>[],
+  options?: { delay?: number },
+): AnimationControls
+export function animate(
+  target: AnimateTarget | readonly SequenceStep[],
+  values?: MotionValues | { delay?: number },
+  options?: AnimateOptions,
 ): AnimationControls {
-  return start(undefined, target, values, options)
+  return isSequence(target)
+    ? start(undefined, target, undefined, values as AnimateOptions)
+    : start(undefined, target, values as MotionValues, options)
 }
 
 /**
@@ -159,8 +211,10 @@ export function useAnimate(
   })
   return {
     scope,
-    animate(target, values, options) {
-      const run = start(refElement(scope.value), target, values, options)
+    animate(target: AnimateTarget | readonly SequenceStep[], values?: unknown, options?: unknown) {
+      const run = isSequence(target)
+        ? start(refElement(scope.value), target, undefined, values as AnimateOptions)
+        : start(refElement(scope.value), target, values as MotionValues, options as AnimateOptions)
       live.add(run)
       void run.finished.then(() => live.delete(run))
       return run

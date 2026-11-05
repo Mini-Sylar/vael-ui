@@ -59,7 +59,7 @@ export const cssValue = (key: string, value: unknown): string =>
 
 // Turns, one-axis scales and skews with no CSS property of their own, composed into `transform`
 // in this order.
-const TURNS = ['perspective', 'rotateX', 'rotateY', 'scaleX', 'scaleY', 'skewX', 'skewY']
+const TURNS = ['perspective', 'rotateX', 'rotateY', 'scaleX', 'scaleY', 'scaleZ', 'skewX', 'skewY']
 const turnUnit = (key: string) =>
   key === 'perspective' ? 'px' : key.startsWith('scale') ? '' : 'deg'
 // Stroke drawing, on a path normalized to a length of 1 (`pathLength="1"`).
@@ -100,6 +100,9 @@ export function toKeyframe(
   const length = first(values.pathLength)
   const offset = first(values.pathOffset)
   if (length != null) frame.strokeDasharray = `${length} ${first(values.pathSpacing) ?? 1}`
+  // A dash of no length still paints its round or square cap, a dot: nothing drawn shows nothing.
+  if (length != null && values.visibility == null)
+    frame.visibility = Number(length) === 0 ? 'hidden' : 'visible'
   // Its own: keyframes of `pathOffset` alone play apart from a plain `pathLength`.
   if (length != null || offset != null) frame.strokeDashoffset = `${-Number(offset ?? 0)}`
   return frame

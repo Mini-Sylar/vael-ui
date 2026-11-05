@@ -93,6 +93,8 @@ type Unlisted = Exclude<ComponentKey, (typeof COMPONENTS)[number]>
 const everyComponent: [Unlisted] extends [never] ? true : Unlisted = true
 void everyComponent
 
+const STAGGER_WORDS = ['end', 'center', 'edges', 'random']
+
 // Animatable properties a shared style may set: paint and transform, never layout.
 const PROPERTIES = new Set([
   'x',
@@ -105,6 +107,7 @@ const PROPERTIES = new Set([
   'rotateY',
   'scaleX',
   'scaleY',
+  'scaleZ',
   'skewX',
   'skewY',
   'perspective',
@@ -238,9 +241,9 @@ function target(input: unknown, path: string, issues: Issues): Data | undefined 
       const parsed = values(raw, `${path}.${key}`, issues)
       if (parsed) out[key] = parsed
     } else if (key === 'stagger') {
-      if (inRange(raw, 0, 1) || raw === true || ['end', 'center', 'edges'].includes(raw as string))
+      if (inRange(raw, 0, 1) || raw === true || STAGGER_WORDS.includes(raw as string))
         out.stagger = raw
-      else issues.push(`${path}.stagger: true, 'end', 'center', 'edges', or 0–1 seconds`)
+      else issues.push(`${path}.stagger: true, 'end', 'center', 'edges', 'random', or 0–1 seconds`)
     } else if (key === 'delay') {
       if (inRange(raw, -2, 2)) out.delay = raw
       else issues.push(`${path}.delay: -2–2 seconds`)
@@ -333,7 +336,7 @@ function component(input: unknown, path: string, issues: Issues): Data | undefin
     else if (key === 'exitOrder' && (raw === 'together' || raw === 'reverse')) out.exitOrder = raw
     else if (
       key === 'stagger' &&
-      (inRange(raw, 0, 1) || raw === true || ['end', 'center', 'edges'].includes(raw as string))
+      (inRange(raw, 0, 1) || raw === true || STAGGER_WORDS.includes(raw as string))
     )
       out.stagger = raw
     else if (key === 'leaving' && (raw === 'pop' || raw === 'hold')) out.leaving = raw
@@ -376,7 +379,7 @@ function role(name: (typeof ROLES)[number], input: unknown, issues: Issues): Dat
     else if (
       name === 'list' &&
       key === 'stagger' &&
-      (inRange(raw, 0, 1) || raw === true || ['end', 'center', 'edges'].includes(raw as string))
+      (inRange(raw, 0, 1) || raw === true || STAGGER_WORDS.includes(raw as string))
     )
       out.stagger = raw
     else if (name === 'list' && key === 'leaving' && (raw === 'pop' || raw === 'hold'))

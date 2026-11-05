@@ -31,6 +31,7 @@ test('pathLength draws a share of a stroke measured as 1 long', () => {
   expect(toKeyframe({ pathLength: 0.25, pathOffset: 0.5 })).toEqual({
     strokeDasharray: '0.25 1',
     strokeDashoffset: '-0.5',
+    visibility: 'visible',
   })
 })
 

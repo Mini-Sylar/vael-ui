@@ -6,7 +6,9 @@ import { staggerAt } from './playable'
 import { repeating } from './repeatPlan'
 import { motionOffAt, motionSpringAt } from './styleHolder'
 import { easingOf, resolveTiming, track } from './timing'
+import type { SequenceAt, SequenceStep } from './animate'
 import type { AnimateOptions, MotionTiming, MotionValues, TweenOptions } from './types'
+import { motionWarn as warn } from './warn'
 import { groupValues, preparePath, repeatOf, toKeyframe, toKeyframes } from './values'
 
 // What only fades under reduced motion; the rest goes straight to its end.
@@ -25,7 +27,11 @@ function place(el: HTMLElement, values: MotionValues) {
     )
 }
 
-/** Plays `values` on `el`, the `index`th of `count` (for `stagger`). Returns the runs it started. */
+/**
+ * Plays `values` on `el`, the `index`th of `count` (for `stagger`). Returns the runs it started.
+ * In a sequence (`inSequence`: the elements it has played on so far), an element's steps stack: each
+ * starts from where the one before it ends, and the sequence keeps the ends once it's over.
+ */
 export function playOn(
   el: HTMLElement,
   input: MotionValues,
@@ -33,15 +39,18 @@ export function playOn(
   index: number,
   count: number,
   all?: readonly Element[],
+  inSequence?: Set<Element>,
 ): Animation[] {
   preparePath(el, input)
   // What's still moving from a last call stays where it is, then gives way.
-  for (const run of playing.get(el) ?? []) {
-    try {
-      run.commitStyles()
-    } catch {}
-    run.cancel()
-  }
+  if (!inSequence?.has(el))
+    for (const run of playing.get(el) ?? []) {
+      try {
+        run.commitStyles()
+      } catch {}
+      run.cancel()
+    }
+  inSequence?.add(el)
   let values = input
   if (motionOffAt(el)) {
     place(el, values)
@@ -71,9 +80,11 @@ export function playOn(
       Object.entries(group.values).filter(([, v]) => !Array.isArray(v)),
     )
     const to = toKeyframe(plain as MotionValues, rtl)
+    // In a sequence it starts from whatever is under it then (an earlier step's end): no value.
     const from: Keyframe = {}
-    for (const prop of Object.keys(to))
-      from[prop] = style.getPropertyValue(prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`))
+    if (!inSequence)
+      for (const prop of Object.keys(to))
+        from[prop] = style.getPropertyValue(prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`))
     const sequence = Object.keys(arrays).length
       ? toKeyframes(arrays as MotionValues, rtl, {
           easing: easingOf(el, own.easing),
@@ -101,23 +112,109 @@ export function playOn(
     const onRepeat = own.onRepeat
     if (onRepeat)
       void import('./repeat').then((kit) => kit.onRepeats(run, onRepeat, plan?.every ?? duration))
-    // Done: the end stays as its own style, and the run lets go.
-    run.finished.then(
-      () => {
-        try {
-          run.commitStyles()
-        } catch {}
-        run.cancel()
-      },
-      () => {},
-    )
+    // Done: the end stays as its own style, and the run lets go (a sequence does it at its end).
+    if (!inSequence)
+      run.finished.then(
+        () => {
+          try {
+            run.commitStyles()
+          } catch {}
+          run.cancel()
+        },
+        () => {},
+      )
     // settled() waits for it, unless it loops forever.
     if (Number.isFinite(run.effect?.getTiming().iterations))
       void track(run.finished.catch(() => {}))
     runs.push(run)
   }
-  playing.set(el, runs)
+  playing.set(el, inSequence ? [...(playing.get(el) ?? []), ...runs] : runs)
   return runs
+}
+
+type Placed = { start: number; length: number }
+
+/** Where a step starts, in seconds from the sequence's start. */
+function placeOf(
+  at: SequenceAt | undefined,
+  before: Placed,
+  named: Map<string, Placed>,
+  steps: readonly SequenceStep[],
+): number {
+  const end = before.start + before.length
+  if (at === undefined) return end
+  if (typeof at === 'number') return Math.max(0, at)
+  if (/^[+-]\d/.test(at)) return Math.max(0, end + Number.parseFloat(at))
+  if (/^\d+(\.\d+)?%$/.test(at)) return before.start + (before.length * Number.parseFloat(at)) / 100
+  const [name, share] = at.split(':')
+  const step = named.get(name!)
+  if (!step) {
+    if (process.env.NODE_ENV !== 'production')
+      warn(
+        steps.some((each) => each[2]?.name === name)
+          ? `animate(): the step named '${name}' comes later in the list; move it above the step that starts from it.`
+          : `animate(): no step is named '${name}'; this step starts after the one before it.`,
+      )
+    return end
+  }
+  return step.start + (share ? (step.length * Number.parseFloat(share)) / 100 : 0)
+}
+
+const endless = (run: Animation) => !Number.isFinite(run.effect?.getTiming().iterations)
+
+/**
+ * A sequence: each step after the one before, or where its `at` puts it. Every run is held to the
+ * sequence's length, so seeking, reversing and the end move them together.
+ */
+export function playSequence(
+  steps: readonly SequenceStep[],
+  elementsOf: (target: SequenceStep[0]) => HTMLElement[],
+  delay = 0,
+): Animation[] {
+  const all: Animation[] = []
+  const named = new Map<string, Placed>()
+  const touched = new Set<Element>()
+  let before: Placed = { start: delay, length: 0 }
+  for (const [target, values, options = {}] of steps) {
+    const { at, name, ...own } = options
+    const start = typeof at === 'number' ? at + delay : placeOf(at, before, named, steps)
+    const els = elementsOf(target)
+    const runs = els.flatMap((el, i) =>
+      playOn(el, values, { ...own, delay: start + (own.delay ?? 0) }, i, els.length, els, touched),
+    )
+    // Its length: to its last element's end (one run, for one that loops).
+    let end = start
+    for (const run of runs) {
+      const timing = run.effect!.getComputedTiming()
+      const ms = endless(run)
+        ? Number(timing.delay ?? 0) + Number(timing.duration ?? 0)
+        : Number(timing.endTime ?? 0)
+      end = Math.max(end, ms / 1000)
+    }
+    before = { start, length: end - start }
+    if (name) named.set(name, before)
+    all.push(...runs)
+  }
+  const finite = all.filter((run) => !endless(run))
+  const total = Math.max(0, ...finite.map((run) => Number(run.effect!.getComputedTiming().endTime)))
+  for (const run of finite)
+    run.effect!.updateTiming({
+      endDelay: total - Number(run.effect!.getComputedTiming().endTime),
+    })
+  // Over: each step's end stays as its own style, later steps over earlier ones.
+  if (finite.length === all.length && all.length)
+    void Promise.all(all.map((run) => run.finished)).then(
+      () => {
+        for (const run of all) {
+          try {
+            run.commitStyles()
+          } catch {}
+          run.cancel()
+        }
+      },
+      () => {},
+    )
+  return all
 }
 
 /**
