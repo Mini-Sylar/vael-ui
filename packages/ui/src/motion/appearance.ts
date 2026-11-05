@@ -50,7 +50,44 @@ const batch = new Map<string, { el: HTMLElement; value: TargetMotion; again: boo
 const byPage = (a: { el: Element }, b: { el: Element }) =>
   a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
 
+// Created before it's placed (a page coming in through an out-in Transition, after the old one
+// leaves): unseen meanwhile, then requeued in the frame it's placed in, together with the rest of its
+// page, so it staggers with them and `after` finds the names it waits on. Two seconds at most.
+const unplaced: {
+  el: HTMLElement
+  name: string
+  value: TargetMotion
+  again: boolean
+  held: Animation
+  frames: number
+}[] = []
+function watchPlaced() {
+  requestAnimationFrame(() => {
+    for (const item of unplaced.splice(0)) {
+      if (item.el.isConnected) {
+        item.held.cancel()
+        queueAppearance(item.el, item.name || undefined, item.value, item.again)
+      } else if (++item.frames > 120) {
+        item.held.cancel()
+        entered(item.el)
+      } else unplaced.push(item)
+    }
+    if (unplaced.length) watchPlaced()
+  })
+}
+
 function flush() {
+  // Not in the page yet: it waits to be placed (above).
+  for (const [name, items] of batch) {
+    if (items.every(({ el }) => el.isConnected)) continue
+    batch.set(
+      name,
+      items.filter(({ el }) => el.isConnected),
+    )
+    if (!unplaced.length) watchPlaced()
+    for (const item of items.filter(({ el }) => !el.isConnected))
+      unplaced.push({ ...item, name, held: holdUnseen(item.el), frames: 0 })
+  }
   // `after`, `steps` or your own `enter` in this batch: it plays as one timeline, names waiting
   // on names, from the runtime that runs hooks.
   const timeline = [...batch.values()].some((items) =>
