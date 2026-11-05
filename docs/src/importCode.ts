@@ -8,6 +8,7 @@ const MOTION = [
   'useAnimate',
   'useMotion',
   'useScrollProgress',
+  'useScrollLength',
   'settled',
   'springEasing',
   'useSpringValue',

@@ -80,9 +80,9 @@ export const directivesContent: Record<string, DirectiveContent> = {
       },
       {
         name: 'stagger',
-        type: "boolean | 'end' | 'center' | 'edges' | number | ((index, count) => number)",
+        type: "boolean | 'end' | 'center' | 'edges' | 'random' | number | ((index, count) => number)",
         description:
-          "Elements that share a name (`v-animate:rows`) come in one after another, in page order. `true` spaces them by the stagger token (40 ms); `'end'`, `'center'` or `'edges'` start the wave there. A number is the seconds between them; a function gives each its own start.",
+          "Elements that share a name (`v-animate:rows`) come in one after another, in page order. `true` spaces them by the stagger token (40 ms); `'end'`, `'center'` or `'edges'` start the wave there, and `'random'` shuffles the order. A number is the seconds between them; a function gives each its own start.",
       },
       {
         name: 'after',

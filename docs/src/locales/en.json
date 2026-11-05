@@ -511,6 +511,7 @@
     "useHoverIndicator": "The sliding hover and keyboard highlight behind vael-ui’s lists. Use it to give your own lists the same highlight.",
     "useSpringValue": "Interruptible spring physics in three forms: a reactive value, an imperative spring that writes each frame without re-rendering, and the pure step function behind both. Use it for motion that can change target partway.",
     "useScrollProgress": "Scroll progress as a ref from 0 to 1: the page's, or an element's way through the screen. Pass it to v-animate's progress as a getter.",
+    "useScrollLength": "How far the page or a container can scroll, in px, as a ref. It follows the content growing or shrinking.",
     "settled": "Resolves once nothing vael-ui started is still animating, everywhere or on one element. For tests.",
     "useTabIndicator": "The sliding selection indicator behind Tabs, SelectButton, MenuList and Pagination. Use it for your own segmented controls and lists.",
     "useScrollLock": "Locks scrolling on the page or any element without a layout shift, as dialogs do while they’re open. Use it for your own overlays and full-screen panels.",
@@ -605,6 +606,7 @@
       "springEasing": "Turns a spring into a CSS easing and its settle time.",
       "useSpringValue": "A value that follows its target on a spring.",
       "useScrollProgress": "Scroll progress from 0 to 1, for scroll-linked motion.",
+      "useScrollLength": "How far it can scroll, in px.",
       "settled": "Waits for motion to finish, in tests.",
       "useHoverIndicator": "The sliding hover highlight, for your own lists.",
       "useTabIndicator": "The sliding indicator behind Tabs and SelectButton."
@@ -799,7 +801,7 @@
         },
         "grid": {
           "title": "Across a grid",
-          "body": "Elements under one name that come in together stagger by where each sits. In a grid, <code>stagger: 'center'</code> starts from the middle cell and spreads outward, and <code>'edges'</code> starts from the corners and closes in. In a single row or column, they go in page order."
+          "body": "Elements under one name that come in together stagger by where each sits. In a grid, <code>stagger: 'center'</code> starts from the middle cell and spreads outward, <code>'edges'</code> starts from the corners and closes in, and <code>'random'</code> goes in a new shuffled order each time. In a single row or column, they go in page order."
         },
         "inView": {
           "title": "While it's in view",
@@ -807,7 +809,7 @@
         },
         "progress": {
           "title": "Linked to scroll",
-          "body": "<code>useScrollProgress()</code> gives the page's scroll, or an element's way through the screen, as a ref from 0 to 1. Pass it to <code>progress</code> as a getter, <code>progress: () => scroll</code>, and the keyframes follow the scroll without re-rendering your component. <code>offset</code> sets where it starts and ends: <code>['start end', 'end start']</code> runs from entering to having left."
+          "body": "<code>useScrollProgress()</code> gives the page's scroll, or an element's way through the screen, as a ref from 0 to 1. Pass it to <code>progress</code> as a getter, <code>progress: () => scroll</code>, and the keyframes follow the scroll without re-rendering your component. <code>offset</code> sets where it starts and ends: <code>['start end', 'end start']</code> runs from entering to having left. <code>useScrollLength()</code> gives how far it can scroll, in px, so <code>scroll.value * length.value</code> is the distance scrolled."
         },
         "replay": {
           "title": "Play it again",
@@ -835,11 +837,11 @@
         },
         "turn": {
           "title": "Turn in 3D",
-          "body": "<code>rotateX</code> and <code>rotateY</code> turn an element toward you or away, and <code>perspective</code> sets how deep that looks: a card flip is <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> and <code>skewY</code> slant it, and <code>scaleX</code> and <code>scaleY</code> scale one axis, such as a bar growing from its base."
+          "body": "<code>rotateX</code> and <code>rotateY</code> turn an element toward you or away, and <code>perspective</code> sets how deep that looks: a card flip is <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> and <code>skewY</code> slant it, and <code>scaleX</code>, <code>scaleY</code> and <code>scaleZ</code> scale one axis, such as a bar growing from its base."
         },
         "draw": {
           "title": "Draw a stroke",
-          "body": "<code>pathLength</code> draws an SVG stroke from 0 (none) to 1 (all of it): <code>initial: {'{'} pathLength: 0 {'}'}</code> draws a check in. <code>pathOffset</code> moves where the drawn part starts. <code>animate()</code> sets <code>pathLength=\"1\"</code> on the path, so <code>pathOffset</code> and any dash you set in CSS are fractions of its length."
+          "body": "<code>pathLength</code> draws an SVG stroke from 0 (none) to 1 (all of it): <code>initial: {'{'} pathLength: 0 {'}'}</code> draws a check in. <code>pathOffset</code> moves where the drawn part starts, and <code>pathSpacing</code> sets the gap after it, so a short stroke repeats along the path. <code>animate()</code> sets <code>pathLength=\"1\"</code> on the path, so <code>pathOffset</code> and any dash you set in CSS are fractions of its length."
         },
         "size": {
           "title": "Follow its content",
@@ -847,7 +849,7 @@
         },
         "fromCode": {
           "title": "From code",
-          "body": "For motion an event starts, such as a wrong code or an item added to the cart, <code>animate(el, values, options)</code> plays the same values and timing as <code>v-animate</code> from your code, and leaves the end as the element's own style. Await it, or steer it with <code>pause()</code>, <code>reverse()</code>, <code>time</code> and <code>speed</code>. <code>useAnimate(useTemplateRef('row'))</code> scopes selectors to one element and stops what it started when the component unmounts. It follows the app's spring, <code>motion: false</code> and reduced motion."
+          "body": "For motion an event starts, such as a wrong code or an item added to the cart, <code>animate(el, values, options)</code> plays the same values and timing as <code>v-animate</code> from your code, and leaves the end as the element's own style. Await it, or steer it with <code>pause()</code>, <code>reverse()</code>, <code>time</code> and <code>speed</code>. <code>useAnimate(useTemplateRef('row'))</code> scopes selectors to one element and stops what it started when the component unmounts. It follows the app's spring, <code>motion: false</code> and reduced motion. To play several in order, give it a list of steps (see Choreography)."
         },
         "tween": {
           "title": "Tween a number",
@@ -932,7 +934,19 @@
       },
       "choreography": {
         "title": "Choreography",
-        "intro": "Inside a dialog or a popover, your own elements can join its motion. You name them, then time them against each other and against the panel.",
+        "intro": "Inside a dialog or a popover, your own elements can join its motion. You name them, then time them against each other and against the panel. From your code, <code>animate()</code> plays a list of steps in order.",
+        "which": {
+          "title": "Which one to use",
+          "body": "What starts the motion decides it, and whether a component is around your elements:",
+          "items": [
+            "Elements that come in together, on the page or in a <code>v-if</code>: name each with <code>v-animate:name</code> and give it an <code>after</code>. Template only, no code.",
+            "Several of the same, such as rows or cards: one name and <code>stagger</code>.",
+            "Inside a dialog, a drawer or a popover: name them in its <code>targets</code>, and <code>after</code> times them against each other and the panel.",
+            "One element through several stops: <code>steps</code>.",
+            "Motion an event starts, such as a click, a saved form or a wrong code: <code>animate([…])</code> from your code, or <code>useAnimate()</code> to scope it to a component.",
+            "A GSAP or motion timeline of your own: an <code>enter</code> hook that returns it."
+          ]
+        },
         "after": {
           "title": "One after another",
           "body": "Name your elements in <code>targets</code>, and mark them with the slot's <code>target('name')</code> or with <code>v-animate:name</code>. <code>after: 'summary:60%'</code> starts the rows when the summary is 60% of the way in. Elements with no component around them can wait on each other too, when they appear together: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>. Rows a component renders from data can't take a mark: give their name a <code>select</code> instead, such as <code>targets: {'{'} rows: {'{'} select: 'tr' {'}'} {'}'}</code>."
@@ -950,9 +964,24 @@
             "<code>'tag'</code>, an element already on the page: when what it's playing now ends"
           ]
         },
+        "page": {
+          "title": "On the page",
+          "body": "Your elements don't need a component around them. Elements that come in together wait on each other by name: <code>v-animate:lede=\"{'{'} initial: {'{'} opacity: 0 {'}'}, after: 'title:50%' {'}'}\"</code> starts the lede halfway through the title's entrance. Under one name, a list staggers, and its <code>after</code> waits for whatever it names. Every moment above works here too. Mount them again and they play in again."
+        },
         "steps": {
           "title": "Stops along the way",
           "body": "<code>steps</code> moves an element through a series of stops. It holds at each stop until that stop's <code>after</code> moment comes."
+        },
+        "sequence": {
+          "title": "In order, from code",
+          "body": "<code>animate()</code> also takes a list of steps, each <code>[target, values, options]</code>, and plays them one after another, on the app's spring. Each step starts when the one before it ends, unless its <code>at</code> says otherwise. The controls steer the whole sequence: await it, <code>pause()</code> it, seek with <code>time</code> or <code>reverse()</code> it. Two steps on one element carry on from each other, and every end stays as the element's own style. In <code>at</code>, TypeScript suggests the names your steps declare and flags one that doesn't exist.",
+          "items": [
+            "<code>'+0.2'</code>: 0.2 seconds after the step before ends.",
+            "<code>'-0.15'</code>: 0.15 seconds before it ends, so the two overlap.",
+            "<code>'50%'</code>: halfway through the step before.",
+            "<code>1.2</code>: 1.2 seconds from the start.",
+            "<code>'card'</code>: with the step given <code>name: 'card'</code>, or <code>'card:60%'</code>: 60% of the way through it."
+          ]
         },
         "own": {
           "title": "Your own timeline",
@@ -1134,7 +1163,8 @@
         "code": "From your code",
         "app": "Your app's motion",
         "other": "Other"
-      }
+      },
+      "reference": "Reference"
     }
   },
   "recipes": {

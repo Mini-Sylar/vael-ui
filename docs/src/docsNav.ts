@@ -38,9 +38,11 @@ export const MOTION_ROUTES = [
 ] as const
 // Composables (`use…`) hold state in a component; utilities are plain functions you call anywhere.
 const MOTION_COMPOSABLES = [
+  'useAnimate',
   'useSpringValue',
   'useTween',
   'useScrollProgress',
+  'useScrollLength',
   'useHoverIndicator',
   'useTabIndicator',
 ]
