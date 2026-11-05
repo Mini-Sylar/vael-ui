@@ -16,8 +16,21 @@ import type {
   InputMotion,
   OtpInputMotion,
 } from '../src/motion/types'
+import { catchAnimations, runsOn } from './utils/startedAnimations'
+
+catchAnimations()
 
 const frame = () => new Promise(requestAnimationFrame)
+// The shakes started on an element, caught as they start: a shake is short enough to come and go
+// between two looks on a slow runner. Its keyframes are what it plays.
+const shakesOn = (el: Element | null) =>
+  el
+    ? runsOn(el).filter((run) =>
+        (run.effect as KeyframeEffect)
+          .getKeyframes()
+          .some((key) => key.translate && key.translate !== '0px' && key.translate !== 'none'),
+      )
+    : []
 const states = (el: Element | null) =>
   (el?.getAnimations() ?? []).filter((a) => a.id === 'ui-state')
 const settle = async () => {
@@ -42,25 +55,23 @@ test('an invalid field shakes on entering the state, not when it mounts invalid,
   await vi.waitFor(() => expect(root()).not.toBeNull())
   // Mounted invalid: shown as is, nothing plays.
   for (let i = 0; i < 5; i++) await frame()
-  expect(states(root()).filter((a) => a.playState === 'running')).toHaveLength(0)
+  expect(shakesOn(root())).toHaveLength(0)
 
   invalid.value = false
   await nextTick()
   invalid.value = true
-  await vi.waitFor(() => expect(states(root()).some((a) => a.playState === 'running')).toBe(true))
-  // It moves: somewhere along the shake it's off its rest position.
-  const xs = new Set<string>()
-  while (states(root()).some((a) => a.playState === 'running')) {
-    xs.add(getComputedStyle(root()!).translate)
-    await frame()
-  }
-  expect(xs.size).toBeGreaterThan(2)
+  // Entering the state shakes it, along the keyframes it was given.
+  await vi.waitFor(() => expect(shakesOn(root())).toHaveLength(1))
+  const keys = (shakesOn(root())[0]!.effect as KeyframeEffect).getKeyframes()
+  expect(keys.map((key) => key.translate)).toEqual(['0px', '-6px', '6px', '-3px', '0px'])
+  await vi.waitFor(() => expect(shakesOn(root())[0]!.playState).toBe('finished'))
   expect(getComputedStyle(root()!).translate).toBe('none')
 
+  // And again each time it enters it.
   invalid.value = false
   await nextTick()
   invalid.value = true
-  await vi.waitFor(() => expect(states(root()).some((a) => a.playState === 'running')).toBe(true))
+  await vi.waitFor(() => expect(shakesOn(root())).toHaveLength(2))
 })
 
 test('a pop from one value to another rides its own spring, overshoot and all, after its delay', async () => {

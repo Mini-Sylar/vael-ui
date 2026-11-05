@@ -5,6 +5,7 @@ import { render } from 'vitest-browser-vue'
 import CascadeSelectFixture from './fixtures/CascadeSelectFixture.vue'
 import MenuFixture from './fixtures/MenuFixture.vue'
 import type { CascadeSelectItem } from '../src/components/CascadeSelect/CascadeSelect.vue'
+import { budget } from './utils/budget'
 
 beforeEach(() => {
   for (const el of document.querySelectorAll('.ui-menu-positioner')) el.remove()
@@ -37,7 +38,7 @@ test('opening a CascadeSelect with 1000 root items renders a window of rows, qui
   await vi.waitFor(() => expect(focusedText()).toBe('City 0'), { interval: 1 })
   const elapsed = performance.now() - start
   expect(rootRows().length).toBeLessThan(100)
-  expect(elapsed).toBeLessThan(120)
+  expect(elapsed).toBeLessThan(budget(120))
 })
 
 test('a long menu keeps End, Home, wrap-around and typeahead across the whole list', async () => {

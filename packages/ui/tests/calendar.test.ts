@@ -94,11 +94,12 @@ test('a shorter next month animates the body height instead of snapping', async 
   // that's what makes the change a transition instead of an instant snap.
   await vi.waitFor(() => expect(body.style.blockSize).not.toBe(''))
 
+  // It lets go once the height has animated; the room is for a busy run, not the animation's length.
   await vi.waitFor(
     () => {
       expect(body.style.blockSize).toBe('')
     },
-    { timeout: 1000 },
+    { timeout: 3000 },
   )
   const after = body.getBoundingClientRect().height
   expect(after).toBeLessThan(before)

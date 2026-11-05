@@ -7,19 +7,22 @@ import type { DirectiveArguments } from 'vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import { SPRINGS, springEasing } from '../src/motion/springEasing'
 import { vAnimate } from '../src/motion/vAnimate'
+import { catchAnimations, holdAtStart, runsOn, timingsOf } from './utils/startedAnimations'
 
 afterEach(() => {
   document.body.innerHTML = ''
 })
 
 const frame = () => new Promise(requestAnimationFrame)
-// Its starting look, once its entrance has begun.
+catchAnimations()
+// Its starting look: every animation on it held at its first frame.
 async function startOf(selector: string) {
   const el = await vi.waitFor(() => {
     const found = document.querySelector<HTMLElement>(selector)
-    expect(found?.style.transition || found?.getAnimations().length).toBeTruthy()
+    expect(found && runsOn(found).length).toBeTruthy()
     return found!
   })
+  holdAtStart(el)
   const style = getComputedStyle(el)
   return {
     opacity: Number(style.opacity),
@@ -49,9 +52,9 @@ test('v-animate.pop.bouncy grows in on the bouncy spring', async () => {
   one('pop', [vAnimate, undefined, undefined, { pop: true, bouncy: true }])
   const start = await startOf('.pop')
   expect(start.scale).toBeLessThan(0.97)
-  const curves = [
-    ...document.querySelector<HTMLElement>('.pop')!.style.transition.matchAll(/linear\([^)]*\)/g),
-  ].map((m) => m[0])
+  const curves = timingsOf(document.querySelector('.pop')!)
+    .map((timing) => String(timing.easing))
+    .filter((easing) => easing.startsWith('linear('))
   const bouncy = springEasing(SPRINGS.bouncy).easing
   const head = (easing: string) =>
     easing
@@ -74,7 +77,9 @@ test('the value tunes the picked entrance: its looks merge, its timing replaces'
   // rise's fade kept, its distance replaced.
   expect(start.opacity).toBeLessThan(0.5)
   expect(start.y).toBeGreaterThan(16)
-  expect(document.querySelector<HTMLElement>('.tuned')!.style.transition).toContain('300ms linear')
+  expect(timingsOf(document.querySelector('.tuned')!)).toContainEqual(
+    expect.objectContaining({ duration: 300, easing: 'linear' }),
+  )
 })
 
 test('v-animate:rows.rise.stagger staggers by the token, in page order', async () => {
@@ -91,15 +96,12 @@ test('v-animate:rows.rise.stagger staggers by the token, in page order', async (
   )
   await frame()
   items.value = [0, 1, 2]
-  await vi.waitFor(() =>
-    expect(
-      [0, 1, 2].map((i) => document.querySelector<HTMLElement>(`.row-${i}`)?.style.transition),
-    ).not.toContain(undefined),
-  )
-  const ms = (delay: string) => parseFloat(delay) * (delay.trim().endsWith('ms') ? 1 : 1000)
-  const delays = [0, 1, 2].map((i) =>
-    Math.round(ms(document.querySelector<HTMLElement>(`.row-${i}`)!.style.transitionDelay)),
-  )
+  const rows = await vi.waitFor(() => {
+    const found = [0, 1, 2].map((i) => document.querySelector(`.row-${i}`))
+    for (const row of found) expect(row && runsOn(row).length).toBeTruthy()
+    return found as Element[]
+  })
+  const delays = rows.map((row) => Math.round(Number(timingsOf(row)[0]!.delay)))
   expect(delays).toEqual([0, 40, 80])
 })
 
