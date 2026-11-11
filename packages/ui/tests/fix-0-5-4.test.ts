@@ -95,6 +95,10 @@ test('Sortable handle="item": the row is focusable and draggable, a click inside
   // A press that doesn't move is a click on the content.
   await userEvent.click(root.querySelector('.open')!)
   expect(clicked).toHaveBeenCalledTimes(1)
+  // Enter opens the row, as a click does.
+  rows[1]!.focus()
+  await userEvent.keyboard('{Enter}')
+  expect(clicked).toHaveBeenCalledTimes(2)
   // The keyboard moves the row itself.
   rows[0]!.focus()
   await userEvent.keyboard(' ')

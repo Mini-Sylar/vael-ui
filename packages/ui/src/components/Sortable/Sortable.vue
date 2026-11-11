@@ -167,6 +167,7 @@ const rawProps = withDefaults(
     /**
      * What you drag by. `'button'` is the grip at the start of each row. `'item'` is the whole row,
      * as a board's cards: a press that moves drags it, one that doesn't is a click on what's inside.
+     * From the keyboard, Space picks a row up and Enter opens it (a click on its content).
      * Rows then take a touch hold (`touchDragDelay`, 150 ms unset) so the list still scrolls.
      * @default 'button'
      */
@@ -426,6 +427,17 @@ function onItemPointerdown(event: PointerEvent, value: string | number) {
 // Keys typed into content in the row are its own; the row's keys grab, move and drop it.
 function onItemKeydown(event: KeyboardEvent, value: string | number) {
   if (event.target !== event.currentTarget && !isGrabbed.value) return
+  // Enter on a row nothing holds opens it, as a click does (a card's task); Space picks it up.
+  if (event.key === 'Enter' && !isGrabbed.value) {
+    const content = (event.currentTarget as HTMLElement).querySelector<HTMLElement>(
+      '.ui-sortable-content > *',
+    )
+    if (content) {
+      event.preventDefault()
+      content.click()
+      return
+    }
+  }
   onHandleKeydown(event, value)
 }
 // After a drag, the browser's trailing click would open what the row holds: it stops here.
