@@ -24,6 +24,7 @@
     :data-ui-theme="themeCss ? scopeId : undefined"
     :data-ui-motion-style="motionStyle || motion === false || defaults.spring ? '' : undefined"
     style="display: contents"
+    v-bind="$attrs"
   >
     <slot />
   </div>
@@ -31,6 +32,9 @@
 
 <script setup lang="ts">
 import { computed, inject, provide, toValue, useId, watchEffect } from 'vue'
+
+// Its class and attributes go on the wrapper around your content.
+defineOptions({ inheritAttrs: false })
 import { messagesKey, resolveMessagesFromI18n } from '../../messages'
 import type { I18nInstance, PartialUiMessages } from '../../messages'
 import { classMergerKey } from '../../classes'

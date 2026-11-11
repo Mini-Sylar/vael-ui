@@ -10,8 +10,12 @@
     margin-inline-start: -0.625rem;
   }
   /* Rises quick and direct; settles back with a soft spring rather than snapping. */
+  /* On a token, so a provider's motion off reaches it; its own `motion: false` turns it off too. */
   .ui-avatar-group--hover-lift .ui-avatar {
-    transition: transform 300ms cubic-bezier(0.34, 3.85, 0.64, 1);
+    transition: transform calc(var(--ui-duration-press) * 1.875) cubic-bezier(0.34, 3.85, 0.64, 1);
+  }
+  .ui-avatar-group[data-motion='off'] .ui-avatar {
+    transition: none;
   }
   @media (hover: hover) and (pointer: fine) {
     .ui-avatar-group--hover-lift .ui-avatar:hover {

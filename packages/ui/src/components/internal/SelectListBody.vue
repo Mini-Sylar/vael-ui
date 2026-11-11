@@ -20,8 +20,9 @@
     <div v-if="items.length === 0 && !loading" :class="emptyPart.class" :style="emptyPart.style">
       <slot name="empty">{{ emptyText }}</slot>
     </div>
-    <div v-else-if="items.length === 0 && loading" class="ui-select-loading">
+    <div v-else-if="items.length === 0 && loading" class="ui-select-loading" role="status">
       <LoaderMark />
+      <span class="ui-select-loading-label">{{ messages.select.loading }}</span>
     </div>
     <!-- Grouped: real role="group" wrappers, so screen readers announce each group's name. Rows
          aren't evenly spaced here, so every option renders and scrolls into view by itself. Keyed
@@ -224,6 +225,7 @@ export interface SelectListSection<T extends SelectItemData = SelectItemData> {
 <script setup lang="ts" generic="T extends SelectItemData">
 import '../shared/loader-spinner.css'
 import LoaderMark from './LoaderMark.vue'
+import { useMessages, selectMessages } from '../../messages'
 import '../shared/tick.css'
 import { computed, useTemplateRef } from 'vue'
 import { useEasedHeight } from '../../composables/useEasedHeight'
@@ -236,6 +238,7 @@ import { useTabIndicator } from '../../composables/useTabIndicator'
 import '../shared/indicator.css'
 import type { UiPartValue } from '../../classes'
 
+const messages = useMessages({ select: selectMessages })
 const props = defineProps<{
   items: readonly T[]
   getLabel: (item: T) => string

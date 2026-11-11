@@ -587,7 +587,12 @@ export function startStates(ctx: StatesContext): void {
   })
 
   // A repeated part: each element its own player, pointer and states, and its index as `where`.
-  type One = { player: ReturnType<typeof createStatePlayer>; pointer: Pointer; stop?: () => void }
+  type One = {
+    player: ReturnType<typeof createStatePlayer>
+    pointer: Pointer
+    stop?: () => void
+    wanted?: string
+  }
   const ones = new Map<Element, One>()
   const frames = () => {
     const spec = partsOnly()
@@ -606,8 +611,13 @@ export function startStates(ctx: StatesContext): void {
         if (!one) {
           const p = shallowReactive<Pointer>({ hover: false, active: false, focus: false })
           one = { player: createStatePlayer(), pointer: p }
-          one.stop = wanted ? pointerOn(el, new Set(wanted.split(',')), p) : undefined
           ones.set(el, one)
+        }
+        // Listening for what its states want now: `hover` added later is heard too.
+        if (one.wanted !== wanted) {
+          one.stop?.()
+          one.wanted = wanted
+          one.stop = wanted ? pointerOn(el, new Set(wanted.split(',')), one.pointer) : undefined
         }
         const known = { ...ctx.states(), ...ctx.each?.(part, el, index) }
         out.push([

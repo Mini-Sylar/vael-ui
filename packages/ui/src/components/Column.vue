@@ -23,6 +23,8 @@ const props = withDefaults(
     sortable?: boolean
     /** Column width as a CSS length. Numbers are pixels. */
     width?: string | number
+    /** Least width as a CSS length, for a column that shares the rest of the room. Numbers are pixels. */
+    minWidth?: string | number
     /** Unset, inherits DataTable's `resizableColumns`; `true` or `false` overrides it for this column. */
     resizable?: boolean
     /** Unset, inherits DataTable's `reorderableColumns`; `false` pins this column in place. */
@@ -73,6 +75,9 @@ const columnDef: RegisteredColumn<T> = {
   },
   get width() {
     return props.width
+  },
+  get minWidth() {
+    return props.minWidth
   },
   get reorderable() {
     return props.reorderable

@@ -82,17 +82,19 @@ const STAR_PATH =
 const attrs = useAttrs()
 const forward = useForwardedListener(attrs)
 const restAttrs = computed(() =>
-  omitAttrs(attrs, [
-    'onPointerenter',
-    'onPointermove',
-    'onPointerleave',
-    'onPointerdown',
-    'onPointerup',
-    'onPointercancel',
-    'onKeydown',
-    'onFocus',
-    'onBlur',
-  ]),
+  fieldControl.own(
+    omitAttrs(attrs, [
+      'onPointerenter',
+      'onPointermove',
+      'onPointerleave',
+      'onPointerdown',
+      'onPointerup',
+      'onPointercancel',
+      'onKeydown',
+      'onFocus',
+      'onBlur',
+    ]),
+  ),
 )
 /** Current rating; `0` means unrated. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })

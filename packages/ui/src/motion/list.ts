@@ -209,19 +209,19 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
     if (motion.off) return after(el, 'onAfterLeave', 0, done)()
     const box = el as Pinned
     if (options.leaving() === 'pop') {
-      // Lifted out where it is, so the others slide up under it while it fades.
-      const { offsetTop, offsetLeft, offsetWidth, offsetHeight } = box
+      // Lifted out where it was painted, so the others slide up under it while it fades. Read
+      // from this update's capture: a neighbour lifted out just before would have moved it.
+      const was = (capturing && before.get(box)) || layoutRect(box)
       Object.assign(box.style, {
         position: 'absolute',
-        top: `${offsetTop}px`,
-        left: `${offsetLeft}px`,
-        width: `${offsetWidth}px`,
-        height: `${offsetHeight}px`,
+        top: `${was.y}px`,
+        left: `${was.x}px`,
+        width: `${was.width}px`,
+        height: `${was.height}px`,
         margin: '0',
         pointerEvents: 'none',
       })
       box._uiPinned = true
-      size?.sync()
     }
     // Held in place until now: the rest slide on from where they are, not from before it left.
     const finish = () => {
@@ -238,6 +238,8 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
       a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
     )
     leavingBatch = []
+    // The box follows its new size once for the whole group, not once per item.
+    if (options.leaving() === 'pop') size?.sync()
     const motion = options.resolved()
     group.forEach(({ el, done: gone }, index) => {
       const done = after(el, 'onAfterLeave', index, gone)

@@ -94,18 +94,18 @@ test('theme.fontSize scales component text within its scope, and leaves the touc
   const touchFontSize = () =>
     getComputedStyle(input).getPropertyValue('--ui-touch-font-size').trim()
 
-  // Button rounds its text to whole pixels (its box sits on the pixel grid); Input scales exactly.
+  // Button and Input round their text to whole pixels (their boxes sit on the pixel grid).
   await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('18px'))
-  expect(getComputedStyle(input).fontSize).toBe('17.5px')
+  expect(getComputedStyle(input).fontSize).toBe('18px')
   expect(getComputedStyle(plain).fontSize).toBe('20px')
-  expect(touchFontSize()).toBe('0px')
+  expect(touchFontSize()).toBe('16px')
   expect(getComputedStyle(document.documentElement).fontSize).toBe('16px')
 
   await screen.rerender({ theme: { fontSize: '12px' } })
   await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('11px'))
-  expect(getComputedStyle(input).fontSize).toBe('10.5px')
+  expect(getComputedStyle(input).fontSize).toBe('11px')
   expect(getComputedStyle(plain).fontSize).toBe('12px')
-  expect(touchFontSize()).toBe('0px')
+  expect(touchFontSize()).toBe('16px')
   await screen.unmount()
 })
 
@@ -117,7 +117,7 @@ test('the document root font size also scales component text', async () => {
   try {
     document.documentElement.style.fontSize = '20px'
     await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('18px'))
-    expect(getComputedStyle(input).fontSize).toBe('17.5px')
+    expect(getComputedStyle(input).fontSize).toBe('18px')
   } finally {
     document.documentElement.style.fontSize = originalFontSize
     await screen.unmount()
@@ -159,9 +159,10 @@ test('every form control shares the same touch font-size floor', () => {
   ]) {
     expect(floored, selector).toContain(selector)
   }
+  // 16px: the size under which iOS zooms a focused field.
   expect(
     getComputedStyle(document.documentElement).getPropertyValue('--ui-touch-font-size').trim(),
-  ).toBe('0px')
+  ).toBe('16px')
 })
 
 test('a nested ConfigProvider theme is scoped to its own subtree — it must NOT leak to buttons outside it', async () => {

@@ -185,14 +185,17 @@ export function vHoverIndicatorVapor(
   // Called in its component's setup, where `inject` finds the provider. The element joins the
   // page after setup, so each start waits a tick before it measures.
   const defaults = injectDefaults()
-  warnIfBare(typeof value === 'function' ? value() : (value as DirectiveBinding | undefined)?.value)
+  // Called with a binding (a VDOM template), its value and modifiers come from it.
+  const read = () => (typeof value === 'function' ? value() : value?.value)
+  const picked = typeof value === 'object' && value ? value.modifiers : modifiers
+  warnIfBare(read())
   const scope = effectScope()
   scope.run(() =>
     watch(
-      () => (typeof value === 'function' ? value() : undefined),
+      read,
       (now) =>
         nextTick(() => {
-          if (scope.active) apply(el, now, modifiers, (run) => runOutside(defaults, run))
+          if (scope.active) apply(el, now, picked, (run) => runOutside(defaults, run))
         }),
       { immediate: true },
     ),

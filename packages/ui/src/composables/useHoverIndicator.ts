@@ -103,9 +103,13 @@ export function useHoverIndicator(
   if (options.group && typeof window !== 'undefined')
     void loadHoverHandoff().then((kit) => (handoff = kit))
 
+  // Rows a drag is moving (a Sortable inside the list) aren't hovered: the highlight stands down.
+  const dragging = () =>
+    !!listEl.value?.querySelector('[data-dragging], [data-grabbed], [data-settling]')
   function onPointerOver(event: PointerEvent) {
     if (event.pointerType === 'touch' || toValue(options.enabled) === false) return
     pointerInside = true
+    if (dragging()) return mark(null)
     const row = rowOf(event.target)
     if (row) {
       const arriving = !current

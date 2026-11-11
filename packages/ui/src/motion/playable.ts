@@ -28,15 +28,19 @@ function cellsAway(all: readonly Element[], from: 'center' | 'edges', el: Elemen
     const spread = (pick: (b: DOMRect) => number) => new Set(boxes.map((b) => Math.round(pick(b))))
     away =
       boxes.every((b) => b.width) && spread((b) => b.top).size > 1 && spread((b) => b.left).size > 1
-        ? boxes.map((b) => {
-            const mid = (edge: 'left' | 'top', size: 'width' | 'height', end: 'right' | 'bottom') =>
-              (b[edge] +
-                b[size] / 2 -
-                (Math.min(...boxes.map((o) => o[edge])) + Math.max(...boxes.map((o) => o[end]))) /
-                  2) /
-              b[size]
-            return Math.hypot(mid('left', 'width', 'right'), mid('top', 'height', 'bottom'))
-          })
+        ? (() => {
+            // The grid's middle, once: per box it made a large grid quadratic.
+            const cx =
+              (Math.min(...boxes.map((o) => o.left)) + Math.max(...boxes.map((o) => o.right))) / 2
+            const cy =
+              (Math.min(...boxes.map((o) => o.top)) + Math.max(...boxes.map((o) => o.bottom))) / 2
+            return boxes.map((b) =>
+              Math.hypot(
+                (b.left + b.width / 2 - cx) / b.width,
+                (b.top + b.height / 2 - cy) / b.height,
+              ),
+            )
+          })()
         : null
     measured.set(all, away)
   }

@@ -15,6 +15,9 @@
     v-bind="attrs"
   >
     <ul class="ui-sortable-list">
+      <!-- handle="item": the row itself is the handle. It's focusable for the keyboard, a press
+           that moves past the threshold drags it, and a press that doesn't is a click on what's
+           inside, as on a card. -->
       <li
         v-for="(item, index) in items"
         :key="keyOf(item)"
@@ -23,8 +26,15 @@
         :data-grabbed="isGrabbedItem(item) || undefined"
         :class="itemPart.class"
         :style="itemPart.style"
+        :tabindex="itemHandle && !disabled ? 0 : undefined"
+        :aria-label="itemHandle ? labelOf(item) : undefined"
+        :aria-roledescription="itemHandle ? 'sortable item' : undefined"
+        :aria-describedby="itemHandle ? instructionsId : undefined"
+        @pointerdown="itemHandle && onItemPointerdown($event, keyOf(item))"
+        @keydown="itemHandle && onItemKeydown($event, keyOf(item))"
       >
         <button
+          v-if="!itemHandle"
           type="button"
           :class="handlePart.class"
           :style="handlePart.style"
@@ -76,7 +86,8 @@ import './Sortable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, nextTick, useAttrs, useId, useTemplateRef } from 'vue'
+import { computed, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -136,6 +147,19 @@ const rawProps = withDefaults(
     /** Turns off dragging, so rows stay static. @default false */
     disabled?: boolean
     /**
+     * What you drag by. `'button'` is the grip at the start of each row. `'item'` is the whole row,
+     * as a board's cards: a press that moves drags it, one that doesn't is a click on what's inside.
+     * Rows then take a touch hold (`touchDragDelay`, 150 ms unset) so the list still scrolls.
+     * @default 'button'
+     */
+    handle?: 'button' | 'item'
+    /**
+     * `'card'` draws each row as a card: a border, padding and a background. `'plain'` draws no
+     * box, so rows look like your content; a held row lifts with a background and a shadow.
+     * @default 'card'
+     */
+    variant?: 'card' | 'plain'
+    /**
      * How it moves: its appearance, row by row (`{ initial: { item: { opacity: 0, y: 8 } }, stagger: 0.04 }`),
      * and its states (`{ states: { dragging: { root: { scale: '1.01' } } } }`). `false` skips the
      * built-in springs, so rows snap to their new slots. Use it when you drive the motion yourself.
@@ -172,6 +196,8 @@ const rawProps = withDefaults(
     autoScroll: true,
     restrictToList: false,
     disabled: false,
+    handle: 'button',
+    variant: 'card',
     motion: undefined,
     group: undefined,
     groupId: undefined,
@@ -186,6 +212,10 @@ const emit = defineEmits<{
   reorder: [value: string | number, to: DropPosition]
   /** Fires when `beforeDrop` throws or rejects, after Sortable reverts the move. */
   'drop-error': [error: unknown, details: SortableDropDetails]
+  /** Fires when a row is picked up, by pointer or keyboard. */
+  'drag-start': [value: string | number]
+  /** Fires when the row is dropped or the drag is cancelled, before its rows settle. */
+  'drag-end': [value: string | number]
 }>()
 
 defineSlots<{
@@ -232,6 +262,7 @@ const {
   announcement,
   onHandlePointerdown,
   onHandleKeydown,
+  consumeSuppressedClick,
 } = useSortable({
   rows,
   getElement: elementFor,
@@ -241,7 +272,8 @@ const {
   group: props.group,
   groupId: () => props.groupId,
   previewMode: () => props.previewMode ?? 'element',
-  touchDragDelay: () => props.touchDragDelay ?? 0,
+  // A whole-row handle is also tappable content: a touch holds before it drags, so the list scrolls.
+  touchDragDelay: () => props.touchDragDelay ?? (props.handle === 'item' ? 150 : 0),
   canDrop: (details) => props.canDrop?.(details) ?? true,
   beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
   onDropError: (error, details) => emit('drop-error', error, details),
@@ -301,6 +333,36 @@ const parts = useStateMotion({
   states: () => ({ dragging: isGrabbed.value, settling: isSettling.value }),
 })
 
+let draggedValue: string | number | null = null
+watch(isGrabbed, (grabbed) => {
+  if (grabbed) emit('drag-start', (draggedValue = activeValue.value!))
+  else if (draggedValue != null) emit('drag-end', draggedValue)
+  if (!grabbed) draggedValue = null
+})
+
+const itemHandle = computed(() => props.handle === 'item')
+// A press on a field inside the row is for typing, not dragging.
+const EDITABLE = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+function onItemPointerdown(event: PointerEvent, value: string | number) {
+  if ((event.target as Element).closest(EDITABLE)) return
+  onHandlePointerdown(event, value)
+}
+// Keys typed into content in the row are its own; the row's keys grab, move and drop it.
+function onItemKeydown(event: KeyboardEvent, value: string | number) {
+  if (event.target !== event.currentTarget && !isGrabbed.value) return
+  onHandleKeydown(event, value)
+}
+// After a drag, the browser's trailing click would open what the row holds: it stops here.
+useEventListener(root, 'click', (event) => consumeSuppressedClick() && stopClick(event), {
+  capture: true,
+})
+function stopClick(event: Event) {
+  event.stopPropagation()
+  event.preventDefault()
+}
+// A link or image inside the row would start the browser's own drag.
+useEventListener(root, 'dragstart', (event) => itemHandle.value && event.preventDefault())
+
 function isGrabbedItem(item: T): boolean {
   return isGrabbedValue(keyOf(item))
 }
@@ -310,7 +372,9 @@ const themedUi = useThemedUi(
   (theme) => theme.sortable,
   () => props.ui,
 )
-const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-sortable'))
+const rootPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.root, 'ui-sortable', `ui-sortable--${props.variant}`),
+)
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-sortable-item'))
 const handlePart = computed(() => resolveUiPart(cx, themedUi()?.handle, 'ui-sortable-handle'))
 

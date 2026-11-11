@@ -176,6 +176,11 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
     )
     return {
       ...group,
+      // How far it moves, so a long one's spring settles to the pixel.
+      far: Math.max(
+        Math.abs(Number.parseFloat(String(plain.x)) || 0),
+        Math.abs(Number.parseFloat(String(plain.y)) || 0),
+      ),
       frame: toKeyframe(plain as MotionValues, rtl, axis),
       sequence: listed.length
         ? toKeyframes(Object.fromEntries(listed) as MotionValues, rtl, {
@@ -237,16 +242,21 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
     }
     // A value timed on its own keeps its curve; shared values split: moves spring, fades ease.
     const own = !!group.timing
-    if (Object.keys(moves).length)
+    if (Object.keys(moves).length) {
+      const sprung =
+        !own && !out && options.timing.spring && group.far > 100
+          ? resolveTiming(el, { spring: options.timing.spring }, undefined, group.far)
+          : undefined
       runs.push(
         el.animate(frames(moves, live.moves), {
           id: PRESENCE_ID,
-          duration: out && !own ? exitMs : duration,
-          easing: out && !own ? EASE_OUT : easing,
+          duration: out && !own ? exitMs : (sprung?.duration ?? duration),
+          easing: out && !own ? EASE_OUT : (sprung?.easing ?? easing),
           delay,
           fill,
         }).finished,
       )
+    }
     // Fades: their own timing; leaving, the exit token; on a spring, eased and capped; else yours.
     const sprung = !own && !out && !!options.timing.spring
     if (Object.keys(fades).length)

@@ -357,9 +357,12 @@ export function inlineKey(key: string, el: Element | null | undefined): string {
  */
 export function restingRect(el: Element): DOMRect {
   const moved: [Animation, number][] = []
-  for (const animation of el.ownerDocument.getAnimations()) {
-    const target = (animation.effect as KeyframeEffect | null)?.target
-    if (!target || !target.contains(el) || animation.playState === 'finished') continue
+  // Only what moves it: its own animations and its ancestors', not every one on the page (a page
+  // of spinners and shimmer made each position update walk them all).
+  const around: Animation[] = []
+  for (let at: Element | null = el; at; at = at.parentElement) around.push(...at.getAnimations())
+  for (const animation of around) {
+    if (animation.playState === 'finished') continue
     const { activeDuration, delay = 0 } = animation.effect!.getComputedTiming()
     const end = delay + Number(activeDuration)
     if (!Number.isFinite(end)) continue

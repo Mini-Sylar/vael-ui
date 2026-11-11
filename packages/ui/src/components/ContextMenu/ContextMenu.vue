@@ -43,6 +43,9 @@
     <template v-if="$slots.item" #item="{ item }">
       <slot name="item" :item="item" />
     </template>
+    <template v-if="$slots.label" #label="{ item }">
+      <slot name="label" :item="item" />
+    </template>
     <template v-if="$slots.footer" #footer>
       <slot name="footer" />
     </template>
@@ -162,6 +165,8 @@ defineSlots<{
   header(): unknown
   /** Override one data-driven row's content while keeping its behavior. */
   item(props: { item: T }): unknown
+  /** Override a row's text only; its icon and shortcut stay. Forwarded to Menu's own `#label`. */
+  label(props: { item: T }): unknown
   /** Forwarded to Menu's own `#footer`. */
   footer(): unknown
 }>()

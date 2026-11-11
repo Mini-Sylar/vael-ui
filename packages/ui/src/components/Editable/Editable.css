@@ -23,15 +23,22 @@
     cursor: text;
   }
   .ui-editable-preview--sm {
-    min-block-size: 2rem;
-    font-size: calc(var(--ui-font-size) * 0.875);
+    min-block-size: 1.75rem;
+    min-block-size: round(1.75rem, 2px);
+    font-size: calc(var(--ui-font-size) * 0.8125);
+    font-size: round(calc(var(--ui-font-size) * 0.8125), 1px);
   }
   .ui-editable-preview--md {
-    min-block-size: 2.5rem;
+    min-block-size: 2.25rem;
+    min-block-size: round(2.25rem, 2px);
+    font-size: calc(var(--ui-font-size) * 0.875);
+    font-size: round(calc(var(--ui-font-size) * 0.875), 1px);
   }
   .ui-editable-preview--lg {
-    min-block-size: 3rem;
-    font-size: calc(var(--ui-font-size) * 1.125);
+    min-block-size: 2.5rem;
+    min-block-size: round(2.5rem, 2px);
+    font-size: var(--ui-font-size);
+    font-size: round(var(--ui-font-size), 1px);
   }
   @media (hover: hover) and (pointer: fine) {
     .ui-editable-preview:hover:not(:disabled) {

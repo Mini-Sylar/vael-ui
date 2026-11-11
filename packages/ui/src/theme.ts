@@ -536,20 +536,67 @@ export function useThemedUi<T extends Record<string, UiPartValue | undefined>>(
   }
 }
 
+// A channel as written: a number, a percentage of `full`, or `none`.
+const channel = (raw: string | undefined, full: number) =>
+  !raw || raw === 'none'
+    ? 0
+    : raw.endsWith('%')
+      ? (Number.parseFloat(raw) / 100) * full
+      : Number(raw)
+const toByte = (linear: number) => {
+  const c = Math.min(1, Math.max(0, linear))
+  return 255 * (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055)
+}
+function fromOklab(l: number, a: number, b: number): [number, number, number] {
+  const L = (l + 0.3963377774 * a + 0.2158037573 * b) ** 3
+  const M = (l - 0.1055613458 * a - 0.0638541728 * b) ** 3
+  const S = (l - 0.0894841775 * a - 1.291485548 * b) ** 3
+  return [
+    toByte(4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S),
+    toByte(-1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S),
+    toByte(-0.0041960863 * L - 0.7034186147 * M + 1.707614701 * S),
+  ]
+}
+function fromHsl(h: number, sat: number, light: number): [number, number, number] {
+  const k = (n: number) => (n + h / 30) % 12
+  const a = sat * Math.min(light, 1 - light)
+  const f = (n: number) => 255 * (light - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))
+  return [f(0), f(8), f(4)]
+}
+
 /**
- * Resolves any CSS color string to its RGB channels by letting the browser's
- * own color engine parse it (a hidden probe element + getComputedStyle) —
- * avoids hand-rolling a parser that would only cover hex.
+ * A CSS colour's sRGB channels, parsed the same way on the server and in the browser (hex, `rgb()`,
+ * `hsl()`, `oklch()`, `oklab()`), so the contrast text server-renders as it hydrates. Anything else
+ * (a colour name) goes through a canvas in the browser.
  */
-function resolveRgb(color: string): [number, number, number] {
+export function resolveRgb(color: string): [number, number, number] {
+  const value = color.trim().toLowerCase()
+  const hex = /^#([\da-f]{3,8})$/.exec(value)?.[1]
+  if (hex) {
+    const full = hex.length <= 4 ? [...hex].map((c) => c + c).join('') : hex
+    return [0, 2, 4].map((i) => Number.parseInt(full.slice(i, i + 2), 16)) as [
+      number,
+      number,
+      number,
+    ]
+  }
+  const fn = /^(rgba?|hsla?|oklch|oklab)\(([^)]*)\)$/.exec(value)
+  if (fn) {
+    const [a, b, c] = fn[2]!.split(/[\s,/]+/).filter(Boolean)
+    if (fn[1]!.startsWith('rgb')) return [channel(a, 255), channel(b, 255), channel(c, 255)]
+    if (fn[1]!.startsWith('hsl'))
+      return fromHsl(Number.parseFloat(a!) || 0, channel(b, 1), channel(c, 1))
+    const l = channel(a, 1)
+    if (fn[1] === 'oklab') return fromOklab(l, channel(b, 0.4), channel(c, 0.4))
+    const chroma = channel(b, 0.4)
+    const hue = ((Number.parseFloat(c ?? '0') || 0) * Math.PI) / 180
+    return fromOklab(l, chroma * Math.cos(hue), chroma * Math.sin(hue))
+  }
   if (typeof document === 'undefined') return [128, 128, 128]
-  const probe = document.createElement('span')
-  probe.style.color = color
-  document.body.appendChild(probe)
-  const rgb = getComputedStyle(probe).color
-  probe.remove()
-  const match = rgb.match(/[\d.]+/g)
-  return match ? [Number(match[0]), Number(match[1]), Number(match[2])] : [128, 128, 128]
+  const ctx = document.createElement('canvas').getContext('2d')
+  if (!ctx) return [128, 128, 128]
+  ctx.fillStyle = color
+  return /^#[\da-f]{6}$/i.test(ctx.fillStyle) ? resolveRgb(ctx.fillStyle) : [128, 128, 128]
 }
 
 /**

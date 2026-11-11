@@ -26,7 +26,10 @@ test('a control that shrinks while pressed keeps its full box clickable', () => 
   const missing = new Set<string>()
   for (const css of Object.values(sheets)) {
     for (const cls of selfScalingPresses(css)) {
-      const guard = new RegExp(`\\${cls}:active::after[^{]*\\{[^}]*inset:\\s*-`)
+      // `:not(…)` between: the guard holds back while a control inside is pressed (Card).
+      const guard = new RegExp(
+        `\\${cls}:active(?::not\\([\\s\\S]*?\\))?::after[^{]*\\{[^}]*inset:\\s*-`,
+      )
       if (!guard.test(all)) missing.add(cls)
     }
   }

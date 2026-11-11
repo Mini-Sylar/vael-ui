@@ -268,6 +268,44 @@
     visibility: hidden;
     pointer-events: none;
   }
+
+  /* planner: the month fills its box, and each day is a box for your content. */
+  .ui-calendar-root--planner {
+    display: flex;
+    inline-size: auto;
+    max-inline-size: none;
+  }
+  .ui-calendar-root--planner .ui-calendar-panes,
+  .ui-calendar-root--planner .ui-calendar-pane {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+  .ui-calendar-root--planner :is(.ui-calendar-weekdays, .ui-calendar-week) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  .ui-calendar-root--planner.ui-calendar-root--week-numbers
+    :is(.ui-calendar-weekdays, .ui-calendar-week) {
+    grid-template-columns: minmax(1.75rem, auto) repeat(7, minmax(0, 1fr));
+  }
+  .ui-calendar-root--planner .ui-calendar-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    aspect-ratio: auto;
+    min-block-size: 6rem;
+    min-inline-size: 0;
+    padding: 0.375rem;
+    text-align: start;
+  }
+  .ui-calendar-root--planner .ui-calendar-cell:active {
+    transform: none;
+  }
+  /* The day's selection is a tint under its content, not a filled square. */
+  .ui-calendar-root--planner .ui-calendar-cell.ui-calendar-cell--selected {
+    background: color-mix(in oklch, var(--ui-primary) 12%, transparent);
+    color: var(--ui-text);
+  }
   .ui-calendar-cell--outside {
     color: var(--ui-text-muted);
     opacity: 0.5;
@@ -451,6 +489,18 @@
     opacity: 0;
     transform: translateX(calc(-0.5rem * var(--ui-calendar-direction, 1)));
     filter: blur(3px);
+  }
+
+  /* Motion turned off after mount: Vapor keeps a Transition's first props, so CSS ends it here. */
+  .ui-calendar-root[data-motion='off']
+    :is(
+      .ui-calendar-grid-enter-active,
+      .ui-calendar-grid-leave-active,
+      .ui-calendar-label-enter-active,
+      .ui-calendar-label-leave-active,
+      .ui-calendar-level-enter-active
+    ) {
+    transition: none;
   }
 
   /* Days, months and years: the old level goes at once, so two grids of text never overlap, and

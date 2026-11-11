@@ -1093,8 +1093,11 @@ function onRowClick(node: TreeNode, event: MouseEvent) {
     return
   }
   const target = event.target as HTMLElement
-  // Guard: chevron/checkbox click must not also activate row.
-  if (target.closest('.ui-tree-chevron, .ui-checkbox')) return
+  // A control inside the row (the chevron, a checkbox, your own button or link) keeps its click.
+  const control = target.closest(
+    '.ui-tree-chevron, .ui-checkbox, button, a[href], input, select, textarea, [role="button"]',
+  )
+  if (control && control !== event.currentTarget) return
   const hasChildren = !!node.children && node.children.length > 0
   if (props.expandOnRowClick && hasChildren) toggleExpand(node)
   activateNode(node)

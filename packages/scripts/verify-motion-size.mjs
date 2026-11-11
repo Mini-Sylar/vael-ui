@@ -115,13 +115,23 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // The states player shares the stagger code. Measured 9546 and 7978 B.
 // up front 9.4 → 9.5 KB, states 7.85 → 7.95 KB (2026-11-05): `stagger: 'random'`, one shuffle per
 // group in the shared stagger code. Measured 9663 and 8081 B.
+// up front 9.5 → 9.6 KB, runtime 7.55 → 7.7 KB, states 7.95 → 8 KB, linked 3.1 → 3.15 KB
+// (2026-11-11): springs settle to the pixel over a long move (a tolerance from the distance, in the
+// shared timing), `appear: 'once'`, `after` waiting on a `layoutId` slide, and a layout place that
+// remembers what it was measured against. Measured 9767, 7856, 8175 and 3193 B.
+// runtime 7.7 → 7.75 KB (2026-11-11): a reopen mid reverse-close stops the stages still to
+// come, and a hook whose promise rejects finishes at once. Measured 7897 B.
+// up front 9.6 → 9.7 KB, states 8 → 8.05 KB (2026-11-11): server-shown entrances never replay on
+// hydration, RTL in the first paint, one shared v-show observer, a provider walk per owner, quiet
+// attributes skipped by the layout and size observers, pixel-true CSS-engine springs; a repeated
+// part listens again when its states change. Measured 9913 and 8203 B.
 const BUDGET = {
-  upFront: 9.5 * 1024,
-  runtime: 7.55 * 1024,
+  upFront: 9.7 * 1024,
+  runtime: 7.75 * 1024,
   morph: 1.55 * 1024,
   button: 1.38 * 1024,
-  states: 7.95 * 1024,
-  linked: 3.1 * 1024,
+  states: 8.05 * 1024,
+  linked: 3.15 * 1024,
 }
 
 // Every chunk a file pulls in statically.

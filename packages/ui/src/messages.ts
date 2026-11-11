@@ -26,6 +26,8 @@ export interface UiMessages {
   input: {
     /** The `clearable` button's name. */
     clear: string
+    /** Read out while `loading` is on. */
+    loading: string
   }
   inputNumber: {
     increment: string
@@ -45,6 +47,8 @@ export interface UiMessages {
     /** `{count}` is replaced with the number of selected items — the
      * `display="count"` trigger summary in `multiple` mode. */
     selectedCount: string
+    /** Read out while options load (Select, Combobox and the other pickers). */
+    loading: string
   }
   combobox: {
     empty: string
@@ -111,6 +115,8 @@ export interface UiMessages {
     label: string
     /** Announced as you type; `{count}` is the number of results. */
     results: string
+    /** Read out while `loading` is on and nothing has come back yet. */
+    loading: string
   }
   colorPicker: {
     /** aria-label of the saturation and brightness plane. */
@@ -225,7 +231,7 @@ export const pullToRefreshMessages: UiMessages['pullToRefresh'] = {
   refreshing: 'Refreshing…',
   updated: 'Updated',
 }
-export const inputMessages: UiMessages['input'] = { clear: 'Clear' }
+export const inputMessages: UiMessages['input'] = { clear: 'Clear', loading: 'Loading…' }
 export const inputNumberMessages: UiMessages['inputNumber'] = {
   increment: 'Increase',
   decrement: 'Decrease',
@@ -240,6 +246,7 @@ export const selectMessages: UiMessages['select'] = {
   empty: 'No options',
   clear: 'Clear selection',
   selectedCount: '{count} selected',
+  loading: 'Loading…',
 }
 export const comboboxMessages: UiMessages['combobox'] = {
   empty: 'No results',
@@ -277,6 +284,7 @@ export const commandPaletteMessages: UiMessages['commandPalette'] = {
   empty: 'No results',
   label: 'Command palette',
   results: '{count} results',
+  loading: 'Loading…',
 }
 export const colorPickerMessages: UiMessages['colorPicker'] = {
   saturationAndBrightness: 'Saturation and brightness',
@@ -386,6 +394,14 @@ export interface UiMessageSource {
 
 export const messagesKey: InjectionKey<Ref<UiMessageSource>> = Symbol('ui-messages')
 
+// A string's `{count}`-style placeholders, passed back to the consumer's `t()` as themselves, so
+// vue-i18n doesn't blank them before vael-ui fills them in.
+const placeholdersOf = (text: string): Record<string, string> => {
+  const named: Record<string, string> = {}
+  for (const match of text.matchAll(/\{(\w+)\}/g)) named[match[1]!] = match[0]
+  return named
+}
+
 // Yours, then your i18n's `uiKit.<section>.<key>`, then the English default.
 function sectionOf<K extends keyof UiMessages>(
   source: UiMessageSource | undefined,
@@ -403,7 +419,7 @@ function sectionOf<K extends keyof UiMessages>(
       const path = `uiKit.${section}.${key}`
       const text = (i18n.t as (key: string, named: object, options: object) => string)(
         path,
-        {},
+        placeholdersOf(defaults[key as keyof UiMessages[K]] as string),
         quiet,
       )
       if (text !== path) out[key] = text
@@ -480,11 +496,11 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   const missing: string[] = []
   let found = 0
   for (const [section, keys] of Object.entries(defaultMessages))
-    for (const key of Object.keys(keys)) {
+    for (const [key, fallback] of Object.entries(keys)) {
       const path = `uiKit.${section}.${key}`
       const text = (i18n.t as (key: string, named: object, options: object) => string)(
         path,
-        {},
+        placeholdersOf(fallback as string),
         quiet,
       )
       if (text === path) {
@@ -497,7 +513,8 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
 
   if (process.env.NODE_ENV !== 'production' && found > 0 && missing.length > 0) {
     const locale = toValue(i18n.locale) ?? ''
-    if (!warnedLocales.has(locale)) {
+    // English falls back to the English defaults: nothing is missing there.
+    if (!/^en(?:[-_]|$)/i.test(locale) && !warnedLocales.has(locale)) {
       warnedLocales.add(locale)
       // eslint-disable-next-line no-console -- the one dev-only warning, asked for above
       console.warn(

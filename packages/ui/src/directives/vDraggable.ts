@@ -60,8 +60,18 @@ function boxOf(row: HTMLElement): HTMLElement {
   return el
 }
 
-// Rows only: not the drag preview, nor a decorative layer such as Tabs' hover indicator.
+// Rows only: not the drag preview, nor a decorative layer such as Tabs' hover indicator. Read once
+// per task: the engine asks for rows one by one, and each read would walk every child's style.
+const rowsOf = new WeakMap<HTMLElement, HTMLElement[]>()
 function childrenOf(container: HTMLElement): HTMLElement[] {
+  let rows = rowsOf.get(container)
+  if (!rows) {
+    rowsOf.set(container, (rows = readChildren(container)))
+    queueMicrotask(() => rowsOf.delete(container))
+  }
+  return rows
+}
+function readChildren(container: HTMLElement): HTMLElement[] {
   return Array.from(container.children)
     .filter(
       (child): child is HTMLElement =>
@@ -168,7 +178,7 @@ export function vDraggableVapor(
   value?: (() => DraggableValue) | DirectiveBinding<DraggableValue>,
 ): (() => void) | void {
   watchEffect(() => {
-    start(el, typeof value === 'function' ? value() : undefined)
+    start(el, typeof value === 'function' ? value() : value?.value)
   })
   return () => stop(el)
 }

@@ -23,7 +23,12 @@
           v-bind="$attrs"
         >
           <span class="ui-tooltip-content">
-            <slot :content="content" :side="resolvedSide">{{ content }}</slot>
+            <slot :content="content" :side="resolvedSide" :keys="keys"
+              >{{ content
+              }}<span v-if="keys.length" class="ui-tooltip-keys"
+                ><Kbd v-for="key in keys" :key="key">{{ key }}</Kbd></span
+              ></slot
+            >
           </span>
         </div>
       </div>
@@ -82,6 +87,7 @@ import { useEventListener } from '@vueuse/core'
 import { ssrDocument } from '../../ssr'
 import { setDescribedBy, useTooltipCore } from '../../composables/useTooltip'
 import { TOOLTIP_ATTR, tooltipTargetListeners, tooltipTargets } from '../../directives/vTooltip'
+import Kbd from '../Kbd/Kbd.vue'
 import type { TooltipDirectiveOptions } from '../../directives/vTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -91,8 +97,8 @@ defineOptions({ inheritAttrs: false })
 const props = withDefaults(defineProps<TooltipHostProps>(), { motion: undefined })
 
 defineSlots<{
-  /** Custom tooltip body; defaults to the text `content`. */
-  default(props: { content: string; side: Side }): unknown
+  /** Custom tooltip body; defaults to the text `content`, then the `keys` as `Kbd`s. */
+  default(props: { content: string; side: Side; keys: string[] }): unknown
 }>()
 
 const currentEl = shallowRef<HTMLElement | null>(null)
@@ -128,6 +134,7 @@ const {
 } = core
 
 const content = computed(() => config.value?.content ?? '')
+const keys = computed(() => config.value?.keys ?? [])
 // Per-target override with host default (like side/openDelay/closeDelay).
 const forceMount = computed(() => config.value?.forceMount ?? props.forceMount ?? false)
 const tooltipTransition = useTooltipMotion({

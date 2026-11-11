@@ -4,6 +4,7 @@
     v-scroll-mask="orientation === 'horizontal' ? 'x' : false"
     :class="rootPart.class"
     :style="rootPart.style"
+    :data-motion="props.motion ? undefined : 'off'"
   >
     <template v-for="(item, index) in items" :key="index">
       <li
@@ -36,7 +37,8 @@
               :completed="stateOf(index) === 'completed'"
               :disabled="isDisabled(item)"
             >
-              <Transition :name="props.motion ? 'ui-stepper-check' : undefined">
+              <!-- A fixed name: Vapor keeps a Transition's first props, so motion off is CSS. -->
+              <Transition name="ui-stepper-check">
                 <svg
                   v-if="stateOf(index) === 'completed'"
                   key="check"

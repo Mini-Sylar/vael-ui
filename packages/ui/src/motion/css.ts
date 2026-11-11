@@ -4,7 +4,7 @@
 import { cssDuration, cssEasing } from './ease'
 import { nextTick } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
-import { springArrival, springEasing, springOf } from './springEasing'
+import { settleFor, springArrival, springEasing, springOf } from './springEasing'
 import type { ResolvedMotion } from './context'
 import type { Runner, RunnerHost } from './host'
 import { cssCanPlay, partDelays, SHELL, staggerAt, targetCanPlay, valuesAt } from './playable'
@@ -62,7 +62,7 @@ function tokenMs(el: Element, token: string): number {
   return value.endsWith('ms') ? n : n * 1000
 }
 
-function timing(el: Element, t: MotionTiming, fallback: Spring): Timed {
+function timing(el: Element, t: MotionTiming, fallback: Spring, distance = 0): Timed {
   if (t.duration !== undefined || t.easing !== undefined) {
     const raw = t.duration ?? 'var(--ui-duration-enter)'
     const duration = typeof raw === 'number' ? raw : tokenMs(el, cssDuration(raw))
@@ -72,8 +72,16 @@ function timing(el: Element, t: MotionTiming, fallback: Spring): Timed {
     return { easing, duration, arrival: duration, given: true }
   }
   const spring = springOf((t.spring as Spring | undefined) ?? fallback)
-  return { ...springEasing(spring), arrival: springArrival(spring) }
+  return { ...springEasing(spring, 0, settleFor(distance)), arrival: springArrival(spring) }
 }
+// How far its values move it, in px: a long move's spring settles to the pixel.
+const travel = (values: MotionValues) =>
+  Math.max(
+    Math.abs(Number.parseFloat(String(plainOf(values.x))) || 0),
+    Math.abs(Number.parseFloat(String(plainOf(values.y))) || 0),
+  )
+const plainOf = (raw: unknown) =>
+  raw && typeof raw === 'object' && 'value' in raw ? (raw as { value: unknown }).value : raw
 
 /** MotionValues → one CSS value per property this engine owns. */
 function plan(values: MotionValues, rtl: boolean): Plan {
@@ -369,7 +377,7 @@ async function appearOnce(
     wait?.cancel()
     return played
   }
-  const go = bringIn(el, values, timing(el, own, spring), spring, delayMs, again)
+  const go = bringIn(el, values, timing(el, own, spring, travel(values)), spring, delayMs, again)
   if (until) await until
   // A style read, not offsetWidth: SVG elements have none, and the start look never applied.
   void getComputedStyle(el).opacity
@@ -421,7 +429,8 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
   }
   function sampleWhileLeaving(id: number, own: Record<string, Element>) {
     const tick = () => {
-      if (!leavingNow || !Object.values(own).some((part) => part.isConnected)) return
+      if (id !== generation || !leavingNow) return
+      if (!Object.values(own).some((part) => part.isConnected)) return
       const now = new Map(leftAt)
       for (const [name, part] of Object.entries(own))
         if (part.isConnected) now.set(name, { el: part, look: lookOf(part) })
@@ -685,6 +694,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     cancel() {
       enteringEl = null
       repeatDones = []
+      leavingNow = false
       generation++
       handedOver?.cancel()
     },

@@ -50,8 +50,11 @@ function applyManualFade(el: HTMLElement, axis: ScrollMaskAxis) {
   }
 }
 
-function resolveAxis(value: ScrollMaskValue): ScrollMaskAxis {
-  return value === 'x' || value === 'y' || value === 'both' ? value : 'y'
+type Modifiers = Partial<Record<string, boolean>> | undefined
+// The value names the axis; failing that, a modifier (`v-scroll-mask.x`); failing that, `y`.
+function resolveAxis(value: ScrollMaskValue, modifiers?: Modifiers): ScrollMaskAxis {
+  if (value === 'x' || value === 'y' || value === 'both') return value
+  return modifiers?.both ? 'both' : modifiers?.x ? 'x' : 'y'
 }
 
 // The scrollbar's strip, kept out of the fade (a mask covers the whole box, scrollbar included).
@@ -105,6 +108,8 @@ function check(el: HTMLElement, axis: ScrollMaskAxis) {
 function start(el: HTMLElement, axis: ScrollMaskAxis) {
   const existing = state.get(el)
   if (existing) {
+    // Re-rendered with the same axis: the observers already follow its size and content.
+    if (existing.axis === axis) return
     existing.axis = axis
     check(el, axis)
     return
@@ -154,11 +159,11 @@ function stop(el: HTMLElement) {
 export const vScrollMask: Directive<HTMLElement, ScrollMaskValue> = {
   mounted(el, binding) {
     if (binding.value === false) return
-    start(el, resolveAxis(binding.value))
+    start(el, resolveAxis(binding.value, binding.modifiers))
   },
   updated(el, binding) {
     if (binding.value === false) stop(el)
-    else start(el, resolveAxis(binding.value))
+    else start(el, resolveAxis(binding.value, binding.modifiers))
   },
   unmounted(el) {
     stop(el)
@@ -166,15 +171,23 @@ export const vScrollMask: Directive<HTMLElement, ScrollMaskValue> = {
 }
 
 export function vScrollMaskVapor(el: HTMLElement, binding: DirectiveBinding<ScrollMaskValue>): void
-export function vScrollMaskVapor(el: HTMLElement, value?: () => ScrollMaskValue): () => void
+export function vScrollMaskVapor(
+  el: HTMLElement,
+  value?: () => ScrollMaskValue,
+  argument?: string | (() => string),
+  modifiers?: Modifiers,
+): () => void
 export function vScrollMaskVapor(
   el: HTMLElement,
   value?: (() => ScrollMaskValue) | DirectiveBinding<ScrollMaskValue>,
+  _argument?: string | (() => string),
+  modifiers?: Modifiers,
 ): (() => void) | void {
+  const picked = typeof value === 'function' ? modifiers : value?.modifiers
   watchEffect(() => {
-    const current = typeof value === 'function' ? value() : undefined
+    const current = typeof value === 'function' ? value() : value?.value
     if (current === false) stop(el)
-    else start(el, resolveAxis(current))
+    else start(el, resolveAxis(current, picked))
   })
   return () => stop(el)
 }

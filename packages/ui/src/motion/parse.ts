@@ -14,6 +14,16 @@ const isData = (value: unknown): value is Data =>
 const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 const NAME = /^[a-z][\w-]{0,31}$/i
 const UNSAFE = /url\(|[{};<>]|\/\*|\\|expression\(/i
+// A selector the browser parses (on the server, any).
+const parses = (selector: string) => {
+  if (typeof document === 'undefined') return true
+  try {
+    document.createDocumentFragment().querySelector(selector)
+    return true
+  } catch {
+    return false
+  }
+}
 
 const ROLES = ['overlay', 'list', 'reveal', 'press', 'content'] as const
 const COMPONENTS = [
@@ -188,9 +198,12 @@ function timing(input: Data, out: Data, path: string, issues: Issues): void {
 function cssValue(key: string, value: unknown): boolean {
   if (typeof value === 'number') return Number.isFinite(value) && Math.abs(value) <= 10000
   if (typeof value !== 'string' || value.length > 200 || UNSAFE.test(value)) return false
-  if (key === 'x' || key === 'y' || key === 'blur')
-    return typeof CSS === 'undefined' || CSS.supports('width', value)
-  return typeof CSS === 'undefined' || CSS.supports(cssName(key), value)
+  if (typeof CSS === 'undefined') return true
+  if (key === 'x' || key === 'y' || key === 'blur') return CSS.supports('width', value)
+  // Per-axis transforms aren't properties of their own: checked as the function they become.
+  if (/^(rotate|scale|skew|translate)[XYZ]$/.test(key))
+    return CSS.supports('transform', `${key}(${value})`)
+  return CSS.supports(cssName(key), value)
 }
 
 function values(input: unknown, path: string, issues: Issues): Data | undefined {
@@ -253,7 +266,8 @@ function target(input: unknown, path: string, issues: Issues): Data | undefined 
       else issues.push(`${path}.after: names or moments like 'rows:60%'`)
     } else if (key === 'select' || key === 'slot') {
       // Scoped querySelectorAll inside the component; still, keep it a plain selector.
-      if (typeof raw === 'string' && raw.length <= 100 && !UNSAFE.test(raw)) out[key] = raw
+      if (typeof raw === 'string' && raw.length <= 100 && !UNSAFE.test(raw) && parses(raw))
+        out[key] = raw
       else issues.push(`${path}.${key}: a short selector`)
     } else if (key === 'steps') {
       if (!Array.isArray(raw) || raw.length > 8) {

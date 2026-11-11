@@ -61,7 +61,8 @@ import './SwipeToReveal.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
+import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
+import { useResizeObserver } from '@vueuse/core'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useSwipeReveal } from '../../composables/useSwipeReveal'
 import type { SwipeRevealSide } from '../../composables/useSwipeReveal'
@@ -217,14 +218,19 @@ watch(
 // 0 → 1: how far each edge is revealed on screen. Exposed for consumer-driven effects; also
 // drives the opt-in `revealScale` grow-in.
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
-const leadingProgress = computed(() => {
-  const width = leadingActionsEl.value?.offsetWidth ?? 0
-  return width > 0 ? clamp01(shown.value / width) : 0
-})
-const trailingProgress = computed(() => {
-  const width = trailingActionsEl.value?.offsetWidth ?? 0
-  return width > 0 ? clamp01(-shown.value / width) : 0
-})
+// The actions' widths, kept by an observer: read on every frame of a swipe, each was a layout.
+const leadingWidth = shallowRef(0)
+const trailingWidth = shallowRef(0)
+useResizeObserver(leadingActionsEl, ([entry]) => (leadingWidth.value = widthOf(entry!)))
+useResizeObserver(trailingActionsEl, ([entry]) => (trailingWidth.value = widthOf(entry!)))
+const widthOf = (entry: ResizeObserverEntry) =>
+  entry.borderBoxSize?.[0]?.inlineSize ?? (entry.target as HTMLElement).offsetWidth
+const leadingProgress = computed(() =>
+  leadingWidth.value > 0 ? clamp01(shown.value / leadingWidth.value) : 0,
+)
+const trailingProgress = computed(() =>
+  trailingWidth.value > 0 ? clamp01(-shown.value / trailingWidth.value) : 0,
+)
 
 const revealScaleOn = computed(() => props.revealScale !== false)
 const rootStyle = computed(() =>

@@ -42,16 +42,15 @@ test('animated=false never applies the pop class, on mount or on change', async 
   expect(content(screen.container)).not.toHaveClass('ui-badge-content--animated')
 })
 
-test('animated (default) applies the pop class, but suppresses its duration on the very first paint', async () => {
+test('animated (default) leaves the first paint still and pops only once the count has changed', async () => {
   const screen = await render(Badge, { props: { count: 1 } })
   const first = content(screen.container)!
-  expect(first).toHaveClass('ui-badge-content--animated')
-  // Initial mount: nothing changed yet, so the pop must not visibly play.
-  expect(first.style.animationDuration).toBe('0s')
+  // Initial mount: nothing changed yet, so the pop must not play.
+  expect(first).not.toHaveClass('ui-badge-content--animated')
 
   await screen.rerender({ count: 2 })
   const second = content(screen.container)!
   expect(second).not.toBe(first)
-  // A genuine change: the pop is allowed to play at its real duration.
-  expect(second.style.animationDuration).toBe('')
+  // A genuine change: the pop plays.
+  expect(second).toHaveClass('ui-badge-content--animated')
 })

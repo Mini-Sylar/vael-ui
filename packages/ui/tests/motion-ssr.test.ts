@@ -136,3 +136,42 @@ test('a list with `appear` hydrates as it is: its items never replay their entra
   for (const item of document.querySelectorAll<HTMLElement>('.served'))
     expect(getComputedStyle(item).opacity).toBe('1')
 })
+
+test('a named entrance, and one CSS cannot play, show as rendered and never replay once hydrated', async () => {
+  const { host, mismatches } = await serveAndHydrate(() =>
+    h('div', [
+      withDirectives(h('p', { class: 'named' }, 'Row'), [
+        [vAnimate, { initial: { opacity: 0, y: 6 }, appear: 'once' }, 'ssr-rows'],
+      ]),
+      withDirectives(h('p', { class: 'stepped' }, 'Step'), [
+        [vAnimate, { initial: { opacity: 0 }, steps: [{ to: { opacity: 0.5 } }] }],
+      ]),
+    ]),
+  )
+  expect(mismatches).toEqual([])
+  await frame()
+  for (const el of host.querySelectorAll<HTMLElement>('.named, .stepped')) {
+    expect(el.hasAttribute('data-ui-ssr')).toBe(false)
+    expect(el.getAnimations()).toHaveLength(0)
+    expect(getComputedStyle(el).opacity).toBe('1')
+  }
+})
+
+test('right to left, the server first paint slides in from the mirrored side', async () => {
+  const html = await renderToString(
+    createSSRApp({
+      render: () =>
+        withDirectives(h('p', { class: 'slide' }, 'Hi'), [[vAnimate, { initial: { x: 12 } }]]),
+    }),
+  )
+  const host = document.createElement('div')
+  host.dir = 'rtl'
+  host.innerHTML = html
+  document.body.append(host)
+  hosts.push(host)
+  const el = host.querySelector<HTMLElement>('.slide')!
+  expect(el.style.getPropertyValue('--ui-appear-translate-rtl')).toBe('-12px 0px')
+  expect(getComputedStyle(el).getPropertyValue('--ui-appear-translate-dir').trim()).toBe(
+    '-12px 0px',
+  )
+})
