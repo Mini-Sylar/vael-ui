@@ -25,6 +25,11 @@ const props = withDefaults(
     width?: string | number
     /** Least width as a CSS length, for a column that shares the rest of the room. Numbers are pixels. */
     minWidth?: string | number
+    /**
+     * Takes the room the other columns leave, and no more: a long value (an email that doesn't
+     * wrap) ends in an ellipsis instead of widening the table past its container. @default false
+     */
+    fill?: boolean
     /** Unset, inherits DataTable's `resizableColumns`; `true` or `false` overrides it for this column. */
     resizable?: boolean
     /** Unset, inherits DataTable's `reorderableColumns`; `false` pins this column in place. */
@@ -78,6 +83,9 @@ const columnDef: RegisteredColumn<T> = {
   },
   get minWidth() {
     return props.minWidth
+  },
+  get fill() {
+    return props.fill
   },
   get reorderable() {
     return props.reorderable

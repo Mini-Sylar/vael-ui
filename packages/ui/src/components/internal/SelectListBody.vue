@@ -56,7 +56,7 @@
         <div
           v-for="index in sectionIndexes(section)"
           :id="`${listboxId}-opt-${index}`"
-          :key="items[index]!.value"
+          :key="items[index]!.value ?? NULL_KEY"
           role="option"
           :class="optionPart.class"
           :data-active="index === activeIndex || undefined"
@@ -177,21 +177,31 @@ export interface SelectItemData {
   disabled?: boolean
 }
 
+/**
+ * What an option may be: your items, whose `value` may also be `null`, a real choice such as
+ * "Unassigned". Picking it sets the model to `null`, and a `null` model shows it as picked.
+ */
+export interface SelectChoice {
+  label: string
+  value: string | number | null
+  disabled?: boolean
+}
+
 /** A titled group of options in Select's `items`, shown under its label. */
-export interface SelectGroupData<T extends SelectItemData = SelectItemData> {
+export interface SelectGroupData<T extends SelectChoice = SelectItemData> {
   label: string
   items: readonly T[]
 }
 
 /** A group as the `#group-label` slot sees it: the object you passed, your own fields included. */
 export interface SelectGroupSlotData<
-  T extends SelectItemData = SelectItemData,
+  T extends SelectChoice = SelectItemData,
 > extends SelectGroupData<T> {
   [key: string]: any
 }
 
 /** @internal A run of options in the list body's `items`, with its group if it has one. */
-export interface SelectListSection<T extends SelectItemData = SelectItemData> {
+export interface SelectListSection<T extends SelectChoice = SelectItemData> {
   label?: string
   group?: SelectGroupSlotData<T>
   start: number
@@ -222,7 +232,7 @@ export interface SelectListSection<T extends SelectItemData = SelectItemData> {
 
   Comment stays outside <template> — see Button.vue for why.
 -->
-<script setup lang="ts" generic="T extends SelectItemData">
+<script setup lang="ts" generic="T extends SelectChoice">
 import '../shared/loader-spinner.css'
 import LoaderMark from './LoaderMark.vue'
 import { useMessages, selectMessages } from '../../messages'
@@ -238,6 +248,8 @@ import { useTabIndicator } from '../../composables/useTabIndicator'
 import '../shared/indicator.css'
 import type { UiPartValue } from '../../classes'
 
+// A `null` value is a choice of its own; as a key, Vue would read it as no key.
+const NULL_KEY = '\u0000null'
 const messages = useMessages({ select: selectMessages })
 const props = defineProps<{
   items: readonly T[]

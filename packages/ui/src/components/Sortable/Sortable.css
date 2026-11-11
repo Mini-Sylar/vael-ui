@@ -141,6 +141,12 @@
     cursor: grabbing;
   }
 
+  /* virtualize: a row off the screen keeps its measured size, border and padding included. */
+  .ui-sortable-item[data-sortable-resting] {
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
   .ui-sortable-content {
     flex: 1 1 auto;
     min-inline-size: 0;

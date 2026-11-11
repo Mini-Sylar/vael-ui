@@ -170,7 +170,8 @@ defineSlots<{
   preview(props: { value: string }): unknown
   /**
    * The control while editing, in place of the Input: a Textarea, a Select, a date picker. Bind
-   * `value` and call `update` with each change; Enter, Escape and focus leaving still work.
+   * `value` and call `update` with each change; Enter, Escape and focus leaving still work. A key your
+   * control handles itself with `preventDefault()` (`@keydown.enter.prevent="save"`) is left to it.
    */
   edit(props: {
     value: string
@@ -269,6 +270,8 @@ function cancel() {
   emit('cancel')
 }
 function onKeydown(event: KeyboardEvent) {
+  // Your control handled the key itself (`@keydown.enter.prevent="save"`): it isn't handled twice.
+  if (event.defaultPrevented) return
   if (event.key === 'Enter' && submitsOnEnter.value) {
     // A textarea keeps Enter for new lines; Cmd or Ctrl with it submits.
     if (event.target instanceof HTMLTextAreaElement && !event.metaKey && !event.ctrlKey) return

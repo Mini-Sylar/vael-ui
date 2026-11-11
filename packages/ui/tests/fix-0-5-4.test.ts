@@ -469,3 +469,220 @@ test('ColorPicker and Editable take a Field label, description and disabled', as
   expect(preview.disabled).toBe(true)
   expect(preview.getAttribute('aria-labelledby')).toBeTruthy()
 })
+
+test('Editable #edit: Enter your control handles itself (preventDefault) submits once', async () => {
+  const mine = vi.fn()
+  const submitted = vi.fn()
+  await render(() =>
+    h(
+      Editable as never,
+      { modelValue: 'A', editing: true, onSubmit: submitted },
+      {
+        edit: () =>
+          h('input', {
+            class: 'own',
+            onKeydown: (e: KeyboardEvent) => {
+              if (e.key !== 'Enter') return
+              e.preventDefault()
+              mine()
+            },
+          }),
+      },
+    ),
+  )
+  const input = await vi.waitFor(() => document.querySelector<HTMLInputElement>('.own')!)
+  input.focus()
+  await userEvent.keyboard('{Enter}')
+  expect(mine).toHaveBeenCalledTimes(1)
+  expect(submitted).not.toHaveBeenCalled()
+})
+
+test('Select: an item with value null is a real choice, picked and shown as such', async () => {
+  const Select = (await import('../src/components/Select/Select.vue')).default
+  const model = shallowRef<string | null>('ana')
+  await render(
+    () =>
+      h(Select as never, {
+        modelValue: model.value,
+        'onUpdate:modelValue': (v: string | null) => (model.value = v),
+        items: [
+          { value: null, label: 'Unassigned' },
+          { value: 'ana', label: 'Ana' },
+        ],
+      }),
+    { global: { stubs: { transition: false } } },
+  )
+  const trigger = document.querySelector<HTMLElement>('.ui-select-trigger')!
+  expect(trigger.textContent).toContain('Ana')
+  await userEvent.click(trigger)
+  const row = await vi.waitFor(() =>
+    [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((el) =>
+      el.textContent?.includes('Unassigned'),
+    )!,
+  )
+  await userEvent.click(row)
+  expect(model.value).toBeNull()
+  await vi.waitFor(() => expect(trigger.textContent).toContain('Unassigned'))
+})
+
+test('Sortable virtualize: only rows near the screen render content; rows keep their size; reordering works', async () => {
+  const items = ref(Array.from({ length: 500 }, (_, i) => ({ value: `r${i}`, label: `Row ${i}` })))
+  const screen = await render(() =>
+    h('div', { class: 'scroller', style: 'block-size: 300px; overflow: auto' }, [
+      h(
+        Sortable as never,
+        {
+          items: items.value,
+          'onUpdate:items': (next: typeof items.value) => (items.value = next),
+          virtualize: 40,
+          motion: false,
+        },
+        {
+          item: ({ item }: { item: { label: string } }) => h('span', { class: 'cell' }, item.label),
+        },
+      ),
+    ]),
+  )
+  const scroller = screen.container.querySelector<HTMLElement>('.scroller')!
+  await frame()
+  await frame()
+  const rendered = () => screen.container.querySelectorAll('.cell').length
+  expect(rendered()).toBeLessThan(80)
+  // The whole list still takes its room, so the scrollbar is right.
+  expect(scroller.scrollHeight).toBeGreaterThan(500 * 30)
+  scroller.scrollTop = scroller.scrollHeight
+  await vi.waitFor(() =>
+    expect(
+      [...screen.container.querySelectorAll('.cell')].some((c) => c.textContent === 'Row 499'),
+    ).toBe(true),
+  )
+  expect(rendered()).toBeLessThan(120)
+  // Keyboard reorder of a row on screen.
+  scroller.scrollTop = 0
+  await vi.waitFor(() => expect(screen.container.querySelector('.cell')?.textContent).toBe('Row 0'))
+  const handle = screen.container.querySelector<HTMLElement>('.ui-sortable-handle')!
+  handle.focus()
+  await userEvent.keyboard(' ')
+  await userEvent.keyboard('{ArrowDown}')
+  await userEvent.keyboard(' ')
+  await vi.waitFor(() => expect(items.value.slice(0, 2).map((i) => i.value)).toEqual(['r1', 'r0']))
+})
+
+test('Calendar planner: a task drags from one day to another through a Sortable in each day', async () => {
+  const { useSortableGroup } = await import('../src/composables/useSortableGroup')
+  const tasks = ref<Record<string, { value: string; label: string }[]>>({
+    '2024-06-10': [{ value: 't1', label: 'Ship' }],
+    '2024-06-12': [{ value: 't2', label: 'Review' }],
+  })
+  const iso = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const board = useSortableGroup({
+    onTransfer: (value, from, to) => {
+      const source = tasks.value[from.groupId as string]!
+      const [task] = source.splice(
+        source.findIndex((t) => t.value === value),
+        1,
+      )
+      ;(tasks.value[to.groupId as string] ??= []).splice(to.index, 0, task!)
+    },
+  })
+  const screen = await render(() =>
+    h(
+      'div',
+      { style: 'inline-size: 900px' },
+      h(
+        Calendar as never,
+        { modelValue: new Date(2024, 5, 15), firstDayOfWeek: 0, planner: true },
+        {
+          day: ({ date }: { date: Date }) => [
+            h('span', String(date.getDate())),
+            h(Sortable as never, {
+              items: tasks.value[iso(date)] ?? [],
+              group: board,
+              groupId: iso(date),
+              handle: 'item',
+              variant: 'plain',
+              motion: false,
+              style: 'min-block-size: 24px',
+            }),
+          ],
+        },
+      ),
+    ),
+  )
+  const card = await vi.waitFor(() =>
+    screen.container.querySelector<HTMLElement>('[data-date="2024-06-10"] .ui-sortable-item')!,
+  )
+  const target = screen.container
+    .querySelector<HTMLElement>('[data-date="2024-06-11"] .ui-sortable')!
+    .getBoundingClientRect()
+  const from = card.getBoundingClientRect()
+  const x0 = from.left + from.width / 2
+  const y0 = from.top + from.height / 2
+  card.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 31,
+      button: 0,
+      clientX: x0,
+      clientY: y0,
+    }),
+  )
+  for (const [x, y] of [
+    [x0 + 20, y0],
+    [target.left + target.width / 2, target.top + 4],
+  ])
+    window.dispatchEvent(
+      new PointerEvent('pointermove', { bubbles: true, pointerId: 31, clientX: x, clientY: y }),
+    )
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 31 }))
+  await vi.waitFor(() => expect(tasks.value['2024-06-11']?.map((t) => t.value)).toEqual(['t1']))
+  expect(tasks.value['2024-06-10']).toEqual([])
+})
+
+test('DataTable: a fill column takes what is left and ends a long value in an ellipsis', async () => {
+  const DataTable = (await import('../src/components/DataTable/DataTable.vue')).default
+  const rows = [
+    { id: 1, name: 'a-very-long-unbreakable-email-address-for-testing@example.com', role: 'Admin' },
+  ]
+  const screen = await render(
+    () =>
+      h('div', { class: 'box', style: 'inline-size: 320px' }, [
+        h(
+          DataTable as never,
+          { data: rows, rowKey: 'id' },
+          {
+            columns: ({ Column }: { Column: unknown }) => [
+              h(Column as never, { field: 'name', label: 'Name', fill: true }),
+              h(Column as never, { field: 'role', label: 'Role', width: 90 }),
+            ],
+          },
+        ),
+      ]),
+    { global: { stubs: { 'transition-group': false } } },
+  )
+  const table = await vi.waitFor(() => {
+    const t = screen.container.querySelector<HTMLElement>('table')!
+    expect(t?.querySelector('td')).toBeTruthy()
+    return t
+  })
+  expect(table.getBoundingClientRect().width).toBeLessThanOrEqual(321)
+  const cell = table.querySelector<HTMLElement>('td')!
+  expect(getComputedStyle(cell).textOverflow).toBe('ellipsis')
+})
+
+test('Dialog: an unlayered class on ui.body overrides the padding under a header', async () => {
+  const DialogComponent = (await import('../src/components/Dialog/Dialog.vue')).default
+  const style = document.createElement('style')
+  style.textContent = '@layer app; .x-body { padding: 0 }'
+  document.head.append(style)
+  await render(() =>
+    h(
+      DialogComponent as never,
+      { open: true, title: 'T', ui: { header: 'x-header', body: 'x-body' } },
+      () => 'Body',
+    ),
+  )
+  const body = await vi.waitFor(() => document.querySelector<HTMLElement>('.x-body')!)
+  expect(getComputedStyle(body).paddingTop).toBe('0px')
+})

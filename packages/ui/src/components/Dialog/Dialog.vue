@@ -243,6 +243,7 @@ export interface DialogProps {
   maximizable?: boolean
   /** Class and style overrides for each part. */
   ui?: Partial<{
+    /** The backdrop. Its colour is `--ui-overlay`, not a `background` here. */
     overlay: UiPartValue
     panel: UiPartValue
     header: UiPartValue

@@ -25,7 +25,8 @@
         :data-value="keyOf(item)"
         :data-grabbed="isGrabbedItem(item) || undefined"
         :class="itemPart.class"
-        :style="itemPart.style"
+        :style="[itemPart.style, restingSize(item)]"
+        :data-sortable-resting="isResting(item) || undefined"
         :tabindex="itemHandle && !disabled ? 0 : undefined"
         :aria-label="itemHandle ? labelOf(item) : undefined"
         :aria-roledescription="itemHandle ? 'sortable item' : undefined"
@@ -56,7 +57,7 @@
             </svg>
           </slot>
         </button>
-        <div class="ui-sortable-content">
+        <div v-if="!isResting(item)" class="ui-sortable-content">
           <slot name="item" :item="item" :index="index" :grabbed="isGrabbedItem(item)">{{
             labelOf(item)
           }}</slot>
@@ -86,7 +87,16 @@ import './Sortable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onScopeDispose,
+  shallowReactive,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -147,6 +157,14 @@ const rawProps = withDefaults(
     /** Turns off dragging, so rows stay static. @default false */
     disabled?: boolean
     /**
+     * For long lists: only rows near the screen render their `#item` content; the others keep a
+     * row of their measured size, so dragging, autoscroll and moving between grouped lists work as
+     * before. The page or any scrolling box around the list can scroll it. `true`, or the size in
+     * px to hold for a row not seen yet (its height, or its width with `axis="x"`).
+     * @default false
+     */
+    virtualize?: boolean | number
+    /**
      * What you drag by. `'button'` is the grip at the start of each row. `'item'` is the whole row,
      * as a board's cards: a press that moves drags it, one that doesn't is a click on what's inside.
      * Rows then take a touch hold (`touchDragDelay`, 150 ms unset) so the list still scrolls.
@@ -198,6 +216,7 @@ const rawProps = withDefaults(
     disabled: false,
     handle: 'button',
     variant: 'card',
+    virtualize: false,
     motion: undefined,
     group: undefined,
     groupId: undefined,
@@ -341,6 +360,63 @@ watch(isGrabbed, (grabbed) => {
 })
 
 const itemHandle = computed(() => props.handle === 'item')
+
+// virtualize: which rows render their content (near the screen), and each other row's last size.
+const near = shallowReactive(new Set<string | number>())
+const sizes = new Map<string | number, number>()
+const ESTIMATE = 48
+const virtual = computed(() => props.virtualize !== false && typeof window !== 'undefined')
+// While a row is held or rows settle, nothing goes to rest: a size changing under a drag would move it.
+const holding = computed(() => isGrabbed.value || isSettling.value)
+function isResting(item: T): boolean {
+  if (!virtual.value) return false
+  const key = keyOf(item)
+  return !near.has(key) && !isGrabbedValue(key)
+}
+function restingSize(item: T) {
+  if (!isResting(item)) return undefined
+  const size =
+    sizes.get(keyOf(item)) ?? (typeof props.virtualize === 'number' ? props.virtualize : ESTIMATE)
+  return props.axis === 'x' ? { inlineSize: `${size}px` } : { blockSize: `${size}px` }
+}
+let watcher: IntersectionObserver | undefined
+const watched = new WeakSet<Element>()
+function onSight(entries: IntersectionObserverEntry[]) {
+  for (const entry of entries) {
+    const key = (entry.target as HTMLElement).dataset.value
+    const item = key == null ? undefined : items.value.find((i) => String(keyOf(i)) === key)
+    if (!item) continue
+    const value = keyOf(item)
+    if (entry.isIntersecting) near.add(value)
+    else if (!holding.value && near.has(value)) {
+      // Its size as it leaves, kept for its resting row.
+      const box = entry.boundingClientRect
+      sizes.set(value, props.axis === 'x' ? box.width : box.height)
+      near.delete(value)
+    }
+  }
+}
+// Before the first sighting, the first screens' worth render, so the list never opens blank.
+if (virtual.value) for (const item of items.value.slice(0, 30)) near.add(keyOf(item))
+watch(
+  [virtual, () => items.value, root],
+  () => {
+    if (!virtual.value || !root.value) {
+      watcher?.disconnect()
+      watcher = undefined
+      return
+    }
+    // Rows a screen away render ahead, so a scroll or an autoscroll never shows a blank one.
+    watcher ??= new IntersectionObserver(onSight, { rootMargin: '100% 100%' })
+    for (const row of root.value.querySelectorAll('[data-sortable-item]'))
+      if (!watched.has(row)) {
+        watched.add(row)
+        watcher.observe(row)
+      }
+  },
+  { flush: 'post', immediate: true },
+)
+onScopeDispose(() => watcher?.disconnect())
 // A press on a field inside the row is for typing, not dragging.
 const EDITABLE = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
 function onItemPointerdown(event: PointerEvent, value: string | number) {

@@ -7,6 +7,7 @@ export interface RegisteredColumn<T> {
   sortable?: boolean
   width?: string | number
   minWidth?: string | number
+  fill?: boolean
   /** Per-column override for DataTable's `resizableColumns` — `undefined`
    * inherits the table-level setting (see DataTable.vue's `isColumnResizable`). */
   resizable?: boolean

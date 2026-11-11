@@ -42,7 +42,7 @@
       >
         <Chip
           v-for="item in visibleChips"
-          :key="item.value"
+          :key="item.value ?? ''"
           :label="item.label"
           removable
           :disabled="isDisabled"
@@ -255,13 +255,14 @@ import type {
   SelectGroupData,
   SelectGroupSlotData,
   SelectItemData,
+  SelectChoice,
   SelectListSection,
 } from '../internal/SelectListBody.vue'
 import type { SelectVirtualizeConfig } from '../Select/Select.vue'
 
 export type ComboboxSide = Side
 export type ComboboxAlign = Align
-export type { SelectGroupData, SelectGroupSlotData, SelectItemData }
+export type { SelectChoice, SelectGroupData, SelectGroupSlotData, SelectItemData }
 
 export type ComboboxFilter<T> = boolean | ((item: T, query: string) => boolean)
 
@@ -283,7 +284,7 @@ export interface ComboboxCreateDetails {
      allowCustom: the Create row is a real option inside the list, not footer content, so it's keyboard-reachable even when
      the typed text partially matches an existing item ("tu" inside "feature"). commitOnBlur defaults off because clicking
      away is rarely an intent to create — only an explicit pick of the Create row (or Enter) commits. -->
-<script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
+<script setup lang="ts" generic="T extends SelectChoice = SelectItemData">
 import type { PopoverCloseReason } from '../../composables/usePopover'
 import type { BeforeClose, ComboboxMotion } from '../../motion/types'
 import './Combobox.css'
@@ -622,7 +623,9 @@ const createLabel = computed(() =>
 )
 
 function labelFor(value: string | number | (string | number)[] | null): string {
-  if (value == null || Array.isArray(value)) return ''
+  if (Array.isArray(value)) return ''
+  if (value == null)
+    return (props.items && options.value.find((option) => option.value === null)?.label) || ''
   const item =
     options.value.find((option) => option.value === value) ??
     chosen.value.find((option) => option.value === value)
@@ -631,8 +634,9 @@ function labelFor(value: string | number | (string | number)[] | null): string {
 
 function isSelected(item: T): boolean {
   if (isCreateRow(item)) return false
-  if (props.multiple) return Array.isArray(model.value) && model.value.includes(item.value)
-  return model.value != null && item.value === model.value
+  if (props.multiple)
+    return Array.isArray(model.value) && model.value.includes(item.value as string | number)
+  return (model.value ?? null) === item.value
 }
 // Filter full item list (not map raw values) so chips show current label on reload; a choice
 // missing from `items` (a remote search's latest response) keeps the item it was picked from.
@@ -741,8 +745,10 @@ function selectItem(item: T, _index: number, createReason: ComboboxCreateReason 
   if (item.disabled) return
   if (props.multiple) {
     const current = Array.isArray(model.value) ? [...model.value] : []
-    const pos = current.indexOf(item.value)
-    if (pos === -1) current.push(item.value)
+    // A `null` choice is for a single pick ("Unassigned"); in a multiple list it's a value like any.
+    const value = item.value as string | number
+    const pos = current.indexOf(value)
+    if (pos === -1) current.push(value)
     else current.splice(pos, 1)
     model.value = current
     query.value = ''

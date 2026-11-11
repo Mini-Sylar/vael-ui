@@ -63,7 +63,7 @@
             >
               <Chip
                 v-for="item in visibleChips"
-                :key="item.value"
+                :key="item.value ?? ''"
                 :label="item.label"
                 removable
                 :disabled="isDisabled"
@@ -265,11 +265,12 @@ import type {
   SelectGroupData,
   SelectGroupSlotData,
   SelectItemData,
+  SelectChoice,
 } from '../internal/SelectListBody.vue'
 
 export type SelectSide = Side
 export type SelectAlign = Align
-export type { SelectGroupData, SelectGroupSlotData, SelectItemData }
+export type { SelectChoice, SelectGroupData, SelectGroupSlotData, SelectItemData }
 
 /** Explicit virtualization tuning — pass `true`/`false` for a blanket
  * on/off, or this shape to also override row size/overscan. */
@@ -282,7 +283,7 @@ export interface SelectVirtualizeConfig {
 export type SelectFilter<T> = boolean | ((item: T, query: string) => boolean)
 </script>
 
-<script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
+<script setup lang="ts" generic="T extends SelectChoice = SelectItemData">
 import type { PopoverCloseReason } from '../../composables/usePopover'
 import type { BeforeClose, SelectMotion } from '../../motion/types'
 import './Select.css'
@@ -531,9 +532,12 @@ const messages = useMessages({ select: selectMessages })
 /** Search box text. Clears when the panel closes. @default '' */
 const query = defineModel<string>('query', { default: '' })
 
-const selectedSet = computed<Set<string | number>>(() => {
+const selectedSet = computed<Set<string | number | null>>(() => {
   if (props.multiple) return new Set(Array.isArray(model.value) ? model.value : [])
-  return new Set(model.value == null ? [] : [model.value as string | number])
+  // Nothing picked reads as the `null` option when there is one ("Unassigned").
+  if (model.value == null)
+    return new Set(props.items && options.value.some((o) => o.value === null) ? [null] : [])
+  return new Set([model.value as string | number])
 })
 function isSelected(item: T): boolean {
   return selectedSet.value.has(item.value)
@@ -672,8 +676,10 @@ function selectItem(item: T, _index: number) {
   if (item.disabled) return
   if (props.multiple) {
     const current = Array.isArray(model.value) ? [...model.value] : []
-    const pos = current.indexOf(item.value)
-    if (pos === -1) current.push(item.value)
+    // A `null` choice is for a single pick ("Unassigned"); in a multiple list it's a value like any.
+    const value = item.value as string | number
+    const pos = current.indexOf(value)
+    if (pos === -1) current.push(value)
     else current.splice(pos, 1)
     model.value = current
   } else {
