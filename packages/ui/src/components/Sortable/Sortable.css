@@ -20,6 +20,17 @@
     flex-direction: row;
     align-items: flex-start;
   }
+  /* A row lifted into the top layer while it crosses lists: none of the browser's popover look,
+     so it keeps its own (anything the page or a variant sets wins over this). */
+  :where([data-sortable-lifted]) {
+    inset: auto;
+    margin: 0;
+    padding: 0;
+    border: 0 none;
+    background: transparent;
+    color: inherit;
+    overflow: visible;
+  }
   .ui-sortable-item {
     display: flex;
     align-items: center;

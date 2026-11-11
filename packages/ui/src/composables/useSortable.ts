@@ -1472,6 +1472,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     target.style.insetInlineStart = `${rect.left}px`
     target.style.insetBlockStart = `${rect.top}px`
     target.style.translate = ''
+    // The real row lifted: into the top layer, so a column with its own stacking (a z-index, a
+    // transform, isolation) can't paint over it, and a transformed one can't trap it.
+    if (mode === 'element') liftToTop(target)
     previewEl = target
     previewIsCopy = mode === 'clone'
     // Respect where the row was actually grabbed, so it doesn't jump to a
@@ -1514,12 +1517,34 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     previewEl.style.insetBlockStart = `${top}px`
   }
 
+  function liftToTop(el: HTMLElement) {
+    if (typeof el.showPopover !== 'function') return
+    el.setAttribute('popover', 'manual')
+    el.setAttribute('data-sortable-lifted', '')
+    try {
+      el.showPopover()
+    } catch {
+      dropFromTop(el)
+    }
+  }
+  function dropFromTop(el: HTMLElement) {
+    if (!el.hasAttribute('data-sortable-lifted')) return
+    try {
+      el.hidePopover()
+    } catch {
+      // Already out of the top layer (it left the page).
+    }
+    el.removeAttribute('popover')
+    el.removeAttribute('data-sortable-lifted')
+  }
+
   function destroyPreview() {
     previewFromStart = false
     if (!previewEl) return
     if (!previewIsCopy) {
       // 'element' mode: the real node, not a clone — put it back in flow
       // instead of removing it.
+      dropFromTop(previewEl)
       previewEl.style.position = ''
       previewEl.style.margin = ''
       previewEl.style.pointerEvents = ''
