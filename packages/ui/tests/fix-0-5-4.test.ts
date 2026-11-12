@@ -768,3 +768,25 @@ test("Sortable clone: the slot a card left behind doesn't take the held look", a
   expect(style.backgroundColor).toBe('rgba(0, 0, 0, 0)')
   window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 81 }))
 })
+
+test('Sortable virtualize: a row added later renders its content at once', async () => {
+  const items = ref(Array.from({ length: 200 }, (_, i) => ({ value: `r${i}`, label: `Row ${i}` })))
+  const screen = await render(() =>
+    h('div', { style: 'block-size: 200px; overflow: auto' }, [
+      h(
+        Sortable as never,
+        { items: items.value, virtualize: 40, motion: false },
+        {
+          item: ({ item }: { item: { label: string } }) => h('span', { class: 'cell' }, item.label),
+        },
+      ),
+    ]),
+  )
+  await frame()
+  // Dropped in at the top, as a card from another column is.
+  items.value = [{ value: 'new', label: 'New row' }, ...items.value]
+  await nextTick()
+  const first = screen.container.querySelector<HTMLElement>('.ui-sortable-item')!
+  expect(first.querySelector('.cell')?.textContent).toBe('New row')
+  expect(first.hasAttribute('data-sortable-resting')).toBe(false)
+})

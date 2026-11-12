@@ -399,6 +399,17 @@ function onSight(entries: IntersectionObserverEntry[]) {
 }
 // Before the first sighting, the first screens' worth render, so the list never opens blank.
 if (virtual.value) for (const item of items.value.slice(0, 30)) near.add(keyOf(item))
+// A row that arrives later (dropped in from another list, just added) renders whole at once:
+// held at an estimate until it was seen, its content would come in a frame late and nudge it.
+let known = new Set(items.value.map(keyOf))
+watch(
+  () => items.value,
+  (now) => {
+    const keys = new Set(now.map(keyOf))
+    if (virtual.value) for (const key of keys) if (!known.has(key)) near.add(key)
+    known = keys
+  },
+)
 watch(
   [virtual, () => items.value, root],
   () => {
