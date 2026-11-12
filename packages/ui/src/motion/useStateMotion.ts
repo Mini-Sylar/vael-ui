@@ -179,7 +179,15 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
     const release = () => held.forEach((run) => run.cancel())
     void loadAppearance().then((module) => {
       release()
-      module.appearParts(String(options.key), keyStyle, own, els, timing.value, false, afterEnter)
+      module.appearJoining(
+        String(options.key),
+        keyStyle,
+        own,
+        els,
+        timing.value,
+        afterEnter,
+        options.root?.(),
+      )
     }, release)
   })
   // `replay`: when it changes, the appearance plays again, without remounting.

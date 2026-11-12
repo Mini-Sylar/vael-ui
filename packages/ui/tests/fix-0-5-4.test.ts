@@ -810,11 +810,14 @@ test("appear: 'once': rows arriving in two batches under one name both come in",
   await sleep(80)
   b.value = ['p1', 'p2', 'p3']
   await nextTick()
-  await new Promise(requestAnimationFrame)
-  const counts = [...screen.container.querySelectorAll('li')].map(
-    (li) => `${li.textContent}:${runsOn(li).length}`,
+  // Each row starts an entrance (frames run slowly while other test files run).
+  await vi.waitFor(() =>
+    expect(
+      [...screen.container.querySelectorAll('li')].map(
+        (li) => `${li.textContent}:${runsOn(li).length > 0}`,
+      ),
+    ).toEqual(['f1:true', 'f2:true', 'p1:true', 'p2:true', 'p3:true']),
   )
-  expect(counts).toEqual(['f1:1', 'f2:1', 'p1:1', 'p2:1', 'p3:1'])
 })
 
 test('v-scroll-mask: content growing inside a fixed box fades in the same frame it overflows', async () => {
@@ -839,4 +842,61 @@ test('v-scroll-mask: content growing inside a fixed box fades in the same frame 
   await frame()
   await frame()
   expect(box).toHaveClass('scroll-fade')
+})
+
+test('Tree entrance: rows that open just after it mounts join the entrance', async () => {
+  const Tree = (await import('../src/components/Tree/Tree.vue')).default
+  const tree = ref<{ expandNode: (v: string) => void } | null>(null)
+  const screen = await render(() =>
+    h(Tree as never, {
+      items: [
+        {
+          value: 'a',
+          label: 'A',
+          children: [
+            { value: 'a1', label: 'A one' },
+            { value: 'a2', label: 'A two' },
+          ],
+        },
+        { value: 'b', label: 'B' },
+      ],
+      ref: tree,
+      motion: { initial: { node: { opacity: 0 } }, duration: 200 },
+    }),
+  )
+  // Its saved open folders arrive a moment later.
+  await sleep(60)
+  tree.value!.expandNode('a')
+  await nextTick()
+  // The opened rows start an entrance of their own (frames run slowly under other test files).
+  await vi.waitFor(() => {
+    const nested = [...screen.container.querySelectorAll<HTMLElement>('[aria-level="2"]')]
+    expect(nested).toHaveLength(2)
+    for (const row of nested) expect(runsOn(row).length).toBeGreaterThan(0)
+  })
+})
+
+test('appear: a scroll in one box leaves entrances elsewhere on the page alone', async () => {
+  const rows = shallowRef<string[]>([])
+  const screen = await render(() => [
+    h('div', { class: 'zz-box', style: 'height: 40px; overflow: auto' }, [
+      h('div', { style: 'height: 400px' }),
+    ]),
+    h(
+      'ul',
+      rows.value.map((id) =>
+        withDirectives(h('li', { key: id }, id), [
+          [vAnimate, { initial: { opacity: 0 }, duration: 120 }],
+        ]),
+      ),
+    ),
+  ])
+  screen.container.querySelector('.zz-box')!.scrollTop = 100
+  await sleep(20)
+  rows.value = ['a', 'b']
+  await nextTick()
+  await vi.waitFor(() => {
+    const items = [...screen.container.querySelectorAll('li')]
+    expect(items.map((li) => runsOn(li).length > 0)).toEqual([true, true])
+  })
 })

@@ -379,7 +379,7 @@ function leaveIfRemoved(
   const look = leaving(value)
   const gone = () => left(el, call(el as Marked, 'onAfterLeave'))
   // Off screen, scrolled away (a recycled row) or motion off: it just goes.
-  if (look && place && seen(place.box) && !scrolling() && !motionOffAt(el)) {
+  if (look && place && seen(place.box) && !scrolling(el) && !motionOffAt(el)) {
     const done = leaveInPlace(el, place, look.values, look.timing, look.hook).then(gone)
     // What replaces it under its name with `swap: 'wait'` waits for this.
     if (name) markLeaving(name, done)

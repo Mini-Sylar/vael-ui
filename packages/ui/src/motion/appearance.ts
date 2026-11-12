@@ -36,13 +36,21 @@ export const seen = (box: DOMRect) =>
   box.bottom > 0 && box.right > 0 && box.top < innerHeight && box.left < innerWidth
 const onScreen = (el: Element) => seen(el.getBoundingClientRect())
 // Scrolling: rows a virtualized list recycles come and go; only real adds and removes animate.
+// Only in what scrolled: a scroll in one box leaves entrances elsewhere on the page alone.
 let scrolledAt = -1e9
+let scrolledIn: EventTarget | null = null
 if (typeof window !== 'undefined')
-  addEventListener('scroll', () => (scrolledAt = performance.now()), {
-    capture: true,
-    passive: true,
-  })
-export const scrolling = () => performance.now() - scrolledAt < 150
+  addEventListener(
+    'scroll',
+    (event) => {
+      scrolledAt = performance.now()
+      scrolledIn = event.target
+    },
+    { capture: true, passive: true },
+  )
+export const scrolling = (el: Element) =>
+  performance.now() - scrolledAt < 150 &&
+  (!(scrolledIn instanceof Node) || scrolledIn.nodeType === 9 || scrolledIn.contains(el))
 
 // No component around it: it plays its own appearance. Those that mount together under one name
 // stagger in page order (`stagger`, `delay`).
@@ -112,7 +120,7 @@ function flush() {
       const timed = value.delay !== undefined || value.stagger !== undefined
       // Many at once (a route of cards): those in view play, up to a budget; the rest just show.
       // Scrolling recycles rows; a replay is yours, on screen, and always plays.
-      if (!later && ((!timed && played >= BUDGET) || (!again && scrolling()) || !onScreen(el)))
+      if (!later && ((!timed && played >= BUDGET) || (!again && scrolling(el)) || !onScreen(el)))
         return entered(el)
       const initial = valuesAt(value.initial, { direction: 0, index: i + 1, count: items.length })
       // Nothing to come in from: it neither plays nor counts.
@@ -188,6 +196,33 @@ export function queueAppearance(
 }
 
 /** A component's `initial` by part, its own over its style's; a repeated part element by element. */
+// How long after a component's entrance its newly mounted parts still join it (ms).
+const JOIN_WINDOW = 600
+
+/** A component's entrance; parts that mount in its root just after (rows a tree opens once its
+ * saved state loads) join it instead of showing as they are. */
+export function appearJoining(
+  key: string,
+  keyStyle: Record<string, unknown> | undefined,
+  own: unknown,
+  els: (part: string) => Element[],
+  timing: MotionTiming,
+  done: () => void,
+  root?: Element | null,
+) {
+  const played = new WeakSet<Element>()
+  const fresh = (part: string) => {
+    const found = els(part).filter((el) => !played.has(el))
+    for (const el of found) played.add(el)
+    return found
+  }
+  appearParts(key, keyStyle, own, fresh, timing, false, done)
+  if (!root) return
+  const late = new MutationObserver(() => appearParts(key, keyStyle, own, fresh, timing))
+  late.observe(root, { childList: true, subtree: true })
+  setTimeout(() => late.disconnect(), JOIN_WINDOW)
+}
+
 export function appearParts(
   key: string,
   keyStyle: Record<string, unknown> | undefined,
