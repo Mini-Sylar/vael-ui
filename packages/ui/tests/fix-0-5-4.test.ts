@@ -917,3 +917,11 @@ test('MenuList: the hover highlight steps aside on the current page row', async 
   const highlight = screen.container.querySelector<HTMLElement>('.ui-menu-list-hover')!
   await vi.waitFor(() => expect(getComputedStyle(highlight).opacity).toBe('0'))
 })
+
+test('a passed aria-required reaches the input inside a Field that isn’t required', async () => {
+  const { default: Field } = await import('../src/components/Field/Field.vue')
+  const screen = await render(() =>
+    h(Field as never, { label: 'Headline' }, () => h(Input as never, { 'aria-required': true })),
+  )
+  expect(screen.container.querySelector('input')!.getAttribute('aria-required')).toBe('true')
+})

@@ -50,6 +50,7 @@ This release makes Sortable ready for task boards and long lists, lets pickers o
 
 - Editable focuses its control when opened through `v-model:editing`, lets Escape cancel before a surrounding Dialog closes, and no longer submits twice when your control handles Enter.
 - ColorPicker, Editable and Rating take their label, description and disabled state from a surrounding `Field`.
+- An `aria-required` you pass, such as one a form library reads from your schema, reaches the control inside a `Field` that isn't marked `required`.
 - Pickers, CommandPalette and Input announce “Loading…” to screen readers while they load.
 - Buttons, links and fields inside a Tree row or an interactive Card work again instead of selecting the row or card.
 
