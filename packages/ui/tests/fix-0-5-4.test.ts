@@ -729,3 +729,42 @@ test('Sortable clone preview keeps the card look outside the list', async () => 
   expect(style.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
   window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 51 }))
 })
+
+test("Sortable clone: the slot a card left behind doesn't take the held look", async () => {
+  const screen = await render(() =>
+    h(Sortable as never, {
+      items: [
+        { value: 'a', label: 'Alpha' },
+        { value: 'b', label: 'Bravo' },
+      ],
+      previewMode: 'clone',
+      variant: 'plain',
+      motion: false,
+    }),
+  )
+  const row = screen.container.querySelector<HTMLElement>('.ui-sortable-item')!
+  const handle = row.querySelector<HTMLElement>('.ui-sortable-handle')!
+  const b = handle.getBoundingClientRect()
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 81,
+      button: 0,
+      clientX: b.left + 4,
+      clientY: b.top + 4,
+    }),
+  )
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId: 81,
+      clientX: b.left + 4,
+      clientY: b.top + 40,
+    }),
+  )
+  await vi.waitFor(() => expect(row.hasAttribute('data-sortable-source')).toBe(true))
+  const style = getComputedStyle(row)
+  expect(style.boxShadow).toBe('none')
+  expect(style.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 81 }))
+})

@@ -48,7 +48,9 @@
     background: var(--ui-surface);
   }
   /* variant="plain": no box at rest; a held row lifts off the list on a surface of its own. */
-  .ui-sortable-item--plain:is([data-dragging], [data-grabbed], [data-sortable-preview]) {
+  .ui-sortable-item--plain:is([data-dragging], [data-grabbed], [data-sortable-preview]):not(
+      [data-sortable-source]
+    ) {
     background: var(--ui-surface);
   }
   /* handle="item": the row is what you hold and what you focus. */
@@ -63,9 +65,10 @@
   .ui-sortable-item[tabindex][data-dragging] {
     cursor: grabbing;
   }
-  /* The floating copy carries the grabbed look too: it's what the pointer holds. */
-  .ui-sortable-item[data-dragging],
-  .ui-sortable-item[data-grabbed],
+  /* The held row, and the copy that floats for it; never the slot it left behind (a clone's
+     placeholder), which is yours to style. */
+  .ui-sortable-item[data-dragging]:not([data-sortable-source]),
+  .ui-sortable-item[data-grabbed]:not([data-sortable-source]),
   .ui-sortable-item[data-sortable-preview] {
     position: relative;
     z-index: 1;
