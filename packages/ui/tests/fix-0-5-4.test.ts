@@ -816,3 +816,27 @@ test("appear: 'once': rows arriving in two batches under one name both come in",
   )
   expect(counts).toEqual(['f1:1', 'f2:1', 'p1:1', 'p2:1', 'p3:1'])
 })
+
+test('v-scroll-mask: content growing inside a fixed box fades in the same frame it overflows', async () => {
+  const screen = await render(() =>
+    withDirectives(
+      h('div', { style: 'block-size: 100px; overflow: auto' }, [
+        h('div', { class: 'grow', style: 'block-size: 50px' }),
+      ]),
+      [[vScrollMask, undefined]],
+    ),
+  )
+  const box = screen.container.firstElementChild as HTMLElement
+  await frame()
+  expect(box).not.toHaveClass('scroll-fade')
+  // Grows without a mutation the observer sees as new content: a height easing in.
+  box
+    .querySelector<HTMLElement>('.grow')!
+    .animate([{ blockSize: '50px' }, { blockSize: '300px' }], {
+      duration: 1,
+      fill: 'forwards',
+    })
+  await frame()
+  await frame()
+  expect(box).toHaveClass('scroll-fade')
+})

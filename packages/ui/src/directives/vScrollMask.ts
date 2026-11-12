@@ -116,7 +116,9 @@ function start(el: HTMLElement, axis: ScrollMaskAxis) {
   }
   const observer = new ResizeObserver(() => check(el, state.get(el)?.axis ?? axis))
   // One check per frame, so a list that re-renders while scrolling adds no extra layout.
-  const mutations = new MutationObserver(() => {
+  const mutations = new MutationObserver((records) => {
+    // New children are watched for size too.
+    if (records.some((r) => r.type === 'childList' && r.target === el)) watchChildren()
     if (entry.frame) return
     entry.frame = requestAnimationFrame(() => {
       entry.frame = 0
@@ -131,7 +133,14 @@ function start(el: HTMLElement, axis: ScrollMaskAxis) {
   }
   state.set(el, entry)
   check(el, axis)
-  observer.observe(el)
+  // Its children too: content that grows inside a box of a fixed size (a tree easing open) never
+  // resizes the box itself, and this reports it before the frame paints.
+  const watchChildren = () => {
+    observer.disconnect()
+    observer.observe(el)
+    for (const child of el.children) observer.observe(child)
+  }
+  watchChildren()
   // Size changes come from new nodes, text, or a child's style, class or hidden.
   mutations.observe(el, {
     childList: true,

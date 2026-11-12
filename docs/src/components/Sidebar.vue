@@ -468,14 +468,10 @@ watch(
 .sidebar-scroll {
   --ui-indicator-bg: color-mix(in oklch, var(--ui-primary) 10%, transparent);
 }
-/* Hovering the current page's row, the highlight feathers in from its left edge, so the dither
-   beside the bar shows through instead of under a flat tint. */
-.sidebar-scroll
-  :deep(
-    .ui-menu-list:has(> .ui-menu-list-item[aria-current='page'][data-indicated])
-      > .ui-menu-list-hover
-  ) {
-  mask-image: linear-gradient(to right, transparent, #000 2.5rem);
+/* The highlight feathers in from its left edge on every row, so on the current page's row the
+   dither beside the bar shows through, and clicking a row doesn't change the highlight's shape. */
+.sidebar-scroll :deep(.ui-menu-list-hover) {
+  mask-image: linear-gradient(to right, rgb(0 0 0 / 0.35), #000 2.5rem);
 }
 
 /* Sidebar rows have no shortcut hints to push right, unlike Menu/ContextMenu
