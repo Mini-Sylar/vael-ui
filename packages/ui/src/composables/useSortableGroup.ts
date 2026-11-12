@@ -138,7 +138,8 @@ function focusHandle(el: HTMLElement) {
  */
 export function useSortableGroup(options: UseSortableGroupOptions): SortableGroupHandle {
   const members = new Map<string | number, GroupMemberBinding>()
-  const memberOrder: (string | number)[] = []
+  // Ghost shifts closing on their own, by row: a new shift for the row takes over from them.
+  const settlingGhosts = new WeakMap<HTMLElement, ReturnType<typeof createSpring>>()
 
   let originGroupId: string | number | null = null
   let sessionSource: SortableSource = 'pointer'
@@ -152,7 +153,14 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     return prefersReducedMotion()
   }
 
+  // The lists' boxes for this drag, measured again only once something has moved them (a scroll,
+  // a list making room): read per pointermove, after the move's own writes, each was a layout.
+  let rectsCache: GroupContainerRect[] | null = null
+  const forgetRects = () => (rectsCache = null)
   function containerRects(): GroupContainerRect[] {
+    return (rectsCache ??= measureRects())
+  }
+  function measureRects(): GroupContainerRect[] {
     const rects: GroupContainerRect[] = []
     for (const [groupId, binding] of members) {
       const el = binding.container()
@@ -213,9 +221,16 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     )
     for (const [value, shift] of shifts) {
       let spring = ghostSprings.get(value)
+      let settling: ReturnType<typeof createSpring> | undefined
       if (!spring) {
         const home = ghostBands.findIndex((band) => band.value === value)
-        spring = createSpring(0, SHIFT_SPRING, (offset) => {
+        // Still settling from a moment ago (the pointer came straight back): it takes over from
+        // there, so two springs never write the same row.
+        const row = hostBinding.getElement(value)
+        settling = row ? settlingGhosts.get(row) : undefined
+        if (row) settlingGhosts.delete(row)
+        settling?.destroy()
+        spring = createSpring(settling?.value ?? 0, SHIFT_SPRING, (offset) => {
           const el = hostBinding.getElement(value)
           if (!el) return
           el.style.translate = layout
@@ -225,7 +240,7 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
         ghostSprings.set(value, spring)
       }
       if (instant) spring.jump(shift)
-      else spring.set(shift)
+      else spring.set(shift, settling ? { velocity: settling.velocity } : undefined)
     }
   }
 
@@ -234,9 +249,12 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
    * shared rAF loop, same pattern `useSortable`'s own settle springs use. */
   function settleGhost() {
     const instant = reducedMotion()
-    for (const spring of ghostSprings.values()) {
+    const host = currentHostId == null ? undefined : members.get(currentHostId)
+    for (const [value, spring] of ghostSprings) {
       if (instant) spring.jump(0)
       else spring.set(0)
+      const row = host?.getElement(value)
+      if (row && !instant) settlingGhosts.set(row, spring)
     }
     ghostSprings = new Map()
     ghostBands = []
@@ -264,6 +282,7 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
   }
 
   function switchHost(newHostId: string | number) {
+    forgetRects()
     if (currentHostId === newHostId) return
     if (currentHostId === originGroupId) {
       members.get(originGroupId!)?.onHostChange(false)
@@ -285,6 +304,9 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
   }
 
   function resetSession() {
+    forgetRects()
+    if (typeof window !== 'undefined')
+      window.removeEventListener('scroll', forgetRects, { capture: true })
     if (currentHostId != null && currentHostId !== originGroupId) {
       members.get(currentHostId)?.onForeignHover(false)
       members.get(currentHostId)?.makeRoom(0)
@@ -300,11 +322,9 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
 
   function __register(groupId: string | number, binding: GroupMemberBinding) {
     members.set(groupId, binding)
-    memberOrder.push(groupId)
+    // The first list's unregister must not drop a later list that took the same id.
     return () => {
-      members.delete(groupId)
-      const index = memberOrder.indexOf(groupId)
-      if (index !== -1) memberOrder.splice(index, 1)
+      if (members.get(groupId) === binding) members.delete(groupId)
     }
   }
 
@@ -316,6 +336,9 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     originGroupId = groupId
     sessionSource = source
     currentHostId = groupId
+    forgetRects()
+    if (typeof window !== 'undefined')
+      window.addEventListener('scroll', forgetRects, { capture: true, passive: true })
     currentIndex = members.get(groupId)?.sourceSlot() ?? 0
   }
 
@@ -402,14 +425,22 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
       return
     }
     if (options.beforeDrop) {
+      const turn = ++sessionSeq
       let approved = false
       try {
         const verdict = options.beforeDrop(details)
-        approved = verdict instanceof Promise ? await verdict : verdict
+        if (verdict instanceof Promise) {
+          origin.setPending(true)
+          approved = await verdict
+        } else approved = verdict
       } catch (error) {
         options.onDropError?.(error, details)
         approved = false
+      } finally {
+        origin.setPending(false)
       }
+      // Cancelled while it was being decided: the transfer never happens.
+      if (turn !== sessionSeq) return
       if (!approved) {
         await rejectTransfer(origin)
         return
@@ -523,7 +554,10 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     await performTransfer()
   }
 
+  // Each pending transfer's turn: a cancel meanwhile moves it on, and the late verdict is dropped.
+  let sessionSeq = 0
   function __cancel() {
+    sessionSeq++
     if (originGroupId == null) return
     const origin = members.get(originGroupId)
     if (currentHostId !== originGroupId) settleGhost()

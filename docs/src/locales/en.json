@@ -1240,5 +1240,369 @@
         "note": "Drag the header to move the dialog. Pointer capture keeps the drag going when the pointer leaves the header. With the grip button focused, the arrow keys move it 10 px, or 50 px with Shift. The dialog stays inside the window and opens centered again."
       }
     }
+  },
+  "formsDocs": {
+    "nav": {
+      "forms": "Forms",
+      "overview": "Overview",
+      "api": "API reference"
+    },
+    "mode": "Validated forms with vael-form",
+    "hint": "Validating a form? vael-form wires this up with a schema",
+    "eyebrow": "vael-form",
+    "title": "Forms",
+    "lede": "vael-form is a separate, optional package for forms on a schema: Zod, Valibot, ArkType or any Standard Schema library. You keep <code>v-model</code>, and it adds the errors, the accessibility wiring and the submit. It works with vael-ui, with plain inputs and with any other component library.",
+    "install": "Install",
+    "installBody": "It needs Vue 3.5 or later, and nothing from vael-ui. Add the schema library you use.",
+    "quickTitle": "One form",
+    "quickBody": "One schema holds the rules. Each input gets three things, all by the field’s name: <code>v-model</code> for the value, <code>attrs</code> for its id, ARIA and blur, and <code>errors</code> for the message.",
+    "tourTitle": "The guide",
+    "why": {
+      "title": "Why vael-form",
+      "items": [
+        "<strong>Vue first.</strong> Fields are refs, so <code>v-model</code> works on inputs, groups and lists, in VDOM and in Vapor.",
+        "<strong>Accessible by default.</strong> <code>attrs</code> sets <code>aria-invalid</code> and <code>aria-describedby</code>, and a failed submit focuses the first invalid field.",
+        "<strong>Errors at the right moment.</strong> An error shows once a field is changed and left, not while you pass over it. Autofill and a click on a moving button are handled.",
+        "<strong>Translated with your catalog.</strong> Schema errors look up keys in your own locale files and follow a locale switch without validating again.",
+        "<strong>Small.</strong> About 8 KB gzipped. Rules, the message catalog and schema limits load only when a form uses them."
+      ]
+    },
+    "card": {
+      "start": "Your first form, its state, and choices such as radios and checkboxes.",
+      "errors": "When an error appears, per field or for the whole app.",
+      "submitting": "Submitting, server errors, FormData and TanStack Query.",
+      "validation": "Rules across fields, async checks, and forms without a schema library.",
+      "lists": "Rows you add and remove, steps, and unions.",
+      "data": "Defaults that load later, fields that follow others, dialogs and stores.",
+      "i18n": "Error messages in every language your app speaks.",
+      "nuxt": "The Nuxt module, server rendering and Vapor."
+    },
+    "chapters": {
+      "eyebrow": "Forms guide · {n} of {total}",
+      "start": {
+        "title": "Your first form",
+        "intro": "A form is one call to <code>useForm</code>. It returns refs for the values, the errors to show, and the attributes each input needs.",
+        "install": {
+          "title": "Install",
+          "body": "vael-form is its own package. Add it with a schema library. Zod is used on these pages; Valibot, ArkType and any other Standard Schema library work the same way."
+        },
+        "first": {
+          "title": "A form",
+          "body": "Give <code>useForm</code> a schema, the starting values and what to do with valid values. Then bind each input by its name. Leave a field empty and tab on: nothing shows. Type something wrong, then leave it, and the error appears.",
+          "items": [
+            "<code>model</code> holds a ref per field. Destructure it, then use <code>v-model=\"email\"</code> as on any ref.",
+            "<code>attrs.email</code> goes on the input: <code>id</code>, <code>name</code>, <code>aria-invalid</code>, <code>aria-describedby</code>, and the blur that marks the field as left.",
+            "<code>errors.email</code> is the message to show, or nothing.",
+            "<code>handleSubmit</code> goes on <code>{'@'}submit</code>. It validates, focuses the first invalid field, and calls <code>onSubmit</code> with the schema’s output."
+          ]
+        },
+        "state": {
+          "title": "Form state",
+          "body": "The form’s state is refs you can destructure and use in a template without <code>.value</code>. Edit the name and watch them change. <code>reset()</code> goes back to the defaults, or makes new ones: here, a save makes the saved values the new defaults."
+        },
+        "choices": {
+          "title": "Radios, checkboxes and numbers",
+          "body": "Every control binds the same way. A group of radios or checkboxes is one field with one error, so its <code>attrs</code> go on the group, and the field counts as left when focus leaves the whole group. A list field bound to several checkboxes holds the checked values, as in plain Vue."
+        },
+        "components": {
+          "title": "With vael-ui and other libraries",
+          "body": "Spread <code>attrs</code> on a component as on an input. Inside vael-ui’s <code>Field</code>, the Field keeps its own id, so its label still names the control, and it merges your <code>aria-describedby</code> with its error. With a library that lets a passed <code>id</code> replace its own, pass only what it needs: <code>:name=\"attrs.email.name\"</code> and <code>{'@'}focusout=\"attrs.email.onFocusout\"</code>."
+        }
+      },
+      "errors": {
+        "title": "When errors show",
+        "intro": "The schema always runs. <code>showErrors</code> only decides when an error becomes visible, and every mode shows everything after a submit.",
+        "modes": {
+          "title": "Modes",
+          "body": "Each field below uses a different mode. Type something wrong in each one and leave it, then compare when the errors appear. <code>edited</code>, the default, waits until a field has been changed and left, so passing over an empty field says nothing.",
+          "items": [
+            "<code>'edited'</code>: once the field has been changed and left.",
+            "<code>'blur'</code>: once the field is left, even unchanged.",
+            "<code>'input'</code>: as soon as the value changes, or once the field is left.",
+            "<code>'submit'</code>: only after the first submit."
+          ]
+        },
+        "perPath": {
+          "title": "A mode per field",
+          "body": "Give a mode per path, with <code>default</code> for the rest. A group covers everything under it, and the nearest path wins. A row added to a list after a submit stays quiet until it is left, or until the next submit."
+        },
+        "summary": {
+          "title": "An error summary",
+          "body": "<code>errorList</code> holds the errors that are showing, with their paths, for a summary at the top of a long form. <code>allErrors</code> holds every error, shown or not. Submit this form empty."
+        },
+        "shift": {
+          "title": "Errors that move the page",
+          "body": "An error that appears pushes the content below it down. vael-form waits for a mouse or touch press to be released before it marks a field as left, so a click on a button that then moves still lands. To stop the shift itself, keep the error element in the page and give it a <code>min-height</code>. <code>aria-describedby</code> points at it only while the field is invalid."
+        },
+        "autofill": {
+          "title": "Autofill",
+          "body": "A browser that autofills a form plays back focus, input and blur on each field in a few milliseconds, at your first click on the page. That blur isn’t you leaving the field, so an autofilled field shows no error until you type in it or submit."
+        },
+        "app": {
+          "title": "For the whole app",
+          "body": "Install the plugin once to set the mode for every form. A form’s own <code>showErrors</code> replaces it; the two aren’t merged. <code>field.untouch()</code> hides a field’s errors again until it is left once more."
+        }
+      },
+      "submitting": {
+        "title": "Submitting",
+        "intro": "<code>handleSubmit</code> prevents the page reload, validates, and then calls <code>onSubmit</code> with valid values. A second submit while one runs is ignored.",
+        "onSubmit": {
+          "title": "onSubmit",
+          "body": "<code>onSubmit</code> gets the schema’s output, so a <code>z.coerce.number()</code> arrives as a number, and a context with the <code>form</code>, the <code>event</code>, the <code>element</code> and the <code>submitter</code>. <code>submitting</code> is true until its promise settles. If it throws, <code>handleSubmit</code> rejects and <code>submitting</code> goes back to false."
+        },
+        "server": {
+          "title": "Errors from your server",
+          "body": "Put what your server rejects on the field with <code>setErrors</code>. The error shows at once and clears when that field changes. Try <code>taken{'@'}example.com</code>."
+        },
+        "buttons": {
+          "title": "Two buttons, one form",
+          "body": "The button that submitted is <code>submitter</code>, as in HTML. Give each button a <code>name</code> and a <code>value</code>, and read it in <code>onSubmit</code>."
+        },
+        "handler": {
+          "title": "A handler of your own",
+          "body": "<code>handleSubmit(fn)</code> returns a submit handler that calls <code>fn</code> instead of <code>onSubmit</code>, with the same values and context. Create it in the script: an inline <code>{'@'}submit=\"handleSubmit(fn)\"</code> would only create the handler, not run it."
+        },
+        "formData": {
+          "title": "FormData",
+          "body": "<code>formData</code> in the context is the values as multipart, built when you read it. It comes from the values, so steps that aren’t on screen are in it. Nested values use the inputs’ names (<code>address.street</code>, <code>members.0.name</code>), files stay files, dates become ISO strings, and the pressed button’s name and value are added."
+        },
+        "query": {
+          "title": "With TanStack Query",
+          "body": "The form checks the values and a mutation sends them. Call the mutation from <code>onSubmit</code>, and put a server’s field errors back with <code>setErrors</code> in the mutation’s <code>onError</code>. <code>handleSubmit()</code> called from code shows every error and focuses the first invalid field, as a submit does."
+        }
+      },
+      "validation": {
+        "title": "Validation",
+        "intro": "The whole schema runs on every change, so rules across fields need nothing extra. Checks a schema shouldn’t hold, such as an API call, go in <code>rules</code>.",
+        "libraries": {
+          "title": "Schema libraries",
+          "body": "Zod 4, Zod Mini, Zod 3, Valibot and ArkType map their errors to your message catalog. Yup, Joi, Effect and any other Standard Schema library work too, and show their own text. Joi needs <code>.prefs({'{'} abortEarly: false {'}'})</code> to report every problem, and Effect needs <code>Schema.toStandardSchemaV1(schema)</code>."
+        },
+        "cross": {
+          "title": "Rules across fields",
+          "body": "A rule that compares fields is a <code>refine</code> with a <code>path</code>. The error goes on the field you name and clears when either side is fixed. Valibot uses <code>v.forward</code>, and ArkType <code>ctx.reject</code> with a <code>path</code>."
+        },
+        "rules": {
+          "title": "Async checks",
+          "body": "<code>rules</code> holds checks for one path, such as an API call. Type a name: <code>admin</code> and <code>vael</code> are taken.",
+          "items": [
+            "A rule runs only when the schema has no error at that path, so a malformed value never reaches your API.",
+            "<code>debounce</code> waits for the last change, and a newer change aborts the earlier call through <code>signal</code>.",
+            "<code>pending</code> is true while it runs, on the field and on the form. A submit waits for it.",
+            "It doesn’t run for the default value, so an edit form doesn’t check what the user already has.",
+            "<code>{'{'} on: 'blur', run {'}'}</code> checks when the field is left instead of while typing."
+          ]
+        },
+        "plain": {
+          "title": "Without a schema library",
+          "body": "Pass <code>validate</code>, a map of paths to plain functions, instead of a schema. A function gets the value and <code>{'{'} values, path {'}'}</code>, and returns a message or nothing. An array runs in order and the first failure wins. <code>*</code> stands for any list index, and <code>''</code> is an error no field owns. The types come from <code>defaultValues</code>."
+        },
+        "validator": {
+          "title": "The same rules on your server",
+          "body": "<code>validator()</code> turns the same map into a Standard Schema, so it runs on a server or in a test."
+        },
+        "transforms": {
+          "title": "Transforms",
+          "body": "Transforms live in the schema. The field keeps what the user typed, and <code>onSubmit</code> gets what the schema returns. <code>v-model.trim</code> and <code>v-model.number</code> work as in any Vue form."
+        },
+        "limits": {
+          "title": "Limits from the schema",
+          "body": "<code>attrs</code> also carries what the schema says about the input: <code>maxlength</code> and <code>minlength</code> for text, <code>min</code>, <code>max</code> and <code>step</code> for numbers, and <code>aria-required</code> for a value that can’t be empty. A <code>maxlength</code> stops typing at the limit, so that error rarely shows. This works with Zod, Valibot and ArkType."
+        }
+      },
+      "lists": {
+        "title": "Lists and steps",
+        "intro": "A list is a field with rows you can add, remove and move. Steps are groups in one schema. Neither registers anything: the values live in the form.",
+        "list": {
+          "title": "Rows you add and remove",
+          "body": "<code>field('members')</code> gives the list’s <code>items</code> and its operations: <code>push</code>, <code>insert</code>, <code>remove</code>, <code>move</code>, <code>swap</code>, <code>replace</code> and <code>clear</code>. <code>item.key</code> stays the same through edits and moves, so use it as the <code>v-for</code> key. A list’s own error, such as “add at least one”, is <code>errors.members</code>."
+        },
+        "steps": {
+          "title": "Steps",
+          "body": "Each step is a group in the schema. <code>validate('account')</code> checks one group and shows only its errors. A step that isn’t on screen keeps what was typed, and the final submit checks every step."
+        },
+        "unions": {
+          "title": "Unions",
+          "body": "A discriminated union has the fields of every branch, and the schema validates the active one. Switch to bank transfer and back: the card number you typed is still there. <code>onSubmit</code> gets the active branch only."
+        },
+        "dynamic": {
+          "title": "A schema that changes",
+          "body": "<code>schema</code> can be a ref, for forms built from data. A new schema validates the same values again."
+        }
+      },
+      "data": {
+        "title": "Loading and reacting",
+        "intro": "Defaults can arrive after the form exists, fields can follow each other, and a form can live outside a component.",
+        "loading": {
+          "title": "Defaults that load later",
+          "body": "Pass a ref, such as a query’s <code>data</code>. The form is usable while it’s <code>undefined</code> and takes the data when it arrives. Data that arrives after the user has typed doesn’t overwrite the edit. After a save, <code>reset(saved)</code> makes the saved values the new defaults."
+        },
+        "watch": {
+          "title": "Fields that follow others",
+          "body": "<code>country.watch()</code> runs when a user edit or <code>setValue</code> changes the value. Here it clears the city. It doesn’t run for <code>reset()</code> or loaded defaults, so data that arrives with both a country and a city keeps both. A list of options that depends on a value is a plain <code>computed</code>."
+        },
+        "dialogs": {
+          "title": "In a dialog",
+          "body": "Put the form in its own component inside the dialog. vael-ui’s <code>Dialog</code> renders its content only while open, so each open creates a new form, already filled in, with nothing to reset. A form that stays mounted needs <code>reset(record)</code> when the dialog opens."
+        },
+        "store": {
+          "title": "In a store",
+          "body": "A form is a plain object that keeps its reactivity anywhere: a Pinia store, a composable, a prop. The <code>form</code> in <code>onSubmit</code>’s context is the same form. Give a form outside a component an <code>id</code> if you render on the server."
+        },
+        "reusable": {
+          "title": "Reusable inputs",
+          "body": "A field is a typed object, so a reusable input takes it as a prop. <code>form.field('email')</code> gives one field with its <code>value</code>, <code>error</code> and <code>attrs</code>."
+        },
+        "children": {
+          "title": "In child components",
+          "body": "<code>useFormContext()</code> gives a child component the same typed form, for a step or a section in its own file. <code>useField(() => props.name)</code> binds a reusable input by name."
+        }
+      },
+      "i18n": {
+        "title": "Translating errors",
+        "intro": "vael-form ships no translations. You connect your i18n once, add the messages to your own locale files, and errors follow a locale switch without validating again.",
+        "setup": {
+          "title": "Connect your i18n",
+          "body": "Pass your vue-i18n instance to the plugin, in either mode, or any <code>{'{'} t, locale {'}'}</code> over your own catalog. Your schemas stay as they are."
+        },
+        "live": {
+          "title": "Errors in the reader’s language",
+          "body": "These pages use their own catalog: switch the docs’ language in the header and the errors below change with it. Submit the form to see them."
+        },
+        "catalog": {
+          "title": "The messages",
+          "body": "Copy these keys into your locale files under <code>formKit</code> and translate the values. You don’t need all of them: the most specific key is tried first (<code>tooSmall.string</code>, then <code>tooSmall.default</code>), and a key you leave out shows the schema library’s own text. To change one message, write it in the schema: <code>.min(8, 'Pick a longer name')</code> shows as written."
+        },
+        "labels": {
+          "title": "Field names in messages",
+          "body": "Every message gets <code>{'{'}field{'}'}</code>: the label you give in <code>labels</code>, itself a key to translate, or the field’s name made readable, so <code>firstName</code> reads “First name”. Messages also get the rule’s values, such as <code>{'{'}minimum{'}'}</code> and <code>{'{'}maximum{'}'}</code>."
+        },
+        "msg": {
+          "title": "Your own messages",
+          "body": "<code>msg()</code> makes a translated message from your own key, with values and a fallback. Register your keys and they complete in your editor. <code>keyPrefix</code> on the plugin moves the messages from <code>formKit</code> to a name of your choice."
+        }
+      },
+      "nuxt": {
+        "title": "Nuxt and server rendering",
+        "intro": "A module for Nuxt, ids that match between server and browser, and the same API in Vapor.",
+        "module": {
+          "title": "The Nuxt module",
+          "body": "The module installs the plugin, connects <code>{'@'}nuxtjs/i18n</code> in whichever order the modules run, and auto-imports <code>useForm</code>, <code>useFormContext</code>, <code>useField</code> and <code>msg</code>. Its options are <code>showErrors</code>, <code>keyPrefix</code>, <code>i18n</code> and <code>autoImports</code>."
+        },
+        "ssr": {
+          "title": "Server rendering",
+          "body": "Inputs get their ids from <code>useId()</code>, so the server and the browser agree. A server render shows no errors, since nobody has earned them yet. A form outside a component needs an <code>id</code> of its own."
+        },
+        "vapor": {
+          "title": "Vapor",
+          "body": "The same API works in Vapor components and in Vapor inside a VDOM app, tested in both. Vue has no Vapor server renderer yet, so server rendering is tested for VDOM only."
+        }
+      }
+    },
+    "api": {
+      "title": "API reference",
+      "intro": "Everything <code>useForm</code> takes and returns, and the other exports.",
+      "options": "Options",
+      "returns": "Returns",
+      "field": "Field",
+      "list": "List fields",
+      "exports": "Other exports",
+      "name": "Name",
+      "description": "Description",
+      "rows": {
+        "schema": "A Standard Schema (Zod, Valibot, ArkType, …), or a ref to one. Its input type types the fields; its output types <code>onSubmit</code>.",
+        "validate": "Instead of <code>schema</code>: a map of paths to plain functions. <code>*</code> is any list index, <code>''</code> the form.",
+        "defaultValues": "The starting values, or a ref or getter to them. May be <code>undefined</code> while they load.",
+        "onSubmit": "<code>(values, {'{'} form, event, element, submitter, formData {'}'})</code>, called with valid values.",
+        "onInvalid": "Called when a submit fails validation, with the errors.",
+        "showErrors": "<code>'edited'</code> (default), <code>'blur'</code>, <code>'input'</code> or <code>'submit'</code>, or a mode per path with <code>default</code>.",
+        "rules": "Extra checks per path, sync or async, such as an API call. A rule can also be a schema.",
+        "debounce": "How long rules wait after the last change, in ms.",
+        "labels": "Translatable names per path, used as <code>{'{'}field{'}'}</code> in messages.",
+        "i18n": "An i18n instance for this form only. Usually set once on the plugin.",
+        "id": "The prefix of the inputs’ ids. Needed outside a component when you render on the server.",
+        "model": "A ref per field, for <code>v-model</code>. Groups are writable objects, lists are arrays.",
+        "errors": "The message to show per path, or nothing. A list is one entry.",
+        "attrs": "Per path, what to spread on the input: <code>id</code>, <code>name</code>, ARIA, blur, schema limits, and <code>errorId</code>.",
+        "handleSubmit": "The <code>{'@'}submit</code> handler, or <code>handleSubmit(fn)</code> for a handler that calls <code>fn</code>.",
+        "submitting": "True while <code>onSubmit</code> runs.",
+        "valid": "True when nothing has an error, shown or not.",
+        "dirty": "True when a value differs from its default.",
+        "touched": "True once any field has been left.",
+        "pending": "True while a rule runs.",
+        "submitCount": "How many times the form was submitted.",
+        "values": "All the values, read-only.",
+        "errorList": "The errors that are showing, as <code>{'{'} path, message {'}'}</code>.",
+        "allErrors": "Every error, shown or not.",
+        "reset": "<code>reset(values?)</code>: back to the defaults, or to new ones. Nothing dirty or touched.",
+        "validateFn": "<code>validate(path?)</code>: checks the form or one group, shows its errors, and resolves to whether it’s valid.",
+        "setValue": "<code>setValue(path, value)</code>, as a user edit.",
+        "setValues": "<code>setValues(values)</code>, without marking anything dirty.",
+        "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>, such as a server’s. Each clears when its field changes.",
+        "clearErrors": "<code>clearErrors(path?)</code>: clears errors set with <code>setErrors</code>.",
+        "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>: runs on user edits and <code>setValue</code>, not on resets or loaded defaults.",
+        "fieldFn": "<code>field(path)</code>: one field, with everything below.",
+        "f_value": "The value, writable.",
+        "f_error": "The message to show, or nothing.",
+        "f_state": "<code>touched</code>, <code>dirty</code>, <code>valid</code>, <code>pending</code>.",
+        "f_attrs": "What to spread on the input, with <code>id</code> and <code>errorId</code>.",
+        "f_methods": "<code>touch()</code>, <code>untouch()</code>, <code>validate()</code>, <code>reset()</code>, <code>watch()</code>.",
+        "l_items": "The rows, each with a stable <code>key</code>, its <code>index</code> and its <code>field</code>.",
+        "l_ops": "<code>push</code>, <code>insert</code>, <code>remove</code>, <code>move</code>, <code>swap</code>, <code>replace</code>, <code>clear</code>. Touched state follows a row when it moves.",
+        "formPlugin": "<code>app.use(formPlugin, {'{'} i18n, showErrors, keyPrefix {'}'})</code>: defaults for every form.",
+        "provideFormConfig": "The same defaults for one component tree.",
+        "useFormContext": "The form of the nearest parent that called <code>useForm</code>, typed with <code>useFormContext&lt;typeof schema&gt;()</code>.",
+        "useField": "<code>useField(() => props.name)</code>: one field of the parent’s form, by name.",
+        "msg": "<code>msg(key, params?, fallback?)</code>: a message from your own catalog, for a schema or a rule.",
+        "validator": "From <code>vael-form/validator</code>: a <code>validate</code> map as a Standard Schema."
+      }
+    }
+  },
+  "formKit": {
+    "required": "{field} is required",
+    "invalidType": {
+      "default": "{field} is not valid",
+      "string": "{field} must be text",
+      "number": "{field} must be a number",
+      "int": "{field} must be a whole number",
+      "boolean": "{field} must be true or false",
+      "date": "{field} must be a valid date",
+      "array": "{field} must be a list"
+    },
+    "tooSmall": {
+      "default": "{field} is too small (minimum {minimum})",
+      "string": "{field} must be at least {minimum} characters",
+      "number": "{field} must be at least {minimum}",
+      "array": "{field} needs at least {minimum} items",
+      "date": "{field} must be on or after {minimum}"
+    },
+    "tooBig": {
+      "default": "{field} is too large (maximum {maximum})",
+      "string": "{field} must be at most {maximum} characters",
+      "number": "{field} must be at most {maximum}",
+      "array": "{field} can have at most {maximum} items",
+      "date": "{field} must be on or before {maximum}"
+    },
+    "invalidFormat": {
+      "default": "{field} is not in the right format",
+      "email": "Enter a valid email address",
+      "url": "Enter a valid URL",
+      "uuid": "{field} must be a valid UUID",
+      "regex": "{field} is not in the right format",
+      "startsWith": "{field} must start with \"{prefix}\"",
+      "endsWith": "{field} must end with \"{suffix}\"",
+      "includes": "{field} must contain \"{includes}\""
+    },
+    "invalidValue": "Choose one of the available options for {field}",
+    "notMultipleOf": "{field} must be a multiple of {divisor}",
+    "invalidUnion": "{field} is not valid",
+    "unrecognizedKeys": "Unrecognized fields: {keys}",
+    "custom": "{field} is not valid"
+  },
+  "formsDemo": {
+    "name": "Name",
+    "email": "Email",
+    "age": "Age",
+    "submit": "Check"
   }
 }

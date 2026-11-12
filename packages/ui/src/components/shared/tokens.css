@@ -32,7 +32,8 @@
     --ui-overlay: rgb(0 0 0 / 0.4);
     --ui-radius: 10px;
     --ui-font-size: 1rem;
-    /* Optional floor for form-field text on touch screens. 0px: fields match your text. */
+    /* Optional floor for form-field text on touch screens. 0px: fields match your text (pair with
+       preventFocusZoom() so iOS doesn't zoom a focused field). */
     --ui-touch-font-size: 0px;
     --ui-border-strong: #d4d4d8;
 

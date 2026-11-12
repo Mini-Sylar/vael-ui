@@ -6,7 +6,8 @@ import type { MotionValues, Spring, TargetMotion } from './types'
 import { entered, started } from './finish'
 import { runHook } from './hook'
 import { prefersReducedMotion } from '../composables/dom'
-import { namedOnPage } from './presence'
+import { namedOnPage, slidingUnder } from './presence'
+import type { Sliding } from './presence'
 
 interface Deferred<T = void> {
   promise: Promise<T>
@@ -67,11 +68,23 @@ function cyclic(targets: ScheduledTarget[]): Set<string> {
   return looped
 }
 
+/** `after` naming a `layoutId` slide: its moments, from where the slide is now. */
+function slidingMoment(slide: Sliding, when?: string): Promise<void> {
+  if (when === 'start') return Promise.resolve()
+  if (when?.endsWith('%')) {
+    const share = Number.parseFloat(when) / 100
+    return sleep(Math.max(0, slide.span * share - (performance.now() - slide.at)))
+  }
+  return slide.done
+}
+
 /**
  * `after` naming elements already on the page: what they're playing now (a change to their
  * `animate`, a state), once their player has had a frame to start it. Never a loop.
  */
 async function alreadyThere(name: string, moment: string, when?: string): Promise<void> {
+  const slide = slidingUnder(name)
+  if (slide) return slidingMoment(slide, when)
   const els = namedOnPage(name)
   if (!els.length) {
     warn(`\`after: '${moment}'\` names nothing on the page; starting without waiting.`)

@@ -6,6 +6,18 @@
     display: inline-flex;
     align-items: center;
   }
+  .ui-color-picker--inline {
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .ui-color-picker-inline {
+    display: contents;
+  }
+  .ui-color-picker-inline > .ui-color-picker-preset {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border-radius: 9999px;
+  }
   .ui-color-picker-swatch,
   .ui-color-picker-preset {
     display: inline-grid;

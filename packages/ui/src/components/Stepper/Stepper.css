@@ -126,6 +126,10 @@
     opacity: 0;
     scale: 0.9;
   }
+  .ui-stepper[data-motion='off']
+    :is(.ui-stepper-check-enter-active, .ui-stepper-check-leave-active) {
+    transition: none;
+  }
 
   .ui-stepper-content {
     display: flex;

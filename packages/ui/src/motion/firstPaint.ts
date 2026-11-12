@@ -30,8 +30,13 @@ export function firstPaint(motion: TargetMotion): Record<string, unknown> | unde
     else if (key === 'filter') vars['--ui-appear-filter'] = String(value)
     else if (key !== 'x' && key !== 'y') return undefined
   }
-  if ('x' in initial || 'y' in initial)
-    vars['--ui-appear-translate'] = `${px(plain(initial.x) ?? 0)} ${px(plain(initial.y) ?? 0)}`
+  if ('x' in initial || 'y' in initial) {
+    const x = plain(initial.x) ?? 0
+    const y = px(plain(initial.y) ?? 0)
+    vars['--ui-appear-translate'] = `${px(x)} ${y}`
+    // Right to left, a number on x runs the other way, as it does in the browser.
+    if (typeof x === 'number' && x) vars['--ui-appear-translate-rtl'] = `${px(-x)} ${y}`
+  }
   const timed = motion.duration !== undefined || motion.easing !== undefined
   const { duration, easing } = timed
     ? {
@@ -60,8 +65,16 @@ export function firstPaint(motion: TargetMotion): Record<string, unknown> | unde
   }
 }
 
+/** On the server, for an entrance CSS can't play (or a named one): it shows as it is, and the
+ * client doesn't play it again once hydrated. */
+export const SHOWN_ON_SERVER = { 'data-ui-ssr': '' }
+
 /** On the client, once hydrated: it lets the first-paint animation finish, then drops it. */
 export function handOver(el: HTMLElement): boolean {
+  if (el.hasAttribute('data-ui-ssr')) {
+    el.removeAttribute('data-ui-ssr')
+    return true
+  }
   if (!el.hasAttribute('data-ui-appear')) return false
   const done = () => {
     el.removeAttribute('data-ui-appear')

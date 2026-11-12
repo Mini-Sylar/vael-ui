@@ -112,7 +112,9 @@
                     <span v-if="entry.icon" :class="iconPart.class" :style="iconPart.style">
                       <component :is="entry.icon" />
                     </span>
-                    <span class="ui-menu-item-label">{{ entry.label }}</span>
+                    <span class="ui-menu-item-label">
+                      <slot name="label" :item="entry">{{ entry.label }}</slot>
+                    </span>
                     <span v-if="entry.shortcut" class="ui-menu-item-shortcut">
                       {{ entry.shortcut }}
                     </span>
@@ -184,6 +186,9 @@
                 >
                   <template v-if="$slots.item" #item="{ item: nestedItem }">
                     <component :is="relayItemSlot" :item="nestedItem as T" />
+                  </template>
+                  <template v-if="$slots.label" #label="{ item: nestedItem }">
+                    <component :is="relayLabelSlot" :item="nestedItem as T" />
                   </template>
                 </MenuSelf>
               </template>
@@ -405,6 +410,8 @@ defineSlots<{
   header(): unknown
   /** Override one data-driven row's content while keeping its behavior. */
   item(props: { item: T }): unknown
+  /** Override a row's text only; its icon, shortcut and submenu chevron stay. */
+  label(props: { item: T }): unknown
   /** Fully custom menu content. Render your own `role="menuitem"` markup; Menu ignores `items`. */
   default(props: {
     close: () => void
@@ -429,6 +436,10 @@ const hasSlot = useSlotPresence(slots)
 // a bare `<slot name="item">` there re-resolves against the submenu under the Vapor compiler.
 const relayItemSlot = createSlotRelay<{ item: T }>(
   (relayProps) => slots.item?.(relayProps) as VNodeChild,
+  ['item'],
+)
+const relayLabelSlot = createSlotRelay<{ item: T }>(
+  (relayProps) => slots.label?.(relayProps) as VNodeChild,
   ['item'],
 )
 

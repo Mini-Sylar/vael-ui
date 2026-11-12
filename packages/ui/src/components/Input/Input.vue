@@ -26,6 +26,7 @@
       :aria-describedby="describedBy"
       :aria-invalid="isInvalid || undefined"
       :aria-required="fieldControl.required() || undefined"
+      :aria-busy="loading || undefined"
       :data-ui-display="displayMode"
       @input="onNativeInput"
       @change="onNativeChange"
@@ -78,6 +79,12 @@
         </svg>
       </button>
     </Transition>
+    <span v-if="loading" class="ui-input-loader" aria-hidden="true"><LoaderMark /></span>
+    <!-- Mounted from the first load on, so the next ones are read out (a live region added with
+         its text already in is often missed). -->
+    <span v-if="everLoaded" role="status" class="ui-input-status">{{
+      loading ? messages.input.loading : ''
+    }}</span>
     <span v-if="$slots.end" ref="endEl" :class="endPart.class" :style="endPart.style"
       ><slot name="end"
     /></span>
@@ -88,6 +95,7 @@
 <script setup lang="ts">
 import './Input.css'
 import '../shared/clear-transition.css'
+import LoaderMark from '../internal/LoaderMark.vue'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
@@ -142,6 +150,8 @@ const rawProps = withDefaults(
     placeholder?: string
     /** Shows a button that empties the input while it has text. @default false */
     clearable?: boolean
+    /** Shows a spinner at the end while something loads for it, such as search results. @default false */
+    loading?: boolean
     /**
      * Crossfades a placeholder or value that changes on its own, like AnimatedText. What you type
      * never animates. @default false
@@ -165,12 +175,18 @@ const rawProps = withDefaults(
     readonly: false,
     invalid: false,
     clearable: false,
+    loading: false,
     animated: false,
     // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
     motion: undefined,
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
+const everLoaded = shallowRef(rawProps.loading)
+watch(
+  () => rawProps.loading,
+  (on) => on && (everLoaded.value = true),
+)
 
 defineSlots<{
   /** Inline leading content, such as an icon, a Kbd hint or a copy Button. */

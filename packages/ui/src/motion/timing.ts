@@ -1,5 +1,5 @@
 // Timing and settled(): shared by the runtime and the states player, so neither drags in the other.
-import { springArrival, springEasing, springOf } from './springEasing'
+import { settleFor, springArrival, springEasing, springOf } from './springEasing'
 import { SPRINGS } from './springNames'
 import type { SpringName } from './springNames'
 import { cssDuration, cssEasing } from './ease'
@@ -49,11 +49,15 @@ export const easingOf = (el: Element, easing: unknown): string | string[] | unde
       ? easing.map((each) => stepEasing(el, each))
       : stepEasing(el, easing)
 
-/** A spring, or a duration with an easing; tokens resolve against the element. */
+/**
+ * A spring, or a duration with an easing; tokens resolve against the element. `distance` (px) is
+ * how far a spring moves it, so a long move settles to the pixel instead of jumping its last few.
+ */
 export function resolveTiming(
   el: Element,
   timing: MotionTiming,
   fallback?: Spring,
+  distance = 0,
 ): ResolvedTiming {
   if (timing.duration !== undefined || timing.easing !== undefined) {
     const raw = timing.duration ?? 'var(--ui-duration-enter)'
@@ -68,7 +72,7 @@ export function resolveTiming(
     return { easing, duration, arrival: duration }
   }
   const spring = springOf((timing.spring as Spring | undefined) ?? fallback ?? DEFAULT_SPRING)
-  return { ...springEasing(spring), arrival: springArrival(spring), spring }
+  return { ...springEasing(spring, 0, settleFor(distance)), arrival: springArrival(spring), spring }
 }
 
 // ─── settled() ───────────────────────────────────────────────────────────────

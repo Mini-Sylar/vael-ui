@@ -454,7 +454,8 @@
     "useTabIndicator": "Tabs、SelectButton、MenuList 和 Pagination 背后的滑动选中指示器。用于你自己的分段控件和列表。",
     "useScrollLock": "像对话框打开时那样，锁定页面或任意元素的滚动，且不会造成布局偏移。用于你自己的浮层和全屏面板。",
     "moveTreeNode": "将节点及其子树原地移动到新的父节点和索引。不可能的移动（例如把文件夹放进它自己里面）不会改变任何内容。用它把拖放移动应用到你的树数据上。",
-    "useFileDrop": "把任意元素变成文件放置区，拖拽经过子元素时悬停状态保持稳定，并忽略拖入的文本或链接。用它构建你自己的放置区。"
+    "useFileDrop": "把任意元素变成文件放置区，拖拽经过子元素时悬停状态保持稳定，并忽略拖入的文本或链接。用它构建你自己的放置区。",
+    "useScrollLength": "页面或容器可滚动的距离（px），以 ref 形式提供。会随内容增减而更新。"
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components 支持 Vite、Webpack、Rollup、esbuild 和 Rspack。解析器是一个普通函数，因此在所有这些工具中的表现都相同。",
@@ -1238,5 +1239,369 @@
         "note": "拖动标题栏即可移动对话框。指针捕获让指针离开标题栏后拖动仍能继续。焦点在抓手按钮上时，方向键每次移动 10 px，按住 Shift 则移动 50 px。对话框会保持在窗口内，再次打开时回到中央。"
       }
     }
+  },
+  "formsDocs": {
+    "nav": {
+      "forms": "表单",
+      "overview": "概览",
+      "api": "API 参考"
+    },
+    "mode": "用 vael-form 校验表单",
+    "hint": "要校验表单？vael-form 用一个 schema 就能接好",
+    "eyebrow": "vael-form",
+    "title": "表单",
+    "lede": "vael-form 是一个独立的可选包，用于基于 schema 的表单：Zod、Valibot、ArkType 或任何 Standard Schema 库。你照常使用 <code>v-model</code>，它负责错误、无障碍连接和提交。它可以和 vael-ui、原生输入框以及任何其他组件库一起使用。",
+    "install": "安装",
+    "installBody": "它需要 Vue 3.5 或更高版本，不依赖 vael-ui。再添加你使用的 schema 库。",
+    "quickTitle": "一个表单",
+    "quickBody": "一个 schema 包含所有规则。每个输入框按字段名拿到三样东西：<code>v-model</code> 绑定值，<code>attrs</code> 提供 id、ARIA 和失焦处理，<code>errors</code> 提供错误消息。",
+    "tourTitle": "指南",
+    "why": {
+      "title": "为什么选 vael-form",
+      "items": [
+        "<strong>Vue 优先。</strong>字段就是 ref，所以 <code>v-model</code> 可用于输入框、分组和列表，在 VDOM 和 Vapor 中都一样。",
+        "<strong>默认无障碍。</strong><code>attrs</code> 会设置 <code>aria-invalid</code> 和 <code>aria-describedby</code>，提交失败时会聚焦第一个无效字段。",
+        "<strong>错误在合适的时机出现。</strong>字段被修改并离开后才显示错误，只是经过时不会显示。自动填充和点击正在移动的按钮也都处理好了。",
+        "<strong>用你的消息目录翻译。</strong>schema 错误会在你自己的语言文件中查找键，切换语言时无需重新校验就会跟着变。",
+        "<strong>体积小。</strong>gzip 后约 8 KB。规则、消息目录和 schema 限制只在表单用到时才加载。"
+      ]
+    },
+    "card": {
+      "start": "你的第一个表单、它的状态，以及单选框和复选框等选项。",
+      "errors": "错误何时出现，可按字段设置，也可全应用统一设置。",
+      "submitting": "提交、服务器错误、FormData 和 TanStack Query。",
+      "validation": "跨字段规则、异步检查，以及不用 schema 库的表单。",
+      "lists": "可增删的行、分步表单和联合类型。",
+      "data": "稍后加载的默认值、跟随其他字段的字段、对话框和 store。",
+      "i18n": "以你的应用支持的每种语言显示错误消息。",
+      "nuxt": "Nuxt 模块、服务端渲染和 Vapor。"
+    },
+    "chapters": {
+      "eyebrow": "表单指南 · 第 {n} 章，共 {total} 章",
+      "start": {
+        "title": "你的第一个表单",
+        "intro": "一个表单就是一次 <code>useForm</code> 调用。它返回值的 ref、要显示的错误，以及每个输入框需要的属性。",
+        "install": {
+          "title": "安装",
+          "body": "vael-form 是一个独立的包。和一个 schema 库一起安装。这些页面使用 Zod；Valibot、ArkType 和任何其他 Standard Schema 库的用法相同。"
+        },
+        "first": {
+          "title": "一个表单",
+          "body": "给 <code>useForm</code> 传入 schema、初始值，以及拿到有效值后要做什么。然后按名称绑定每个输入框。留空一个字段并按 Tab 离开：什么都不显示。输入错误内容再离开，错误就会出现。",
+          "items": [
+            "<code>model</code> 为每个字段提供一个 ref。解构它，然后像对任何 ref 一样使用 <code>v-model=\"email\"</code>。",
+            "<code>attrs.email</code> 放在输入框上：<code>id</code>、<code>name</code>、<code>aria-invalid</code>、<code>aria-describedby</code>，以及把字段标记为已离开的失焦处理。",
+            "<code>errors.email</code> 是要显示的消息，没有则为空。",
+            "<code>handleSubmit</code> 放在 <code>{'@'}submit</code> 上。它会校验、聚焦第一个无效字段，并用 schema 的输出调用 <code>onSubmit</code>。"
+          ]
+        },
+        "state": {
+          "title": "表单状态",
+          "body": "表单的状态都是 ref，可以解构后直接在模板中使用，不用写 <code>.value</code>。编辑名称，看看它们如何变化。<code>reset()</code> 回到默认值，或设定新的默认值：这里每次保存都会把保存的值设为新的默认值。"
+        },
+        "choices": {
+          "title": "单选框、复选框和数字",
+          "body": "每种控件的绑定方式都一样。一组单选框或复选框是一个字段，只有一个错误，所以它的 <code>attrs</code> 放在分组上，焦点离开整个分组时字段才算已离开。绑定到多个复选框的列表字段保存被勾选的值，和普通 Vue 一样。"
+        },
+        "components": {
+          "title": "搭配 vael-ui 和其他库",
+          "body": "像在输入框上一样，把 <code>attrs</code> 展开到组件上。在 vael-ui 的 <code>Field</code> 中，Field 保留自己的 id，所以它的标签仍然指向控件，并会把你的 <code>aria-describedby</code> 和它的错误合并。如果某个库会用传入的 <code>id</code> 替换自己的 id，只传它需要的：<code>:name=\"attrs.email.name\"</code> 和 <code>{'@'}focusout=\"attrs.email.onFocusout\"</code>。"
+        }
+      },
+      "errors": {
+        "title": "错误何时显示",
+        "intro": "schema 始终都会运行。<code>showErrors</code> 只决定错误何时可见，提交后每种模式都会显示全部错误。",
+        "modes": {
+          "title": "模式",
+          "body": "下面每个字段使用不同的模式。在每个字段中输入错误的内容后离开，比较错误出现的时机。默认的 <code>edited</code> 会等到字段被修改并离开后才显示，所以只是经过空字段不会显示任何内容。",
+          "items": [
+            "<code>'edited'</code>：字段被修改并离开后。",
+            "<code>'blur'</code>：字段离开后，即使未修改。",
+            "<code>'input'</code>：值一变化就显示，或在字段离开后显示。",
+            "<code>'submit'</code>：仅在第一次提交之后。"
+          ]
+        },
+        "perPath": {
+          "title": "按字段设置模式",
+          "body": "为每个路径指定一个模式，其余的用 <code>default</code>。分组覆盖其下的所有内容，最近的路径优先。提交之后才添加到列表的行在离开前或下次提交前都保持安静。"
+        },
+        "summary": {
+          "title": "错误汇总",
+          "body": "<code>errorList</code> 包含正在显示的错误及其路径，可在长表单顶部做汇总。<code>allErrors</code> 包含所有错误，无论是否显示。直接提交这个空表单试试。"
+        },
+        "shift": {
+          "title": "会让页面移动的错误",
+          "body": "出现的错误会把下方内容往下推。vael-form 会等鼠标或触摸按下的操作松开后，才把字段标记为已离开，所以点击随后移动的按钮仍然有效。要彻底避免移动，就让错误元素一直留在页面中，并给它设置 <code>min-height</code>。只有字段无效时，<code>aria-describedby</code> 才会指向它。"
+        },
+        "autofill": {
+          "title": "自动填充",
+          "body": "浏览器自动填充表单时，会在你第一次点击页面的瞬间，在几毫秒内对每个字段依次触发聚焦、输入和失焦。这次失焦并不是你离开了字段，所以自动填充的字段在你输入或提交之前不会显示错误。"
+        },
+        "app": {
+          "title": "全应用设置",
+          "body": "安装一次插件，就能为每个表单设置模式。表单自己的 <code>showErrors</code> 会替换它，两者不会合并。<code>field.untouch()</code> 会再次隐藏字段的错误，直到它再一次被离开。"
+        }
+      },
+      "submitting": {
+        "title": "提交",
+        "intro": "<code>handleSubmit</code> 阻止页面刷新、进行校验，然后用有效值调用 <code>onSubmit</code>。提交进行中时再次提交会被忽略。",
+        "onSubmit": {
+          "title": "onSubmit",
+          "body": "<code>onSubmit</code> 收到 schema 的输出，所以 <code>z.coerce.number()</code> 收到的就是数字；还会收到一个上下文，包含 <code>form</code>、<code>event</code>、<code>element</code> 和 <code>submitter</code>。在它的 Promise 完成之前，<code>submitting</code> 一直为 true。如果它抛出错误，<code>handleSubmit</code> 会 reject，<code>submitting</code> 恢复为 false。"
+        },
+        "server": {
+          "title": "来自服务器的错误",
+          "body": "用 <code>setErrors</code> 把服务器拒绝的内容放到对应字段上。错误会立即显示，并在该字段变化时清除。试试 <code>taken{'@'}example.com</code>。"
+        },
+        "buttons": {
+          "title": "一个表单，两个按钮",
+          "body": "触发提交的按钮就是 <code>submitter</code>，和 HTML 一样。给每个按钮设置 <code>name</code> 和 <code>value</code>，然后在 <code>onSubmit</code> 中读取。"
+        },
+        "handler": {
+          "title": "自定义处理函数",
+          "body": "<code>handleSubmit(fn)</code> 返回一个提交处理函数，它用相同的值和上下文调用 <code>fn</code>，而不是 <code>onSubmit</code>。请在脚本中创建它：内联的 <code>{'@'}submit=\"handleSubmit(fn)\"</code> 只会创建处理函数，而不会运行它。"
+        },
+        "formData": {
+          "title": "FormData",
+          "body": "上下文中的 <code>formData</code> 是以 multipart 形式表示的值，在读取时才构建。它来自表单的值，所以不在屏幕上的步骤也包含在内。嵌套的值使用输入框的名称（<code>address.street</code>、<code>members.0.name</code>），文件保持为文件，日期变成 ISO 字符串，并会加上被按下按钮的名称和值。"
+        },
+        "query": {
+          "title": "搭配 TanStack Query",
+          "body": "表单检查值，mutation 发送它们。在 <code>onSubmit</code> 中调用 mutation，并在 mutation 的 <code>onError</code> 中用 <code>setErrors</code> 放回服务器返回的字段错误。在代码中调用 <code>handleSubmit()</code> 会像提交一样显示所有错误并聚焦第一个无效字段。"
+        }
+      },
+      "validation": {
+        "title": "校验",
+        "intro": "每次变化都会运行整个 schema，所以跨字段规则无需额外处理。不适合放进 schema 的检查，例如 API 调用，放在 <code>rules</code> 中。",
+        "libraries": {
+          "title": "schema 库",
+          "body": "Zod 4、Zod Mini、Zod 3、Valibot 和 ArkType 会把错误映射到你的消息目录。Yup、Joi、Effect 和任何其他 Standard Schema 库也能使用，显示它们自己的文本。Joi 需要 <code>.prefs({'{'} abortEarly: false {'}'})</code> 才会报告所有问题，Effect 需要 <code>Schema.toStandardSchemaV1(schema)</code>。"
+        },
+        "cross": {
+          "title": "跨字段规则",
+          "body": "比较多个字段的规则就是带 <code>path</code> 的 <code>refine</code>。错误显示在你指定的字段上，任一方修正后就会清除。Valibot 使用 <code>v.forward</code>，ArkType 使用带 <code>path</code> 的 <code>ctx.reject</code>。"
+        },
+        "rules": {
+          "title": "异步检查",
+          "body": "<code>rules</code> 保存针对单个路径的检查，例如 API 调用。输入一个名称试试：<code>admin</code> 和 <code>vael</code> 已被占用。",
+          "items": [
+            "规则只在 schema 在该路径上没有错误时运行，所以格式错误的值永远不会到达你的 API。",
+            "<code>debounce</code> 等待最后一次变化，更新的变化会通过 <code>signal</code> 中止之前的调用。",
+            "运行期间，字段和表单上的 <code>pending</code> 都为 true。提交会等待它完成。",
+            "默认值不会触发它，所以编辑表单不会去检查用户已有的内容。",
+            "<code>{'{'} on: 'blur', run {'}'}</code> 在字段离开时检查，而不是在输入时。"
+          ]
+        },
+        "plain": {
+          "title": "不用 schema 库",
+          "body": "传入 <code>validate</code> 代替 schema，它是从路径到普通函数的映射。函数接收值和 <code>{'{'} values, path {'}'}</code>，返回一条消息或什么都不返回。数组按顺序运行，第一个失败的生效。<code>*</code> 代表任意列表索引，<code>''</code> 是不属于任何字段的错误。类型来自 <code>defaultValues</code>。"
+        },
+        "validator": {
+          "title": "在服务器上使用相同规则",
+          "body": "<code>validator()</code> 把同一个映射转换成 Standard Schema，所以它可以在服务器或测试中运行。"
+        },
+        "transforms": {
+          "title": "转换",
+          "body": "转换写在 schema 中。字段保留用户输入的内容，<code>onSubmit</code> 收到 schema 返回的结果。<code>v-model.trim</code> 和 <code>v-model.number</code> 的用法和任何 Vue 表单一样。"
+        },
+        "limits": {
+          "title": "来自 schema 的限制",
+          "body": "<code>attrs</code> 还带有 schema 对输入的约束：文本的 <code>maxlength</code> 和 <code>minlength</code>，数字的 <code>min</code>、<code>max</code> 和 <code>step</code>，以及不能为空的值的 <code>aria-required</code>。<code>maxlength</code> 会在达到上限时阻止继续输入，所以这个错误很少出现。这适用于 Zod、Valibot 和 ArkType。"
+        }
+      },
+      "lists": {
+        "title": "列表和分步",
+        "intro": "列表是一个字段，其中的行可以添加、删除和移动。分步是同一个 schema 中的分组。两者都不需要注册任何东西：值都保存在表单中。",
+        "list": {
+          "title": "可增删的行",
+          "body": "<code>field('members')</code> 提供列表的 <code>items</code> 及其操作：<code>push</code>、<code>insert</code>、<code>remove</code>、<code>move</code>、<code>swap</code>、<code>replace</code> 和 <code>clear</code>。<code>item.key</code> 在编辑和移动中保持不变，所以把它用作 <code>v-for</code> 的 key。列表自身的错误，例如“至少添加一项”，是 <code>errors.members</code>。"
+        },
+        "steps": {
+          "title": "分步",
+          "body": "每一步都是 schema 中的一个分组。<code>validate('account')</code> 检查一个分组，只显示它的错误。不在屏幕上的步骤会保留已输入的内容，最终提交会检查每一步。"
+        },
+        "unions": {
+          "title": "联合类型",
+          "body": "可辨识联合拥有每个分支的字段，schema 校验当前生效的分支。切换到银行转账再切回来：你输入的卡号还在。<code>onSubmit</code> 只收到当前分支。"
+        },
+        "dynamic": {
+          "title": "会变化的 schema",
+          "body": "<code>schema</code> 可以是一个 ref，用于根据数据构建的表单。新的 schema 会重新校验同样的值。"
+        }
+      },
+      "data": {
+        "title": "加载与响应",
+        "intro": "默认值可以在表单创建之后才到达，字段之间可以相互跟随，表单也可以存在于组件之外。",
+        "loading": {
+          "title": "稍后加载的默认值",
+          "body": "传入一个 ref，例如查询的 <code>data</code>。它为 <code>undefined</code> 时表单就可以使用，数据到达时再接收。用户输入之后才到达的数据不会覆盖已有的编辑。保存后，<code>reset(saved)</code> 会把保存的值设为新的默认值。"
+        },
+        "watch": {
+          "title": "跟随其他字段的字段",
+          "body": "当用户编辑或 <code>setValue</code> 改变值时，<code>country.watch()</code> 就会运行。这里它会清空城市。<code>reset()</code> 或加载的默认值不会触发它，所以同时带有国家和城市的数据会两者都保留。依赖某个值的选项列表就是一个普通的 <code>computed</code>。"
+        },
+        "dialogs": {
+          "title": "在对话框中",
+          "body": "把表单放进对话框内它自己的组件中。vael-ui 的 <code>Dialog</code> 只在打开时渲染内容，所以每次打开都会创建一个已填好的新表单，不需要重置。始终挂载的表单需要在对话框打开时调用 <code>reset(record)</code>。"
+        },
+        "store": {
+          "title": "在 store 中",
+          "body": "表单是一个普通对象，在任何地方都保持响应性：Pinia store、组合式函数、prop。<code>onSubmit</code> 上下文中的 <code>form</code> 就是同一个表单。如果使用服务端渲染，请给组件之外的表单设置一个 <code>id</code>。"
+        },
+        "reusable": {
+          "title": "可复用的输入组件",
+          "body": "字段是一个带类型的对象，所以可复用的输入组件可以把它作为 prop 接收。<code>form.field('email')</code> 返回一个字段，包含它的 <code>value</code>、<code>error</code> 和 <code>attrs</code>。"
+        },
+        "children": {
+          "title": "在子组件中",
+          "body": "<code>useFormContext()</code> 让子组件拿到同一个带类型的表单，适合放在单独文件中的步骤或区块。<code>useField(() => props.name)</code> 按名称绑定可复用的输入组件。"
+        }
+      },
+      "i18n": {
+        "title": "翻译错误",
+        "intro": "vael-form 不自带任何翻译。你只需接入一次 i18n，把消息加到你自己的语言文件中，切换语言时错误无需重新校验就会跟着变。",
+        "setup": {
+          "title": "接入你的 i18n",
+          "body": "把你的 vue-i18n 实例传给插件，两种模式都可以，也可以传入任何基于你自己目录的 <code>{'{'} t, locale {'}'}</code>。你的 schema 保持不变。"
+        },
+        "live": {
+          "title": "以读者的语言显示错误",
+          "body": "这些页面使用自己的消息目录：在页眉切换文档语言，下方的错误会随之改变。提交表单即可看到。"
+        },
+        "catalog": {
+          "title": "消息",
+          "body": "把这些键复制到你的语言文件中的 <code>formKit</code> 下，再翻译它们的值。不必全部复制：会先尝试最具体的键（先 <code>tooSmall.string</code>，再 <code>tooSmall.default</code>），省略的键会显示 schema 库自己的文本。要修改某一条消息，直接写在 schema 中：<code>.min(8, 'Pick a longer name')</code> 会原样显示。"
+        },
+        "labels": {
+          "title": "消息中的字段名",
+          "body": "每条消息都会收到 <code>{'{'}field{'}'}</code>：你在 <code>labels</code> 中提供的标签（它本身也是一个待翻译的键），或者把字段名转换成易读的形式，比如 <code>firstName</code> 显示为“First name”。消息还会收到规则的值，例如 <code>{'{'}minimum{'}'}</code> 和 <code>{'{'}maximum{'}'}</code>。"
+        },
+        "msg": {
+          "title": "你自己的消息",
+          "body": "<code>msg()</code> 用你自己的键生成一条翻译后的消息，可附带值和后备文本。注册你的键后，编辑器就能自动补全它们。插件上的 <code>keyPrefix</code> 会把消息从 <code>formKit</code> 移到你选择的名称下。"
+        }
+      },
+      "nuxt": {
+        "title": "Nuxt 和服务端渲染",
+        "intro": "一个 Nuxt 模块，服务器和浏览器一致的 id，以及在 Vapor 中相同的 API。",
+        "module": {
+          "title": "Nuxt 模块",
+          "body": "该模块会安装插件，无论模块的运行顺序如何都会接入 <code>{'@'}nuxtjs/i18n</code>，并自动导入 <code>useForm</code>、<code>useFormContext</code>、<code>useField</code> 和 <code>msg</code>。它的选项有 <code>showErrors</code>、<code>keyPrefix</code>、<code>i18n</code> 和 <code>autoImports</code>。"
+        },
+        "ssr": {
+          "title": "服务端渲染",
+          "body": "输入框的 id 来自 <code>useId()</code>，所以服务器和浏览器保持一致。服务端渲染不会显示任何错误，因为此时还没有人触发它们。组件之外的表单需要自己的 <code>id</code>。"
+        },
+        "vapor": {
+          "title": "Vapor",
+          "body": "同样的 API 可用于 Vapor 组件，以及 VDOM 应用中的 Vapor，两者都经过测试。Vue 目前还没有 Vapor 服务端渲染器，所以服务端渲染只针对 VDOM 进行了测试。"
+        }
+      }
+    },
+    "api": {
+      "title": "API 参考",
+      "intro": "<code>useForm</code> 接收和返回的一切，以及其他导出。",
+      "options": "选项",
+      "returns": "返回值",
+      "field": "字段",
+      "list": "列表字段",
+      "exports": "其他导出",
+      "name": "名称",
+      "description": "说明",
+      "rows": {
+        "schema": "一个 Standard Schema（Zod、Valibot、ArkType 等），或指向它的 ref。它的输入类型决定字段的类型，输出类型决定 <code>onSubmit</code> 的类型。",
+        "validate": "代替 <code>schema</code>：从路径到普通函数的映射。<code>*</code> 表示任意列表索引，<code>''</code> 表示整个表单。",
+        "defaultValues": "初始值，或指向它们的 ref 或 getter。加载期间可以是 <code>undefined</code>。",
+        "onSubmit": "<code>(values, {'{'} form, event, element, submitter, formData {'}'})</code>，以有效值调用。",
+        "onInvalid": "提交未通过校验时调用，参数为错误。",
+        "showErrors": "<code>'edited'</code>（默认）、<code>'blur'</code>、<code>'input'</code> 或 <code>'submit'</code>，或带 <code>default</code> 的按路径模式。",
+        "rules": "按路径设置的额外检查，同步或异步，例如 API 调用。规则也可以是一个 schema。",
+        "debounce": "最后一次变化后规则等待的时间，单位为毫秒。",
+        "labels": "按路径设置的可翻译名称，在消息中用作 <code>{'{'}field{'}'}</code>。",
+        "i18n": "仅用于此表单的 i18n 实例。通常在插件上统一设置一次。",
+        "id": "输入框 id 的前缀。在组件之外使用并进行服务端渲染时需要。",
+        "model": "每个字段一个 ref，用于 <code>v-model</code>。分组是可写的对象，列表是数组。",
+        "errors": "每个路径要显示的消息，没有则为空。一个列表算作一项。",
+        "attrs": "每个路径要展开到输入框上的内容：<code>id</code>、<code>name</code>、ARIA、失焦处理、schema 限制和 <code>errorId</code>。",
+        "handleSubmit": "<code>{'@'}submit</code> 处理函数，或用 <code>handleSubmit(fn)</code> 得到一个调用 <code>fn</code> 的处理函数。",
+        "submitting": "<code>onSubmit</code> 运行期间为 true。",
+        "valid": "没有任何错误时为 true，无论是否显示。",
+        "dirty": "有值与默认值不同时为 true。",
+        "touched": "任一字段被离开后为 true。",
+        "pending": "规则运行期间为 true。",
+        "submitCount": "表单被提交的次数。",
+        "values": "所有值，只读。",
+        "errorList": "正在显示的错误，形式为 <code>{'{'} path, message {'}'}</code>。",
+        "allErrors": "所有错误，无论是否显示。",
+        "reset": "<code>reset(values?)</code>：回到默认值，或设定新的默认值。所有内容都变为未修改、未离开。",
+        "validateFn": "<code>validate(path?)</code>：检查整个表单或一个分组，显示其错误，并返回是否有效。",
+        "setValue": "<code>setValue(path, value)</code>，视同用户编辑。",
+        "setValues": "<code>setValues(values)</code>，不会标记任何内容为已修改。",
+        "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>，例如来自服务器的错误。每个错误在其字段变化时清除。",
+        "clearErrors": "<code>clearErrors(path?)</code>：清除用 <code>setErrors</code> 设置的错误。",
+        "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>：在用户编辑和 <code>setValue</code> 时运行，重置或加载默认值时不运行。",
+        "fieldFn": "<code>field(path)</code>：单个字段，包含以下所有内容。",
+        "f_value": "值，可写。",
+        "f_error": "要显示的消息，没有则为空。",
+        "f_state": "<code>touched</code>、<code>dirty</code>、<code>valid</code>、<code>pending</code>。",
+        "f_attrs": "要展开到输入框上的内容，包含 <code>id</code> 和 <code>errorId</code>。",
+        "f_methods": "<code>touch()</code>、<code>untouch()</code>、<code>validate()</code>、<code>reset()</code>、<code>watch()</code>。",
+        "l_items": "各行，每行都有稳定的 <code>key</code>、它的 <code>index</code> 和它的 <code>field</code>。",
+        "l_ops": "<code>push</code>、<code>insert</code>、<code>remove</code>、<code>move</code>、<code>swap</code>、<code>replace</code>、<code>clear</code>。行移动时，已离开状态会跟着它走。",
+        "formPlugin": "<code>app.use(formPlugin, {'{'} i18n, showErrors, keyPrefix {'}'})</code>：所有表单的默认设置。",
+        "provideFormConfig": "为一个组件树提供同样的默认设置。",
+        "useFormContext": "最近一个调用了 <code>useForm</code> 的父组件的表单，用 <code>useFormContext&lt;typeof schema&gt;()</code> 指定类型。",
+        "useField": "<code>useField(() => props.name)</code>：按名称获取父组件表单中的一个字段。",
+        "msg": "<code>msg(key, params?, fallback?)</code>：来自你自己目录的消息，用于 schema 或规则。",
+        "validator": "来自 <code>vael-form/validator</code>：把 <code>validate</code> 映射作为 Standard Schema 使用。"
+      }
+    }
+  },
+  "formKit": {
+    "required": "{field}为必填项",
+    "invalidType": {
+      "default": "{field}无效",
+      "string": "{field}必须是文本",
+      "number": "{field}必须是数字",
+      "int": "{field}必须是整数",
+      "boolean": "{field}必须是“是”或“否”",
+      "date": "{field}必须是有效的日期",
+      "array": "{field}必须是列表"
+    },
+    "tooSmall": {
+      "default": "{field}过小（最小值为 {minimum}）",
+      "string": "{field}至少需要 {minimum} 个字符",
+      "number": "{field}不能小于 {minimum}",
+      "array": "{field}至少需要 {minimum} 项",
+      "date": "{field}不能早于 {minimum}"
+    },
+    "tooBig": {
+      "default": "{field}过大（最大值为 {maximum}）",
+      "string": "{field}最多 {maximum} 个字符",
+      "number": "{field}不能大于 {maximum}",
+      "array": "{field}最多只能有 {maximum} 项",
+      "date": "{field}不能晚于 {maximum}"
+    },
+    "invalidFormat": {
+      "default": "{field}格式不正确",
+      "email": "请输入有效的电子邮件地址",
+      "url": "请输入有效的网址",
+      "uuid": "{field}必须是有效的 UUID",
+      "regex": "{field}格式不正确",
+      "startsWith": "{field}必须以“{prefix}”开头",
+      "endsWith": "{field}必须以“{suffix}”结尾",
+      "includes": "{field}必须包含“{includes}”"
+    },
+    "invalidValue": "请为{field}选择一个可用选项",
+    "notMultipleOf": "{field}必须是 {divisor} 的倍数",
+    "invalidUnion": "{field}无效",
+    "unrecognizedKeys": "无法识别的字段：{keys}",
+    "custom": "{field}无效"
+  },
+  "formsDemo": {
+    "name": "姓名",
+    "email": "电子邮件",
+    "age": "年龄",
+    "submit": "检查"
   }
 }

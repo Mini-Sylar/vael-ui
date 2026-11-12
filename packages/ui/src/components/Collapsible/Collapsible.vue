@@ -7,6 +7,7 @@
     v-bind="attrs"
   >
     <span
+      v-if="$slots.trigger"
       ref="triggerWrapper"
       :class="triggerPart.class"
       :style="triggerPart.style"

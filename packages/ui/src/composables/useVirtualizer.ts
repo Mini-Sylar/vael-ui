@@ -26,6 +26,9 @@ export interface UseVirtualizerOptions {
   estimateSize?: MaybeRefOrGetter<number | undefined>
   /** Mirrors `onReachEnd`, firing once the window's first index nears 0 — re-arms the same way. */
   onReachStart?: () => void
+  /** `dynamic` only: each row's identity. Measured heights follow the row, so prepending older
+   * items (with `onReachStart`) keeps every height on its own row. Unset, rows go by index. */
+  getKey?: (index: number) => string | number
 }
 
 export interface VirtualRow {
@@ -126,14 +129,16 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
   // offsets array, recomputed on every real measurement change. A plain O(n) pass
   // is fast enough at realistic row counts (tens of thousands); a fancier
   // incremental structure isn't worth the complexity unless that stops being true.
-  const dynamicSizes = new Map<number, number>()
+  const dynamicSizes = new Map<string | number, number>()
+  const keyOf = (index: number) => options.getKey?.(index) ?? index
+  const sizeAt = (index: number) => dynamicSizes.get(keyOf(index))
   const sizeVersion = shallowRef(0)
   const dynamicOffsets = computed<number[]>(() => {
     void sizeVersion.value // dependency-only read: recompute whenever a real measurement changes
     const offsets: number[] = [0]
     let acc = 0
     for (let i = 0; i < count.value; i++) {
-      acc += dynamicSizes.get(i) ?? estimateSize.value
+      acc += sizeAt(i) ?? estimateSize.value
       offsets.push(acc)
     }
     return offsets
@@ -145,8 +150,9 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     // varies with the container's fractional scroll offset), so a strict
     // !== on the raw float can keep "changing" forever.
     const size = Math.round(rawHeight)
-    if (size > 0 && dynamicSizes.get(index) !== size) {
-      dynamicSizes.set(index, size)
+    const key = keyOf(index)
+    if (size > 0 && dynamicSizes.get(key) !== size) {
+      dynamicSizes.set(key, size)
       sizeVersion.value++
     }
   }
@@ -201,12 +207,15 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     }
     if (!el) {
       elByIndex.delete(index)
+      // Its callback goes with it: an endless list doesn't keep one per row it ever showed.
+      rowRefCache.delete(index)
       return
     }
     elByIndex.set(index, el)
     indexByEl.set(el, index)
-    rowResizeObserver?.observe(el)
-    applyMeasurement(index, el.getBoundingClientRect().height)
+    // Its first size comes from the observer, after layout and before paint: no forced layout per row.
+    if (rowResizeObserver) rowResizeObserver.observe(el)
+    else applyMeasurement(index, el.getBoundingClientRect().height)
   }
 
   const totalSize = computed(() =>
@@ -253,7 +262,7 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     const rows: VirtualRow[] = []
     for (let index = start; index <= end; index++) {
       const rowStart = offsets ? offsets[index]! : index * size
-      const rowSize = offsets ? (dynamicSizes.get(index) ?? estimateSize.value) : size
+      const rowSize = offsets ? (sizeAt(index) ?? estimateSize.value) : size
       const style: Record<string, string> = {
         position: 'absolute',
         insetInline: '0',
@@ -276,6 +285,10 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     [count, range],
     ([currentCount, currentRange]) => {
       if (currentCount !== lastCount) {
+        // Rows past the end (by index) are gone: their heights go with them.
+        if (!options.getKey && currentCount < lastCount)
+          for (const key of dynamicSizes.keys())
+            if ((key as number) >= currentCount) dynamicSizes.delete(key)
         armedEnd = true
         armedStart = true
         lastCount = currentCount
@@ -334,7 +347,7 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     const container = options.containerEl.value
     if (!container) return
     const dynamic = isDynamic.value
-    const size = dynamic ? (dynamicSizes.get(index) ?? estimateSize.value) : resolvedSize.value
+    const size = dynamic ? (sizeAt(index) ?? estimateSize.value) : resolvedSize.value
     const contentTop = Number.parseFloat(getComputedStyle(container).paddingTop) || 0
     const rowStart = (dynamic ? dynamicOffsets.value[index]! : index * size) + contentTop
     const rowEnd = rowStart + size

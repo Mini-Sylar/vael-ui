@@ -59,3 +59,4 @@ minimumReleaseAgeExclude:
   - unplugin-vue@8.0.0
   - unplugin@3.4.0
   - vue-i18n@11.4.12
+  - vael-form@0.0.3

@@ -22,6 +22,9 @@ export function release(group: string, list: HTMLElement, indicator: HTMLElement
     rect: indicator.getBoundingClientRect(),
     at: performance.now(),
   }
+  // Not picked up in time, it lets go of the list (which may be leaving the page).
+  const mine = released
+  setTimeout(() => released === mine && (released = null), HANDOFF_MS)
 }
 
 /** Plays this list's indicator from where the neighbour's was seen to where this one lands. */

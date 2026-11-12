@@ -7,6 +7,7 @@ type Tracked = Element & {
   _uiEntered?: () => void
   _uiGone?: boolean
   _uiThen?: (() => void)[]
+  _uiStartTimer?: ReturnType<typeof setTimeout>
 }
 
 /** It's about to come in: `start` as it starts moving, `run` once it's in. The latest arming wins. */
@@ -22,7 +23,7 @@ export function started(el: Element, ms = 0) {
   const start = (el as Tracked)._uiStart
   if (!start) return
   ;(el as Tracked)._uiStart = undefined
-  if (ms > 0) setTimeout(start, ms)
+  if (ms > 0) (el as Tracked)._uiStartTimer = setTimeout(start, ms)
   else queueMicrotask(start)
 }
 
@@ -47,6 +48,8 @@ export function onceEntered(el: Element, run: () => void) {
 export function left(el: Element, run: (() => void) | undefined) {
   const tracked = el as Tracked
   tracked._uiEntered = tracked._uiStart = undefined
+  // Gone before its delay was up (a close mid-stagger): it never started.
+  clearTimeout(tracked._uiStartTimer)
   if (run && !tracked._uiGone) queueMicrotask(run)
   tracked._uiGone = true
 }

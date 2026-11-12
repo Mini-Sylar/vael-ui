@@ -32,7 +32,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { PhCaretUpDown, PhCheck, PhFunction, PhSquaresFour, PhWaveSine } from '@phosphor-icons/vue'
+import {
+  PhCaretUpDown,
+  PhCheck,
+  PhFunction,
+  PhSquaresFour,
+  PhTextbox,
+  PhWaveSine,
+} from '@phosphor-icons/vue'
 import { Button, Menu } from 'vael-ui'
 import type { DocsMode } from '../docsNav'
 
@@ -64,6 +71,12 @@ const items = computed(() => [
     value: 'motion',
     icon: PhWaveSine,
     description: t('motionDocs.mode.motion'),
+  },
+  {
+    label: t('formsDocs.nav.forms'),
+    value: 'forms',
+    icon: PhTextbox,
+    description: t('formsDocs.mode'),
   },
 ])
 const current = computed(() => items.value.find((item) => item.value === mode.value)!)

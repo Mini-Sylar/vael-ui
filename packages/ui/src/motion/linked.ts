@@ -23,7 +23,7 @@ interface Hold {
   target: Keyframe
 }
 // Per element, everything holding it, the latest on top: a nested overlay hands back to its parent.
-const holds = new Map<Element, Hold[]>()
+const holds = new WeakMap<Element, Hold[]>()
 const runs = new WeakMap<Element, Animation[]>()
 // Chrome composites an animation whole or not at all: one with a border-radius in it moves the
 // page on the main thread. These go in an animation of their own.

@@ -4,10 +4,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding-inline: var(--ui-btn-px);
+    /* The box's 1px border is inside this padding: a reset that zeroes button borders changes nothing. */
+    padding-inline: calc(var(--ui-btn-px) + 1px);
     /* Whole pixels, like the sizes below: the label then starts on the pixel grid. */
-    padding-inline: round(var(--ui-btn-px), 1px);
-    border: 1px solid transparent;
+    padding-inline: round(calc(var(--ui-btn-px) + 1px), 1px);
+    border: 0;
     font: inherit;
     font-weight: 500;
     line-height: 1;
@@ -24,7 +25,7 @@
   .ui-button::before {
     content: '';
     position: absolute;
-    inset: -1px;
+    inset: 0;
     z-index: -1;
     border: 1px solid var(--ui-button-border, transparent);
     border-radius: inherit;
@@ -39,10 +40,10 @@
      fractional width, its edge spreads into the next pixel, so the end of every release looked a
      pixel wider before it settled. A box a whole number of pixels wide (within half a pixel,
      as the page rounds it at rest anyway) only ever moves its edge inward. */
-  @supports (inline-size: round(calc(100% + 2px), 1px)) {
+  @supports (inline-size: round(100%, 1px)) {
     .ui-button::before {
       inset-inline-end: auto;
-      inline-size: round(calc(100% + 2px), 1px);
+      inline-size: round(100%, 1px);
     }
   }
 
@@ -76,12 +77,12 @@
   }
 
   .ui-button--has-leading {
-    padding-inline-start: calc(var(--ui-btn-px) - 2px);
-    padding-inline-start: round(calc(var(--ui-btn-px) - 2px), 1px);
+    padding-inline-start: calc(var(--ui-btn-px) - 1px);
+    padding-inline-start: round(calc(var(--ui-btn-px) - 1px), 1px);
   }
   .ui-button--has-trailing {
-    padding-inline-end: calc(var(--ui-btn-px) - 2px);
-    padding-inline-end: round(calc(var(--ui-btn-px) - 2px), 1px);
+    padding-inline-end: calc(var(--ui-btn-px) - 1px);
+    padding-inline-end: round(calc(var(--ui-btn-px) - 1px), 1px);
   }
 
   .ui-button--icon {
@@ -212,7 +213,7 @@
   }
   .ui-button-hold {
     position: absolute;
-    inset: -1px;
+    inset: 0;
     z-index: -1;
     border-radius: inherit;
     background: currentColor;
@@ -227,10 +228,10 @@
     clip-path: inset(0 0 0 100%);
   }
   /* Whole pixels wide, as the box it fills (see `.ui-button::before`). */
-  @supports (inline-size: round(calc(100% + 2px), 1px)) {
+  @supports (inline-size: round(100%, 1px)) {
     .ui-button-hold {
       inset-inline-end: auto;
-      inline-size: round(calc(100% + 2px), 1px);
+      inline-size: round(100%, 1px);
     }
   }
   .ui-button[data-hold='holding'] .ui-button-hold,
@@ -338,12 +339,9 @@
     opacity: 0;
     pointer-events: none;
   }
-  /* The spinner is always mounted for the crossfade; it only turns while it shows. */
-  .ui-button-loader :is(.ui-loader, .ui-loader-part) {
-    animation-play-state: paused;
-  }
-  .ui-button--loading .ui-button-loader :is(.ui-loader, .ui-loader-part) {
-    animation-play-state: running;
+  /* The spinner is always mounted for the crossfade; idle, it has no animation at all. */
+  .ui-button:not(.ui-button--loading) .ui-button-loader :is(.ui-loader, .ui-loader-part) {
+    animation: none;
   }
 
   .ui-button--loader-overlay .ui-button-loader {

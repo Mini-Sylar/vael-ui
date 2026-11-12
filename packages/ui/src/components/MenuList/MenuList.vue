@@ -37,7 +37,9 @@
           <span v-if="row.entry.icon" :class="iconPart.class" :style="iconPart.style">
             <component :is="row.entry.icon" />
           </span>
-          <span class="ui-menu-list-item-label">{{ row.entry.label }}</span>
+          <span class="ui-menu-list-item-label">
+            <slot name="label" :item="row.entry as T" :is-group="true">{{ row.entry.label }}</slot>
+          </span>
         </slot>
       </div>
       <component
@@ -57,7 +59,9 @@
           <span v-if="row.entry.icon" :class="iconPart.class" :style="iconPart.style">
             <component :is="row.entry.icon" />
           </span>
-          <span class="ui-menu-list-item-label">{{ row.entry.label }}</span>
+          <span class="ui-menu-list-item-label">
+            <slot name="label" :item="row.entry as T" :is-group="false">{{ row.entry.label }}</slot>
+          </span>
           <span v-if="row.entry.shortcut" class="ui-menu-list-item-shortcut">
             {{ row.entry.shortcut }}
           </span>
@@ -135,6 +139,8 @@ defineSlots<{
    * (an entry with `items`, whose children render beneath it).
    */
   item(props: { item: T; isGroup: boolean }): unknown
+  /** Override a row's text only; its icon and shortcut stay. */
+  label(props: { item: T; isGroup: boolean }): unknown
 }>()
 
 function isSeparator(entry: MenuEntry<MenuItemData>): entry is MenuSeparator {

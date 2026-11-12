@@ -16,17 +16,23 @@
   }
   .ui-input--sm {
     block-size: 1.75rem;
+    block-size: round(1.75rem, 2px);
     font-size: calc(var(--ui-font-size) * 0.8125);
+    font-size: round(calc(var(--ui-font-size) * 0.8125), 1px);
     border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-input--md {
     block-size: 2.25rem;
+    block-size: round(2.25rem, 2px);
     font-size: calc(var(--ui-font-size) * 0.875);
+    font-size: round(calc(var(--ui-font-size) * 0.875), 1px);
     border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-input--lg {
     block-size: 2.5rem;
+    block-size: round(2.5rem, 2px);
     font-size: var(--ui-font-size);
+    font-size: round(var(--ui-font-size), 1px);
     border-radius: var(--ui-radius);
   }
   .ui-input-el {
@@ -78,12 +84,24 @@
   }
   /* inline-flex, not inline-grid + place-items: a single icon centers identically either way, but a slot with MORE than one child (Combobox's #end carries a consumer slot, a clear button, AND the chevron) needs a ROW — grid's implicit auto-placement stacked them into separate rows instead, one on top of the other. */
   .ui-input-start,
-  .ui-input-end {
+  .ui-input-end,
+  .ui-input-loader {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
     flex: none;
     color: var(--ui-text-muted);
+  }
+  .ui-input-loader {
+    font-size: 0.875em;
+  }
+  .ui-input-status {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   /* clearable: Select's clear button, a 24px target with a circle painted behind the icon. */
   .ui-input-clear {
@@ -174,13 +192,13 @@
 
   @media (hover: none) and (pointer: coarse) {
     .ui-input--sm {
-      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.8125));
+      font-size: max(var(--ui-touch-font-size), round(calc(var(--ui-font-size) * 0.8125), 1px));
     }
     .ui-input--md {
-      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.875));
+      font-size: max(var(--ui-touch-font-size), round(calc(var(--ui-font-size) * 0.875), 1px));
     }
     .ui-input--lg {
-      font-size: max(var(--ui-touch-font-size), var(--ui-font-size));
+      font-size: max(var(--ui-touch-font-size), round(var(--ui-font-size), 1px));
     }
   }
 }

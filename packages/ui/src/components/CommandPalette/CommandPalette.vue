@@ -47,6 +47,7 @@
         :ref="registerListEl"
         tag="ul"
         role="listbox"
+        :aria-busy="loading || undefined"
         v-scroll-mask
         :class="listPart.class"
         :style="listPart.style"
@@ -61,7 +62,15 @@
           :style="indicatorStyle"
         />
         <li
-          v-if="filteredItems.length === 0"
+          v-if="filteredItems.length === 0 && loading"
+          key="loading"
+          :class="[emptyPart.class, 'ui-command-palette-loading']"
+          :style="emptyPart.style"
+        >
+          <slot name="loading"><LoaderMark /></slot>
+        </li>
+        <li
+          v-else-if="filteredItems.length === 0"
           key="empty"
           :class="emptyPart.class"
           :style="emptyPart.style"
@@ -163,6 +172,7 @@ import type { DialogOpenChangeDetails } from '../../composables/useDialog'
 import { scrollIntoContainer } from '../../composables/dom'
 import type { DOMTarget } from '../../composables/dom'
 import Kbd from '../Kbd/Kbd.vue'
+import LoaderMark from '../internal/LoaderMark.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -194,6 +204,8 @@ const rawProps = withDefaults(
     shortcut?: string
     /** Closes the palette after an item is selected. @default true */
     closeOnSelect?: boolean
+    /** Results are on their way (a server search): shows a spinner instead of "No results" while the list is empty. @default false */
+    loading?: boolean
     /** Panel width, as in Dialog. @default 'lg' */
     size?: DialogSize
     /**
@@ -250,6 +262,7 @@ const rawProps = withDefaults(
   }>(),
   {
     closeOnSelect: true,
+    loading: false,
     size: 'lg',
     position: 'top',
     modal: true,
@@ -306,6 +319,8 @@ defineSlots<{
   'group-label'(props: { group: string; items: T[] }): unknown
   /** Replaces the localized "no results" row shown when nothing matches. */
   empty(): unknown
+  /** Replaces the spinner shown while `loading` and the list is empty. */
+  loading(): unknown
   /** A strip under the list, such as key hints. `activeItem` is the highlighted item, if any. */
   footer(props: { activeItem: T | undefined; query: string }): unknown
 }>()
@@ -475,8 +490,9 @@ watch(activeIndex, (index) => {
 
 // Read out politely as you type: how many match, or that nothing does.
 const resultsText = computed(() => {
-  if (!query.value.trim()) return ''
   const count = filteredItems.value.length
+  if (props.loading && count === 0) return messages.value.commandPalette.loading
+  if (!query.value.trim()) return ''
   if (count === 0) return messages.value.commandPalette.empty
   return messages.value.commandPalette.results.replace('{count}', String(count))
 })

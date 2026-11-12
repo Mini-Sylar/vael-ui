@@ -79,6 +79,10 @@
     min-block-size: 0;
     max-block-size: none;
   }
+  .ui-command-palette-loading {
+    display: grid;
+    place-items: center;
+  }
   .ui-command-palette-list:has(.ui-command-palette-empty) {
     display: grid;
     place-items: center;

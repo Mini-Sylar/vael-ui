@@ -1,26 +1,26 @@
 import type {
   SelectGroupData,
   SelectGroupSlotData,
-  SelectItemData,
+  SelectChoice,
   SelectListSection,
 } from '../components/internal/SelectListBody.vue'
 
 /** An entry with an `items` array and no `value` is a group; anything else is an option. */
-export function isGroup<T extends SelectItemData>(
+export function isGroup<T extends SelectChoice>(
   entry: T | SelectGroupData<T>,
 ): entry is SelectGroupData<T> {
   return Array.isArray((entry as SelectGroupData<T>).items) && !('value' in entry)
 }
 
 /** Every option, groups flattened, for selection and lookups. */
-export function flattenOptions<T extends SelectItemData>(
+export function flattenOptions<T extends SelectChoice>(
   entries: ReadonlyArray<T | SelectGroupData<T>>,
 ): T[] {
   return entries.flatMap((entry) => (isGroup(entry) ? [...entry.items] : [entry]))
 }
 
 /** The options that match, in order, plus each group's run of them; a group with no match drops out. */
-export function groupSections<T extends SelectItemData>(
+export function groupSections<T extends SelectChoice>(
   entries: ReadonlyArray<T | SelectGroupData<T>>,
   matches: (item: T) => boolean,
 ): { items: T[]; sections: SelectListSection<T>[] } {

@@ -24,7 +24,7 @@ import {
 } from './layout'
 import type { LeavingPlace } from './layout'
 import { followSize } from './size'
-import { firstPaint, handOver } from './firstPaint'
+import { SHOWN_ON_SERVER, firstPaint, handOver } from './firstPaint'
 import { valuesAt } from './playable'
 import { queueAppearance, scrolling, seen, unwatchView } from './appearance'
 import type {
@@ -64,6 +64,8 @@ type Marked = HTMLElement & {
   _uiShown?: [string, string][]
   /** Mounted with its component's first render: `appear: 'later'` skips its entrance. */
   _uiFirstRender?: boolean
+  /** `appear: 'once'`: whether this element is in the one entrance its name plays. */
+  _uiOnce?: boolean
   /** Watching `v-show` hide and show it. */
   _uiShownStop?: () => void
   /** A `progress` getter followed outside render, and how to stop following it. */
@@ -187,6 +189,47 @@ function showNow(el: HTMLElement, values: MotionValues): [string, string][] {
   })
 }
 
+// `appear: 'once'`: the names whose entrance has played in this page load, and those playing now.
+const playedOnce = new Set<string>()
+const playingOnce = new Set<string>()
+// How long a name's first entrance takes in rows that arrive after the first ones (ms).
+const ONCE_WINDOW = 600
+/** Marks a name's entrance as played (a server-rendered one that hydrated). */
+function markPlayedOnce(name: string | undefined, value: AnimateDirectiveValue | undefined) {
+  if (name && typeof value === 'object' && value.appear === 'once') playedOnce.add(name)
+}
+/**
+ * `appear: 'once'` settled for this element: `true` the first time its name has elements to show
+ * (those mounting in the same flush count as the same time), `false` from then on.
+ */
+function settleOnce(
+  el: Marked,
+  name: string | undefined,
+  value: AnimateDirectiveValue | undefined,
+): AnimateDirectiveValue | undefined {
+  if (typeof value !== 'object' || value.appear !== 'once') return value
+  if (el._uiOnce === undefined) {
+    if (!name) {
+      if (process.env.NODE_ENV !== 'production')
+        motionWarn("v-animate `appear: 'once'` needs a name (`v-animate:rows`) to play once under.")
+      el._uiOnce = true
+    } else if (playedOnce.has(name)) el._uiOnce = false
+    else {
+      el._uiOnce = true
+      // Open while the first rows are still arriving (lists under one name rendering a moment
+      // apart, data landing in batches); they all come in with the entrance.
+      if (!playingOnce.has(name)) {
+        playingOnce.add(name)
+        setTimeout(() => {
+          playingOnce.delete(name)
+          playedOnce.add(name)
+        }, ONCE_WINDOW)
+      }
+    }
+  }
+  return { ...value, appear: el._uiOnce }
+}
+
 function appearAlone(
   el: Marked,
   name: string | undefined,
@@ -194,6 +237,7 @@ function appearAlone(
 ) {
   if (el._uiAppeared) return
   el._uiAppeared = true
+  value = settleOnce(el, name, value)
   if (motionOffAt(el)) return entered(el)
   if (typeof value === 'string') {
     const preset = presetAround(el, value)
@@ -233,9 +277,6 @@ const layoutIdOf = (value: AnimateDirectiveValue | undefined) =>
 
 // A leaving look of its own is quick: vael-ui's exit token, eased out.
 const EXIT: MotionTiming = { duration: 'var(--ui-duration-exit)', easing: 'var(--ui-ease-out)' }
-const ownTiming = (t: TargetMotion) =>
-  t.spring !== undefined || t.duration !== undefined || t.easing !== undefined
-
 // A preset by name: the nearest ConfigProvider style's, else a built-in one.
 function presetAround(el: Element | undefined, name: string): TargetMotion | undefined {
   return (
@@ -315,14 +356,19 @@ function leaving(value: AnimateDirectiveValue | undefined) {
   if (value.exit === false) return undefined
   const where = { direction: 0 as const, index: 0, count: 1 }
   const exit = valuesAt(value.exit, where)
-  if (exit) return { values: exit, timing: ownTiming(value) ? (value as MotionTiming) : EXIT }
+  if (exit) return { values: exit, timing: timedBy(value) ? (value as MotionTiming) : EXIT }
   const initial = valuesAt(value.initial, where)
   return initial ? { values: exitFrom(initial), timing: EXIT } : undefined
 }
 /** Already in the page under a new `layoutId`: it slides from what left under it, if anything did. */
-function arriveUnder(el: HTMLElement, id: string, value: AnimateDirectiveValue | undefined) {
+function arriveUnder(
+  el: HTMLElement,
+  id: string,
+  value: AnimateDirectiveValue | undefined,
+  name?: string,
+) {
   el.dataset.layoutId = id
-  arriveLayout(el, id, timingOf(value)!, () => {}, call(el as Marked, 'onAfterMove'))
+  arriveLayout(el, id, timingOf(value)!, () => {}, call(el as Marked, 'onAfterMove'), name)
 }
 function leaveIfRemoved(
   el: HTMLElement,
@@ -333,7 +379,7 @@ function leaveIfRemoved(
   const look = leaving(value)
   const gone = () => left(el, call(el as Marked, 'onAfterLeave'))
   // Off screen, scrolled away (a recycled row) or motion off: it just goes.
-  if (look && place && seen(place.box) && !scrolling() && !motionOffAt(el)) {
+  if (look && place && seen(place.box) && !scrolling(el) && !motionOffAt(el)) {
     const done = leaveInPlace(el, place, look.values, look.timing, look.hook).then(gone)
     // What replaces it under its name with `swap: 'wait'` waits for this.
     if (name) markLeaving(name, done)
@@ -347,7 +393,7 @@ function leaveIfRemoved(
 function followShown(el: Marked, name: string | undefined): () => void {
   let shown = el.style.display !== 'none'
   let display = shown ? el.style.display : ''
-  const watcher = new MutationObserver(() => {
+  const check = () => {
     const now = el.style.display !== 'none'
     if (now === shown) {
       if (now) display = el.style.display
@@ -374,10 +420,17 @@ function followShown(el: Marked, name: string | undefined): () => void {
     if (look && place && seen(place.box) && !motionOffAt(el))
       void leaveInPlace(copy, place, look.values, look.timing, look.hook).then(gone)
     else gone()
+  }
+  // One observer for every element: in Vapor each one watches, `v-show` or not.
+  shownChecks.set(el, check)
+  shownWatcher ??= new MutationObserver((records) => {
+    for (const record of records) shownChecks.get(record.target as Element)?.()
   })
-  watcher.observe(el, { attributes: true, attributeFilter: ['style'] })
-  return () => watcher.disconnect()
+  shownWatcher.observe(el, { attributes: true, attributeFilter: ['style'] })
+  return () => shownChecks.delete(el)
 }
+let shownWatcher: MutationObserver | undefined
+const shownChecks = new WeakMap<Element, () => void>()
 
 /**
  * `replay`: when its value changes, the element plays its `initial` again, without remounting.
@@ -407,8 +460,11 @@ function join(
   if (!presence) return appearAlone(el, name, value)
   // `appear: false`: it doesn't come in with the component; its exit stays. `'later'` the
   // component itself sorts out: not with its opening, yes once it's open.
+  const settled = settleOnce(el, name, value)
   const joined =
-    typeof value === 'object' && value.appear === false ? { ...value, initial: undefined } : value
+    typeof settled === 'object' && settled.appear === false
+      ? { ...settled, initial: undefined }
+      : settled
   // A string names one of the style's presets; the component resolves it when it plays.
   el._uiAnimateLeave = presence.register(el, name ?? 'default', joined)
 }
@@ -427,8 +483,11 @@ export const vAnimate: ObjectDirective<
   getSSRProps(binding) {
     const value = valueOf(undefined, binding)
     // `appear: false` or `'later'`: what the server renders is the first render; it shows as it is.
+    // `'once'` is the page load's first: the server's look is it.
     if (typeof value === 'object' && (value.appear === 'later' || value.appear === false)) return {}
-    return (!binding.arg && typeof value === 'object' && firstPaint(value)) || {}
+    if (typeof value !== 'object' || !(value.initial || value.enter)) return {}
+    // Named, or a look CSS can't play: shown as it is, never replayed once hydrated.
+    return (!binding.arg && firstPaint(value)) || SHOWN_ON_SERVER
   },
   // Before the component that rendered it counts as mounted: is this its first render?
   created(el, binding, vnode) {
@@ -454,6 +513,7 @@ export const vAnimate: ObjectDirective<
     // Hydrated: the server's CSS is playing (or has played) its appearance; never twice.
     if (handOver(el)) {
       marked._uiAppeared = true
+      markPlayedOnce(binding.arg, value)
       entered(el)
     }
     // `layout: true` follows its size as well as its place; `'position'` only moves.
@@ -490,6 +550,7 @@ export const vAnimate: ObjectDirective<
         timingOf(value)!,
         () => join(marked, binding.arg, value),
         call(marked, 'onAfterMove'),
+        binding.arg,
       )
     else join(marked, binding.arg, value)
   },
@@ -521,7 +582,7 @@ export const vAnimate: ObjectDirective<
     replayIfChanged(el, value, before, binding.arg)
     // ...and arrives under the new one, from what just left under it.
     const id = layoutIdOf(value)
-    if (id && id !== layoutIdOf(before)) arriveUnder(el, id, value)
+    if (id && id !== layoutIdOf(before)) arriveUnder(el, id, value, binding.arg)
     if (
       binding.value !== binding.oldValue &&
       (binding.arg || !binding.modifiers.size || hasPicks(binding.modifiers))
@@ -574,30 +635,32 @@ const holding = (
   defaults: Provided<{ motion?: boolean }>,
 ) => ({ style: () => style?.value, off: () => defaults?.value.motion === false })
 
-/** The component that holds `el` in its rendered tree, walked down from `owner`. */
+/** The component that holds `el` in its rendered tree, walked down from `owner`. One walk per
+ * owner per task maps every element at once: a teleported list asked for each row in turn. */
+const holders = new WeakMap<ComponentInternalInstance, Map<Element, ComponentInternalInstance>>()
 function around(
   owner: ComponentInternalInstance,
   el: Element,
 ): ComponentInternalInstance | undefined {
-  const walk = (
-    node: VNode,
-    holder: ComponentInternalInstance,
-  ): ComponentInternalInstance | undefined => {
-    if (typeof node.type === 'string') {
-      if (node.el === el) return holder
-    } else if (node.component) {
-      const subTree = (node.component as { subTree?: VNode }).subTree
-      return subTree ? walk(subTree, node.component) : undefined
-    } else if (node.suspense?.activeBranch) return walk(node.suspense.activeBranch, holder)
-    if (Array.isArray(node.children))
-      for (const child of node.children)
-        if (isVNode(child)) {
-          const found = walk(child, holder)
-          if (found) return found
-        }
-    return undefined
+  let map = holders.get(owner)
+  if (!map) {
+    const found = (map = new Map<Element, ComponentInternalInstance>())
+    const walk = (node: VNode, holder: ComponentInternalInstance) => {
+      if (typeof node.type === 'string') {
+        if (node.el instanceof Element) found.set(node.el, holder)
+      } else if (node.component) {
+        const subTree = (node.component as { subTree?: VNode }).subTree
+        if (subTree) walk(subTree, node.component)
+        return
+      } else if (node.suspense?.activeBranch) return walk(node.suspense.activeBranch, holder)
+      if (Array.isArray(node.children))
+        for (const child of node.children) if (isVNode(child)) walk(child, holder)
+    }
+    walk(owner.subTree, owner)
+    holders.set(owner, map)
+    queueMicrotask(() => holders.delete(owner))
   }
-  return walk(owner.subTree, owner)
+  return map.get(el)
 }
 
 /** Vapor's form: called once in setup with a value getter; the argument arrives as a getter too. */
@@ -648,6 +711,7 @@ export function vAnimateVapor(
   // Hydrated: the server's CSS plays its appearance; never twice.
   if (handOver(el)) {
     ;(el as Marked)._uiAppeared = true
+    markPlayedOnce(name, raw?.())
     entered(el)
   }
   // The value as last seen. After setup, only the effect below reads the template: once the element
@@ -682,7 +746,7 @@ export function vAnimateVapor(
     const now = layoutIdOf(current)
     if (arrived && was !== now) {
       if (was) rememberLayout(el, was)
-      if (now) arriveUnder(el, now, current)
+      if (now) arriveUnder(el, now, current, name)
     }
     before = current
     // After the flush: in setup it has no parent yet to watch.
@@ -709,6 +773,7 @@ export function vAnimateVapor(
         timingOf(current)!,
         () => join(el as Marked, name, current),
         call(el as Marked, 'onAfterMove'),
+        name,
       )
     else join(el as Marked, name, current)
     arrived = true

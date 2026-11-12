@@ -40,6 +40,8 @@ export interface UseFieldControlReturn {
   onBlur: () => void
 }
 
+const isOn = (value: unknown) => value === true || value === 'true' || value === ''
+
 export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldControlReturn {
   const ctx = inject(fieldKey, undefined)
   const ownId = useId()
@@ -80,7 +82,8 @@ export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldC
     // No label rendered: nothing to point at.
     labelledBy: () => (ctx && (ctx.hasLabel?.() ?? true) ? ctx.labelId : undefined),
     invalid: () => ctx?.invalid() ?? false,
-    required: () => ctx?.required() ?? false,
+    // A Field's `required`, or yours (a form library's schema says so): either one marks it.
+    required: () => (ctx?.required() ?? false) || isOn(attrs['aria-required']),
     disabled: () => ctx?.disabled() ?? false,
     onFocus: () => ctx?.reportFocus(true),
     onBlur: () => ctx?.reportFocus(false),

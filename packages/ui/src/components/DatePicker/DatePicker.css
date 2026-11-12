@@ -60,6 +60,7 @@
   @media (hover: none) and (pointer: coarse) {
     .ui-date-picker-ampm .ui-select-button-option.ui-select-button-option {
       block-size: 2.25rem;
+      block-size: round(2.25rem, 2px);
       padding-inline: 1rem;
     }
   }

@@ -54,9 +54,13 @@ function tick(now: number) {
   lastFrameTime = now
   ticking.length = 0
   for (const spring of active) ticking.push(spring)
-  for (const spring of ticking) spring.advance(dt)
-  ticking.length = 0
-  frameId = active.size > 0 ? requestAnimationFrame(tick) : 0
+  try {
+    for (const spring of ticking) spring.advance(dt)
+  } finally {
+    // A spring whose frame throws doesn't stop the others.
+    ticking.length = 0
+    frameId = active.size > 0 ? requestAnimationFrame(tick) : 0
+  }
 }
 
 function schedule(spring: SpringRunner) {

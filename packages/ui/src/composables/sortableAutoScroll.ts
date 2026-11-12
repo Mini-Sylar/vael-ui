@@ -115,21 +115,33 @@ export function recordScrollReach(reach: ScrollReach, el: Element | null) {
 /** Scrolls whatever the pointer is near the edge of. The `lists` the drag is working in also
  * scroll while the pointer is past their start or end (still within their width, or height):
  * held below a column, the column keeps scrolling toward its end, so the drop can get there. */
+// Per drag (its reach map): the element last under the pointer and the scrollers above it.
+const lastScan = new WeakMap<ScrollReach, { under: Element | null; found: HTMLElement[] }>()
+
 export function autoScrollAt(
   point: { x: number; y: number },
   lists: (HTMLElement | null)[],
   reach?: ScrollReach,
 ): boolean {
   const under = document.elementFromPoint(point.x, point.y)
-  const candidates = new Set<HTMLElement>()
-  for (const axis of ['x', 'y'] as const) {
-    let node = findScrollParent(under, axis)
-    while (node) {
-      candidates.add(node)
-      if (isPage(node)) break
-      node = findScrollParent(node.parentElement, axis)
+  // The scrollers above what the pointer is over, walked again only when that changes.
+  const seen = reach && lastScan.get(reach)
+  let found: HTMLElement[]
+  if (seen && seen.under === under) found = seen.found
+  else {
+    const walked = new Set<HTMLElement>()
+    for (const axis of ['x', 'y'] as const) {
+      let node = findScrollParent(under, axis)
+      while (node) {
+        walked.add(node)
+        if (isPage(node)) break
+        node = findScrollParent(node.parentElement, axis)
+      }
     }
+    found = [...walked]
+    if (reach) lastScan.set(reach, { under, found })
   }
+  const candidates = new Set<HTMLElement>(found)
   const working = new Set(lists.filter((el): el is HTMLElement => !!el))
   for (const el of working) candidates.add(el)
 

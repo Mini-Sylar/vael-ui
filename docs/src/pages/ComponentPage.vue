@@ -34,6 +34,12 @@
       <h1>{{ name }}</h1>
       <p v-if="description" class="description">{{ description }}</p>
       <p v-if="note" class="page-note">{{ note }}</p>
+      <!-- A form control: one quiet line toward vael-form, which wires it to a schema. -->
+      <RouterLink v-if="formHint" :to="{ name: 'forms-overview' }" class="form-hint">
+        <PhTextbox :size="14" class="form-hint-icon" aria-hidden="true" />
+        <span>{{ t('formsDocs.hint') }}</span>
+        <PhArrowRight :size="12" aria-hidden="true" class="form-hint-arrow" />
+      </RouterLink>
 
       <section id="install" class="install">
         <h2>{{ t('component.install') }}</h2>
@@ -166,6 +172,7 @@ import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { SelectButton } from 'vael-ui'
+import { PhArrowRight, PhTextbox } from '@phosphor-icons/vue'
 import { layoutNext } from '../layoutNext'
 import componentMeta from '../generated/component-meta.json'
 import demoManifest from '../generated/demo-manifest.json'
@@ -256,6 +263,12 @@ const category = computed(() => {
   return key ? t(`taxonomy.${key}`) : undefined
 })
 const description = computed(() => describe(name.value))
+// Form fields only: not a calendar or a tree, which are rarely a form's value.
+const formHint = computed(
+  () =>
+    ['formsAndInputs', 'selection'].includes(categoryOf(name.value) ?? '') &&
+    !['Calendar', 'Tree'].includes(name.value),
+)
 
 useHead({
   title: () => name.value,
@@ -472,6 +485,41 @@ const tocLinks = computed(() => [
 .component-page-layout--next .description,
 .component-page-layout--next .page-note {
   max-inline-size: 46rem;
+}
+
+/* A form control's pointer to vael-form: its own line, a quiet pill, so it reads as a way out
+   of the page and not as more description. */
+.form-hint {
+  display: flex;
+  inline-size: fit-content;
+  align-items: center;
+  gap: 0.375rem;
+  margin-block: 0.5rem 1.25rem;
+  padding: 0.25rem 0.625rem 0.25rem 0.5rem;
+  border: 1px solid color-mix(in oklch, var(--ui-primary) 14%, var(--ui-border));
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--ui-primary) 4%, var(--ui-surface));
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  transition:
+    color var(--ui-duration-press) ease,
+    border-color var(--ui-duration-press) ease;
+}
+.form-hint-icon {
+  color: var(--ui-primary);
+}
+.form-hint-arrow {
+  transition: translate var(--ui-duration-press) var(--ui-ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .form-hint:hover {
+    color: var(--ui-text);
+    border-color: color-mix(in oklch, var(--ui-primary) 30%, var(--ui-border));
+  }
+  .form-hint:hover .form-hint-arrow {
+    translate: 2px 0;
+  }
 }
 
 .page-head {

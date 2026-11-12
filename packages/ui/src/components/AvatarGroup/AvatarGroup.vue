@@ -5,6 +5,7 @@
     :data-ui-list="avatars.marker"
     :class="rootPart.class"
     :style="rootPart.style"
+    :data-motion="props.motion === false ? 'off' : undefined"
     v-bind="attrs"
   >
     <TransitionGroup v-bind="avatars.transition">

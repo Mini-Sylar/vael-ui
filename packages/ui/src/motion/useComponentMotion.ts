@@ -144,10 +144,12 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
   const elementCallback =
     (el: Element, name: 'onStart' | 'onAfterEnter' | 'onAfterLeave') => (): boolean => {
       // Remembered: by the time it has closed, Vue has let go of the root's ref.
+      // A registered element is found at once; only a stamped or selected one needs the walk,
+      // which per element made an opening with many rows quadratic.
       const root = currentRoot()
       const entry =
         root &&
-        (collectEntries(root, resolved.value.targets).find((e) => e.el === el) ?? entryOf(el))
+        (entryOf(el) ?? collectEntries(root, resolved.value.targets).find((e) => e.el === el))
       if (!entry) return false
       // Its own (`v-animate`'s value), else its name's in `targets`.
       const own = typeof entry.motion === 'object' ? entry.motion : undefined

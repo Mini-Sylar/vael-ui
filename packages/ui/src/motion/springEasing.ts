@@ -20,6 +20,12 @@ export const FLING_SPRING: IndicatorSpring = { damping: 1, response: 0.4 }
 
 const cache = new Map<string, { easing: string; duration: number; arrival: number }>()
 
+// Settled once it's within this share of the distance and has all but stopped.
+const SETTLED = 0.005
+/** @internal The share of a move this long (px) that stays under half a pixel, so its end never jumps. */
+export const settleFor = (distance: number): number =>
+  distance > 100 ? Math.min(SETTLED, 0.5 / 2 ** Math.ceil(Math.log2(distance))) : SETTLED
+
 /**
  * A spring as a CSS `linear()` easing, and the time it takes to settle, in ms. `velocity` is where
  * it starts moving, in distances per second (a flick handing its speed on); negative moves away.
@@ -27,8 +33,10 @@ const cache = new Map<string, { easing: string; duration: number; arrival: numbe
 export function springEasing(
   spring: IndicatorSpring | SpringName,
   velocity = 0,
+  /** @internal How close to the target counts as there (`settleFor`), a share of the distance. */
+  settled = SETTLED,
 ): { easing: string; duration: number } {
-  const { easing, duration } = compileSpring(spring, velocity)
+  const { easing, duration } = compileSpring(spring, velocity, settled)
   return { easing, duration }
 }
 
@@ -41,6 +49,7 @@ export function springArrival(spring: IndicatorSpring | SpringName): number {
 function compileSpring(
   named: IndicatorSpring | SpringName,
   velocity = 0,
+  settled = SETTLED,
 ): {
   easing: string
   duration: number
@@ -48,10 +57,10 @@ function compileSpring(
 } {
   const spring = springOf(named)
   const start = Math.round(velocity * 100) / 100
-  const key = `${spring.damping}|${spring.response}|${start}`
+  const key = `${spring.damping}|${spring.response}|${start}|${settled}`
   const hit = cache.get(key)
   if (hit) return hit
-  const compiled = sampleSpring(spring, start)
+  const compiled = sampleSpring(spring, start, settled)
   if (cache.size > 64) cache.clear()
   cache.set(key, compiled)
   return compiled
@@ -60,6 +69,7 @@ function compileSpring(
 function sampleSpring(
   spring: IndicatorSpring,
   velocity: number,
+  settled: number,
 ): {
   easing: string
   duration: number
@@ -70,13 +80,12 @@ function sampleSpring(
   let state = { value: 0, velocity }
   let t = 0
   let arrival = -1
-  // Settled once it is within 0.5% of the target and has all but stopped.
   while (t < 5) {
     state = stepSpring(state, 1, dt, spring.damping, spring.response)
     t += dt
     samples.push(state.value)
     if (arrival < 0 && state.value >= 0.98) arrival = t
-    if (Math.abs(1 - state.value) < 0.005 && Math.abs(state.velocity) < 0.05) break
+    if (Math.abs(1 - state.value) < settled && Math.abs(state.velocity) < settled * 10) break
   }
   samples[samples.length - 1] = 1
   // About 60 points keeps the curve smooth and the string short.

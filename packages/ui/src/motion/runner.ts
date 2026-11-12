@@ -368,8 +368,11 @@ export function createRunner(host: RunnerHost): Runner {
       // targets do; then the panel and what's around it.
       const outer = new Set([host.mainPart, 'overlay', 'positioner'])
       const inner = all.filter((part) => !outer.has(part) && leaveOf(part)).reverse()
+      // Reopened meanwhile: the stages still to come would fade out what's coming back in.
       await content()
+      if (id !== generation) return
       await own(inner, Math.min(REVERSE_STEP, REVERSE_CAP / Math.max(1, inner.length)))
+      if (id !== generation) return
       await own(all.filter((part) => outer.has(part)))
     } else await Promise.all([content(), own(all)])
     finish()

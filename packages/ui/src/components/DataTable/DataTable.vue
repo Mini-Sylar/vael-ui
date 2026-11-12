@@ -736,9 +736,21 @@ function columnStyle(col: RegisteredColumn<T>): Record<string, string> | undefin
     const width = `var(${columnWidthVar(col)})`
     return { width, minWidth: width }
   }
-  if (col.width === undefined) return undefined
-  const width = typeof col.width === 'number' ? `${col.width}px` : col.width
-  return { width, minWidth: width }
+  const px = (value: string | number) => (typeof value === 'number' ? `${value}px` : value)
+  // `fill`: as wide as what's left (100%), but its content never asks for more (max 0).
+  if (col.fill)
+    return {
+      width: '100%',
+      maxWidth: '0',
+      minWidth: col.minWidth === undefined ? undefined : px(col.minWidth),
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    } as Record<string, string>
+  if (col.width === undefined)
+    return col.minWidth === undefined ? undefined : { minWidth: px(col.minWidth) }
+  const width = px(col.width)
+  return { width, minWidth: col.minWidth === undefined ? width : px(col.minWidth) }
 }
 
 const MIN_COLUMN_WIDTH = 40

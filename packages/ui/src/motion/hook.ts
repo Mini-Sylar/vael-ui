@@ -46,7 +46,14 @@ export async function runHook(
     )
   else if (result && typeof (result as { then?: unknown }).then === 'function')
     finished = new Promise<void>((resolve) =>
-      (result as { then: (f: () => void) => unknown }).then(() => resolve()),
+      (result as { then: (f: () => void, r: (e: unknown) => void) => unknown }).then(
+        () => resolve(),
+        (error) => {
+          if (process.env.NODE_ENV !== 'production')
+            motionWarn(`${name} ${phase}: the hook's promise rejected: ${String(error)}`)
+          resolve()
+        },
+      ),
     )
   else {
     if (process.env.NODE_ENV !== 'production') {

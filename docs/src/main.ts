@@ -1,6 +1,7 @@
 import { ViteSSG } from 'vite-ssg'
 import './style.css'
 import { preventFocusZoom, vTooltip } from 'vael-ui'
+import { formPlugin } from 'vael-form'
 import './demo-content.css'
 import './prose.css'
 import App from './App.vue'
@@ -10,6 +11,8 @@ import { adoptPrerendered } from './composables/highlightInline'
 
 export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => {
   app.use(i18n).directive('tooltip', vTooltip)
+  // The Forms demos' errors come from the docs' own locales (formKit), in the language you read.
+  app.use(formPlugin, { i18n: i18n.global })
   // Fields keep the docs' text size on iPhone without the focus zoom.
   preventFocusZoom()
 

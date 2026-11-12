@@ -4,7 +4,7 @@
 import { onBeforeUpdate } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
-import { cssSize, sizeTimingOf } from './size'
+import { cssSize, quietAttribute, sizeTimingOf } from './size'
 import { resolveTiming, track } from './timing'
 import type { ElementHookContext, MotionResult, MotionTiming, MotionValues } from './types'
 import { LAYOUT_ID } from './ids'
@@ -12,6 +12,7 @@ import { runHook } from './hook'
 import { isTimed } from './playable'
 import { motionOffAt } from './styleHolder'
 import { groupValues, reducePresence, toKeyframe } from './values'
+import { markNamed, markSliding } from './presence'
 
 // Just now: the same flush, however long that render takes, or soon after it (a late tick, an
 // async part). Timed from the flush's end: a slow render used to run the clock out mid-swap.
@@ -109,6 +110,12 @@ export function rememberLayout(el: Element, id: string): void {
   const left: Left = { box, at: Infinity, near: el.parentElement }
   boxes.set(id, [...(boxes.get(id) ?? []), left])
   queueMicrotask(() => (left.at = performance.now()))
+  // Not taken by then, it's let go, with the parent it left from.
+  setTimeout(() => {
+    const list = boxes.get(id)?.filter((each) => each !== left)
+    if (list?.length) boxes.set(id, list)
+    else if (list) boxes.delete(id)
+  }, FRESH * 4)
 }
 
 /**
@@ -123,6 +130,8 @@ export function arriveLayout(
   otherwise: () => void,
   /** It has slid into place (or would have, with motion off). */
   moved?: () => void,
+  /** Its `v-animate` name: `after` can wait on the slide, as on an entrance. */
+  name?: string,
 ): void {
   queueMicrotask(() => {
     // The nearest of those that just left; the latest of equally near ones.
@@ -139,7 +148,11 @@ export function arriveLayout(
     const run = slide(el, before.box, now, timing)
     if (!run) return moved?.()
     raiseWhile(el, run)
-    run.finished.then(moved, () => {})
+    const done = run.finished.then(moved, () => {})
+    if (name) {
+      markNamed(el, name)
+      markSliding(name, Number(run.effect?.getComputedTiming().endTime ?? 0), done)
+    }
   })
 }
 
@@ -190,7 +203,8 @@ function slide(
     Math.abs(sy - 1) < 0.01
   )
     return undefined
-  const { duration, easing } = resolveTiming(el, timing)
+  const far = Math.max(Math.abs(dx), Math.abs(dy), Math.abs(from.width - to.width))
+  const { duration, easing } = resolveTiming(el, timing, undefined, far)
   const sized = html && (Math.abs(sx - 1) >= 0.01 || Math.abs(sy - 1) >= 0.01)
   // Its real size, as Vue Starport moves a component: what's in it reflows on the way instead of
   // being stretched. Clipped to it meanwhile. An SVG has no size to set: it scales.
@@ -232,7 +246,10 @@ function slide(
 
 // `layout`: each element's last place in its parent, and per parent, the elements watched under it.
 type Point = { x: number; y: number }
-const placeOf = new WeakMap<Element, Point | undefined>()
+// With what it was measured against: an ancestor is the offsetParent only while it's transformed
+// (an entrance under way), so a reading from another box isn't a move.
+type Place = Point & { via?: Element | null }
+const placeOf = new WeakMap<Element, Place | undefined>()
 const timingOf = new WeakMap<Element, () => MotionTiming>()
 // `onAfterMove`: run once its slide has played, or at once when it moves without one.
 const movedOf = new WeakMap<Element, () => void>()
@@ -270,13 +287,14 @@ function ownShift(el: Element, shown: Point = shownOn(el)): Point | undefined {
  * an entrance or a glide on its way, aren't moves), and scrolling or the parent moving as a whole
  * neither.
  */
-function placeIn(el: Element, parent: Element): Point | undefined {
+function placeIn(el: Element, parent: Element): Place | undefined {
   // Not rendered (display: none around it): no place, so showing it isn't a move.
   if (el instanceof HTMLElement && !el.offsetParent && !el.getClientRects().length) return undefined
   if (el instanceof HTMLElement && parent instanceof HTMLElement) {
-    if (el.offsetParent === parent) return { x: el.offsetLeft, y: el.offsetTop }
-    if (el.offsetParent === parent.offsetParent)
-      return { x: el.offsetLeft - parent.offsetLeft, y: el.offsetTop - parent.offsetTop }
+    const via = el.offsetParent
+    if (via === parent) return { x: el.offsetLeft, y: el.offsetTop, via }
+    if (via === parent.offsetParent)
+      return { x: el.offsetLeft - parent.offsetLeft, y: el.offsetTop - parent.offsetTop, via }
   }
   const box = el.getBoundingClientRect()
   const at = parent.getBoundingClientRect()
@@ -325,7 +343,7 @@ function shownOffset(run: Animation): Point {
 function slideBy(el: Element, offset: Point, timing: MotionTiming) {
   if (pageHidden()) return movedOf.get(el)?.()
   if (Math.abs(offset.x) < 0.5 && Math.abs(offset.y) < 0.5) return
-  const { duration, easing } = resolveTiming(el, timing)
+  const { duration, easing } = resolveTiming(el, timing, undefined, Math.hypot(offset.x, offset.y))
   const run = el.animate([{ translate: `${offset.x}px ${offset.y}px` }, { translate: '0px 0px' }], {
     id: LAYOUT_ID,
     duration,
@@ -370,8 +388,13 @@ function relayout(parent: Element, members: Set<Element>) {
     const own = ownNow[i]
     placeOf.set(el, place)
     ownOf.set(el, own)
-    // Unmoved: a glide on its way carries on undisturbed.
-    if (!last || !place || (Math.abs(last.x - place.x) < 0.5 && Math.abs(last.y - place.y) < 0.5))
+    // Unmoved, or measured against another box: a glide on its way carries on undisturbed.
+    if (
+      !last ||
+      !place ||
+      last.via !== place.via ||
+      (Math.abs(last.x - place.x) < 0.5 && Math.abs(last.y - place.y) < 0.5)
+    )
       return
     for (const run of runs[i]!) run.cancel()
     // A drag list placing its own rows glides them itself: a slide here would move them twice.
@@ -416,7 +439,11 @@ export function followLayout(
   let group = groups.get(parent)
   if (!group) {
     const members = new Set<Element>()
-    const observer = new MutationObserver(() => relayout(parent, members))
+    const observer = new MutationObserver((records) => {
+      // Assistive-tech state and the motion system's own marks don't move anything.
+      if (records.every((r) => r.type === 'attributes' && quietAttribute(r.attributeName))) return
+      relayout(parent, members)
+    })
     observer.observe(parent, {
       childList: true,
       subtree: true,

@@ -45,6 +45,13 @@ const close = (a: number, b: number) => Math.abs(a - b) < 0.5
  * its width without new content (a window or container resize, its own style) is layout, and
  * doesn't.
  */
+/** @internal Attributes that never move anything: state for assistive tech (arrow keys through a
+ * list set them each step) and the motion system's own marks. */
+export const quietAttribute = (name: string | null) =>
+  !!name &&
+  ((name.startsWith('aria-') && name !== 'aria-hidden' && name !== 'aria-expanded') ||
+    name.startsWith('data-ui-'))
+
 export function followSize(
   el: HTMLElement,
   timing: () => MotionTiming | undefined,
@@ -234,10 +241,15 @@ export function followSize(
     // Its own pins aren't new content.
     const records = all.filter(
       (r) =>
-        !(r.type === 'attributes' && r.attributeName === 'style' && pins.has(r.target as Element)),
+        !(
+          r.type === 'attributes' &&
+          r.attributeName === 'style' &&
+          pins.has(r.target as Element)
+        ) && !(r.type === 'attributes' && quietAttribute(r.attributeName)),
     )
     if (!records.length) return
-    watchChildren()
+    // Children to watch only change with the list of them.
+    if (records.some((r) => r.type === 'childList' && r.target === el)) watchChildren()
     sync(layout || records.some((r) => r.target !== el || r.type !== 'attributes'))
   })
   changes.observe(el, {

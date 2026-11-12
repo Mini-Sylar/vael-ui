@@ -36,6 +36,8 @@ export const entryOf = (el: Element): PresenceEntry | undefined => lastEntry.get
 const byName = new Map<string, Set<Element>>()
 export function markNamed(el: Element, name: string): void {
   const set = byName.get(name) ?? new Set()
+  // Rows that came and went (pages, filters) aren't kept alive by their name.
+  if (set.size > 64) for (const each of set) if (!each.isConnected) set.delete(each)
   set.add(el)
   byName.set(name, set)
 }
@@ -53,6 +55,21 @@ export function leavingUnder(name: string): Promise<unknown> | undefined {
   return set?.size ? Promise.allSettled(set) : undefined
 }
 
+// A `layoutId` slide playing under a name: `after: 'name'` waits on it as on an entrance.
+const slidingByName = new Map<string, Sliding>()
+export interface Sliding {
+  /** When it started (performance.now()) and how long it runs (ms), for `'name:60%'`. */
+  at: number
+  span: number
+  done: Promise<void>
+}
+export function markSliding(name: string, span: number, done: Promise<void>): void {
+  const entry: Sliding = { at: performance.now(), span, done }
+  slidingByName.set(name, entry)
+  void done.finally(() => slidingByName.get(name) === entry && slidingByName.delete(name))
+}
+export const slidingUnder = (name: string): Sliding | undefined => slidingByName.get(name)
+
 /** The elements under this name still on the page. */
 export function namedOnPage(name: string): Element[] {
   const set = byName.get(name)
@@ -63,14 +80,18 @@ export function namedOnPage(name: string): Element[] {
 
 function createPresence(): Presence {
   const list: PresenceEntry[] = []
+  // The entry by element, so registering each of n rows isn't a walk of the list each time.
+  const byEl = new WeakMap<Element, PresenceEntry>()
   const presence: Presence = {
     register(el, name, motion) {
       // A `:ref` written inline is a new function each render; the same element registers once.
-      const existing = list.find((e) => e.el === el && e.name === name)
+      const known = byEl.get(el)
+      const existing = known?.name === name ? known : undefined
       const entry = existing ?? { el, name, motion }
       lastEntry.set(el, entry)
       if (existing) existing.motion = motion ?? existing.motion
       else {
+        byEl.set(el, entry)
         list.push(entry)
         presence.joined?.(entry)
       }
@@ -78,11 +99,18 @@ function createPresence(): Presence {
       return () =>
         queueMicrotask(() => {
           const at = list.indexOf(entry)
-          if (!el.isConnected && at >= 0) list.splice(at, 1)
+          if (!el.isConnected && at >= 0) {
+            list.splice(at, 1)
+            if (byEl.get(el) === entry) byEl.delete(el)
+          }
         })
     },
     entries() {
-      for (let i = list.length - 1; i >= 0; i--) if (!list[i]!.el.isConnected) list.splice(i, 1)
+      for (let i = list.length - 1; i >= 0; i--)
+        if (!list[i]!.el.isConnected) {
+          if (byEl.get(list[i]!.el) === list[i]) byEl.delete(list[i]!.el)
+          list.splice(i, 1)
+        }
       return [...list].sort((a, b) =>
         a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
       )

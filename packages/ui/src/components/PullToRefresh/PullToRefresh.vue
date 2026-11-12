@@ -92,6 +92,7 @@ export interface PullToRefreshProps {
 <!-- Custom #indicator animations go inside slot content, not zone (which owns block-size state) -->
 <script setup lang="ts">
 import { prefersReducedMotion } from '../../composables/dom'
+import { withProviderDefaults } from '../../config'
 import './PullToRefresh.css'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
@@ -111,7 +112,8 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
-const props = withDefaults(defineProps<PullToRefreshProps>(), { motion: true })
+const rawProps = withDefaults(defineProps<PullToRefreshProps>(), { motion: undefined })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 defineSlots<{
   /** Scrollable content. */

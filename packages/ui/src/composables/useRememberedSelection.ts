@@ -1,7 +1,7 @@
 import { computed, watchEffect } from 'vue'
 import type { ComputedRef } from 'vue'
 
-type Value = string | number
+type Value = string | number | null
 
 /**
  * The selected items: from `options` when they're in it, else as they were when last seen there.

@@ -54,11 +54,14 @@
       type="button"
       :class="previewPart.class"
       :style="previewPart.style"
-      :disabled="disabled"
+      :id="fieldControl.id"
+      :disabled="isDisabled"
       :data-placeholder="modelValue ? undefined : ''"
       :aria-label="attrs['aria-label'] as string | undefined"
-      :aria-labelledby="attrs['aria-labelledby'] as string | undefined"
-      :aria-describedby="labelled ? valueId : undefined"
+      :aria-labelledby="
+        (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
+      "
+      :aria-describedby="describedBy"
       @click="activationMode === 'click' && start()"
       @dblclick="activationMode === 'dblclick' && start()"
       @focus="activationMode === 'focus' && !refocusing && start()"
@@ -83,8 +86,9 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
-import { containsThroughLayers } from '../../composables/useLayerStack'
+import { containsThroughLayers, useLayer } from '../../composables/useLayerStack'
 import { omitAttrs } from '../../composables/forwardedListeners'
+import { useFieldControl } from '../../composables/useFieldControl'
 import type { EditableMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
@@ -93,7 +97,11 @@ const attrs = useAttrs()
 // The label names the input and the preview button, so the wrapper doesn't get it.
 const rootAttrs = computed(() => omitAttrs(attrs, ['aria-label', 'aria-labelledby']))
 // Labelled, the preview is named by the label and described by its text: "Notes, button, Pressure low".
-const labelled = computed(() => !!(attrs['aria-label'] || attrs['aria-labelledby']))
+// Inside a Field: its label names the preview, its description describes it, its disabled holds.
+const fieldControl = useFieldControl({})
+const labelled = computed(
+  () => !!(attrs['aria-label'] || attrs['aria-labelledby'] || fieldControl.labelledBy()),
+)
 const valueId = useId()
 /** The text. Updates when an edit is submitted, not on every keystroke. @default '' */
 const modelValue = defineModel<string>({ default: '' })
@@ -142,6 +150,13 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { motion: true })
+const isDisabled = computed(() => props.disabled || fieldControl.disabled())
+// Labelled, the preview is described by its text, then by the Field's description and error.
+const describedBy = computed(
+  () =>
+    [labelled.value ? valueId : undefined, fieldControl.describedBy()].filter(Boolean).join(' ') ||
+    undefined,
+)
 
 const emit = defineEmits<{
   /** Fires with the saved text. */
@@ -155,7 +170,8 @@ defineSlots<{
   preview(props: { value: string }): unknown
   /**
    * The control while editing, in place of the Input: a Textarea, a Select, a date picker. Bind
-   * `value` and call `update` with each change; Enter, Escape and focus leaving still work.
+   * `value` and call `update` with each change; Enter, Escape and focus leaving still work. A key your
+   * control handles itself with `preventDefault()` (`@keydown.enter.prevent="save"`) is left to it.
    */
   edit(props: {
     value: string
@@ -173,8 +189,26 @@ const input = useTemplateRef<InstanceType<typeof Input>>('input')
 const editArea = useTemplateRef<HTMLElement>('editArea')
 const preview = useTemplateRef<HTMLButtonElement>('preview')
 const draft = shallowRef('')
-// Opened from outside (v-model:editing), the input starts on the text, as a click would.
-watch(editing, (on) => on && (draft.value = modelValue.value), { immediate: true })
+// Opened from outside (v-model:editing), the input starts on the text and takes focus, as a click would.
+let starting = false
+watch(
+  editing,
+  (on) => {
+    if (!on) return
+    draft.value = modelValue.value
+    if (!starting) void nextTick(focusEdit)
+  },
+  { immediate: true },
+)
+// Escape cancels the edit before it reaches a Drawer or Dialog around it.
+const layer = useLayer({
+  scope: () => root.value,
+  onDismiss: () => {
+    cancel()
+    return true
+  },
+})
+watch(editing, (on) => (on ? layer.push() : layer.pop()), { immediate: true, flush: 'post' })
 const parts = useStateMotion({
   key: 'editable',
   mainPart: 'root',
@@ -187,7 +221,7 @@ const parts = useStateMotion({
     input: '.ui-editable-input',
     actions: '.ui-editable-actions',
   },
-  states: () => ({ editing: editing.value, disabled: props.disabled }),
+  states: () => ({ editing: editing.value, disabled: isDisabled.value }),
 })
 // The phone keyboard's action key reads Done when it saves.
 const submitsOnEnter = computed(() => props.submitMode === 'enter' || props.submitMode === 'both')
@@ -196,19 +230,20 @@ function setDraft(value: string) {
 }
 const FOCUSABLE = 'input, textarea, select, button, [tabindex]:not([tabindex="-1"])'
 
+// The first control in #edit, or the built-in input: focused as the edit opens.
+function focusEdit() {
+  const el = input.value?.inputEl ?? editArea.value?.querySelector<HTMLElement>(FOCUSABLE)
+  el?.focus()
+  if (props.selectOnFocus && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement))
+    el.select()
+}
 function start() {
-  if (props.disabled || editing.value) return
+  if (isDisabled.value || editing.value) return
   draft.value = modelValue.value
+  starting = true
   editing.value = true
-  nextTick(() => {
-    const el = input.value?.inputEl ?? editArea.value?.querySelector<HTMLElement>(FOCUSABLE)
-    el?.focus()
-    if (
-      props.selectOnFocus &&
-      (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
-    )
-      el.select()
-  })
+  starting = false
+  void nextTick(focusEdit)
 }
 // Focus coming back on close must not reopen a focus-activated edit.
 let refocusing = false
@@ -235,6 +270,8 @@ function cancel() {
   emit('cancel')
 }
 function onKeydown(event: KeyboardEvent) {
+  // Your control handled the key itself (`@keydown.enter.prevent="save"`): it isn't handled twice.
+  if (event.defaultPrevented) return
   if (event.key === 'Enter' && submitsOnEnter.value) {
     // A textarea keeps Enter for new lines; Cmd or Ctrl with it submits.
     if (event.target instanceof HTMLTextAreaElement && !event.metaKey && !event.ctrlKey) return
@@ -286,7 +323,7 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const rootPart = computed(() =>
-  resolveUiPart(cx, themedUi()?.root, 'ui-editable', props.disabled && 'ui-editable--disabled'),
+  resolveUiPart(cx, themedUi()?.root, 'ui-editable', isDisabled.value && 'ui-editable--disabled'),
 )
 const previewPart = computed(() =>
   resolveUiPart(

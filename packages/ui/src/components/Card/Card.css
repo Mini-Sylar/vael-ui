@@ -72,7 +72,9 @@
   .ui-card--interactive {
     position: relative;
   }
-  .ui-card--interactive:active::after {
+  .ui-card--interactive:active:not(
+      :has(:is(a[href], button, input, select, textarea, [role='button']):active)
+    )::after {
     content: '';
     position: absolute;
     inset: -4%;

@@ -15,25 +15,60 @@
     padding: 0;
     list-style: none;
   }
+  /* Items keep their own height: a board's columns line up at the top. */
   .ui-sortable[data-axis='x'] {
     flex-direction: row;
-    align-items: stretch;
+    align-items: flex-start;
+  }
+  /* A row lifted into the top layer while it crosses lists: none of the browser's popover look,
+     so it keeps its own (anything the page or a variant sets wins over this). */
+  :where([data-sortable-lifted]) {
+    inset: auto;
+    margin: 0;
+    padding: 0;
+    border: 0 none;
+    background: transparent;
+    color: inherit;
+    overflow: visible;
   }
   .ui-sortable-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius);
-    background: var(--ui-surface);
     transition:
       box-shadow var(--ui-duration-press) ease,
-      border-color var(--ui-duration-press) ease;
+      border-color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
   }
-  /* The floating copy carries the grabbed look too: it's what the pointer holds. */
-  .ui-sortable-item[data-dragging],
-  .ui-sortable-item[data-grabbed],
+  /* variant="card" (the default): each row is a card. */
+  .ui-sortable-item.ui-sortable-item--card {
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface);
+  }
+  /* variant="plain": no box at rest; a held row lifts off the list on a surface of its own. */
+  .ui-sortable-item--plain:is([data-dragging], [data-grabbed], [data-sortable-preview]):not(
+      [data-sortable-source]
+    ) {
+    background: var(--ui-surface);
+  }
+  /* handle="item": the row is what you hold and what you focus. */
+  .ui-sortable-item[tabindex] {
+    cursor: grab;
+    touch-action: manipulation;
+  }
+  .ui-sortable-item[tabindex]:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-sortable-item[tabindex][data-dragging] {
+    cursor: grabbing;
+  }
+  /* The held row, and the copy that floats for it; never the slot it left behind (a clone's
+     placeholder), which is yours to style. */
+  .ui-sortable-item[data-dragging]:not([data-sortable-source]),
+  .ui-sortable-item[data-grabbed]:not([data-sortable-source]),
   .ui-sortable-item[data-sortable-preview] {
     position: relative;
     z-index: 1;
@@ -101,8 +136,10 @@
       background: var(--ui-muted);
     }
   }
-  .ui-sortable-handle:active:not(:disabled) {
-    transform: scale(0.94);
+  /* The press shrinks what's in the handle, not the handle: its box stays under the pointer, so a
+     release at the edge still lands on it and a click on content inside it still reaches that. */
+  .ui-sortable-handle:active:not(:disabled) > * {
+    scale: 0.94;
   }
   /* `disabled` stops the dragging, not the rows: the grips read as off, the content stays as is. */
   .ui-sortable-handle:disabled {
@@ -115,6 +152,12 @@
   }
   .ui-sortable-item[data-dragging] .ui-sortable-handle {
     cursor: grabbing;
+  }
+
+  /* virtualize: a row off the screen keeps its measured size, border and padding included. */
+  .ui-sortable-item[data-sortable-resting] {
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .ui-sortable-content {
@@ -159,18 +202,8 @@
     .ui-sortable-handle {
       transition: none;
     }
-    .ui-sortable-handle:active {
-      transform: none;
+    .ui-sortable-handle:active > * {
+      scale: none;
     }
-  }
-
-  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
-  .ui-sortable-handle {
-    position: relative;
-  }
-  .ui-sortable-handle:active::after {
-    content: '';
-    position: absolute;
-    inset: -4%;
   }
 }

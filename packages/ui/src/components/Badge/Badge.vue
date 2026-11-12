@@ -1,12 +1,6 @@
 <template>
   <span ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
-    <span
-      v-if="!dot"
-      :key="count"
-      :class="contentClass"
-      :style="contentStyle()"
-      :data-direction="direction"
-    >
+    <span v-if="!dot" :key="count" :class="contentClass" :data-direction="direction">
       <slot>{{ display }}</slot>
     </span>
   </span>
@@ -15,6 +9,7 @@
 <!-- No positioning props: composition via consumer's wrapper (Avatar's #badge slot), not component props -->
 <script setup lang="ts">
 import './Badge.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
@@ -27,7 +22,7 @@ import type { BadgeMotion } from '../../motion/types'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Color variant. @default 'primary' */
     variant?: 'primary' | 'muted' | 'success' | 'warning' | 'danger' | 'info'
@@ -42,7 +37,7 @@ const props = withDefaults(
      * @default true
      */
     animated?: boolean
-    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, scale: 0.6 } } }`). `false` turns its own appearance off; `animated` keeps the count change. */
+    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, scale: 0.6 } } }`). `false` turns all of its motion off, the count change included. */
     motion?: BadgeMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
@@ -56,6 +51,7 @@ const props = withDefaults(
     motion: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { motion: true })
 
 defineSlots<{
   /** Overrides `count` entirely; anything you render here wins. */
@@ -90,27 +86,24 @@ const rootPart = computed(() =>
     props.dot && 'ui-badge--dot',
   ),
 )
+// The pop plays on a change of count, never on the first render: the class arrives with the change.
+const changed = shallowRef(false)
 const contentClass = computed(() =>
-  cx('ui-badge-content', props.animated && 'ui-badge-content--animated'),
+  cx(
+    'ui-badge-content',
+    props.animated && props.motion !== false && changed.value && 'ui-badge-content--animated',
+  ),
 )
 
 const direction = shallowRef<'up' | 'down'>('up')
 watch(
   () => props.count,
   (next, prev) => {
+    changed.value = true
     if (next != null && prev != null) direction.value = next < prev ? 'down' : 'up'
   },
   { flush: 'sync' },
 )
-
-// Animate only on state-CHANGE: non-reactive closure flag (like useTabIndicator's measuredOnce) prevents initial-render animation.
-let contentMounted = false
-function contentStyle(): Record<string, string> | undefined {
-  if (!props.animated) return undefined
-  const style = contentMounted ? undefined : { animationDuration: '0s' }
-  contentMounted = true
-  return style
-}
 
 defineExpose({
   /** Root element. */

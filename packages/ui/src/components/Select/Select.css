@@ -16,17 +16,23 @@
   }
   .ui-select-trigger--sm {
     block-size: 1.75rem;
+    block-size: round(1.75rem, 2px);
     font-size: calc(var(--ui-font-size) * 0.8125);
+    font-size: round(calc(var(--ui-font-size) * 0.8125), 1px);
     border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-select-trigger--md {
     block-size: 2.25rem;
+    block-size: round(2.25rem, 2px);
     font-size: calc(var(--ui-font-size) * 0.875);
+    font-size: round(calc(var(--ui-font-size) * 0.875), 1px);
     border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-select-trigger--lg {
     block-size: 2.5rem;
+    block-size: round(2.5rem, 2px);
     font-size: var(--ui-font-size);
+    font-size: round(var(--ui-font-size), 1px);
     border-radius: var(--ui-radius);
   }
   /* The frame rings while the combobox inside it has keyboard focus. */
@@ -65,13 +71,13 @@
 
   @media (hover: none) and (pointer: coarse) {
     .ui-select-trigger--sm {
-      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.8125));
+      font-size: max(var(--ui-touch-font-size), round(calc(var(--ui-font-size) * 0.8125), 1px));
     }
     .ui-select-trigger--md {
-      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.875));
+      font-size: max(var(--ui-touch-font-size), round(calc(var(--ui-font-size) * 0.875), 1px));
     }
     .ui-select-trigger--lg {
-      font-size: max(var(--ui-touch-font-size), var(--ui-font-size));
+      font-size: max(var(--ui-touch-font-size), round(var(--ui-font-size), 1px));
     }
   }
 }

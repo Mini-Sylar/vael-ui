@@ -289,6 +289,8 @@ export function holdLayout(...lists: (HTMLElement | null)[]): void {
 
 export interface GroupMemberBinding {
   container: () => HTMLElement | null
+  /** A cross-list drop is being decided (`beforeDrop`): the origin list shows it as pending. */
+  setPending: (pending: boolean) => void
   rows: () => readonly FlatSortableRow[]
   getElement: (value: string | number) => HTMLElement | null
   axis: () => SortableAxis
@@ -445,6 +447,7 @@ interface Band extends SortableBand {
   wasBelowSource: boolean
 }
 
+let groupSeq = 0
 export function useSortable(options: UseSortableOptions): UseSortableReturn {
   const activeValue = shallowRef<string | number | null>(null)
   const isDragging = shallowRef(false)
@@ -879,8 +882,11 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     change()
     // A grid's rows don't move as the row lifts out: the slots were measured with it in place.
     if (reducedMotion() || grid) return
-    for (const row of remaining) {
-      const delta = before.get(row.value)! - bandOf(options.getElement(row.value)).start
+    // Every row read first, then every spring moved: one layout, not one per row.
+    const deltas = remaining.map(
+      (row) => [row, before.get(row.value)! - bandOf(options.getElement(row.value)).start] as const,
+    )
+    for (const [row, delta] of deltas) {
       if (Math.abs(delta) < 0.5) continue
       const spring = springFor(row.value)
       const { velocity: carried, target } = spring
@@ -1010,6 +1016,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
     if (options.beforeDrop && sourceFrom) {
       const details: SortableDropDetails = { value, from: sourceFrom, to: at }
+      const drop = ++dropSeq
       let approved = false
       try {
         const verdict = options.beforeDrop(details)
@@ -1027,6 +1034,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       } finally {
         isPending.value = false
       }
+      // Cancelled while it was being decided (Escape, a blur): the move never happens.
+      if (drop !== dropSeq || activeValue.value !== value) return
       if (!approved) {
         say('cancel')
         await revert()
@@ -1093,6 +1102,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     el.removeAttribute('data-dragging')
   }
 
+  // Each pending drop's turn: a cancel meanwhile moves it on, and the late verdict is dropped.
+  let dropSeq = 0
   function resetTrackingState() {
     unwatchHandleBlur()
     draggedValues.value = new Set()
@@ -1126,6 +1137,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
   function cancel() {
     if (!isGrabbed.value) return
+    dropSeq++
     if (options.group) {
       options.group.__cancel()
       return
@@ -1137,6 +1149,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   // --- pointer ---------------------------------------------------------------
 
   let pointerId: number | null = null
+  let dragRtl = false
   let committed = false
   let startX = 0
   let startY = 0
@@ -1234,8 +1247,13 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
    * row leaves the page with its old list's re-render, so the copy lands on its new one the way a
    * clone does: above every list, leaving each list's scrolling alone. Null when nothing is lifted. */
   function copyLiftedRow(): HTMLElement | null {
+    // The row stays where it was until its list re-renders; out of the top layer now, so it never
+    // keeps the lifted look (a list that keeps it, or a transfer that changes nothing).
+    if (previewEl && !previewIsCopy) dropFromTop(previewEl)
     if (!previewEl || previewIsCopy || toValue(options.dragPreview) || reducedMotion()) return null
     const copy = previewEl.cloneNode(true) as HTMLElement
+    copy.removeAttribute('popover')
+    copy.removeAttribute('data-sortable-lifted')
     copy.removeAttribute('data-dragging')
     copy.removeAttribute('id')
     copy.setAttribute('aria-hidden', 'true')
@@ -1459,6 +1477,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     target.style.insetInlineStart = `${rect.left}px`
     target.style.insetBlockStart = `${rect.top}px`
     target.style.translate = ''
+    // The real row lifted: into the top layer, so a column with its own stacking (a z-index, a
+    // transform, isolation) can't paint over it, and a transformed one can't trap it.
+    if (mode === 'element') liftToTop(target)
     previewEl = target
     previewIsCopy = mode === 'clone'
     // Respect where the row was actually grabbed, so it doesn't jump to a
@@ -1501,12 +1522,34 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     previewEl.style.insetBlockStart = `${top}px`
   }
 
+  function liftToTop(el: HTMLElement) {
+    if (typeof el.showPopover !== 'function') return
+    el.setAttribute('popover', 'manual')
+    el.setAttribute('data-sortable-lifted', '')
+    try {
+      el.showPopover()
+    } catch {
+      dropFromTop(el)
+    }
+  }
+  function dropFromTop(el: HTMLElement) {
+    if (!el.hasAttribute('data-sortable-lifted')) return
+    try {
+      el.hidePopover()
+    } catch {
+      // Already out of the top layer (it left the page).
+    }
+    el.removeAttribute('popover')
+    el.removeAttribute('data-sortable-lifted')
+  }
+
   function destroyPreview() {
     previewFromStart = false
     if (!previewEl) return
     if (!previewIsCopy) {
       // 'element' mode: the real node, not a clone — put it back in flow
       // instead of removing it.
+      dropFromTop(previewEl)
       previewEl.style.position = ''
       previewEl.style.margin = ''
       previewEl.style.pointerEvents = ''
@@ -1543,7 +1586,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     committed = false
     startX = event.clientX
     startY = event.clientY
-    lastAlong = event.clientY
+    lastAlong = axis() === 'x' ? event.clientX : event.clientY
     lastTime = performance.now()
     lastPointerEvent = event
     velocity = 0
@@ -1594,6 +1637,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       return false
     }
     committed = true
+    // Read once: a style read per move, after the move's own writes, forces a recalc each time.
+    dragRtl = isRtl(dragEl)
     isDragging.value = true
     grabAlong = (axis() === 'x' ? startX : startY) - bandOf(dragEl).start
     startAutoScroll()
@@ -1686,7 +1731,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const shift = scrollShift()
     const along = (axis() === 'x' ? dx : dy) + shift
     // Right to left, a deeper row sits further left.
-    const across = axis() === 'x' ? dy : isRtl(dragEl) ? -dx : dx
+    const across = axis() === 'x' ? dy : dragRtl ? -dx : dx
     // 1:1 with the pointer, no transition — never gate a live drag.
     if (previewEl) movePreview(event)
     else if (dragEl) {
@@ -1796,6 +1841,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   function onWindowKeydown(event: KeyboardEvent) {
     if (event.key !== 'Escape' || !isDragging.value) return
     event.preventDefault()
+    dropSeq++
     clearTouchHoldTimer()
     releasePointer()
     committed = false
@@ -1873,6 +1919,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
     if (event.key === ' ' || event.key === 'Enter') {
       event.preventDefault()
+      // A drop being decided (`beforeDrop`) isn't dropped twice.
+      if (isPending.value) return
       if (!isGrabbed.value) {
         if (begin(value, 'keyboard')) {
           // A replayed key (useLazySortable) has no currentTarget left.
@@ -1953,7 +2001,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
 
   if (options.group) {
-    ownGroupId = toValue(options.groupId) ?? useId()
+    // `useId()` is empty outside a component (a directive's hook): every list would share one id.
+    ownGroupId = toValue(options.groupId) ?? (useId() || `ui-sortable-${++groupSeq}`)
     const binding: GroupMemberBinding = {
       container,
       rows,
@@ -1967,6 +2016,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       sourceSlot: () => sourceSlot,
       previewRect: () => previewEl?.getBoundingClientRect() ?? null,
       releaseVelocity: () => velocity,
+      setPending: (pending) => (isPending.value = pending),
       onHostChange: (isHost) => {
         isGroupHost = isHost
         if (!isHost) {

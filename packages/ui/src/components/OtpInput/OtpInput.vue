@@ -406,9 +406,25 @@ const cellPart = computed(() =>
   resolveUiPart(cx, themedUi()?.cell, 'ui-otp-cell', hasCustomCell.value && 'ui-otp-cell--custom'),
 )
 
+// Asked for while disabled (a code being checked), focus arrives once it's enabled again.
+let focusWhenEnabled = false
+function focus() {
+  if (isDisabled.value) {
+    focusWhenEnabled = true
+    return
+  }
+  focusWhenEnabled = false
+  inputEl.value?.focus()
+}
+watch(isDisabled, (disabled) => {
+  if (!disabled && focusWhenEnabled) void nextTick(focus)
+})
+
 defineExpose({
   /** Root element. */
   el: root,
+  /** Focuses the field. Called while it's disabled, it focuses as soon as it's enabled again. */
+  focus,
   /** Invisible native `<input>` that receives typing and paste. */
   inputEl,
   /** Cell elements, one per character slot. */

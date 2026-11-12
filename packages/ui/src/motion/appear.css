@@ -4,10 +4,14 @@
   @keyframes ui-appear {
     from {
       opacity: var(--ui-appear-opacity, 1);
-      translate: var(--ui-appear-translate, none);
+      translate: var(--ui-appear-translate-dir, var(--ui-appear-translate, none));
       scale: var(--ui-appear-scale, none);
       filter: var(--ui-appear-filter, none);
     }
+  }
+  /* Right to left, a number on x runs the other way, as it does once scripts run. */
+  [data-ui-appear]:dir(rtl) {
+    --ui-appear-translate-dir: var(--ui-appear-translate-rtl, var(--ui-appear-translate, none));
   }
   @keyframes ui-appear-fade {
     from {

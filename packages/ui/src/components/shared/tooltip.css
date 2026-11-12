@@ -30,6 +30,20 @@
     display: block;
     opacity: var(--ui-tooltip-content-opacity, 1);
   }
+  /* A shortcut's keys after the text, tinted from the tooltip's own colour. */
+  .ui-tooltip-keys {
+    display: inline-flex;
+    gap: 0.125rem;
+    margin-inline-start: 0.5em;
+    vertical-align: middle;
+  }
+  .ui-tooltip-keys .ui-kbd {
+    color: inherit;
+    opacity: 0.85;
+    border-color: color-mix(in oklab, currentColor 25%, transparent);
+    background: color-mix(in oklab, currentColor 12%, transparent);
+    box-shadow: none;
+  }
   .ui-tooltip-enter-active {
     transition: opacity var(--ui-duration-tooltip) var(--ui-ease-out);
   }

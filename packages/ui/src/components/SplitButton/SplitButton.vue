@@ -75,6 +75,9 @@
       <template v-if="$slots.item" #item="slotProps">
         <slot name="item" v-bind="slotProps" />
       </template>
+      <template v-if="$slots.label" #label="slotProps">
+        <slot name="label" v-bind="slotProps" />
+      </template>
       <template v-if="$slots.footer" #footer>
         <slot name="footer" />
       </template>
@@ -200,6 +203,8 @@ defineSlots<{
   header(): unknown
   /** Custom content for one dropdown row, keeping its behavior; forwarded to Menu's own `#item`. */
   item(props: { item: T }): unknown
+  /** Override a row's text only; its icon and shortcut stay. Forwarded to Menu's own `#label`. */
+  label(props: { item: T }): unknown
   /** Forwarded to the dropdown Menu's own `#footer`. */
   footer(): unknown
 }>()

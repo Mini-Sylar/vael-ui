@@ -40,6 +40,15 @@
     transition: block-size var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-select-empty,
+  /* Read out, not shown: the spinner is what's seen. */
+  .ui-select-loading-label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .ui-select-loading {
     display: flex;
     align-items: center;

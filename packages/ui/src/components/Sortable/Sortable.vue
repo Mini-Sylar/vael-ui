@@ -15,6 +15,9 @@
     v-bind="attrs"
   >
     <ul class="ui-sortable-list">
+      <!-- handle="item": the row itself is the handle. It's focusable for the keyboard, a press
+           that moves past the threshold drags it, and a press that doesn't is a click on what's
+           inside, as on a card. -->
       <li
         v-for="(item, index) in items"
         :key="keyOf(item)"
@@ -22,9 +25,17 @@
         :data-value="keyOf(item)"
         :data-grabbed="isGrabbedItem(item) || undefined"
         :class="itemPart.class"
-        :style="itemPart.style"
+        :style="[itemPart.style, restingSize(item)]"
+        :data-sortable-resting="isResting(item) || undefined"
+        :tabindex="itemHandle && !disabled ? 0 : undefined"
+        :aria-label="itemHandle ? labelOf(item) : undefined"
+        :aria-roledescription="itemHandle ? 'sortable item' : undefined"
+        :aria-describedby="itemHandle ? instructionsId : undefined"
+        @pointerdown="itemHandle && onItemPointerdown($event, keyOf(item))"
+        @keydown="itemHandle && onItemKeydown($event, keyOf(item))"
       >
         <button
+          v-if="!itemHandle"
           type="button"
           :class="handlePart.class"
           :style="handlePart.style"
@@ -46,7 +57,7 @@
             </svg>
           </slot>
         </button>
-        <div class="ui-sortable-content">
+        <div v-if="!isResting(item)" class="ui-sortable-content">
           <slot name="item" :item="item" :index="index" :grabbed="isGrabbedItem(item)">{{
             labelOf(item)
           }}</slot>
@@ -76,7 +87,17 @@ import './Sortable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, nextTick, useAttrs, useId, useTemplateRef } from 'vue'
+import {
+  computed,
+  nextTick,
+  onScopeDispose,
+  shallowReactive,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
+import { useEventListener } from '@vueuse/core'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -136,6 +157,28 @@ const rawProps = withDefaults(
     /** Turns off dragging, so rows stay static. @default false */
     disabled?: boolean
     /**
+     * For long lists: only rows near the screen render their `#item` content; the others keep a
+     * row of their measured size, so dragging, autoscroll and moving between grouped lists work as
+     * before. The page or any scrolling box around the list can scroll it. `true`, or the size in
+     * px to hold for a row not seen yet (its height, or its width with `axis="x"`).
+     * @default false
+     */
+    virtualize?: boolean | number
+    /**
+     * What you drag by. `'button'` is the grip at the start of each row. `'item'` is the whole row,
+     * as a board's cards: a press that moves drags it, one that doesn't is a click on what's inside.
+     * From the keyboard, Space picks a row up and Enter opens it (a click on its content).
+     * Rows then take a touch hold (`touchDragDelay`, 150 ms unset) so the list still scrolls.
+     * @default 'button'
+     */
+    handle?: 'button' | 'item'
+    /**
+     * `'card'` draws each row as a card: a border, padding and a background. `'plain'` draws no
+     * box, so rows look like your content; a held row lifts with a background and a shadow.
+     * @default 'card'
+     */
+    variant?: 'card' | 'plain'
+    /**
      * How it moves: its appearance, row by row (`{ initial: { item: { opacity: 0, y: 8 } }, stagger: 0.04 }`),
      * and its states (`{ states: { dragging: { root: { scale: '1.01' } } } }`). `false` skips the
      * built-in springs, so rows snap to their new slots. Use it when you drive the motion yourself.
@@ -172,6 +215,9 @@ const rawProps = withDefaults(
     autoScroll: true,
     restrictToList: false,
     disabled: false,
+    handle: 'button',
+    variant: 'card',
+    virtualize: false,
     motion: undefined,
     group: undefined,
     groupId: undefined,
@@ -186,6 +232,10 @@ const emit = defineEmits<{
   reorder: [value: string | number, to: DropPosition]
   /** Fires when `beforeDrop` throws or rejects, after Sortable reverts the move. */
   'drop-error': [error: unknown, details: SortableDropDetails]
+  /** Fires when a row is picked up, by pointer or keyboard. */
+  'drag-start': [value: string | number]
+  /** Fires when the row is dropped or the drag is cancelled, before its rows settle. */
+  'drag-end': [value: string | number]
 }>()
 
 defineSlots<{
@@ -232,6 +282,7 @@ const {
   announcement,
   onHandlePointerdown,
   onHandleKeydown,
+  consumeSuppressedClick,
 } = useSortable({
   rows,
   getElement: elementFor,
@@ -241,7 +292,8 @@ const {
   group: props.group,
   groupId: () => props.groupId,
   previewMode: () => props.previewMode ?? 'element',
-  touchDragDelay: () => props.touchDragDelay ?? 0,
+  // A whole-row handle is also tappable content: a touch holds before it drags, so the list scrolls.
+  touchDragDelay: () => props.touchDragDelay ?? (props.handle === 'item' ? 150 : 0),
   canDrop: (details) => props.canDrop?.(details) ?? true,
   beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
   onDropError: (error, details) => emit('drop-error', error, details),
@@ -301,6 +353,115 @@ const parts = useStateMotion({
   states: () => ({ dragging: isGrabbed.value, settling: isSettling.value }),
 })
 
+let draggedValue: string | number | null = null
+watch(isGrabbed, (grabbed) => {
+  if (grabbed) emit('drag-start', (draggedValue = activeValue.value!))
+  else if (draggedValue != null) emit('drag-end', draggedValue)
+  if (!grabbed) draggedValue = null
+})
+
+const itemHandle = computed(() => props.handle === 'item')
+
+// virtualize: which rows render their content (near the screen), and each other row's last size.
+const near = shallowReactive(new Set<string | number>())
+const sizes = new Map<string | number, number>()
+const ESTIMATE = 48
+const virtual = computed(() => props.virtualize !== false && typeof window !== 'undefined')
+// While a row is held or rows settle, nothing goes to rest: a size changing under a drag would move it.
+const holding = computed(() => isGrabbed.value || isSettling.value)
+function isResting(item: T): boolean {
+  if (!virtual.value) return false
+  const key = keyOf(item)
+  return !near.has(key) && !isGrabbedValue(key)
+}
+function restingSize(item: T) {
+  if (!isResting(item)) return undefined
+  const size =
+    sizes.get(keyOf(item)) ?? (typeof props.virtualize === 'number' ? props.virtualize : ESTIMATE)
+  return props.axis === 'x' ? { inlineSize: `${size}px` } : { blockSize: `${size}px` }
+}
+let watcher: IntersectionObserver | undefined
+const watched = new WeakSet<Element>()
+function onSight(entries: IntersectionObserverEntry[]) {
+  for (const entry of entries) {
+    const key = (entry.target as HTMLElement).dataset.value
+    const item = key == null ? undefined : items.value.find((i) => String(keyOf(i)) === key)
+    if (!item) continue
+    const value = keyOf(item)
+    if (entry.isIntersecting) near.add(value)
+    else if (!holding.value && near.has(value)) {
+      // Its size as it leaves, kept for its resting row.
+      const box = entry.boundingClientRect
+      sizes.set(value, props.axis === 'x' ? box.width : box.height)
+      near.delete(value)
+    }
+  }
+}
+// Before the first sighting, the first screens' worth render, so the list never opens blank.
+if (virtual.value) for (const item of items.value.slice(0, 30)) near.add(keyOf(item))
+// A row that arrives later (dropped in from another list, just added) renders whole at once:
+// held at an estimate until it was seen, its content would come in a frame late and nudge it.
+let known = new Set(items.value.map(keyOf))
+watch(
+  () => items.value,
+  (now) => {
+    const keys = new Set(now.map(keyOf))
+    if (virtual.value) for (const key of keys) if (!known.has(key)) near.add(key)
+    known = keys
+  },
+)
+watch(
+  [virtual, () => items.value, root],
+  () => {
+    if (!virtual.value || !root.value) {
+      watcher?.disconnect()
+      watcher = undefined
+      return
+    }
+    // Rows a screen away render ahead, so a scroll or an autoscroll never shows a blank one.
+    watcher ??= new IntersectionObserver(onSight, { rootMargin: '100% 100%' })
+    for (const row of root.value.querySelectorAll('[data-sortable-item]'))
+      if (!watched.has(row)) {
+        watched.add(row)
+        watcher.observe(row)
+      }
+  },
+  { flush: 'post', immediate: true },
+)
+onScopeDispose(() => watcher?.disconnect())
+// A press on a field inside the row is for typing, not dragging.
+const EDITABLE = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+function onItemPointerdown(event: PointerEvent, value: string | number) {
+  if ((event.target as Element).closest(EDITABLE)) return
+  onHandlePointerdown(event, value)
+}
+// Keys typed into content in the row are its own; the row's keys grab, move and drop it.
+function onItemKeydown(event: KeyboardEvent, value: string | number) {
+  if (event.target !== event.currentTarget && !isGrabbed.value) return
+  // Enter on a row nothing holds opens it, as a click does (a card's task); Space picks it up.
+  if (event.key === 'Enter' && !isGrabbed.value) {
+    const content = (event.currentTarget as HTMLElement).querySelector<HTMLElement>(
+      '.ui-sortable-content > *',
+    )
+    if (content) {
+      event.preventDefault()
+      content.click()
+      return
+    }
+  }
+  onHandleKeydown(event, value)
+}
+// After a drag, the browser's trailing click would open what the row holds: it stops here.
+useEventListener(root, 'click', (event) => consumeSuppressedClick() && stopClick(event), {
+  capture: true,
+})
+function stopClick(event: Event) {
+  event.stopPropagation()
+  event.preventDefault()
+}
+// A link or image inside the row would start the browser's own drag.
+useEventListener(root, 'dragstart', (event) => itemHandle.value && event.preventDefault())
+
 function isGrabbedItem(item: T): boolean {
   return isGrabbedValue(keyOf(item))
 }
@@ -310,8 +471,13 @@ const themedUi = useThemedUi(
   (theme) => theme.sortable,
   () => props.ui,
 )
-const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-sortable'))
-const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-sortable-item'))
+const rootPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.root, 'ui-sortable', `ui-sortable--${props.variant}`),
+)
+// The variant is on each row too: a floating copy outside the list keeps its look.
+const itemPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.item, 'ui-sortable-item', `ui-sortable-item--${props.variant}`),
+)
 const handlePart = computed(() => resolveUiPart(cx, themedUi()?.handle, 'ui-sortable-handle'))
 
 defineExpose({

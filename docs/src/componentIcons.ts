@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import {
+  PhTextbox,
   PhArrowsClockwise,
   PhArrowsOutLineHorizontal,
   PhBell,
@@ -140,7 +141,8 @@ export const componentIcons: Record<string, Component> = {
   PullToRefresh: PhArrowsClockwise,
   Dock: PhLayout,
   Sortable: PhDotsSixVertical,
-  // Guides with an icon: the AI agent skill is unlike the rest, and Motion, as in the mode switcher.
+  // Guides with an icon: the AI agent skill is unlike the rest, and Motion and Forms, as in the mode switcher.
   'guide:guide-skill': PhSparkle,
   'guide:motion-overview': PhWaveSine,
+  'guide:forms-overview': PhTextbox,
 }

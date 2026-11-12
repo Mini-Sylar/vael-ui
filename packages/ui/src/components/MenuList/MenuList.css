@@ -32,6 +32,16 @@
       background: color-mix(in oklch, var(--ui-primary) 12%, var(--ui-surface));
     }
   }
+  /* On the current row its own indicator darkens instead: the highlight steps aside, not stacking a second tint. */
+  .ui-menu-list:has(.ui-menu-list-item[aria-current='page']:focus-visible) > .ui-menu-list-hover {
+    opacity: 0;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-menu-list:has(.ui-menu-list-item[aria-current='page']:hover:not(:disabled))
+      > .ui-menu-list-hover {
+      opacity: 0;
+    }
+  }
   /* Server-rendered, before the indicator is measured: the current row draws its look. */
   .ui-menu-list:not([data-indicator-placed]) .ui-menu-list-item[aria-current='page']::after {
     content: '';

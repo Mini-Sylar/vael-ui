@@ -37,6 +37,7 @@ import { directivesContent } from '../directivesContent'
 import {
   GUIDE_ROUTES,
   MOTION_ROUTES,
+  FORMS_ROUTES,
   composableValue,
   directiveValue,
   guideValue,
@@ -150,6 +151,17 @@ export function pageEntries(t: Translate, te: Has): PaletteEntry[] {
       icon: PhBookOpen,
       boost: 6,
       group: t('nav.guides'),
+    })),
+    // The Forms section's pages (vael-form).
+    ...FORMS_ROUTES.map((page) => ({
+      id: guideValue(page.routeName),
+      kind: 'page' as const,
+      label: t(page.labelKey),
+      to: routeFor(guideValue(page.routeName)),
+      icon: PhTextbox,
+      keywords: [t('formsDocs.nav.forms'), 'vael-form', 'validation', 'schema', 'zod'],
+      boost: 6,
+      group: t('formsDocs.nav.forms'),
     })),
     // The Motion section's pages, its customizing guide among them.
     ...MOTION_ROUTES.map((page) => ({

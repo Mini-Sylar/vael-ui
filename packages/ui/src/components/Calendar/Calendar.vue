@@ -1,7 +1,11 @@
 <template>
   <div
     ref="rootEl"
-    :class="[rootPart.class, showWeekNumbers && 'ui-calendar-root--week-numbers']"
+    :class="[
+      rootPart.class,
+      showWeekNumbers && 'ui-calendar-root--week-numbers',
+      planner && 'ui-calendar-root--planner',
+    ]"
     :style="rootPart.style"
     :data-motion="motionOn ? undefined : 'off'"
   >
@@ -199,10 +203,8 @@
                         v-for="day in week"
                         :key="isoDate(day)"
                         role="gridcell"
-                        v-bind="dayAttrs(day, pane)"
-                        :class="cellPart(day, pane).class"
-                        :style="cellPart(day, pane).style"
-                        @click="onDayClick(day)"
+                        v-bind="cellBindings(day, pane)"
+                        @click="onDayClick(day, $event)"
                         @pointerenter="onDayHover(day)"
                       >
                         <!-- Custom day content is read after the date, not hidden behind an aria-label. -->
@@ -392,6 +394,14 @@ const rawProps = withDefaults(
     /** Shows each week's number (ISO 8601) at the start of its row. @default false */
     showWeekNumbers?: boolean
     /**
+     * Lays the month out as a planner: the calendar fills its container, the seven columns share
+     * the width, and each day is a box that grows with what you put in `#day` (tasks, events, a
+     * `Sortable` to drag them between days), with the date at its top start. A click on a control
+     * inside a day is that control's, not a selection.
+     * @default false
+     */
+    planner?: boolean
+    /**
      * `false` skips the month change's slide. An object restyles it: give the `label` and `grid`
      * looks as values, or as functions of `where.direction` (`1` forward, `-1` back). @default true
      */
@@ -417,6 +427,7 @@ const rawProps = withDefaults(
     locale: undefined,
     firstDayOfWeek: undefined,
     months: 1,
+    planner: false,
     showYearButtons: false,
     showWeekNumbers: false,
     motion: undefined,
@@ -933,15 +944,29 @@ function selectDate(day: Date) {
   if (props.selectionMode === 'range') commitRange(day)
   else commitSingle(day)
 }
-function onDayClick(day: Date) {
+// A control inside the cell (a chip, a button, a row being dragged) keeps its click.
+const CELL_CONTROL =
+  'button, a[href], input, select, textarea, [role="button"], [data-sortable-item]'
+function onDayClick(day: Date, event?: MouseEvent) {
+  const control = event && (event.target as Element).closest(CELL_CONTROL)
+  if (
+    control &&
+    control !== event.currentTarget &&
+    (event.currentTarget as Element).contains(control)
+  )
+    return
   // A disabled day does nothing, including the jump to its month when it's an adjacent month's day.
   if (isDayDisabled(day)) return
   focusedDate.value = day
   if (!isShownMonth(day)) showMonth(day)
   selectDate(day)
 }
+// Only a range waiting for its end previews: otherwise a hover would re-render every day for nothing.
 function onDayHover(day: Date) {
-  if (props.selectionMode === 'range') hoveredDate.value = day
+  if (props.selectionMode !== 'range') return
+  const value = model.value
+  if (isRange(value) && value.start && !value.end) hoveredDate.value = day
+  else if (hoveredDate.value) hoveredDate.value = null
 }
 
 function onMonthPick(month: Date) {
@@ -1159,6 +1184,8 @@ function onYearKeydown(event: KeyboardEvent) {
 }
 
 function onGridKeydown(event: KeyboardEvent) {
+  // Keys typed into content inside a day (a planner's items) are its own.
+  if (!(event.target as HTMLElement).hasAttribute('data-date')) return
   let next: Date | null = null
   // ARIA APG keyboard nav: arrow keys move focus, Enter/Space select. Right to left, the week
   // runs from the right.
@@ -1235,6 +1262,11 @@ function dayAttrs(day: Date, month: Date) {
     'aria-disabled': isDayDisabled(day) || undefined,
     'aria-label': slots.day ? undefined : cellLabel(day),
   }
+}
+// A day's attributes, class and style from one call: bound twice, each rebuilt the class list.
+function cellBindings(day: Date, month: Date) {
+  const part = cellPart(day, month)
+  return { ...dayAttrs(day, month), class: part.class, style: part.style }
 }
 function cellPart(day: Date, month: Date) {
   return resolveUiPart(

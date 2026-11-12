@@ -7,6 +7,8 @@ import type { BeforeClose } from '../motion/types'
 
 export interface TooltipDirectiveOptions {
   content: string
+  /** A shortcut's keys, shown after the text as `Kbd`s: `['⌘', 'K']`. */
+  keys?: string[]
   side?: Side
   align?: Align
   /** Gap between the target and the tooltip, in px (default 8). A function is read each time the
@@ -147,13 +149,15 @@ export function vTooltipVapor(
   _argument?: unknown,
   modifiers: Partial<Record<string, boolean>> = {},
 ): (() => void) | void {
+  // Called with a binding (a VDOM template), its value and modifiers come from it.
+  const picked = typeof value === 'object' && value ? value.modifiers : modifiers
   watchEffect(() => {
-    const current = typeof value === 'function' ? value() : undefined
+    const current = typeof value === 'function' ? value() : value?.value
     if (current == null) {
       if (resolvedTargets.has(el)) teardown(el)
       return
     }
-    apply(el, current, modifiers)
+    apply(el, current, picked)
   })
   return () => teardown(el)
 }

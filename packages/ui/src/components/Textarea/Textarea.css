@@ -17,14 +17,17 @@
   }
   .ui-textarea--sm {
     font-size: calc(var(--ui-font-size) * 0.8125);
+    font-size: round(calc(var(--ui-font-size) * 0.8125), 1px);
     border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-textarea--md {
     font-size: calc(var(--ui-font-size) * 0.875);
+    font-size: round(calc(var(--ui-font-size) * 0.875), 1px);
     border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-textarea--lg {
     font-size: var(--ui-font-size);
+    font-size: round(var(--ui-font-size), 1px);
     border-radius: var(--ui-radius);
   }
   .ui-textarea-el {
@@ -147,13 +150,13 @@
 
   @media (hover: none) and (pointer: coarse) {
     .ui-textarea--sm {
-      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.8125));
+      font-size: max(var(--ui-touch-font-size), round(calc(var(--ui-font-size) * 0.8125), 1px));
     }
     .ui-textarea--md {
-      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.875));
+      font-size: max(var(--ui-touch-font-size), round(calc(var(--ui-font-size) * 0.875), 1px));
     }
     .ui-textarea--lg {
-      font-size: max(var(--ui-touch-font-size), var(--ui-font-size));
+      font-size: max(var(--ui-touch-font-size), round(var(--ui-font-size), 1px));
     }
   }
 }

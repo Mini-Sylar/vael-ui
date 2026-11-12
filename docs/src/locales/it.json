@@ -454,7 +454,8 @@
     "useTabIndicator": "L'indicatore di selezione scorrevole dietro Tabs, SelectButton, MenuList e Pagination. Usalo per i tuoi controlli segmentati e le tue liste.",
     "useScrollLock": "Blocca lo scorrimento della pagina o di qualsiasi elemento senza spostamenti del layout, come fanno i dialoghi mentre sono aperti. Usalo per i tuoi overlay e pannelli a schermo intero.",
     "moveTreeNode": "Sposta un nodo e il suo sottoalbero sotto un nuovo genitore e indice, sul posto. Uno spostamento impossibile, come una cartella dentro sé stessa, non cambia nulla. Usalo per applicare uno spostamento drag-and-drop ai dati del tuo albero.",
-    "useFileDrop": "Trasforma qualsiasi elemento in un'area di rilascio per file, con uno stato di trascinamento che resta stabile sopra gli elementi figli e ignora testo o link trascinati. Usalo per costruire la tua zona di rilascio."
+    "useFileDrop": "Trasforma qualsiasi elemento in un'area di rilascio per file, con uno stato di trascinamento che resta stabile sopra gli elementi figli e ignora testo o link trascinati. Usalo per costruire la tua zona di rilascio.",
+    "useScrollLength": "Quanto può scorrere la pagina o un contenitore, in px, come ref. Segue il contenuto quando cresce o si riduce."
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components supporta Vite, Webpack, Rollup, esbuild e Rspack. Il resolver è una normale funzione, quindi funziona allo stesso modo con tutti.",
@@ -1238,5 +1239,369 @@
         "note": "Trascina l’intestazione per spostare il dialog. La cattura del puntatore mantiene il trascinamento quando il puntatore esce dall’intestazione. Con il focus sul pulsante di presa, le frecce lo spostano di 10 px, o di 50 px con Maiusc. Il dialog resta dentro la finestra e si riapre al centro."
       }
     }
+  },
+  "formsDocs": {
+    "nav": {
+      "forms": "Moduli",
+      "overview": "Panoramica",
+      "api": "Riferimento API"
+    },
+    "mode": "Moduli validati con vael-form",
+    "hint": "Devi validare un modulo? vael-form lo collega a uno schema",
+    "eyebrow": "vael-form",
+    "title": "Moduli",
+    "lede": "vael-form è un pacchetto separato e facoltativo per moduli basati su uno schema: Zod, Valibot, ArkType o qualsiasi libreria Standard Schema. Tieni <code>v-model</code>, e lui aggiunge gli errori, il collegamento per l'accessibilità e l'invio. Funziona con vael-ui, con input semplici e con qualsiasi altra libreria di componenti.",
+    "install": "Installazione",
+    "installBody": "Richiede Vue 3.5 o successivo, e niente di vael-ui. Aggiungi la libreria di schemi che usi.",
+    "quickTitle": "Un modulo",
+    "quickBody": "Un solo schema contiene le regole. Ogni input riceve tre cose, tutte tramite il nome del campo: <code>v-model</code> per il valore, <code>attrs</code> per id, ARIA e blur, ed <code>errors</code> per il messaggio.",
+    "tourTitle": "La guida",
+    "why": {
+      "title": "Perché vael-form",
+      "items": [
+        "<strong>Vue prima di tutto.</strong> I campi sono ref, quindi <code>v-model</code> funziona su input, gruppi e liste, in VDOM e in Vapor.",
+        "<strong>Accessibile di default.</strong> <code>attrs</code> imposta <code>aria-invalid</code> e <code>aria-describedby</code>, e un invio fallito porta il focus sul primo campo non valido.",
+        "<strong>Errori al momento giusto.</strong> Un errore compare quando un campo è stato modificato e lasciato, non mentre ci passi sopra. Autocompilazione e clic su un pulsante che si sposta sono gestiti.",
+        "<strong>Tradotto con il tuo catalogo.</strong> Gli errori dello schema cercano le chiavi nei tuoi file di lingua e seguono un cambio di lingua senza validare di nuovo.",
+        "<strong>Leggero.</strong> Circa 8 KB con gzip. Regole, catalogo dei messaggi e limiti dello schema si caricano solo quando un modulo li usa."
+      ]
+    },
+    "card": {
+      "start": "Il tuo primo modulo, il suo stato e le scelte come radio e checkbox.",
+      "errors": "Quando compare un errore, per campo o per tutta l'app.",
+      "submitting": "Invio, errori del server, FormData e TanStack Query.",
+      "validation": "Regole tra campi, controlli asincroni e moduli senza libreria di schemi.",
+      "lists": "Righe che aggiungi e rimuovi, passaggi e unioni.",
+      "data": "Valori predefiniti che arrivano dopo, campi che ne seguono altri, dialog e store.",
+      "i18n": "Messaggi di errore in ogni lingua della tua app.",
+      "nuxt": "Il modulo Nuxt, il rendering lato server e Vapor."
+    },
+    "chapters": {
+      "eyebrow": "Guida ai moduli · {n} di {total}",
+      "start": {
+        "title": "Il tuo primo modulo",
+        "intro": "Un modulo è una sola chiamata a <code>useForm</code>. Restituisce ref per i valori, gli errori da mostrare e gli attributi di cui ogni input ha bisogno.",
+        "install": {
+          "title": "Installazione",
+          "body": "vael-form è un pacchetto a sé. Aggiungilo insieme a una libreria di schemi. In queste pagine si usa Zod; Valibot, ArkType e qualsiasi altra libreria Standard Schema funzionano allo stesso modo."
+        },
+        "first": {
+          "title": "Un modulo",
+          "body": "Passa a <code>useForm</code> uno schema, i valori iniziali e cosa fare con i valori validi. Poi collega ogni input tramite il suo nome. Lascia vuoto un campo e premi Tab: non compare niente. Scrivi qualcosa di sbagliato, poi esci dal campo, e l'errore compare.",
+          "items": [
+            "<code>model</code> contiene una ref per campo. Destrutturalo, poi usa <code>v-model=\"email\"</code> come su qualsiasi ref.",
+            "<code>attrs.email</code> va sull'input: <code>id</code>, <code>name</code>, <code>aria-invalid</code>, <code>aria-describedby</code> e il blur che segna il campo come lasciato.",
+            "<code>errors.email</code> è il messaggio da mostrare, o niente.",
+            "<code>handleSubmit</code> va su <code>{'@'}submit</code>. Valida, porta il focus sul primo campo non valido e chiama <code>onSubmit</code> con l'output dello schema."
+          ]
+        },
+        "state": {
+          "title": "Stato del modulo",
+          "body": "Lo stato del modulo è fatto di ref che puoi destrutturare e usare in un template senza <code>.value</code>. Modifica il nome e guardale cambiare. <code>reset()</code> torna ai valori predefiniti, o ne crea di nuovi: qui un salvataggio rende i valori salvati i nuovi predefiniti."
+        },
+        "choices": {
+          "title": "Radio, checkbox e numeri",
+          "body": "Ogni controllo si collega allo stesso modo. Un gruppo di radio o checkbox è un solo campo con un solo errore, quindi i suoi <code>attrs</code> vanno sul gruppo, e il campo conta come lasciato quando il focus esce dall'intero gruppo. Un campo lista collegato a più checkbox contiene i valori selezionati, come in Vue puro."
+        },
+        "components": {
+          "title": "Con vael-ui e altre librerie",
+          "body": "Applica <code>attrs</code> a un componente come a un input. Dentro il <code>Field</code> di vael-ui, il Field mantiene il proprio id, così la sua etichetta continua a nominare il controllo, e unisce il tuo <code>aria-describedby</code> con il suo errore. Con una libreria in cui un <code>id</code> passato sostituisce il suo, passa solo ciò che serve: <code>:name=\"attrs.email.name\"</code> e <code>{'@'}focusout=\"attrs.email.onFocusout\"</code>."
+        }
+      },
+      "errors": {
+        "title": "Quando compaiono gli errori",
+        "intro": "Lo schema viene sempre eseguito. <code>showErrors</code> decide solo quando un errore diventa visibile, e ogni modalità mostra tutto dopo un invio.",
+        "modes": {
+          "title": "Modalità",
+          "body": "Ogni campo qui sotto usa una modalità diversa. Scrivi qualcosa di sbagliato in ciascuno, esci dal campo e confronta quando compaiono gli errori. <code>edited</code>, quella predefinita, aspetta che il campo sia stato modificato e lasciato, quindi passare su un campo vuoto non mostra nulla.",
+          "items": [
+            "<code>'edited'</code>: quando il campo è stato modificato e lasciato.",
+            "<code>'blur'</code>: quando il campo viene lasciato, anche se non modificato.",
+            "<code>'input'</code>: appena il valore cambia, o quando il campo viene lasciato.",
+            "<code>'submit'</code>: solo dopo il primo invio."
+          ]
+        },
+        "perPath": {
+          "title": "Una modalità per campo",
+          "body": "Indica una modalità per percorso, con <code>default</code> per il resto. Un gruppo copre tutto ciò che contiene, e vince il percorso più vicino. Una riga aggiunta a una lista dopo un invio resta silenziosa finché non viene lasciata, o fino all'invio successivo."
+        },
+        "summary": {
+          "title": "Un riepilogo degli errori",
+          "body": "<code>errorList</code> contiene gli errori visibili, con i loro percorsi, per un riepilogo in cima a un modulo lungo. <code>allErrors</code> contiene ogni errore, visibile o no. Invia questo modulo vuoto."
+        },
+        "shift": {
+          "title": "Errori che spostano la pagina",
+          "body": "Un errore che compare spinge in basso il contenuto sottostante. vael-form aspetta che una pressione del mouse o del dito venga rilasciata prima di segnare un campo come lasciato, così un clic su un pulsante che poi si sposta va comunque a segno. Per evitare lo spostamento stesso, tieni l'elemento dell'errore nella pagina e dagli un <code>min-height</code>. <code>aria-describedby</code> punta a esso solo mentre il campo non è valido."
+        },
+        "autofill": {
+          "title": "Autocompilazione",
+          "body": "Un browser che compila automaticamente un modulo riproduce focus, input e blur su ogni campo in pochi millisecondi, al tuo primo clic sulla pagina. Quel blur non sei tu che lasci il campo, quindi un campo compilato automaticamente non mostra errori finché non ci scrivi o invii il modulo."
+        },
+        "app": {
+          "title": "Per tutta l'app",
+          "body": "Installa il plugin una volta per impostare la modalità di ogni modulo. Lo <code>showErrors</code> di un modulo la sostituisce; i due non vengono uniti. <code>field.untouch()</code> nasconde di nuovo gli errori di un campo finché non viene lasciato un'altra volta."
+        }
+      },
+      "submitting": {
+        "title": "Invio",
+        "intro": "<code>handleSubmit</code> impedisce il ricaricamento della pagina, valida e poi chiama <code>onSubmit</code> con i valori validi. Un secondo invio mentre uno è in corso viene ignorato.",
+        "onSubmit": {
+          "title": "onSubmit",
+          "body": "<code>onSubmit</code> riceve l'output dello schema, quindi un <code>z.coerce.number()</code> arriva come numero, e un contesto con <code>form</code>, <code>event</code>, <code>element</code> e <code>submitter</code>. <code>submitting</code> è true finché la sua promise non si conclude. Se lancia un errore, <code>handleSubmit</code> viene rifiutata e <code>submitting</code> torna a false."
+        },
+        "server": {
+          "title": "Errori dal tuo server",
+          "body": "Metti sul campo ciò che il tuo server rifiuta con <code>setErrors</code>. L'errore compare subito e sparisce quando quel campo cambia. Prova <code>taken{'@'}example.com</code>."
+        },
+        "buttons": {
+          "title": "Due pulsanti, un modulo",
+          "body": "Il pulsante che ha inviato è <code>submitter</code>, come in HTML. Dai a ogni pulsante un <code>name</code> e un <code>value</code>, e leggilo in <code>onSubmit</code>."
+        },
+        "handler": {
+          "title": "Un handler tutto tuo",
+          "body": "<code>handleSubmit(fn)</code> restituisce un handler di invio che chiama <code>fn</code> al posto di <code>onSubmit</code>, con gli stessi valori e lo stesso contesto. Crealo nello script: un <code>{'@'}submit=\"handleSubmit(fn)\"</code> inline creerebbe solo l'handler, senza eseguirlo."
+        },
+        "formData": {
+          "title": "FormData",
+          "body": "<code>formData</code> nel contesto sono i valori in formato multipart, costruiti quando lo leggi. Deriva dai valori, quindi include anche i passaggi che non sono sullo schermo. I valori annidati usano i nomi degli input (<code>address.street</code>, <code>members.0.name</code>), i file restano file, le date diventano stringhe ISO, e vengono aggiunti nome e valore del pulsante premuto."
+        },
+        "query": {
+          "title": "Con TanStack Query",
+          "body": "Il modulo controlla i valori e una mutation li invia. Chiama la mutation da <code>onSubmit</code>, e rimetti gli errori di campo del server con <code>setErrors</code> nell'<code>onError</code> della mutation. <code>handleSubmit()</code> chiamato dal codice mostra ogni errore e porta il focus sul primo campo non valido, come fa un invio."
+        }
+      },
+      "validation": {
+        "title": "Validazione",
+        "intro": "L'intero schema viene eseguito a ogni modifica, quindi le regole tra campi non richiedono nulla in più. I controlli che uno schema non dovrebbe contenere, come una chiamata API, vanno in <code>rules</code>.",
+        "libraries": {
+          "title": "Librerie di schemi",
+          "body": "Zod 4, Zod Mini, Zod 3, Valibot e ArkType associano i loro errori al tuo catalogo di messaggi. Funzionano anche Yup, Joi, Effect e qualsiasi altra libreria Standard Schema, che mostrano il proprio testo. Joi richiede <code>.prefs({'{'} abortEarly: false {'}'})</code> per segnalare ogni problema, ed Effect richiede <code>Schema.toStandardSchemaV1(schema)</code>."
+        },
+        "cross": {
+          "title": "Regole tra campi",
+          "body": "Una regola che confronta campi è un <code>refine</code> con un <code>path</code>. L'errore va sul campo che indichi e sparisce quando uno dei due lati viene corretto. Valibot usa <code>v.forward</code>, e ArkType <code>ctx.reject</code> con un <code>path</code>."
+        },
+        "rules": {
+          "title": "Controlli asincroni",
+          "body": "<code>rules</code> contiene controlli per un percorso, come una chiamata API. Scrivi un nome: <code>admin</code> e <code>vael</code> sono già presi.",
+          "items": [
+            "Una regola viene eseguita solo quando lo schema non ha errori in quel percorso, così un valore malformato non raggiunge mai la tua API.",
+            "<code>debounce</code> aspetta l'ultima modifica, e una modifica più recente annulla la chiamata precedente tramite <code>signal</code>.",
+            "<code>pending</code> è true mentre è in esecuzione, sul campo e sul modulo. Un invio la aspetta.",
+            "Non viene eseguita per il valore predefinito, così un modulo di modifica non controlla ciò che l'utente ha già.",
+            "<code>{'{'} on: 'blur', run {'}'}</code> controlla quando il campo viene lasciato invece che durante la digitazione."
+          ]
+        },
+        "plain": {
+          "title": "Senza una libreria di schemi",
+          "body": "Passa <code>validate</code>, una mappa di percorsi verso semplici funzioni, al posto di uno schema. Una funzione riceve il valore e <code>{'{'} values, path {'}'}</code>, e restituisce un messaggio o niente. Un array viene eseguito in ordine e vince il primo errore. <code>*</code> indica qualsiasi indice di lista, e <code>''</code> è un errore che non appartiene a nessun campo. I tipi derivano da <code>defaultValues</code>."
+        },
+        "validator": {
+          "title": "Le stesse regole sul tuo server",
+          "body": "<code>validator()</code> trasforma la stessa mappa in uno Standard Schema, così puoi eseguirla su un server o in un test."
+        },
+        "transforms": {
+          "title": "Trasformazioni",
+          "body": "Le trasformazioni stanno nello schema. Il campo mantiene ciò che l'utente ha scritto, e <code>onSubmit</code> riceve ciò che lo schema restituisce. <code>v-model.trim</code> e <code>v-model.number</code> funzionano come in qualsiasi modulo Vue."
+        },
+        "limits": {
+          "title": "Limiti dallo schema",
+          "body": "<code>attrs</code> porta anche ciò che lo schema dice dell'input: <code>maxlength</code> e <code>minlength</code> per il testo, <code>min</code>, <code>max</code> e <code>step</code> per i numeri, e <code>aria-required</code> per un valore che non può essere vuoto. Un <code>maxlength</code> blocca la digitazione al limite, quindi quell'errore compare di rado. Funziona con Zod, Valibot e ArkType."
+        }
+      },
+      "lists": {
+        "title": "Liste e passaggi",
+        "intro": "Una lista è un campo con righe che puoi aggiungere, rimuovere e spostare. I passaggi sono gruppi in un unico schema. Nessuno dei due registra nulla: i valori vivono nel modulo.",
+        "list": {
+          "title": "Righe che aggiungi e rimuovi",
+          "body": "<code>field('members')</code> fornisce gli <code>items</code> della lista e le sue operazioni: <code>push</code>, <code>insert</code>, <code>remove</code>, <code>move</code>, <code>swap</code>, <code>replace</code> e <code>clear</code>. <code>item.key</code> resta lo stesso attraverso modifiche e spostamenti, quindi usalo come chiave del <code>v-for</code>. L'errore della lista stessa, come «aggiungine almeno uno», è <code>errors.members</code>."
+        },
+        "steps": {
+          "title": "Passaggi",
+          "body": "Ogni passaggio è un gruppo nello schema. <code>validate('account')</code> controlla un gruppo e mostra solo i suoi errori. Un passaggio che non è sullo schermo mantiene ciò che è stato scritto, e l'invio finale controlla ogni passaggio."
+        },
+        "unions": {
+          "title": "Unioni",
+          "body": "Un'unione discriminata ha i campi di ogni ramo, e lo schema valida quello attivo. Passa al bonifico bancario e torna indietro: il numero di carta che avevi scritto è ancora lì. <code>onSubmit</code> riceve solo il ramo attivo."
+        },
+        "dynamic": {
+          "title": "Uno schema che cambia",
+          "body": "<code>schema</code> può essere una ref, per moduli costruiti dai dati. Un nuovo schema valida di nuovo gli stessi valori."
+        }
+      },
+      "data": {
+        "title": "Caricare e reagire",
+        "intro": "I valori predefiniti possono arrivare dopo che il modulo esiste, i campi possono seguirsi a vicenda, e un modulo può vivere fuori da un componente.",
+        "loading": {
+          "title": "Valori predefiniti che arrivano dopo",
+          "body": "Passa una ref, come il <code>data</code> di una query. Il modulo è utilizzabile mentre è <code>undefined</code> e prende i dati quando arrivano. I dati che arrivano dopo che l'utente ha scritto non sovrascrivono la modifica. Dopo un salvataggio, <code>reset(saved)</code> rende i valori salvati i nuovi predefiniti."
+        },
+        "watch": {
+          "title": "Campi che ne seguono altri",
+          "body": "<code>country.watch()</code> viene eseguito quando una modifica dell'utente o <code>setValue</code> cambia il valore. Qui svuota la città. Non viene eseguito per <code>reset()</code> o per i valori predefiniti caricati, così i dati che arrivano con sia un paese sia una città li mantengono entrambi. Una lista di opzioni che dipende da un valore è un semplice <code>computed</code>."
+        },
+        "dialogs": {
+          "title": "In un dialog",
+          "body": "Metti il modulo in un suo componente dentro il dialog. Il <code>Dialog</code> di vael-ui renderizza il suo contenuto solo mentre è aperto, quindi ogni apertura crea un nuovo modulo, già compilato, senza niente da reimpostare. Un modulo che resta montato richiede <code>reset(record)</code> quando il dialog si apre."
+        },
+        "store": {
+          "title": "In uno store",
+          "body": "Un modulo è un semplice oggetto che mantiene la sua reattività ovunque: uno store Pinia, un composable, una prop. Il <code>form</code> nel contesto di <code>onSubmit</code> è lo stesso modulo. Dai un <code>id</code> a un modulo fuori da un componente se renderizzi sul server."
+        },
+        "reusable": {
+          "title": "Input riutilizzabili",
+          "body": "Un campo è un oggetto tipizzato, quindi un input riutilizzabile lo riceve come prop. <code>form.field('email')</code> fornisce un campo con il suo <code>value</code>, <code>error</code> e <code>attrs</code>."
+        },
+        "children": {
+          "title": "Nei componenti figli",
+          "body": "<code>useFormContext()</code> dà a un componente figlio lo stesso modulo tipizzato, per un passaggio o una sezione in un file a sé. <code>useField(() => props.name)</code> collega un input riutilizzabile tramite il nome."
+        }
+      },
+      "i18n": {
+        "title": "Tradurre gli errori",
+        "intro": "vael-form non include traduzioni. Colleghi la tua i18n una volta, aggiungi i messaggi ai tuoi file di lingua, e gli errori seguono un cambio di lingua senza validare di nuovo.",
+        "setup": {
+          "title": "Collega la tua i18n",
+          "body": "Passa al plugin la tua istanza di vue-i18n, in una qualsiasi delle due modalità, oppure un qualsiasi <code>{'{'} t, locale {'}'}</code> sopra il tuo catalogo. I tuoi schemi restano come sono."
+        },
+        "live": {
+          "title": "Errori nella lingua di chi legge",
+          "body": "Queste pagine usano il proprio catalogo: cambia la lingua della documentazione nell'intestazione e gli errori qui sotto cambiano con essa. Invia il modulo per vederli."
+        },
+        "catalog": {
+          "title": "I messaggi",
+          "body": "Copia queste chiavi nei tuoi file di lingua sotto <code>formKit</code> e traduci i valori. Non ti servono tutte: si prova prima la chiave più specifica (<code>tooSmall.string</code>, poi <code>tooSmall.default</code>), e una chiave che ometti mostra il testo della libreria di schemi. Per cambiare un messaggio, scrivilo nello schema: <code>.min(8, 'Pick a longer name')</code> appare così come scritto."
+        },
+        "labels": {
+          "title": "Nomi dei campi nei messaggi",
+          "body": "Ogni messaggio riceve <code>{'{'}field{'}'}</code>: l'etichetta che indichi in <code>labels</code>, a sua volta una chiave da tradurre, oppure il nome del campo reso leggibile, così <code>firstName</code> diventa «First name». I messaggi ricevono anche i valori della regola, come <code>{'{'}minimum{'}'}</code> e <code>{'{'}maximum{'}'}</code>."
+        },
+        "msg": {
+          "title": "I tuoi messaggi",
+          "body": "<code>msg()</code> crea un messaggio tradotto a partire da una tua chiave, con valori e un fallback. Registra le tue chiavi e il tuo editor le completa. <code>keyPrefix</code> sul plugin sposta i messaggi da <code>formKit</code> a un nome a tua scelta."
+        }
+      },
+      "nuxt": {
+        "title": "Nuxt e rendering lato server",
+        "intro": "Un modulo per Nuxt, id che coincidono tra server e browser, e la stessa API in Vapor.",
+        "module": {
+          "title": "Il modulo Nuxt",
+          "body": "Il modulo installa il plugin, collega <code>{'@'}nuxtjs/i18n</code> in qualunque ordine vengano eseguiti i moduli, e importa automaticamente <code>useForm</code>, <code>useFormContext</code>, <code>useField</code> e <code>msg</code>. Le sue opzioni sono <code>showErrors</code>, <code>keyPrefix</code>, <code>i18n</code> e <code>autoImports</code>."
+        },
+        "ssr": {
+          "title": "Rendering lato server",
+          "body": "Gli input ricevono i loro id da <code>useId()</code>, così server e browser concordano. Un render sul server non mostra errori, perché nessuno se li è ancora guadagnati. Un modulo fuori da un componente richiede un proprio <code>id</code>."
+        },
+        "vapor": {
+          "title": "Vapor",
+          "body": "La stessa API funziona nei componenti Vapor e in Vapor dentro un'app VDOM, testata in entrambi. Vue non ha ancora un renderer lato server per Vapor, quindi il rendering lato server è testato solo per VDOM."
+        }
+      }
+    },
+    "api": {
+      "title": "Riferimento API",
+      "intro": "Tutto ciò che <code>useForm</code> accetta e restituisce, e gli altri export.",
+      "options": "Opzioni",
+      "returns": "Valori restituiti",
+      "field": "Campo",
+      "list": "Campi lista",
+      "exports": "Altri export",
+      "name": "Nome",
+      "description": "Descrizione",
+      "rows": {
+        "schema": "Uno Standard Schema (Zod, Valibot, ArkType, …), o una ref a uno schema. Il suo tipo di input tipizza i campi; il suo output tipizza <code>onSubmit</code>.",
+        "validate": "Al posto di <code>schema</code>: una mappa di percorsi verso semplici funzioni. <code>*</code> è qualsiasi indice di lista, <code>''</code> il modulo.",
+        "defaultValues": "I valori iniziali, o una ref o un getter che li restituisce. Può essere <code>undefined</code> mentre si caricano.",
+        "onSubmit": "<code>(values, {'{'} form, event, element, submitter, formData {'}'})</code>, chiamata con i valori validi.",
+        "onInvalid": "Chiamata quando un invio non supera la validazione, con gli errori.",
+        "showErrors": "<code>'edited'</code> (predefinito), <code>'blur'</code>, <code>'input'</code> o <code>'submit'</code>, oppure una modalità per percorso con <code>default</code>.",
+        "rules": "Controlli extra per percorso, sincroni o asincroni, come una chiamata API. Una regola può anche essere uno schema.",
+        "debounce": "Quanto aspettano le regole dopo l'ultima modifica, in ms.",
+        "labels": "Nomi traducibili per percorso, usati come <code>{'{'}field{'}'}</code> nei messaggi.",
+        "i18n": "Un'istanza i18n solo per questo modulo. Di solito si imposta una volta sul plugin.",
+        "id": "Il prefisso degli id degli input. Serve fuori da un componente quando renderizzi sul server.",
+        "model": "Una ref per campo, per <code>v-model</code>. I gruppi sono oggetti scrivibili, le liste sono array.",
+        "errors": "Il messaggio da mostrare per percorso, o niente. Una lista è una sola voce.",
+        "attrs": "Per percorso, cosa applicare all'input: <code>id</code>, <code>name</code>, ARIA, blur, limiti dello schema ed <code>errorId</code>.",
+        "handleSubmit": "L'handler di <code>{'@'}submit</code>, o <code>handleSubmit(fn)</code> per un handler che chiama <code>fn</code>.",
+        "submitting": "True mentre <code>onSubmit</code> è in esecuzione.",
+        "valid": "True quando niente ha un errore, visibile o no.",
+        "dirty": "True quando un valore è diverso dal suo predefinito.",
+        "touched": "True quando almeno un campo è stato lasciato.",
+        "pending": "True mentre una regola è in esecuzione.",
+        "submitCount": "Quante volte il modulo è stato inviato.",
+        "values": "Tutti i valori, in sola lettura.",
+        "errorList": "Gli errori visibili, come <code>{'{'} path, message {'}'}</code>.",
+        "allErrors": "Ogni errore, visibile o no.",
+        "reset": "<code>reset(values?)</code>: torna ai valori predefiniti, o a valori nuovi. Niente resta dirty o touched.",
+        "validateFn": "<code>validate(path?)</code>: controlla il modulo o un gruppo, ne mostra gli errori, e si risolve indicando se è valido.",
+        "setValue": "<code>setValue(path, value)</code>, come una modifica dell'utente.",
+        "setValues": "<code>setValues(values)</code>, senza segnare niente come dirty.",
+        "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>, come quelli di un server. Ognuno sparisce quando il suo campo cambia.",
+        "clearErrors": "<code>clearErrors(path?)</code>: cancella gli errori impostati con <code>setErrors</code>.",
+        "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>: viene eseguita sulle modifiche dell'utente e su <code>setValue</code>, non sui reset o sui valori predefiniti caricati.",
+        "fieldFn": "<code>field(path)</code>: un campo, con tutto ciò che segue.",
+        "f_value": "Il valore, scrivibile.",
+        "f_error": "Il messaggio da mostrare, o niente.",
+        "f_state": "<code>touched</code>, <code>dirty</code>, <code>valid</code>, <code>pending</code>.",
+        "f_attrs": "Cosa applicare all'input, con <code>id</code> ed <code>errorId</code>.",
+        "f_methods": "<code>touch()</code>, <code>untouch()</code>, <code>validate()</code>, <code>reset()</code>, <code>watch()</code>.",
+        "l_items": "Le righe, ognuna con una <code>key</code> stabile, il suo <code>index</code> e il suo <code>field</code>.",
+        "l_ops": "<code>push</code>, <code>insert</code>, <code>remove</code>, <code>move</code>, <code>swap</code>, <code>replace</code>, <code>clear</code>. Lo stato touched segue una riga quando si sposta.",
+        "formPlugin": "<code>app.use(formPlugin, {'{'} i18n, showErrors, keyPrefix {'}'})</code>: valori predefiniti per ogni modulo.",
+        "provideFormConfig": "Gli stessi valori predefiniti per un solo albero di componenti.",
+        "useFormContext": "Il modulo del genitore più vicino che ha chiamato <code>useForm</code>, tipizzato con <code>useFormContext&lt;typeof schema&gt;()</code>.",
+        "useField": "<code>useField(() => props.name)</code>: un campo del modulo del genitore, tramite il nome.",
+        "msg": "<code>msg(key, params?, fallback?)</code>: un messaggio dal tuo catalogo, per uno schema o una regola.",
+        "validator": "Da <code>vael-form/validator</code>: una mappa <code>validate</code> come Standard Schema."
+      }
+    }
+  },
+  "formKit": {
+    "required": "{field} è obbligatorio",
+    "invalidType": {
+      "default": "{field} non è valido",
+      "string": "{field} deve essere un testo",
+      "number": "{field} deve essere un numero",
+      "int": "{field} deve essere un numero intero",
+      "boolean": "{field} deve essere vero o falso",
+      "date": "{field} deve essere una data valida",
+      "array": "{field} deve essere una lista"
+    },
+    "tooSmall": {
+      "default": "{field} è troppo piccolo (minimo {minimum})",
+      "string": "{field} deve avere almeno {minimum} caratteri",
+      "number": "{field} deve essere almeno {minimum}",
+      "array": "{field} richiede almeno {minimum} elementi",
+      "date": "{field} non può essere prima del {minimum}"
+    },
+    "tooBig": {
+      "default": "{field} è troppo grande (massimo {maximum})",
+      "string": "{field} deve avere al massimo {maximum} caratteri",
+      "number": "{field} deve essere al massimo {maximum}",
+      "array": "{field} può avere al massimo {maximum} elementi",
+      "date": "{field} non può essere dopo il {maximum}"
+    },
+    "invalidFormat": {
+      "default": "{field} non è nel formato corretto",
+      "email": "Inserisci un indirizzo email valido",
+      "url": "Inserisci un URL valido",
+      "uuid": "{field} deve essere un UUID valido",
+      "regex": "{field} non è nel formato corretto",
+      "startsWith": "{field} deve iniziare con «{prefix}»",
+      "endsWith": "{field} deve terminare con «{suffix}»",
+      "includes": "{field} deve contenere «{includes}»"
+    },
+    "invalidValue": "Scegli una delle opzioni disponibili per {field}",
+    "notMultipleOf": "{field} deve essere un multiplo di {divisor}",
+    "invalidUnion": "{field} non è valido",
+    "unrecognizedKeys": "Campi non riconosciuti: {keys}",
+    "custom": "{field} non è valido"
+  },
+  "formsDemo": {
+    "name": "Nome",
+    "email": "Email",
+    "age": "Età",
+    "submit": "Verifica"
   }
 }

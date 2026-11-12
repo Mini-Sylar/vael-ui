@@ -3,10 +3,26 @@
     ref="root"
     :class="rootPart.class"
     :style="rootPart.style"
-    :data-state="disabled ? 'disabled' : undefined"
+    :data-state="isDisabled ? 'disabled' : undefined"
     :data-motion="props.motion ? undefined : 'off'"
     v-bind="attrs"
   >
+    <!-- presets-placement="inline": the presets sit beside the swatch, which still opens the panel. -->
+    <span v-if="inlinePresets" role="group" :aria-label="label" class="ui-color-picker-inline">
+      <button
+        v-for="preset in presets"
+        :key="preset"
+        type="button"
+        :class="presetPart.class"
+        :style="[{ '--ui-color-picker-value': preset }, presetPart.style]"
+        :aria-label="preset"
+        :aria-pressed="sameColor(preset, modelValue)"
+        :disabled="isDisabled"
+        @click="pick(preset)"
+      >
+        <slot name="preset" :color="preset" :selected="sameColor(preset, modelValue)" />
+      </button>
+    </span>
     <Popover
       ref="popover"
       v-model:open="open"
@@ -33,10 +49,13 @@
             type="button"
             :class="swatchPart.class"
             :style="[{ '--ui-color-picker-value': modelValue }, swatchPart.style]"
+            :id="fieldControl.id"
             :aria-label="label"
+            :aria-labelledby="fieldControl.labelledBy()"
+            :aria-describedby="fieldControl.describedBy()"
             aria-haspopup="dialog"
             :aria-expanded="open"
-            :disabled="disabled"
+            :disabled="isDisabled"
           />
         </slot>
       </template>
@@ -108,7 +127,7 @@
           </button>
         </div>
         <div
-          v-if="presets && presets.length > 0"
+          v-if="presets && presets.length > 0 && !inlinePresets"
           :class="presetsPart.class"
           :style="presetsPart.style"
         >
@@ -183,6 +202,7 @@ import Popover from '../Popover/Popover.vue'
 import type { PopoverExposed } from '../Popover/Popover.vue'
 import Slider from '../Slider/Slider.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
+import { useFieldControl } from '../../composables/useFieldControl'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useMessages, colorPickerMessages } from '../../messages'
@@ -200,8 +220,10 @@ const open = defineModel<boolean>('open', { default: false })
 
 const rawProps = withDefaults(
   defineProps<{
-    /** Colors offered as swatches in the panel, as `#rrggbb`. */
+    /** Colors offered as swatches, as `#rrggbb`. */
     presets?: string[]
+    /** Where the presets show: in the panel, or inline beside the swatch, which then opens the panel for any other color. @default 'panel' */
+    presetsPlacement?: 'panel' | 'inline'
     /** Shows the eyedropper button in browsers that have one. @default true */
     showEyeDropper?: boolean
     /** Accessible label for the swatch and the panel. @default 'Color' */
@@ -233,6 +255,7 @@ const rawProps = withDefaults(
   }>(),
   {
     showEyeDropper: true,
+    presetsPlacement: 'panel',
     label: 'Color',
     disabled: false,
     size: 'md',
@@ -253,9 +276,13 @@ defineSlots<{
 
 const messages = useMessages({ colorPicker: colorPickerMessages })
 
+// Inside a Field: its label names the swatch, its description describes it, its disabled holds.
+const fieldControl = useFieldControl({})
+const isDisabled = computed(() => props.disabled || fieldControl.disabled())
+
 // A disabled picker stays shut whatever opens it.
 watch(open, (value) => {
-  if (value && props.disabled) open.value = false
+  if (value && isDisabled.value) open.value = false
 })
 
 const hsv = shallowRef<Hsv>(hexToHsv(HEX.test(modelValue.value) ? modelValue.value : '#000000'))
@@ -360,7 +387,7 @@ const parts = useStateMotion({
   mainPart: 'swatch',
   motion: () => props.motion,
   parts: () => ({ swatch: swatchEl.value }),
-  states: () => ({ disabled: props.disabled }),
+  states: () => ({ disabled: isDisabled.value }),
 })
 const panelMotion = computed(() => rawProps.motion as PopoverMotion | undefined)
 const cx = useClassMerge()
@@ -368,8 +395,17 @@ const themedUi = useThemedUi(
   (theme) => theme.colorPicker,
   () => props.ui,
 )
+const inlinePresets = computed(
+  () => props.presetsPlacement === 'inline' && !!props.presets && props.presets.length > 0,
+)
 const rootPart = computed(() =>
-  resolveUiPart(cx, themedUi()?.root, 'ui-color-picker', `ui-color-picker--${props.size}`),
+  resolveUiPart(
+    cx,
+    themedUi()?.root,
+    'ui-color-picker',
+    `ui-color-picker--${props.size}`,
+    inlinePresets.value && 'ui-color-picker--inline',
+  ),
 )
 const swatchPart = computed(() => resolveUiPart(cx, themedUi()?.swatch, 'ui-color-picker-swatch'))
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-color-picker-panel'))
