@@ -862,6 +862,10 @@
         "own": {
           "title": "Your own components",
           "body": "<code>useMotion</code> gives your own component the same motion as vael-ui's. Bind its <code>transition</code> to Vue's <code>&lt;Transition&gt;</code>. The component then follows your app's motion, animates in and out, and animates its named children with it."
+        },
+        "once": {
+          "title": "Once per page load",
+          "body": "<code>appear: 'once'</code> plays a name's entrance once per page load. It plays the first time the name has elements to show, and rows that arrive in the next 600 ms join it, such as a second list under the same name or data loading in batches. Later mounts under that name show without the entrance. Hide and show the lists below: only the plain one plays again."
         }
       },
       "states": {

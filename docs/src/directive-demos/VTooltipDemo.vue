@@ -4,6 +4,10 @@
     <Button v-tooltip.top="{ content: 'Delete', openDelay: 0 }" size="sm" variant="danger">
       Delete
     </Button>
+    <!-- `keys` shows a shortcut's keys after the text. -->
+    <Button v-tooltip="{ content: 'Search', keys: ['⌘', 'K'] }" size="sm" variant="outline">
+      Search
+    </Button>
   </div>
 </template>
 

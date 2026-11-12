@@ -861,6 +861,10 @@
         "own": {
           "title": "Tus propios componentes",
           "body": "<code>useMotion</code> da a tu propio componente el mismo movimiento que los de vael-ui. Vincula su <code>transition</code> al <code>&lt;Transition&gt;</code> de Vue. El componente sigue entonces el movimiento de tu app, entra y sale con animación, y anima con él a sus hijos con nombre."
+        },
+        "once": {
+          "title": "Una vez por carga de página",
+          "body": "<code>appear: 'once'</code> reproduce la entrada de un nombre una sola vez por carga de página. Se reproduce la primera vez que el nombre tiene elementos que mostrar, y las filas que llegan en los siguientes 600 ms se suman a ella, como una segunda lista bajo el mismo nombre o datos que cargan por lotes. Los montajes posteriores bajo ese nombre se muestran sin la entrada. Oculta y muestra las listas de abajo: solo la normal se reproduce de nuevo."
         }
       },
       "states": {
