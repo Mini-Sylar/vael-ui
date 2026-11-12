@@ -847,6 +847,7 @@ async function sent() {
     description:
       'How far the page, or a scrolling container, can scroll, in px, as a ref. It follows the content growing or shrinking, as rows loading in, and the window resizing. Pair it with `useScrollProgress` to turn progress into a distance: `progress.value * length.value`.',
     installNames: ['useScrollLength'],
+    hasLiveDemo: true,
     params: [
       {
         name: 'container',
