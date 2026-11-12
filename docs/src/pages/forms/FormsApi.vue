@@ -33,87 +33,10 @@ import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import GuideLayout from '../../components/GuideLayout.vue'
+import { FORMS_API as groups } from '../../formsChapters'
 
 const { t } = useI18n()
 useHead({ title: () => t('formsDocs.api.title') })
-
-// [what it's called, its key in formsDocs.api.rows, its anchor when that differs from the name]
-type Row = [name: string, key?: string, anchor?: string]
-const rows = (list: Row[]) =>
-  list.map(([name, key = name, anchor = name]) => ({ name, key, anchor }))
-
-const groups = [
-  {
-    id: 'options',
-    rows: rows([
-      ['schema'],
-      ['validate'],
-      ['defaultValues'],
-      ['onSubmit'],
-      ['onInvalid'],
-      ['showErrors'],
-      ['rules'],
-      ['debounce'],
-      ['labels'],
-      ['i18n'],
-      ['id'],
-    ]),
-  },
-  {
-    id: 'returns',
-    rows: rows([
-      ['model'],
-      ['errors'],
-      ['attrs'],
-      ['handleSubmit'],
-      ['submitting'],
-      ['valid'],
-      ['dirty'],
-      ['touched'],
-      ['pending'],
-      ['submitCount'],
-      ['values'],
-      ['errorList'],
-      ['allErrors'],
-      ['reset'],
-      ['validate()', 'validateFn', 'validate-fn'],
-      ['setValue'],
-      ['setValues'],
-      ['setErrors'],
-      ['clearErrors'],
-      ['watch'],
-      ['field', 'fieldFn'],
-    ]),
-  },
-  {
-    id: 'field',
-    rows: rows([
-      ['value', 'f_value', 'field-value'],
-      ['error', 'f_error', 'field-error'],
-      ['touched, dirty, …', 'f_state', 'field-state'],
-      ['attrs', 'f_attrs', 'field-attrs'],
-      ['touch(), …', 'f_methods', 'field-methods'],
-    ]),
-  },
-  {
-    id: 'list',
-    rows: rows([
-      ['items', 'l_items'],
-      ['push, remove, …', 'l_ops', 'list-operations'],
-    ]),
-  },
-  {
-    id: 'exports',
-    rows: rows([
-      ['formPlugin'],
-      ['provideFormConfig'],
-      ['useFormContext'],
-      ['useField'],
-      ['msg'],
-      ['validator'],
-    ]),
-  },
-]
 
 // `field` is both a group and a method: the method's row keeps the name as its anchor.
 const anchorOf = (id: string) => (id === 'field' ? 'field-members' : id)

@@ -44,6 +44,7 @@ import {
   routeFor,
 } from '../docsNav'
 import { MOTION_CHAPTERS, SECTION_OPTIONS } from '../motionChapters'
+import { FORMS_API, FORMS_CHAPTERS, SECTION_APIS } from '../formsChapters'
 import { BLOCKS } from '../motionBlocks'
 
 export type ApiKind = 'props' | 'events' | 'slots' | 'exposed' | 'parameters' | 'returns'
@@ -121,6 +122,15 @@ export function absoluteUrl(href: string): string {
   return typeof window === 'undefined' ? href : new URL(href, window.location.origin).href
 }
 
+// What each Forms page opens with: the palette searches it, so "validation" finds its chapter.
+const FORMS_INTRO: Record<string, string> = {
+  'forms-overview': 'formsDocs.lede',
+  'forms-api': 'formsDocs.api.intro',
+  ...Object.fromEntries(
+    FORMS_CHAPTERS.map((chapter) => [chapter.routeName, `formsDocs.chapters.${chapter.id}.intro`]),
+  ),
+}
+
 /** Every page, grouped and ordered like the sidebar, components first. */
 export function pageEntries(t: Translate, te: Has): PaletteEntry[] {
   const describe = (key: string) => (te(key) ? plain(t(key)) : undefined)
@@ -152,17 +162,33 @@ export function pageEntries(t: Translate, te: Has): PaletteEntry[] {
       boost: 6,
       group: t('nav.guides'),
     })),
-    // The Forms section's pages (vael-form).
+    // The Forms section's pages (vael-form), and `useForm`, which Tab opens into its options.
     ...FORMS_ROUTES.map((page) => ({
       id: guideValue(page.routeName),
       kind: 'page' as const,
       label: t(page.labelKey),
       to: routeFor(guideValue(page.routeName)),
+      text: plain(htmlText(t(FORMS_INTRO[page.routeName] ?? ''))),
       icon: PhTextbox,
-      keywords: [t('formsDocs.nav.forms'), 'vael-form', 'validation', 'schema', 'zod'],
+      keywords: [t('formsDocs.nav.forms'), 'vael-form', 'validation', 'schema', 'zod', 'forms'],
       boost: 6,
       group: t('formsDocs.nav.forms'),
     })),
+    {
+      id: 'forms:useForm',
+      kind: 'page' as const,
+      label: 'useForm',
+      to: { name: 'forms-api' },
+      description: plain(htmlText(t('formsDocs.api.intro'))),
+      text: plain(htmlText(t('formsDocs.api.intro'))),
+      icon: PhFunction,
+      keywords: ['vael-form', 'form', 'validation', 'schema'],
+      boost: 7,
+      group: t('formsDocs.nav.forms'),
+      scope: 'useForm',
+      copy: "import { useForm } from 'vael-form'",
+      copyKind: 'import' as const,
+    },
     // The Motion section's pages, its customizing guide among them.
     ...MOTION_ROUTES.map((page) => ({
       id: guideValue(page.routeName),
@@ -510,6 +536,67 @@ export async function loadDeepEntries(t: Translate): Promise<PaletteEntry[]> {
         group: t('motionDocs.nav.motion'),
         copyKind: 'link',
       })
+    }
+  }
+  // Each section of the Forms guide, with the options it teaches, and each row of the API.
+  const forms = t('formsDocs.nav.forms')
+  for (const chapter of FORMS_CHAPTERS) {
+    const chapterTitle = t(`formsDocs.chapters.${chapter.id}.title`)
+    for (const section of chapter.sections) {
+      const key = `formsDocs.chapters.${chapter.id}.${section.id}`
+      entries.push({
+        id: `section:${chapter.routeName}:${section.id}`,
+        kind: 'section',
+        label: plain(t(`${key}.title`))!,
+        parent: chapterTitle,
+        to: { name: chapter.routeName, hash: `#${section.id}` },
+        text: plain(htmlText(t(`${key}.body`))),
+        keywords: [
+          section.id.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase(),
+          ...(SECTION_APIS[`${chapter.id}.${section.id}`] ?? []),
+        ],
+        icon: PhHash,
+        boost: 4,
+        group: forms,
+        copyKind: 'link',
+      })
+    }
+  }
+  for (const group of FORMS_API) {
+    const kind =
+      group.id === 'options' ? 'parameters' : group.id === 'exports' ? 'section' : 'returns'
+    for (const row of group.rows) {
+      const description = plain(htmlText(t(`formsDocs.api.rows.${row.key}`)))
+      const base = {
+        id: `forms:api:${group.id}:${row.key}`,
+        label: row.name,
+        to: { name: 'forms-api', hash: `#${row.anchor}` },
+        description,
+        text: description,
+        copyKind: 'link' as const,
+      }
+      if (kind === 'section') {
+        entries.push({
+          ...base,
+          kind,
+          parent: t('formsDocs.api.title'),
+          icon: PhFunction,
+          boost: 5,
+          group: forms,
+          copy: `import { ${row.name} } from 'vael-form'`,
+          copyKind: 'import',
+        })
+      } else {
+        entries.push({
+          ...base,
+          kind,
+          parent: 'useForm',
+          scope: 'useForm',
+          icon: API_ICONS[kind],
+          boost: API_BOOST[kind],
+          group: t(`composable.${kind}`),
+        })
+      }
     }
   }
   for (const block of BLOCKS) {
