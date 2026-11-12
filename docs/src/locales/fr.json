@@ -454,7 +454,8 @@
     "useTabIndicator": "L'indicateur de sélection glissant derrière Tabs, SelectButton, MenuList et Pagination. Utilisez-le pour vos propres contrôles segmentés et listes.",
     "useScrollLock": "Bloque le défilement de la page ou de n'importe quel élément sans décalage de mise en page, comme le font les dialogues ouverts. Utilisez-le pour vos propres superpositions et panneaux plein écran.",
     "moveTreeNode": "Déplace un nœud et son sous-arbre vers un nouveau parent et un nouvel index, sur place. Un déplacement impossible, comme un dossier dans lui-même, ne change rien. Utilisez-le pour appliquer un glisser-déposer à vos données d'arbre.",
-    "useFileDrop": "Transforme n'importe quel élément en zone de dépôt de fichiers, avec un état de survol qui reste stable au-dessus des éléments enfants et ignore le texte ou les liens glissés. Utilisez-le pour créer votre propre zone de dépôt."
+    "useFileDrop": "Transforme n'importe quel élément en zone de dépôt de fichiers, avec un état de survol qui reste stable au-dessus des éléments enfants et ignore le texte ou les liens glissés. Utilisez-le pour créer votre propre zone de dépôt.",
+    "useScrollLength": "La distance de défilement possible de la page ou d'un conteneur, en px, sous forme de ref. Elle suit le contenu qui grandit ou rétrécit."
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components prend en charge Vite, Webpack, Rollup, esbuild et Rspack. Le résolveur est une simple fonction, il fonctionne donc de la même manière avec chacun d'eux.",

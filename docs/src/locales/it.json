@@ -454,7 +454,8 @@
     "useTabIndicator": "L'indicatore di selezione scorrevole dietro Tabs, SelectButton, MenuList e Pagination. Usalo per i tuoi controlli segmentati e le tue liste.",
     "useScrollLock": "Blocca lo scorrimento della pagina o di qualsiasi elemento senza spostamenti del layout, come fanno i dialoghi mentre sono aperti. Usalo per i tuoi overlay e pannelli a schermo intero.",
     "moveTreeNode": "Sposta un nodo e il suo sottoalbero sotto un nuovo genitore e indice, sul posto. Uno spostamento impossibile, come una cartella dentro sé stessa, non cambia nulla. Usalo per applicare uno spostamento drag-and-drop ai dati del tuo albero.",
-    "useFileDrop": "Trasforma qualsiasi elemento in un'area di rilascio per file, con uno stato di trascinamento che resta stabile sopra gli elementi figli e ignora testo o link trascinati. Usalo per costruire la tua zona di rilascio."
+    "useFileDrop": "Trasforma qualsiasi elemento in un'area di rilascio per file, con uno stato di trascinamento che resta stabile sopra gli elementi figli e ignora testo o link trascinati. Usalo per costruire la tua zona di rilascio.",
+    "useScrollLength": "Quanto può scorrere la pagina o un contenitore, in px, come ref. Segue il contenuto quando cresce o si riduce."
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components supporta Vite, Webpack, Rollup, esbuild e Rspack. Il resolver è una normale funzione, quindi funziona allo stesso modo con tutti.",

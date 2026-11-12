@@ -473,7 +473,8 @@
     "useTabIndicator": "Der gleitende Auswahlindikator hinter Tabs, SelectButton, MenuList und Pagination. Nutzen Sie ihn für Ihre eigenen Segment-Steuerelemente und Listen.",
     "useScrollLock": "Sperrt das Scrollen der Seite oder eines beliebigen Elements ohne Layoutsprung, so wie Dialoge es tun, solange sie geöffnet sind. Nutzen Sie es für Ihre eigenen Overlays und Vollbild-Panels.",
     "moveTreeNode": "Verschiebt einen Knoten samt Teilbaum direkt an einen neuen Elternknoten und Index. Eine unmögliche Verschiebung, etwa ein Ordner in sich selbst, ändert nichts. Nutzen Sie es, um eine Drag-and-drop-Verschiebung auf Ihre Baumdaten anzuwenden.",
-    "useFileDrop": "Macht jedes Element zum Ablageziel für Dateien, mit einem Drag-over-Zustand, der über Kindelementen stabil bleibt und gezogenen Text oder Links ignoriert. Nutzen Sie es, um Ihre eigene Drop-Zone zu bauen."
+    "useFileDrop": "Macht jedes Element zum Ablageziel für Dateien, mit einem Drag-over-Zustand, der über Kindelementen stabil bleibt und gezogenen Text oder Links ignoriert. Nutzen Sie es, um Ihre eigene Drop-Zone zu bauen.",
+    "useScrollLength": "Wie weit die Seite oder ein Container scrollen kann, in px, als Ref. Der Wert folgt dem Inhalt, wenn er wächst oder schrumpft."
   },
   "nuxt": {
     "excludeIntro": "Überspringen Sie bestimmte Komponentennamen, etwa um Ihren eigenen <code>&lt;Button&gt;</code> unter demselben Tag zu registrieren:",

@@ -454,7 +454,8 @@
     "useTabIndicator": "O indicador de seleção deslizante por trás de Tabs, SelectButton, MenuList e Pagination. Use-o para seus próprios controles segmentados e listas.",
     "useScrollLock": "Bloqueia a rolagem da página ou de qualquer elemento sem deslocar o layout, como os diálogos fazem enquanto estão abertos. Use-o para suas próprias sobreposições e painéis de tela cheia.",
     "moveTreeNode": "Move um nó e sua subárvore para um novo pai e índice, no próprio array. Um movimento impossível, como uma pasta para dentro de si mesma, não muda nada. Use-o para aplicar um movimento de arrastar e soltar aos dados da sua árvore.",
-    "useFileDrop": "Transforma qualquer elemento em uma área para soltar arquivos, com um estado de arraste que se mantém estável sobre os elementos filhos e ignora texto ou links arrastados. Use-o para criar sua própria área de soltar."
+    "useFileDrop": "Transforma qualquer elemento em uma área para soltar arquivos, com um estado de arraste que se mantém estável sobre os elementos filhos e ignora texto ou links arrastados. Use-o para criar sua própria área de soltar.",
+    "useScrollLength": "Quanto a página ou um contêiner pode rolar, em px, como ref. Acompanha o conteúdo quando ele cresce ou diminui."
   },
   "autoImport": {
     "bundlersIntro": "O unplugin-vue-components suporta Vite, Webpack, Rollup, esbuild e Rspack. O resolver é uma função comum, então funciona do mesmo jeito com todos eles.",
