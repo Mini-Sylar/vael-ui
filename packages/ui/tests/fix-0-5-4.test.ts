@@ -900,3 +900,20 @@ test('appear: a scroll in one box leaves entrances elsewhere on the page alone',
     expect(items.map((li) => runsOn(li).length > 0)).toEqual([true, true])
   })
 })
+
+test('MenuList: the hover highlight steps aside on the current page row', async () => {
+  const { default: MenuList } = await import('../src/components/MenuList/MenuList.vue')
+  const screen = await render(() =>
+    h(MenuList as never, {
+      active: 'b',
+      items: [
+        { value: 'a', label: 'A' },
+        { value: 'b', label: 'B' },
+      ],
+    }),
+  )
+  const current = screen.container.querySelector<HTMLElement>('[aria-current="page"]')!
+  await userEvent.hover(current)
+  const highlight = screen.container.querySelector<HTMLElement>('.ui-menu-list-hover')!
+  await vi.waitFor(() => expect(getComputedStyle(highlight).opacity).toBe('0'))
+})
