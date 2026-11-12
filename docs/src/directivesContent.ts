@@ -103,9 +103,9 @@ export const directivesContent: Record<string, DirectiveContent> = {
       },
       {
         name: 'appear',
-        type: "boolean | 'later'",
+        type: "boolean | 'later' | 'once'",
         description:
-          "`false`: no entrance on mount; `replay` and its exit still play. `'later'`: no entrance for what's there at the first render, one for anything added after. Default `true`.",
+          "`false`: no entrance on mount; `replay` and its exit still play. `'later'`: no entrance for what's there at the first render, one for anything added after. `'once'`: a name's entrance plays once per page load, the first time the name has elements to show; rows that arrive in the next 600 ms join it, and later mounts under the name show without it. Default `true`.",
       },
       {
         name: 'layout',
@@ -199,6 +199,12 @@ export const directivesContent: Record<string, DirectiveContent> = {
         description: 'The wait before the tooltip opens or closes, in ms.',
       },
       {
+        name: 'keys',
+        type: 'string[]',
+        description:
+          "A shortcut's keys, shown after the text as `Kbd` elements: `{ content: 'Search', keys: ['⌘', 'K'] }`.",
+      },
+      {
         name: 'beforeClose',
         type: 'BeforeClose',
         description:
@@ -234,6 +240,14 @@ export const directivesContent: Record<string, DirectiveContent> = {
         name: "'x' | 'y' | 'both'",
         type: 'ScrollMaskAxis',
         description: "Which edges to fade. Default `'y'` when the value is empty or `true`.",
+      },
+    ],
+    modifiers: [
+      {
+        name: '.x / .y / .both',
+        type: '—',
+        description:
+          'Sets the axis, as the value does: `v-scroll-mask.x` fades the sides of a box that scrolls across.',
       },
     ],
   },

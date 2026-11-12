@@ -308,3 +308,82 @@ export const SECTION_APIS: Record<string, string[]> = {
 
 // A name's row on the API page: `validate()` is the method, `validate` the option.
 export const apiAnchor = (name: string) => (name === 'validate()' ? 'validate-fn' : name)
+
+// The API reference's rows: the page and the command palette read this one list.
+// [what it's called, its key in formsDocs.api.rows, its anchor when that differs from the name]
+type Row = [name: string, key?: string, anchor?: string]
+const rows = (list: Row[]) =>
+  list.map(([name, key = name, anchor = name]) => ({ name, key, anchor }))
+
+export const FORMS_API = [
+  {
+    id: 'options',
+    rows: rows([
+      ['schema'],
+      ['validate'],
+      ['defaultValues'],
+      ['onSubmit'],
+      ['onInvalid'],
+      ['showErrors'],
+      ['rules'],
+      ['debounce'],
+      ['labels'],
+      ['i18n'],
+      ['id'],
+    ]),
+  },
+  {
+    id: 'returns',
+    rows: rows([
+      ['model'],
+      ['errors'],
+      ['attrs'],
+      ['handleSubmit'],
+      ['submitting'],
+      ['valid'],
+      ['dirty'],
+      ['touched'],
+      ['pending'],
+      ['submitCount'],
+      ['values'],
+      ['errorList'],
+      ['allErrors'],
+      ['reset'],
+      ['validate()', 'validateFn', 'validate-fn'],
+      ['setValue'],
+      ['setValues'],
+      ['setErrors'],
+      ['clearErrors'],
+      ['watch'],
+      ['field', 'fieldFn'],
+    ]),
+  },
+  {
+    id: 'field',
+    rows: rows([
+      ['value', 'f_value', 'field-value'],
+      ['error', 'f_error', 'field-error'],
+      ['touched, dirty, …', 'f_state', 'field-state'],
+      ['attrs', 'f_attrs', 'field-attrs'],
+      ['touch(), …', 'f_methods', 'field-methods'],
+    ]),
+  },
+  {
+    id: 'list',
+    rows: rows([
+      ['items', 'l_items'],
+      ['push, remove, …', 'l_ops', 'list-operations'],
+    ]),
+  },
+  {
+    id: 'exports',
+    rows: rows([
+      ['formPlugin'],
+      ['provideFormConfig'],
+      ['useFormContext'],
+      ['useField'],
+      ['msg'],
+      ['validator'],
+    ]),
+  },
+]

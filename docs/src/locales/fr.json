@@ -861,6 +861,10 @@
         "own": {
           "title": "Vos propres composants",
           "body": "<code>useMotion</code> donne à votre propre composant le même mouvement que ceux de vael-ui. Liez sa <code>transition</code> au <code>&lt;Transition&gt;</code> de Vue. Le composant suit alors le mouvement de votre app, entre et sort en s'animant, et anime ses enfants nommés avec lui."
+        },
+        "once": {
+          "title": "Une fois par chargement de page",
+          "body": "<code>appear: 'once'</code> joue l'entrée d'un nom une seule fois par chargement de page. Elle se joue la première fois que le nom a des éléments à afficher, et les lignes qui arrivent dans les 600 ms suivantes s'y joignent, comme une seconde liste sous le même nom ou des données chargées par lots. Les montages suivants sous ce nom s'affichent sans l'entrée. Masquez puis affichez les listes ci-dessous : seule la liste ordinaire se rejoue."
         }
       },
       "states": {
