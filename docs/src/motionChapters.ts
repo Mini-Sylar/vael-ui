@@ -50,6 +50,7 @@ export const MOTION_CHAPTERS: MotionChapter[] = [
       { id: 'inView', demo: 'elements/09-InView' },
       { id: 'progress', demo: 'elements/10-ScrollProgress' },
       { id: 'replay', demo: 'elements/03-Replay' },
+      { id: 'once', demo: 'elements/18-Once' },
       { id: 'layout', demo: 'elements/04-Layout' },
       { id: 'shared', demo: 'elements/05-SharedElement' },
       {
@@ -250,6 +251,7 @@ export const SECTION_OPTIONS: Record<string, string[]> = {
   'elements.inView': ['inView', 'viewport'],
   'elements.progress': ['progress', 'useScrollProgress', 'useScrollLength'],
   'elements.replay': ['replay', 'appear'],
+  'elements.once': ['appear'],
   'elements.layout': ['layout'],
   'elements.shared': ['layoutId'],
   'elements.pages': ['swap'],

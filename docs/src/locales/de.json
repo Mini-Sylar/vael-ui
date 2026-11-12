@@ -861,6 +861,10 @@
         "own": {
           "title": "Ihre eigenen Komponenten",
           "body": "<code>useMotion</code> gibt Ihrer eigenen Komponente dieselbe Bewegung wie denen von vael-ui. Binden Sie ihre <code>transition</code> an Vues <code>&lt;Transition&gt;</code>. Die Komponente folgt dann der Bewegung Ihrer App, animiert hinein und hinaus und animiert ihre benannten Kinder mit."
+        },
+        "once": {
+          "title": "Einmal pro Seitenaufruf",
+          "body": "<code>appear: 'once'</code> spielt den Auftritt eines Namens einmal pro Seitenaufruf ab. Er läuft, sobald der Name zum ersten Mal Elemente zu zeigen hat, und Zeilen, die in den nächsten 600 ms eintreffen, kommen dazu, etwa eine zweite Liste unter demselben Namen oder in Stapeln geladene Daten. Spätere Mounts unter diesem Namen erscheinen ohne den Auftritt. Blenden Sie die Listen unten aus und wieder ein: Nur die gewöhnliche spielt erneut."
         }
       },
       "states": {
