@@ -349,7 +349,8 @@ test("appear: 'once' plays a name's entrance once per page load, stagger include
   const first = [...screen.container.querySelectorAll<HTMLElement>('.row')]
   expect(first).toHaveLength(2)
   for (const row of first) expect(runsOn(row).length).toBeGreaterThan(0)
-  await sleep(250)
+  // Past the name's first entrance (600 ms).
+  await sleep(700)
   // Mounted again under the same name (the group collapsed and reopened): shown at once.
   shown.value = false
   await nextTick()
@@ -789,4 +790,29 @@ test('Sortable virtualize: a row added later renders its content at once', async
   const first = screen.container.querySelector<HTMLElement>('.ui-sortable-item')!
   expect(first.querySelector('.cell')?.textContent).toBe('New row')
   expect(first.hasAttribute('data-sortable-resting')).toBe(false)
+})
+
+test("appear: 'once': rows arriving in two batches under one name both come in", async () => {
+  const a = shallowRef<string[]>([])
+  const b = shallowRef<string[]>([])
+  const list = (ids: string[], cls: string) =>
+    h(
+      'ul',
+      ids.map((id) =>
+        withDirectives(h('li', { class: cls, key: id }, id), [
+          [vAnimate, { initial: { opacity: 0 }, appear: 'once', duration: 120 }, 'zz-two-batch'],
+        ]),
+      ),
+    )
+  const screen = await render(() => [list(a.value, 'fav'), list(b.value, 'proj')])
+  a.value = ['f1', 'f2']
+  await nextTick()
+  await sleep(80)
+  b.value = ['p1', 'p2', 'p3']
+  await nextTick()
+  await new Promise(requestAnimationFrame)
+  const counts = [...screen.container.querySelectorAll('li')].map(
+    (li) => `${li.textContent}:${runsOn(li).length}`,
+  )
+  expect(counts).toEqual(['f1:1', 'f2:1', 'p1:1', 'p2:1', 'p3:1'])
 })

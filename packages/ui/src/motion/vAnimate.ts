@@ -192,6 +192,8 @@ function showNow(el: HTMLElement, values: MotionValues): [string, string][] {
 // `appear: 'once'`: the names whose entrance has played in this page load, and those playing now.
 const playedOnce = new Set<string>()
 const playingOnce = new Set<string>()
+// How long a name's first entrance takes in rows that arrive after the first ones (ms).
+const ONCE_WINDOW = 600
 /** Marks a name's entrance as played (a server-rendered one that hydrated). */
 function markPlayedOnce(name: string | undefined, value: AnimateDirectiveValue | undefined) {
   if (name && typeof value === 'object' && value.appear === 'once') playedOnce.add(name)
@@ -214,12 +216,14 @@ function settleOnce(
     } else if (playedOnce.has(name)) el._uiOnce = false
     else {
       el._uiOnce = true
+      // Open while the first rows are still arriving (lists under one name rendering a moment
+      // apart, data landing in batches); they all come in with the entrance.
       if (!playingOnce.has(name)) {
         playingOnce.add(name)
-        queueMicrotask(() => {
+        setTimeout(() => {
           playingOnce.delete(name)
           playedOnce.add(name)
-        })
+        }, ONCE_WINDOW)
       }
     }
   }

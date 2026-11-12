@@ -1344,8 +1344,9 @@ export type AnimateDirectiveValue =
        * entrance for what's there when its component first renders (inside a vael-ui component,
        * when it opens), but one for anything mounted after, such as a row added to a list.
        * `'once'`: one entrance per name per page load. The first time the name has elements to
-       * show, they come in together (rows that arrive once their data has loaded included);
-       * later mounts under the name show at once. Needs a name (`v-animate:rows`).
+       * show, they come in together, with rows that arrive in the next 600 ms (a second list under
+       * the name, data loading in batches); later mounts under the name show at once. Needs a
+       * name (`v-animate:rows`).
        * @default true
        */
       appear?: boolean | 'later' | 'once'
