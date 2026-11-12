@@ -78,6 +78,11 @@ test.each(['card', 'plain'] as const)(
     // The grabbed look adds a shadow and the primary border; everything else stays.
     const { boxShadow: _a, borderTopColor: _b, ...restBefore } = before
     const { boxShadow: _c, borderTopColor: _d, ...restDuring } = during
+    // variant="plain" lifts the held row onto a surface on purpose: its fill is meant to change.
+    if (variant === 'plain') {
+      delete (restBefore as Record<string, string>).backgroundColor
+      delete (restDuring as Record<string, string>).backgroundColor
+    }
     expect(restDuring).toEqual(restBefore)
     await frame()
     // Dropped (a transfer the page didn't apply): the row is back to its own look.
