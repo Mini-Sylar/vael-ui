@@ -1239,5 +1239,369 @@
         "note": "ヘッダーをドラッグするとダイアログを動かせます。ポインターキャプチャーにより、ポインターがヘッダーの外に出てもドラッグが続きます。グリップボタンにフォーカスがあるときは、矢印キーで 10 px、Shift を押しながらだと 50 px 動きます。ダイアログはウィンドウの内側にとどまり、次に開くときは中央に戻ります。"
       }
     }
+  },
+  "formsDocs": {
+    "nav": {
+      "forms": "フォーム",
+      "overview": "概要",
+      "api": "API リファレンス"
+    },
+    "mode": "vael-form でバリデーションするフォーム",
+    "hint": "フォームをバリデーションしますか？ vael-form がスキーマで配線します",
+    "eyebrow": "vael-form",
+    "title": "フォーム",
+    "lede": "vael-form は、スキーマに基づくフォームのための別パッケージで、使うかどうかは自由です。Zod、Valibot、ArkType など、Standard Schema に対応したライブラリならどれでも使えます。<code>v-model</code> はそのままで、エラー、アクセシビリティの配線、送信を加えます。vael-ui でも、素の input でも、ほかのコンポーネントライブラリでも動きます。",
+    "install": "インストール",
+    "installBody": "Vue 3.5 以降が必要で、vael-ui は必要ありません。使うスキーマライブラリを追加してください。",
+    "quickTitle": "ひとつのフォーム",
+    "quickBody": "ルールはひとつのスキーマにまとめます。各 input は、フィールド名で 3 つのものを受け取ります。値には <code>v-model</code>、id、ARIA、blur には <code>attrs</code>、メッセージには <code>errors</code> です。",
+    "tourTitle": "ガイド",
+    "why": {
+      "title": "vael-form を選ぶ理由",
+      "items": [
+        "<strong>Vue ファースト。</strong>フィールドは ref なので、<code>v-model</code> は input、グループ、リストで、VDOM でも Vapor でも動きます。",
+        "<strong>標準でアクセシブル。</strong><code>attrs</code> が <code>aria-invalid</code> と <code>aria-describedby</code> を設定し、送信に失敗すると最初の無効なフィールドにフォーカスします。",
+        "<strong>ちょうどよいタイミングでエラー表示。</strong>エラーはフィールドを変更して離れたときに表示され、通り過ぎただけでは出ません。自動入力や、動いてしまうボタンのクリックにも対応しています。",
+        "<strong>自分のカタログで翻訳。</strong>スキーマのエラーは自分のロケールファイルのキーを参照し、ロケールを切り替えると再検証なしで追従します。",
+        "<strong>小さい。</strong>gzip で約 8 KB。ルール、メッセージカタログ、スキーマの制限は、フォームが使うときだけ読み込まれます。"
+      ]
+    },
+    "card": {
+      "start": "最初のフォーム、その状態、ラジオやチェックボックスなどの選択肢。",
+      "errors": "エラーがいつ表示されるか。フィールドごと、またはアプリ全体で。",
+      "submitting": "送信、サーバーのエラー、FormData、TanStack Query。",
+      "validation": "フィールドをまたぐルール、非同期チェック、スキーマライブラリなしのフォーム。",
+      "lists": "追加・削除できる行、ステップ、ユニオン。",
+      "data": "あとから読み込まれる初期値、ほかに追従するフィールド、ダイアログとストア。",
+      "i18n": "アプリが対応するすべての言語でのエラーメッセージ。",
+      "nuxt": "Nuxt モジュール、サーバーレンダリング、Vapor。"
+    },
+    "chapters": {
+      "eyebrow": "フォームガイド · {n} / {total}",
+      "start": {
+        "title": "最初のフォーム",
+        "intro": "フォームは <code>useForm</code> を 1 回呼ぶだけです。値の ref、表示するエラー、各 input に必要な属性を返します。",
+        "install": {
+          "title": "インストール",
+          "body": "vael-form は独立したパッケージです。スキーマライブラリと一緒に追加してください。このページでは Zod を使いますが、Valibot、ArkType、そのほかの Standard Schema ライブラリでも同じように動きます。"
+        },
+        "first": {
+          "title": "フォーム",
+          "body": "<code>useForm</code> にスキーマ、初期値、有効な値をどう扱うかを渡します。そして各 input を名前でバインドします。フィールドを空のまま Tab で移動しても何も表示されません。間違った値を入力してから離れると、エラーが表示されます。",
+          "items": [
+            "<code>model</code> はフィールドごとの ref を持ちます。分割代入して、ほかの ref と同じように <code>v-model=\"email\"</code> を使います。",
+            "<code>attrs.email</code> は input に付けます。<code>id</code>、<code>name</code>、<code>aria-invalid</code>、<code>aria-describedby</code>、そしてフィールドを離れたことを記録する blur です。",
+            "<code>errors.email</code> は表示するメッセージで、なければ何もありません。",
+            "<code>handleSubmit</code> は <code>{'@'}submit</code> に付けます。バリデーションし、最初の無効なフィールドにフォーカスし、スキーマの出力で <code>onSubmit</code> を呼びます。"
+          ]
+        },
+        "state": {
+          "title": "フォームの状態",
+          "body": "フォームの状態は ref で、分割代入してテンプレートで <code>.value</code> なしに使えます。名前を編集して、変化を見てください。<code>reset()</code> は初期値に戻すか、新しい初期値を作ります。ここでは、保存すると保存した値が新しい初期値になります。"
+        },
+        "choices": {
+          "title": "ラジオ、チェックボックス、数値",
+          "body": "どのコントロールも同じ方法でバインドします。ラジオやチェックボックスのグループはエラーがひとつのひとつのフィールドなので、<code>attrs</code> はグループに付け、フォーカスがグループ全体から離れたときにフィールドを離れたとみなします。複数のチェックボックスにバインドしたリストのフィールドは、素の Vue と同じく、チェックされた値を持ちます。"
+        },
+        "components": {
+          "title": "vael-ui やほかのライブラリと使う",
+          "body": "<code>attrs</code> は input と同じようにコンポーネントに展開します。vael-ui の <code>Field</code> の中では、Field が自身の id を保つのでラベルはそのままコントロールを指し、渡した <code>aria-describedby</code> を自身のエラーとマージします。渡した <code>id</code> で自身の id を置き換えてしまうライブラリでは、必要なものだけを渡します。<code>:name=\"attrs.email.name\"</code> と <code>{'@'}focusout=\"attrs.email.onFocusout\"</code> です。"
+        }
+      },
+      "errors": {
+        "title": "エラーを表示するタイミング",
+        "intro": "スキーマは常に実行されます。<code>showErrors</code> はエラーをいつ表示するかを決めるだけで、どのモードでも送信後はすべて表示します。",
+        "modes": {
+          "title": "モード",
+          "body": "下のフィールドはそれぞれ別のモードを使っています。各フィールドに誤った値を入力して離れ、エラーが表示されるタイミングを比べてみてください。標準の <code>edited</code> はフィールドが変更されて離れるまで待つので、空のフィールドを通り過ぎても何も表示しません。",
+          "items": [
+            "<code>'edited'</code>：フィールドが変更されて離れたとき。",
+            "<code>'blur'</code>：変更がなくても、フィールドを離れたとき。",
+            "<code>'input'</code>：値が変わったとき、またはフィールドを離れたとき。",
+            "<code>'submit'</code>：最初の送信のあとだけ。"
+          ]
+        },
+        "perPath": {
+          "title": "フィールドごとのモード",
+          "body": "パスごとにモードを指定し、残りは <code>default</code> で指定します。グループはその下のすべてに適用され、最も近いパスが優先されます。送信後にリストへ追加された行は、離れるか次に送信するまで表示しません。"
+        },
+        "summary": {
+          "title": "エラーのまとめ",
+          "body": "<code>errorList</code> は表示中のエラーをパス付きで持ち、長いフォームの先頭にまとめを出すのに使えます。<code>allErrors</code> は表示されているかどうかにかかわらず、すべてのエラーを持ちます。このフォームを空のまま送信してみてください。"
+        },
+        "shift": {
+          "title": "ページを動かすエラー",
+          "body": "表示されたエラーは、その下の内容を押し下げます。vael-form はマウスやタッチの押下が離されるまでフィールドを離れたとみなさないので、そのあと動くボタンのクリックもちゃんと届きます。ずれそのものを防ぐには、エラー要素をページに残して <code>min-height</code> を付けます。<code>aria-describedby</code> がそれを指すのは、フィールドが無効なあいだだけです。"
+        },
+        "autofill": {
+          "title": "自動入力",
+          "body": "フォームを自動入力するブラウザは、ページで最初にクリックしたときに、各フィールドのフォーカス、入力、blur を数ミリ秒で再生します。その blur はユーザーがフィールドを離れたわけではないので、自動入力されたフィールドは、入力するか送信するまでエラーを表示しません。"
+        },
+        "app": {
+          "title": "アプリ全体で",
+          "body": "プラグインを一度インストールすると、すべてのフォームのモードを設定できます。フォーム自身の <code>showErrors</code> はそれを置き換え、マージはされません。<code>field.untouch()</code> は、もう一度離れるまでフィールドのエラーを再び隠します。"
+        }
+      },
+      "submitting": {
+        "title": "送信",
+        "intro": "<code>handleSubmit</code> はページの再読み込みを防ぎ、バリデーションしてから、有効な値で <code>onSubmit</code> を呼びます。実行中の 2 回目の送信は無視されます。",
+        "onSubmit": {
+          "title": "onSubmit",
+          "body": "<code>onSubmit</code> はスキーマの出力を受け取るので、<code>z.coerce.number()</code> は数値として届きます。さらに <code>form</code>、<code>event</code>、<code>element</code>、<code>submitter</code> を持つコンテキストも受け取ります。<code>submitting</code> はその Promise が確定するまで true です。例外を投げると、<code>handleSubmit</code> は reject し、<code>submitting</code> は false に戻ります。"
+        },
+        "server": {
+          "title": "サーバーからのエラー",
+          "body": "サーバーが拒否した内容は <code>setErrors</code> でフィールドに設定します。エラーはすぐに表示され、そのフィールドが変わると消えます。<code>taken{'@'}example.com</code> を試してください。"
+        },
+        "buttons": {
+          "title": "ひとつのフォームに 2 つのボタン",
+          "body": "送信したボタンは、HTML と同じく <code>submitter</code> です。各ボタンに <code>name</code> と <code>value</code> を付け、<code>onSubmit</code> で読み取ります。"
+        },
+        "handler": {
+          "title": "独自のハンドラー",
+          "body": "<code>handleSubmit(fn)</code> は、<code>onSubmit</code> の代わりに <code>fn</code> を同じ値とコンテキストで呼ぶ送信ハンドラーを返します。script の中で作ってください。インラインの <code>{'@'}submit=\"handleSubmit(fn)\"</code> はハンドラーを作るだけで、実行はしません。"
+        },
+        "formData": {
+          "title": "FormData",
+          "body": "コンテキストの <code>formData</code> は値を multipart にしたもので、読み取ったときに作られます。値から作られるので、画面にないステップも含まれます。ネストした値は input の名前（<code>address.street</code>、<code>members.0.name</code>）を使い、ファイルはファイルのまま、日付は ISO 文字列になり、押されたボタンの name と value が加わります。"
+        },
+        "query": {
+          "title": "TanStack Query と使う",
+          "body": "フォームが値をチェックし、ミューテーションが送ります。<code>onSubmit</code> からミューテーションを呼び、サーバーのフィールドエラーはミューテーションの <code>onError</code> で <code>setErrors</code> を使って戻します。コードから呼んだ <code>handleSubmit()</code> は、送信と同じくすべてのエラーを表示し、最初の無効なフィールドにフォーカスします。"
+        }
+      },
+      "validation": {
+        "title": "バリデーション",
+        "intro": "変更のたびにスキーマ全体が実行されるので、フィールドをまたぐルールに追加の仕組みはいりません。API 呼び出しなど、スキーマに持たせるべきでないチェックは <code>rules</code> に書きます。",
+        "libraries": {
+          "title": "スキーマライブラリ",
+          "body": "Zod 4、Zod Mini、Zod 3、Valibot、ArkType は、エラーをメッセージカタログに対応させます。Yup、Joi、Effect、そのほかの Standard Schema ライブラリも動き、それぞれ独自の文言を表示します。Joi はすべての問題を報告するために <code>.prefs({'{'} abortEarly: false {'}'})</code> が必要で、Effect には <code>Schema.toStandardSchemaV1(schema)</code> が必要です。"
+        },
+        "cross": {
+          "title": "フィールドをまたぐルール",
+          "body": "フィールドどうしを比べるルールは、<code>path</code> 付きの <code>refine</code> です。エラーは指定したフィールドに付き、どちらか一方が直ると消えます。Valibot では <code>v.forward</code>、ArkType では <code>path</code> 付きの <code>ctx.reject</code> を使います。"
+        },
+        "rules": {
+          "title": "非同期チェック",
+          "body": "<code>rules</code> は、API 呼び出しなど、ひとつのパスに対するチェックを持ちます。名前を入力してみてください。<code>admin</code> と <code>vael</code> は使用済みです。",
+          "items": [
+            "ルールは、そのパスにスキーマのエラーがないときだけ実行されるので、不正な形式の値が API に届くことはありません。",
+            "<code>debounce</code> は最後の変更を待ち、新しい変更は <code>signal</code> を通じて前の呼び出しを中断します。",
+            "<code>pending</code> は実行中、フィールドとフォームの両方で true になります。送信はその完了を待ちます。",
+            "初期値に対しては実行されないので、編集フォームがユーザーの既存の値をチェックすることはありません。",
+            "<code>{'{'} on: 'blur', run {'}'}</code> は、入力中ではなくフィールドを離れたときにチェックします。"
+          ]
+        },
+        "plain": {
+          "title": "スキーマライブラリなしで",
+          "body": "スキーマの代わりに、パスと素の関数の対応表である <code>validate</code> を渡します。関数は値と <code>{'{'} values, path {'}'}</code> を受け取り、メッセージを返すか、何も返しません。配列は順に実行され、最初の失敗が採用されます。<code>*</code> は任意のリストのインデックスを表し、<code>''</code> はどのフィールドにも属さないエラーです。型は <code>defaultValues</code> から決まります。"
+        },
+        "validator": {
+          "title": "サーバーでも同じルールを",
+          "body": "<code>validator()</code> は同じ対応表を Standard Schema に変換するので、サーバーやテストでも実行できます。"
+        },
+        "transforms": {
+          "title": "変換",
+          "body": "変換はスキーマに書きます。フィールドはユーザーが入力したものを保ち、<code>onSubmit</code> はスキーマが返したものを受け取ります。<code>v-model.trim</code> と <code>v-model.number</code> は、ほかの Vue のフォームと同じように動きます。"
+        },
+        "limits": {
+          "title": "スキーマからの制限",
+          "body": "<code>attrs</code> は、スキーマが input について示す内容も持ちます。テキストには <code>maxlength</code> と <code>minlength</code>、数値には <code>min</code>、<code>max</code>、<code>step</code>、空にできない値には <code>aria-required</code> です。<code>maxlength</code> は上限で入力を止めるので、そのエラーはほとんど表示されません。Zod、Valibot、ArkType で動きます。"
+        }
+      },
+      "lists": {
+        "title": "リストとステップ",
+        "intro": "リストは、行を追加、削除、移動できるフィールドです。ステップはひとつのスキーマの中のグループです。どちらも何も登録しません。値はフォームの中にあります。",
+        "list": {
+          "title": "追加・削除できる行",
+          "body": "<code>field('members')</code> は、リストの <code>items</code> と操作を返します。<code>push</code>、<code>insert</code>、<code>remove</code>、<code>move</code>、<code>swap</code>、<code>replace</code>、<code>clear</code> です。<code>item.key</code> は編集や移動のあいだも変わらないので、<code>v-for</code> のキーに使います。「1 つ以上追加してください」のようなリスト自身のエラーは <code>errors.members</code> です。"
+        },
+        "steps": {
+          "title": "ステップ",
+          "body": "各ステップはスキーマの中のグループです。<code>validate('account')</code> はひとつのグループをチェックし、そのエラーだけを表示します。画面にないステップも入力内容を保ち、最後の送信ですべてのステップをチェックします。"
+        },
+        "unions": {
+          "title": "ユニオン",
+          "body": "判別可能なユニオンはすべての分岐のフィールドを持ち、スキーマは有効な分岐をバリデーションします。銀行振込に切り替えて戻ってみてください。入力したカード番号はそのまま残っています。<code>onSubmit</code> は有効な分岐だけを受け取ります。"
+        },
+        "dynamic": {
+          "title": "変わるスキーマ",
+          "body": "データから作るフォームのために、<code>schema</code> は ref にできます。新しいスキーマは同じ値を再びバリデーションします。"
+        }
+      },
+      "data": {
+        "title": "読み込みと反応",
+        "intro": "初期値はフォームができたあとに届いてもよく、フィールドはお互いに追従でき、フォームはコンポーネントの外にも置けます。",
+        "loading": {
+          "title": "あとから読み込まれる初期値",
+          "body": "クエリの <code>data</code> などの ref を渡します。フォームは <code>undefined</code> のあいだも使え、データが届くとそれを取り込みます。ユーザーが入力したあとに届いたデータは、その編集を上書きしません。保存後は <code>reset(saved)</code> で保存した値が新しい初期値になります。"
+        },
+        "watch": {
+          "title": "ほかに追従するフィールド",
+          "body": "<code>country.watch()</code> は、ユーザーの編集や <code>setValue</code> で値が変わったときに実行されます。ここでは市区町村をクリアします。<code>reset()</code> や読み込まれた初期値では実行されないので、国と市区町村の両方を持って届いたデータは両方を保ちます。値に依存する選択肢のリストは、素の <code>computed</code> です。"
+        },
+        "dialogs": {
+          "title": "ダイアログの中で",
+          "body": "フォームは独自のコンポーネントにして、ダイアログの中に置きます。vael-ui の <code>Dialog</code> は開いているあいだだけ内容を描画するので、開くたびに入力済みの新しいフォームが作られ、リセットするものはありません。マウントされたままのフォームでは、ダイアログを開くときに <code>reset(record)</code> が必要です。"
+        },
+        "store": {
+          "title": "ストアの中で",
+          "body": "フォームは、どこに置いてもリアクティブさを保つ素のオブジェクトです。Pinia ストア、コンポーザブル、prop のどれにも置けます。<code>onSubmit</code> のコンテキストの <code>form</code> は同じフォームです。サーバーで描画する場合、コンポーネントの外のフォームには <code>id</code> を付けてください。"
+        },
+        "reusable": {
+          "title": "再利用できる input",
+          "body": "フィールドは型付きのオブジェクトなので、再利用できる input はそれを prop として受け取れます。<code>form.field('email')</code> は、<code>value</code>、<code>error</code>、<code>attrs</code> を持つひとつのフィールドを返します。"
+        },
+        "children": {
+          "title": "子コンポーネントの中で",
+          "body": "<code>useFormContext()</code> は、子コンポーネントに同じ型付きのフォームを渡します。別ファイルのステップやセクションに使えます。<code>useField(() => props.name)</code> は、再利用できる input を名前でバインドします。"
+        }
+      },
+      "i18n": {
+        "title": "エラーの翻訳",
+        "intro": "vael-form は翻訳を同梱していません。i18n を一度接続し、メッセージを自分のロケールファイルに追加すれば、エラーは再検証なしでロケールの切り替えに追従します。",
+        "setup": {
+          "title": "i18n を接続する",
+          "body": "vue-i18n のインスタンスをどちらのモードでもプラグインに渡すか、自分のカタログに対する <code>{'{'} t, locale {'}'}</code> を渡します。スキーマはそのままです。"
+        },
+        "live": {
+          "title": "読み手の言語でエラーを",
+          "body": "このページは独自のカタログを使っています。ヘッダーでドキュメントの言語を切り替えると、下のエラーも一緒に変わります。フォームを送信して確かめてください。"
+        },
+        "catalog": {
+          "title": "メッセージ",
+          "body": "これらのキーをロケールファイルの <code>formKit</code> の下にコピーし、値を翻訳します。すべては必要ありません。最も具体的なキーから試され（<code>tooSmall.string</code>、次に <code>tooSmall.default</code>）、省いたキーはスキーマライブラリ自身の文言を表示します。ひとつのメッセージを変えるには、スキーマに書きます。<code>.min(8, 'Pick a longer name')</code> は書いたとおりに表示されます。"
+        },
+        "labels": {
+          "title": "メッセージ内のフィールド名",
+          "body": "すべてのメッセージは <code>{'{'}field{'}'}</code> を受け取ります。<code>labels</code> で指定したラベル（これ自体も翻訳するキーです）か、読みやすくしたフィールド名で、<code>firstName</code> は「First name」になります。メッセージは <code>{'{'}minimum{'}'}</code> や <code>{'{'}maximum{'}'}</code> などのルールの値も受け取ります。"
+        },
+        "msg": {
+          "title": "独自のメッセージ",
+          "body": "<code>msg()</code> は、自分のキーから、値とフォールバック付きで翻訳されたメッセージを作ります。キーを登録すると、エディターで補完されます。プラグインの <code>keyPrefix</code> は、メッセージを <code>formKit</code> から好きな名前に移します。"
+        }
+      },
+      "nuxt": {
+        "title": "Nuxt とサーバーレンダリング",
+        "intro": "Nuxt 用のモジュール、サーバーとブラウザで一致する id、Vapor でも同じ API。",
+        "module": {
+          "title": "Nuxt モジュール",
+          "body": "モジュールはプラグインをインストールし、モジュールの実行順にかかわらず <code>{'@'}nuxtjs/i18n</code> を接続し、<code>useForm</code>、<code>useFormContext</code>、<code>useField</code>、<code>msg</code> を自動インポートします。オプションは <code>showErrors</code>、<code>keyPrefix</code>、<code>i18n</code>、<code>autoImports</code> です。"
+        },
+        "ssr": {
+          "title": "サーバーレンダリング",
+          "body": "input の id は <code>useId()</code> から作られるので、サーバーとブラウザで一致します。サーバーレンダリングではエラーを表示しません。まだ誰も操作していないからです。コンポーネントの外のフォームには、独自の <code>id</code> が必要です。"
+        },
+        "vapor": {
+          "title": "Vapor",
+          "body": "同じ API が Vapor コンポーネントでも、VDOM アプリの中の Vapor でも動き、両方でテストしています。Vue にはまだ Vapor のサーバーレンダラーがないので、サーバーレンダリングは VDOM でのみテストしています。"
+        }
+      }
+    },
+    "api": {
+      "title": "API リファレンス",
+      "intro": "<code>useForm</code> が受け取るものと返すもの、そしてほかのエクスポート。",
+      "options": "オプション",
+      "returns": "戻り値",
+      "field": "フィールド",
+      "list": "リストのフィールド",
+      "exports": "そのほかのエクスポート",
+      "name": "名前",
+      "description": "説明",
+      "rows": {
+        "schema": "Standard Schema（Zod、Valibot、ArkType など）、またはその ref。入力の型がフィールドの型を、出力の型が <code>onSubmit</code> の型を決めます。",
+        "validate": "<code>schema</code> の代わりに、パスと素の関数の対応表。<code>*</code> は任意のリストのインデックス、<code>''</code> はフォームです。",
+        "defaultValues": "初期値、またはその ref や getter。読み込み中は <code>undefined</code> でもかまいません。",
+        "onSubmit": "<code>(values, {'{'} form, event, element, submitter, formData {'}'})</code>。有効な値で呼ばれます。",
+        "onInvalid": "送信がバリデーションに失敗したときに、エラーとともに呼ばれます。",
+        "showErrors": "<code>'edited'</code>（標準）、<code>'blur'</code>、<code>'input'</code>、<code>'submit'</code>、または <code>default</code> 付きのパスごとのモード。",
+        "rules": "API 呼び出しなど、パスごとの追加チェック。同期でも非同期でもかまいません。ルールはスキーマにもできます。",
+        "debounce": "最後の変更のあと、ルールが待つ時間（ms）。",
+        "labels": "パスごとの翻訳できる名前。メッセージ内で <code>{'{'}field{'}'}</code> として使われます。",
+        "i18n": "このフォーム専用の i18n インスタンス。通常はプラグインで一度設定します。",
+        "id": "input の id の接頭辞。コンポーネントの外でサーバーレンダリングするときに必要です。",
+        "model": "<code>v-model</code> 用の、フィールドごとの ref。グループは書き込み可能なオブジェクト、リストは配列です。",
+        "errors": "パスごとの表示するメッセージ。なければ何もありません。リストは 1 項目です。",
+        "attrs": "パスごとに input に展開するもの。<code>id</code>、<code>name</code>、ARIA、blur、スキーマの制限、<code>errorId</code>。",
+        "handleSubmit": "<code>{'@'}submit</code> のハンドラー。<code>handleSubmit(fn)</code> なら <code>fn</code> を呼ぶハンドラーになります。",
+        "submitting": "<code>onSubmit</code> の実行中は true。",
+        "valid": "表示の有無にかかわらず、エラーがひとつもなければ true。",
+        "dirty": "値が初期値と異なれば true。",
+        "touched": "いずれかのフィールドを離れたら true。",
+        "pending": "ルールの実行中は true。",
+        "submitCount": "フォームが送信された回数。",
+        "values": "すべての値。読み取り専用です。",
+        "errorList": "表示中のエラー。<code>{'{'} path, message {'}'}</code> の形式です。",
+        "allErrors": "表示の有無にかかわらず、すべてのエラー。",
+        "reset": "<code>reset(values?)</code>：初期値に戻すか、新しい初期値にします。dirty も touched もなくなります。",
+        "validateFn": "<code>validate(path?)</code>：フォームまたはひとつのグループをチェックしてエラーを表示し、有効かどうかで解決します。",
+        "setValue": "<code>setValue(path, value)</code>。ユーザーの編集として扱います。",
+        "setValues": "<code>setValues(values)</code>。何も dirty にしません。",
+        "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>。サーバーからのエラーなどに使います。それぞれ、そのフィールドが変わると消えます。",
+        "clearErrors": "<code>clearErrors(path?)</code>：<code>setErrors</code> で設定したエラーを消します。",
+        "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>：ユーザーの編集と <code>setValue</code> で実行され、リセットや読み込まれた初期値では実行されません。",
+        "fieldFn": "<code>field(path)</code>：以下のすべてを持つ、ひとつのフィールド。",
+        "f_value": "値。書き込み可能です。",
+        "f_error": "表示するメッセージ。なければ何もありません。",
+        "f_state": "<code>touched</code>、<code>dirty</code>、<code>valid</code>、<code>pending</code>。",
+        "f_attrs": "input に展開するもの。<code>id</code> と <code>errorId</code> を含みます。",
+        "f_methods": "<code>touch()</code>、<code>untouch()</code>、<code>validate()</code>、<code>reset()</code>、<code>watch()</code>。",
+        "l_items": "行。それぞれ安定した <code>key</code>、<code>index</code>、<code>field</code> を持ちます。",
+        "l_ops": "<code>push</code>、<code>insert</code>、<code>remove</code>、<code>move</code>、<code>swap</code>、<code>replace</code>、<code>clear</code>。行を移動すると touched の状態も一緒に移ります。",
+        "formPlugin": "<code>app.use(formPlugin, {'{'} i18n, showErrors, keyPrefix {'}'})</code>：すべてのフォームの既定値。",
+        "provideFormConfig": "同じ既定値を、ひとつのコンポーネントツリーに。",
+        "useFormContext": "<code>useForm</code> を呼んだ最も近い親のフォーム。<code>useFormContext&lt;typeof schema&gt;()</code> で型を付けます。",
+        "useField": "<code>useField(() => props.name)</code>：親のフォームのひとつのフィールドを名前で。",
+        "msg": "<code>msg(key, params?, fallback?)</code>：スキーマやルールのための、自分のカタログからのメッセージ。",
+        "validator": "<code>vael-form/validator</code> から：<code>validate</code> の対応表を Standard Schema として。"
+      }
+    }
+  },
+  "formKit": {
+    "required": "{field}は必須です",
+    "invalidType": {
+      "default": "{field}が正しくありません",
+      "string": "{field}はテキストで入力してください",
+      "number": "{field}は数値で入力してください",
+      "int": "{field}は整数で入力してください",
+      "boolean": "{field}は true か false にしてください",
+      "date": "{field}は有効な日付で入力してください",
+      "array": "{field}はリストにしてください"
+    },
+    "tooSmall": {
+      "default": "{field}が小さすぎます（最小 {minimum}）",
+      "string": "{field}は{minimum}文字以上で入力してください",
+      "number": "{field}は{minimum}以上で入力してください",
+      "array": "{field}は{minimum}件以上必要です",
+      "date": "{field}は{minimum}以降の日付にしてください"
+    },
+    "tooBig": {
+      "default": "{field}が大きすぎます（最大 {maximum}）",
+      "string": "{field}は{maximum}文字以内で入力してください",
+      "number": "{field}は{maximum}以下で入力してください",
+      "array": "{field}は{maximum}件までです",
+      "date": "{field}は{maximum}以前の日付にしてください"
+    },
+    "invalidFormat": {
+      "default": "{field}の形式が正しくありません",
+      "email": "有効なメールアドレスを入力してください",
+      "url": "有効な URL を入力してください",
+      "uuid": "{field}は有効な UUID にしてください",
+      "regex": "{field}の形式が正しくありません",
+      "startsWith": "{field}は「{prefix}」で始めてください",
+      "endsWith": "{field}は「{suffix}」で終えてください",
+      "includes": "{field}には「{includes}」を含めてください"
+    },
+    "invalidValue": "{field}は選択肢から選んでください",
+    "notMultipleOf": "{field}は{divisor}の倍数にしてください",
+    "invalidUnion": "{field}が正しくありません",
+    "unrecognizedKeys": "不明なフィールドがあります：{keys}",
+    "custom": "{field}が正しくありません"
+  },
+  "formsDemo": {
+    "name": "名前",
+    "email": "メールアドレス",
+    "age": "年齢",
+    "submit": "確認"
   }
 }

@@ -27,24 +27,38 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { PhArrowLeft, PhArrowRight } from '@phosphor-icons/vue'
-import { MOTION_LINK, MOTION_ROUTES, navSections, routeFor, valueFor } from '../docsNav'
+import {
+  FORMS_ROUTES,
+  FORMS_LINK,
+  MOTION_LINK,
+  MOTION_ROUTES,
+  navSections,
+  routeFor,
+  valueFor,
+} from '../docsNav'
 
 const { t } = useI18n()
 const route = useRoute()
 
-// A Motion page pages through the Motion list, in its order.
+// A Motion or Forms page pages through its own list, in its order.
 const mode = computed(() =>
   route.name === 'composable'
     ? 'composables'
     : MOTION_ROUTES.some((page) => page.routeName === route.name)
       ? 'motion'
-      : 'components',
+      : FORMS_ROUTES.some((page) => page.routeName === route.name)
+        ? 'forms'
+        : 'components',
 )
 // The row that opens the Motion section isn't a next page: the guides read straight on.
 const pages = computed(() =>
   navSections(mode.value, t)
     .flatMap((section) => section.items)
-    .filter((page) => mode.value === 'motion' || page.value !== MOTION_LINK),
+    .filter(
+      (page) =>
+        (mode.value === 'motion' || page.value !== MOTION_LINK) &&
+        (mode.value === 'forms' || page.value !== FORMS_LINK),
+    ),
 )
 const index = computed(() => pages.value.findIndex((page) => page.value === valueFor(route)))
 const prev = computed(() => (index.value > 0 ? pages.value[index.value - 1] : undefined))

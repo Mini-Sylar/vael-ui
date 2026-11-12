@@ -3,6 +3,7 @@ import { categories } from './taxonomy'
 import { composableCategories } from './composablesTaxonomy'
 import { DIRECTIVES } from './directivesTaxonomy'
 import { directivesContent } from './directivesContent'
+import { FORMS_CHAPTERS } from './formsChapters'
 
 // The sidebar's order, shared with the previous/next pager so the two never disagree.
 
@@ -36,6 +37,15 @@ export const MOTION_ROUTES = [
   { routeName: 'motion-showpieces', labelKey: 'motionDocs.nav.showpieces' },
   { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
 ] as const
+// The Forms section (vael-form, its own package): the overview, the guide's chapters, the API.
+export const FORMS_ROUTES = [
+  { routeName: 'forms-overview', labelKey: 'formsDocs.nav.overview' },
+  ...FORMS_CHAPTERS.map((chapter) => ({
+    routeName: chapter.routeName,
+    labelKey: `formsDocs.chapters.${chapter.id}.title`,
+  })),
+  { routeName: 'forms-api', labelKey: 'formsDocs.nav.api' },
+] as const
 // Composables (`use…`) hold state in a component; utilities are plain functions you call anywhere.
 const MOTION_COMPOSABLES = [
   'useAnimate',
@@ -51,7 +61,7 @@ const MOTION_UTILITIES = ['springEasing', 'settled']
 // The directives that move things, listed in Motion's sidebar too.
 const MOTION_DIRECTIVES = ['vAnimate', 'vHoverIndicator', 'vDraggable']
 
-export type DocsMode = 'components' | 'composables' | 'motion'
+export type DocsMode = 'components' | 'composables' | 'motion' | 'forms'
 export interface DocsNavItem {
   label: string
   value: string
@@ -64,6 +74,8 @@ export interface DocsNavSection {
 export const guideValue = (routeName: string) => `guide:${routeName}`
 /** The row that opens the Motion section from the components' sidebar. */
 export const MOTION_LINK = guideValue('motion-overview')
+/** The row that opens the Forms section, among the guides. */
+export const FORMS_LINK = guideValue('forms-overview')
 export const composableValue = (name: string) => `composable:${name}`
 export const directiveValue = (name: string) => `directive:${name}`
 
@@ -86,10 +98,19 @@ export function valueFor(
   if (to.name === 'directive') return directiveValue(to.params.name as string)
   if (GUIDE_ROUTES.some((g) => g.routeName === to.name)) return guideValue(to.name as string)
   if (MOTION_ROUTES.some((g) => g.routeName === to.name)) return guideValue(to.name as string)
+  if (FORMS_ROUTES.some((g) => g.routeName === to.name)) return guideValue(to.name as string)
   return null
 }
 
 export function navSections(mode: DocsMode, t: (key: string) => string): DocsNavSection[] {
+  if (mode === 'forms') {
+    return [
+      {
+        label: t('formsDocs.nav.forms'),
+        items: FORMS_ROUTES.map((g) => ({ label: t(g.labelKey), value: guideValue(g.routeName) })),
+      },
+    ]
+  }
   if (mode === 'motion') {
     return [
       {
@@ -122,7 +143,11 @@ export function navSections(mode: DocsMode, t: (key: string) => string): DocsNav
   return [
     {
       label: t('nav.guides'),
-      items: GUIDE_ROUTES.map((g) => ({ label: t(g.labelKey), value: guideValue(g.routeName) })),
+      items: [
+        ...GUIDE_ROUTES.map((g) => ({ label: t(g.labelKey), value: guideValue(g.routeName) })),
+        // Forms has a section of its own: this row takes you there.
+        { label: t('formsDocs.nav.forms'), value: FORMS_LINK },
+      ],
     },
     // Motion has a section of its own: this row takes you there.
     {

@@ -3,6 +3,7 @@ import { allComponents } from './taxonomy'
 import { allComposables } from './composablesTaxonomy'
 import { DIRECTIVES } from './directivesTaxonomy'
 import { MOTION_CHAPTERS } from './motionChapters'
+import { FORMS_CHAPTERS } from './formsChapters'
 
 export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: () => import('./pages/Home.vue') },
@@ -94,6 +95,22 @@ export const routes: RouteRecordRaw[] = [
     path: '/motion/engines',
     name: 'motion-engines',
     component: () => import('./pages/motion/MotionEngines.vue'),
+  },
+  {
+    path: '/forms',
+    name: 'forms-overview',
+    component: () => import('./pages/forms/FormsOverview.vue'),
+  },
+  // The Forms guide's chapters share one page, driven by formsChapters.ts.
+  ...FORMS_CHAPTERS.map((chapter) => ({
+    path: chapter.path,
+    name: chapter.routeName,
+    component: () => import('./pages/forms/FormsChapter.vue'),
+  })),
+  {
+    path: '/forms/api',
+    name: 'forms-api',
+    component: () => import('./pages/forms/FormsApi.vue'),
   },
   {
     path: '/components/:name',

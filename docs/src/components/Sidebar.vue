@@ -130,7 +130,9 @@ import { NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { NEW_COMPOSABLES, composableCategories } from '../composablesTaxonomy'
 import {
   composableValue,
+  FORMS_ROUTES,
   GUIDE_ROUTES,
+  FORMS_LINK,
   MOTION_LINK,
   MOTION_ROUTES,
   navSections,
@@ -150,6 +152,7 @@ const router = useRouter()
 // or guide shows the components. A composable or directive opened from the Motion list keeps it.
 function modeFor(routeName: unknown, current: DocsMode): DocsMode | null {
   if (MOTION_ROUTES.some((g) => g.routeName === routeName)) return 'motion'
+  if (FORMS_ROUTES.some((g) => g.routeName === routeName)) return 'forms'
   if (routeName === 'composable') return current === 'motion' ? 'motion' : 'composables'
   if (routeName === 'directive') return current === 'motion' ? 'motion' : 'components'
   if (routeName === 'component' || GUIDE_ROUTES.some((g) => g.routeName === routeName))
@@ -162,7 +165,7 @@ const sidebarMode = shallowRef<DocsMode>(modeFor(route.name, 'components') ?? 'c
 // A mode switch moves the way the switcher reads: a mode further along comes in from the right,
 // one before it from the left. The old list goes first (`swap: 'wait'`), so two never overlap.
 // Never on the first render: no page loads moving.
-const ORDER: DocsMode[] = ['components', 'composables', 'motion']
+const ORDER: DocsMode[] = ['components', 'composables', 'motion', 'forms']
 const switched = shallowRef(false)
 let step = 1
 watch(sidebarMode, (now, before) => {
@@ -182,7 +185,7 @@ const swap = () => ({
 
 // In the components' sidebar, the Motion row is marked like a link: it opens its own section.
 const leavesSection = (value: unknown) =>
-  sidebarMode.value === 'components' && value === MOTION_LINK
+  sidebarMode.value === 'components' && (value === MOTION_LINK || value === FORMS_LINK)
 
 // Switching modes takes you there: back to the last component or composable you read, or to
 // the section's first page. A reload then lands where the switch took you.
@@ -206,6 +209,7 @@ watch(
 )
 function goToMode(mode: DocsMode) {
   if (mode === 'motion') return router.push({ name: 'motion-overview' })
+  if (mode === 'forms') return router.push({ name: 'forms-overview' })
   if (mode === 'composables') {
     const name = remembered('composable') ?? composableCategories[0]!.items[0]!
     return router.push({ name: 'composable', params: { name } })

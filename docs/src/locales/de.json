@@ -1239,5 +1239,369 @@
         "note": "Ziehen Sie die Kopfzeile, um den Dialog zu verschieben. Pointer Capture hält das Ziehen aufrecht, wenn der Zeiger die Kopfzeile verlässt. Hat der Griff-Button den Fokus, verschieben ihn die Pfeiltasten um 10 px, mit Umschalt um 50 px. Der Dialog bleibt im Fenster und öffnet sich wieder zentriert."
       }
     }
+  },
+  "formsDocs": {
+    "nav": {
+      "forms": "Formulare",
+      "overview": "Überblick",
+      "api": "API-Referenz"
+    },
+    "mode": "Validierte Formulare mit vael-form",
+    "hint": "Ein Formular validieren? vael-form verbindet es mit einem Schema",
+    "eyebrow": "vael-form",
+    "title": "Formulare",
+    "lede": "vael-form ist ein eigenes, optionales Paket für Formulare auf Basis eines Schemas: Zod, Valibot, ArkType oder jede Standard-Schema-Bibliothek. Sie behalten <code>v-model</code>, und es ergänzt die Fehler, die Verknüpfung für Barrierefreiheit und das Absenden. Es funktioniert mit vael-ui, mit einfachen Inputs und mit jeder anderen Komponentenbibliothek.",
+    "install": "Installation",
+    "installBody": "Es braucht Vue 3.5 oder neuer und nichts aus vael-ui. Fügen Sie die Schema-Bibliothek hinzu, die Sie nutzen.",
+    "quickTitle": "Ein Formular",
+    "quickBody": "Ein Schema enthält die Regeln. Jeder Input bekommt drei Dinge, alle über den Namen des Felds: <code>v-model</code> für den Wert, <code>attrs</code> für seine id, ARIA und Blur, und <code>errors</code> für die Meldung.",
+    "tourTitle": "Der Leitfaden",
+    "why": {
+      "title": "Warum vael-form",
+      "items": [
+        "<strong>Vue zuerst.</strong> Felder sind Refs, daher funktioniert <code>v-model</code> auf Inputs, Gruppen und Listen, in VDOM und in Vapor.",
+        "<strong>Standardmäßig barrierefrei.</strong> <code>attrs</code> setzt <code>aria-invalid</code> und <code>aria-describedby</code>, und ein fehlgeschlagenes Absenden fokussiert das erste ungültige Feld.",
+        "<strong>Fehler im richtigen Moment.</strong> Ein Fehler erscheint, sobald ein Feld geändert und verlassen wurde, nicht schon beim Durchtabben. Autofill und ein Klick auf einen Button, der sich verschiebt, werden abgefangen.",
+        "<strong>Übersetzt mit Ihrem Katalog.</strong> Schema-Fehler schlagen Keys in Ihren eigenen Sprachdateien nach und folgen einem Sprachwechsel, ohne erneut zu validieren.",
+        "<strong>Klein.</strong> Etwa 8 KB gzipped. Regeln, der Meldungskatalog und Schema-Grenzen laden nur, wenn ein Formular sie nutzt."
+      ]
+    },
+    "card": {
+      "start": "Ihr erstes Formular, sein Zustand und Auswahlen wie Radios und Checkboxen.",
+      "errors": "Wann ein Fehler erscheint, pro Feld oder für die ganze App.",
+      "submitting": "Absenden, Serverfehler, FormData und TanStack Query.",
+      "validation": "Regeln über mehrere Felder, asynchrone Prüfungen und Formulare ohne Schema-Bibliothek.",
+      "lists": "Zeilen zum Hinzufügen und Entfernen, Schritte und Unions.",
+      "data": "Standardwerte, die später laden, Felder, die anderen folgen, Dialoge und Stores.",
+      "i18n": "Fehlermeldungen in jeder Sprache Ihrer App.",
+      "nuxt": "Das Nuxt-Modul, Server-Rendering und Vapor."
+    },
+    "chapters": {
+      "eyebrow": "Formular-Leitfaden · {n} von {total}",
+      "start": {
+        "title": "Ihr erstes Formular",
+        "intro": "Ein Formular ist ein Aufruf von <code>useForm</code>. Er gibt Refs für die Werte zurück, die anzuzeigenden Fehler und die Attribute, die jeder Input braucht.",
+        "install": {
+          "title": "Installation",
+          "body": "vael-form ist ein eigenes Paket. Fügen Sie es zusammen mit einer Schema-Bibliothek hinzu. Diese Seiten nutzen Zod; Valibot, ArkType und jede andere Standard-Schema-Bibliothek funktionieren genauso."
+        },
+        "first": {
+          "title": "Ein Formular",
+          "body": "Geben Sie <code>useForm</code> ein Schema, die Startwerte und das, was mit gültigen Werten passieren soll. Binden Sie dann jeden Input über seinen Namen. Lassen Sie ein Feld leer und tabben Sie weiter: Nichts erscheint. Tippen Sie etwas Falsches und verlassen Sie das Feld, dann erscheint der Fehler.",
+          "items": [
+            "<code>model</code> enthält eine Ref pro Feld. Destrukturieren Sie es und nutzen Sie <code>v-model=\"email\"</code> wie bei jeder Ref.",
+            "<code>attrs.email</code> kommt auf den Input: <code>id</code>, <code>name</code>, <code>aria-invalid</code>, <code>aria-describedby</code> und der Blur, der das Feld als verlassen markiert.",
+            "<code>errors.email</code> ist die anzuzeigende Meldung oder nichts.",
+            "<code>handleSubmit</code> kommt auf <code>{'@'}submit</code>. Es validiert, fokussiert das erste ungültige Feld und ruft <code>onSubmit</code> mit der Ausgabe des Schemas auf."
+          ]
+        },
+        "state": {
+          "title": "Formularzustand",
+          "body": "Der Zustand des Formulars besteht aus Refs, die Sie destrukturieren und im Template ohne <code>.value</code> nutzen können. Ändern Sie den Namen und sehen Sie zu, wie sie sich ändern. <code>reset()</code> geht zurück zu den Standardwerten oder setzt neue: Hier macht ein Speichern die gespeicherten Werte zu den neuen Standardwerten."
+        },
+        "choices": {
+          "title": "Radios, Checkboxen und Zahlen",
+          "body": "Jedes Steuerelement wird gleich gebunden. Eine Gruppe von Radios oder Checkboxen ist ein Feld mit einem Fehler, daher kommen ihre <code>attrs</code> auf die Gruppe, und das Feld gilt als verlassen, wenn der Fokus die ganze Gruppe verlässt. Ein Listenfeld, das an mehrere Checkboxen gebunden ist, enthält die angehakten Werte, wie in einfachem Vue."
+        },
+        "components": {
+          "title": "Mit vael-ui und anderen Bibliotheken",
+          "body": "Verteilen Sie <code>attrs</code> auf eine Komponente wie auf einen Input. In vael-uis <code>Field</code> behält das Field seine eigene id, sodass sein Label das Steuerelement weiterhin benennt, und es führt Ihr <code>aria-describedby</code> mit seinem Fehler zusammen. Bei einer Bibliothek, in der eine übergebene <code>id</code> die eigene ersetzt, übergeben Sie nur, was sie braucht: <code>:name=\"attrs.email.name\"</code> und <code>{'@'}focusout=\"attrs.email.onFocusout\"</code>."
+        }
+      },
+      "errors": {
+        "title": "Wann Fehler erscheinen",
+        "intro": "Das Schema läuft immer. <code>showErrors</code> entscheidet nur, wann ein Fehler sichtbar wird, und jeder Modus zeigt nach einem Absenden alles.",
+        "modes": {
+          "title": "Modi",
+          "body": "Jedes Feld unten nutzt einen anderen Modus. Geben Sie in jedes etwas Falsches ein, verlassen Sie es und vergleichen Sie, wann die Fehler erscheinen. <code>edited</code>, der Standard, wartet, bis ein Feld geändert und verlassen wurde. Wer nur durch ein leeres Feld tabbt, sieht nichts.",
+          "items": [
+            "<code>'edited'</code>: sobald das Feld geändert und verlassen wurde.",
+            "<code>'blur'</code>: sobald das Feld verlassen wird, auch unverändert.",
+            "<code>'input'</code>: sobald sich der Wert ändert oder das Feld verlassen wird.",
+            "<code>'submit'</code>: erst nach dem ersten Absenden."
+          ]
+        },
+        "perPath": {
+          "title": "Ein Modus pro Feld",
+          "body": "Geben Sie einen Modus pro Pfad an, mit <code>default</code> für den Rest. Eine Gruppe gilt für alles darunter, und der nächstgelegene Pfad gewinnt. Eine Zeile, die nach einem Absenden zu einer Liste hinzukommt, bleibt still, bis sie verlassen wird oder bis zum nächsten Absenden."
+        },
+        "summary": {
+          "title": "Eine Fehlerübersicht",
+          "body": "<code>errorList</code> enthält die angezeigten Fehler mit ihren Pfaden, für eine Übersicht oben in einem langen Formular. <code>allErrors</code> enthält jeden Fehler, angezeigt oder nicht. Senden Sie dieses Formular leer ab."
+        },
+        "shift": {
+          "title": "Fehler, die die Seite verschieben",
+          "body": "Ein Fehler, der erscheint, schiebt den Inhalt darunter nach unten. vael-form wartet, bis ein Maus- oder Touch-Druck losgelassen wird, bevor es ein Feld als verlassen markiert, sodass ein Klick auf einen Button, der sich dann verschiebt, trotzdem ankommt. Um die Verschiebung selbst zu verhindern, lassen Sie das Fehlerelement in der Seite und geben ihm eine <code>min-height</code>. <code>aria-describedby</code> verweist nur darauf, solange das Feld ungültig ist."
+        },
+        "autofill": {
+          "title": "Autofill",
+          "body": "Ein Browser, der ein Formular automatisch ausfüllt, spielt bei Ihrem ersten Klick auf die Seite Fokus, Eingabe und Blur auf jedem Feld in wenigen Millisekunden ab. Dieser Blur heißt nicht, dass Sie das Feld verlassen haben, daher zeigt ein automatisch ausgefülltes Feld keinen Fehler, bis Sie darin tippen oder absenden."
+        },
+        "app": {
+          "title": "Für die ganze App",
+          "body": "Installieren Sie das Plugin einmal, um den Modus für jedes Formular festzulegen. Das eigene <code>showErrors</code> eines Formulars ersetzt ihn; die beiden werden nicht zusammengeführt. <code>field.untouch()</code> blendet die Fehler eines Felds wieder aus, bis es erneut verlassen wird."
+        }
+      },
+      "submitting": {
+        "title": "Absenden",
+        "intro": "<code>handleSubmit</code> verhindert das Neuladen der Seite, validiert und ruft dann <code>onSubmit</code> mit gültigen Werten auf. Ein zweites Absenden, während eines läuft, wird ignoriert.",
+        "onSubmit": {
+          "title": "onSubmit",
+          "body": "<code>onSubmit</code> bekommt die Ausgabe des Schemas, sodass ein <code>z.coerce.number()</code> als Zahl ankommt, und einen Kontext mit <code>form</code>, <code>event</code>, <code>element</code> und <code>submitter</code>. <code>submitting</code> ist true, bis sein Promise abgeschlossen ist. Wirft es einen Fehler, lehnt <code>handleSubmit</code> ab und <code>submitting</code> wird wieder false."
+        },
+        "server": {
+          "title": "Fehler von Ihrem Server",
+          "body": "Setzen Sie, was Ihr Server ablehnt, mit <code>setErrors</code> auf das Feld. Der Fehler erscheint sofort und verschwindet, wenn sich dieses Feld ändert. Probieren Sie <code>taken{'@'}example.com</code>."
+        },
+        "buttons": {
+          "title": "Zwei Buttons, ein Formular",
+          "body": "Der Button, der abgesendet hat, ist <code>submitter</code>, wie in HTML. Geben Sie jedem Button einen <code>name</code> und einen <code>value</code> und lesen Sie ihn in <code>onSubmit</code> aus."
+        },
+        "handler": {
+          "title": "Ein eigener Handler",
+          "body": "<code>handleSubmit(fn)</code> gibt einen Submit-Handler zurück, der <code>fn</code> statt <code>onSubmit</code> aufruft, mit denselben Werten und demselben Kontext. Erstellen Sie ihn im Script: Ein inline <code>{'@'}submit=\"handleSubmit(fn)\"</code> würde den Handler nur erstellen, nicht ausführen."
+        },
+        "formData": {
+          "title": "FormData",
+          "body": "<code>formData</code> im Kontext sind die Werte als Multipart, erzeugt beim Auslesen. Es entsteht aus den Werten, daher sind auch Schritte enthalten, die nicht auf dem Bildschirm sind. Verschachtelte Werte nutzen die Namen der Inputs (<code>address.street</code>, <code>members.0.name</code>), Dateien bleiben Dateien, Datumswerte werden zu ISO-Strings, und Name und Wert des gedrückten Buttons kommen hinzu."
+        },
+        "query": {
+          "title": "Mit TanStack Query",
+          "body": "Das Formular prüft die Werte, und eine Mutation sendet sie. Rufen Sie die Mutation aus <code>onSubmit</code> auf und setzen Sie die Feldfehler eines Servers im <code>onError</code> der Mutation mit <code>setErrors</code> zurück. <code>handleSubmit()</code>, aus Code aufgerufen, zeigt jeden Fehler und fokussiert das erste ungültige Feld, wie ein Absenden."
+        }
+      },
+      "validation": {
+        "title": "Validierung",
+        "intro": "Das ganze Schema läuft bei jeder Änderung, daher brauchen Regeln über mehrere Felder nichts weiter. Prüfungen, die nicht ins Schema gehören, etwa ein API-Aufruf, kommen in <code>rules</code>.",
+        "libraries": {
+          "title": "Schema-Bibliotheken",
+          "body": "Zod 4, Zod Mini, Zod 3, Valibot und ArkType ordnen ihre Fehler Ihrem Meldungskatalog zu. Yup, Joi, Effect und jede andere Standard-Schema-Bibliothek funktionieren ebenfalls und zeigen ihren eigenen Text. Joi braucht <code>.prefs({'{'} abortEarly: false {'}'})</code>, um jedes Problem zu melden, und Effect braucht <code>Schema.toStandardSchemaV1(schema)</code>."
+        },
+        "cross": {
+          "title": "Regeln über mehrere Felder",
+          "body": "Eine Regel, die Felder vergleicht, ist ein <code>refine</code> mit einem <code>path</code>. Der Fehler landet auf dem Feld, das Sie angeben, und verschwindet, wenn eine der beiden Seiten korrigiert wird. Valibot nutzt <code>v.forward</code>, ArkType <code>ctx.reject</code> mit einem <code>path</code>."
+        },
+        "rules": {
+          "title": "Asynchrone Prüfungen",
+          "body": "<code>rules</code> enthält Prüfungen für einen Pfad, etwa einen API-Aufruf. Tippen Sie einen Namen: <code>admin</code> und <code>vael</code> sind vergeben.",
+          "items": [
+            "Eine Regel läuft nur, wenn das Schema an diesem Pfad keinen Fehler hat, sodass ein fehlerhafter Wert nie Ihre API erreicht.",
+            "<code>debounce</code> wartet auf die letzte Änderung, und eine neuere Änderung bricht den früheren Aufruf über <code>signal</code> ab.",
+            "<code>pending</code> ist true, solange sie läuft, auf dem Feld und auf dem Formular. Ein Absenden wartet darauf.",
+            "Sie läuft nicht für den Standardwert, daher prüft ein Bearbeitungsformular nicht, was der Nutzer schon hat.",
+            "<code>{'{'} on: 'blur', run {'}'}</code> prüft beim Verlassen des Felds statt beim Tippen."
+          ]
+        },
+        "plain": {
+          "title": "Ohne Schema-Bibliothek",
+          "body": "Übergeben Sie statt eines Schemas <code>validate</code>, eine Zuordnung von Pfaden zu einfachen Funktionen. Eine Funktion bekommt den Wert und <code>{'{'} values, path {'}'}</code> und gibt eine Meldung oder nichts zurück. Ein Array läuft der Reihe nach, und der erste Fehlschlag gewinnt. <code>*</code> steht für jeden Listenindex, und <code>''</code> ist ein Fehler, der keinem Feld gehört. Die Typen kommen aus <code>defaultValues</code>."
+        },
+        "validator": {
+          "title": "Dieselben Regeln auf Ihrem Server",
+          "body": "<code>validator()</code> macht aus derselben Zuordnung ein Standard Schema, sodass sie auf einem Server oder in einem Test läuft."
+        },
+        "transforms": {
+          "title": "Transformationen",
+          "body": "Transformationen gehören ins Schema. Das Feld behält, was der Nutzer getippt hat, und <code>onSubmit</code> bekommt, was das Schema zurückgibt. <code>v-model.trim</code> und <code>v-model.number</code> funktionieren wie in jedem Vue-Formular."
+        },
+        "limits": {
+          "title": "Grenzen aus dem Schema",
+          "body": "<code>attrs</code> trägt auch, was das Schema über den Input sagt: <code>maxlength</code> und <code>minlength</code> für Text, <code>min</code>, <code>max</code> und <code>step</code> für Zahlen und <code>aria-required</code> für einen Wert, der nicht leer sein darf. Ein <code>maxlength</code> stoppt das Tippen an der Grenze, daher erscheint dieser Fehler selten. Das funktioniert mit Zod, Valibot und ArkType."
+        }
+      },
+      "lists": {
+        "title": "Listen und Schritte",
+        "intro": "Eine Liste ist ein Feld mit Zeilen, die Sie hinzufügen, entfernen und verschieben können. Schritte sind Gruppen in einem Schema. Keines von beiden registriert etwas: Die Werte liegen im Formular.",
+        "list": {
+          "title": "Zeilen hinzufügen und entfernen",
+          "body": "<code>field('members')</code> liefert die <code>items</code> der Liste und ihre Operationen: <code>push</code>, <code>insert</code>, <code>remove</code>, <code>move</code>, <code>swap</code>, <code>replace</code> und <code>clear</code>. <code>item.key</code> bleibt bei Änderungen und Verschiebungen gleich, nutzen Sie ihn daher als Key für <code>v-for</code>. Der eigene Fehler einer Liste, etwa „mindestens einen hinzufügen“, ist <code>errors.members</code>."
+        },
+        "steps": {
+          "title": "Schritte",
+          "body": "Jeder Schritt ist eine Gruppe im Schema. <code>validate('account')</code> prüft eine Gruppe und zeigt nur ihre Fehler. Ein Schritt, der nicht auf dem Bildschirm ist, behält, was getippt wurde, und das letzte Absenden prüft jeden Schritt."
+        },
+        "unions": {
+          "title": "Unions",
+          "body": "Eine Discriminated Union hat die Felder jedes Zweigs, und das Schema validiert den aktiven. Wechseln Sie zur Banküberweisung und zurück: Die eingegebene Kartennummer ist noch da. <code>onSubmit</code> bekommt nur den aktiven Zweig."
+        },
+        "dynamic": {
+          "title": "Ein Schema, das sich ändert",
+          "body": "<code>schema</code> kann eine Ref sein, für Formulare, die aus Daten entstehen. Ein neues Schema validiert dieselben Werte erneut."
+        }
+      },
+      "data": {
+        "title": "Laden und reagieren",
+        "intro": "Standardwerte können ankommen, nachdem das Formular existiert, Felder können einander folgen, und ein Formular kann außerhalb einer Komponente leben.",
+        "loading": {
+          "title": "Standardwerte, die später laden",
+          "body": "Übergeben Sie eine Ref, etwa die <code>data</code> einer Query. Das Formular ist nutzbar, solange sie <code>undefined</code> ist, und übernimmt die Daten, wenn sie ankommen. Daten, die ankommen, nachdem der Nutzer getippt hat, überschreiben die Eingabe nicht. Nach einem Speichern macht <code>reset(saved)</code> die gespeicherten Werte zu den neuen Standardwerten."
+        },
+        "watch": {
+          "title": "Felder, die anderen folgen",
+          "body": "<code>country.watch()</code> läuft, wenn eine Nutzereingabe oder <code>setValue</code> den Wert ändert. Hier leert es die Stadt. Es läuft nicht bei <code>reset()</code> oder geladenen Standardwerten, sodass Daten, die mit Land und Stadt ankommen, beides behalten. Eine Liste von Optionen, die von einem Wert abhängt, ist ein einfaches <code>computed</code>."
+        },
+        "dialogs": {
+          "title": "In einem Dialog",
+          "body": "Legen Sie das Formular in eine eigene Komponente im Dialog. vael-uis <code>Dialog</code> rendert seinen Inhalt nur, solange er offen ist, daher erzeugt jedes Öffnen ein neues, bereits ausgefülltes Formular, ohne dass etwas zurückgesetzt werden muss. Ein Formular, das gemountet bleibt, braucht <code>reset(record)</code>, wenn der Dialog öffnet."
+        },
+        "store": {
+          "title": "In einem Store",
+          "body": "Ein Formular ist ein einfaches Objekt, das seine Reaktivität überall behält: in einem Pinia-Store, einem Composable, einer Prop. Das <code>form</code> im Kontext von <code>onSubmit</code> ist dasselbe Formular. Geben Sie einem Formular außerhalb einer Komponente eine <code>id</code>, wenn Sie auf dem Server rendern."
+        },
+        "reusable": {
+          "title": "Wiederverwendbare Inputs",
+          "body": "Ein Feld ist ein typisiertes Objekt, daher nimmt ein wiederverwendbarer Input es als Prop. <code>form.field('email')</code> liefert ein Feld mit seinem <code>value</code>, <code>error</code> und seinen <code>attrs</code>."
+        },
+        "children": {
+          "title": "In Kindkomponenten",
+          "body": "<code>useFormContext()</code> gibt einer Kindkomponente dasselbe typisierte Formular, für einen Schritt oder einen Abschnitt in einer eigenen Datei. <code>useField(() => props.name)</code> bindet einen wiederverwendbaren Input über seinen Namen."
+        }
+      },
+      "i18n": {
+        "title": "Fehler übersetzen",
+        "intro": "vael-form liefert keine Übersetzungen mit. Sie verbinden Ihr i18n einmal, fügen die Meldungen Ihren eigenen Sprachdateien hinzu, und Fehler folgen einem Sprachwechsel, ohne erneut zu validieren.",
+        "setup": {
+          "title": "Ihr i18n verbinden",
+          "body": "Übergeben Sie Ihre vue-i18n-Instanz an das Plugin, in beiden Modi, oder ein beliebiges <code>{'{'} t, locale {'}'}</code> über Ihrem eigenen Katalog. Ihre Schemas bleiben, wie sie sind."
+        },
+        "live": {
+          "title": "Fehler in der Sprache des Lesers",
+          "body": "Diese Seiten nutzen ihren eigenen Katalog: Wechseln Sie die Sprache der Dokumentation im Header, und die Fehler unten ändern sich mit. Senden Sie das Formular ab, um sie zu sehen."
+        },
+        "catalog": {
+          "title": "Die Meldungen",
+          "body": "Kopieren Sie diese Keys in Ihre Sprachdateien unter <code>formKit</code> und übersetzen Sie die Werte. Sie brauchen nicht alle: Der spezifischste Key wird zuerst versucht (<code>tooSmall.string</code>, dann <code>tooSmall.default</code>), und ein Key, den Sie weglassen, zeigt den eigenen Text der Schema-Bibliothek. Um eine Meldung zu ändern, schreiben Sie sie ins Schema: <code>.min(8, 'Pick a longer name')</code> erscheint so, wie es dasteht."
+        },
+        "labels": {
+          "title": "Feldnamen in Meldungen",
+          "body": "Jede Meldung bekommt <code>{'{'}field{'}'}</code>: das Label, das Sie in <code>labels</code> angeben, selbst ein zu übersetzender Key, oder den lesbar gemachten Namen des Felds, sodass <code>firstName</code> als „First name“ erscheint. Meldungen bekommen auch die Werte der Regel, etwa <code>{'{'}minimum{'}'}</code> und <code>{'{'}maximum{'}'}</code>."
+        },
+        "msg": {
+          "title": "Eigene Meldungen",
+          "body": "<code>msg()</code> erzeugt eine übersetzte Meldung aus Ihrem eigenen Key, mit Werten und einem Fallback. Registrieren Sie Ihre Keys, und Ihr Editor vervollständigt sie. <code>keyPrefix</code> am Plugin verschiebt die Meldungen von <code>formKit</code> unter einen Namen Ihrer Wahl."
+        }
+      },
+      "nuxt": {
+        "title": "Nuxt und Server-Rendering",
+        "intro": "Ein Modul für Nuxt, ids, die zwischen Server und Browser übereinstimmen, und dieselbe API in Vapor.",
+        "module": {
+          "title": "Das Nuxt-Modul",
+          "body": "Das Modul installiert das Plugin, verbindet <code>{'@'}nuxtjs/i18n</code> unabhängig von der Reihenfolge der Module und importiert <code>useForm</code>, <code>useFormContext</code>, <code>useField</code> und <code>msg</code> automatisch. Seine Optionen sind <code>showErrors</code>, <code>keyPrefix</code>, <code>i18n</code> und <code>autoImports</code>."
+        },
+        "ssr": {
+          "title": "Server-Rendering",
+          "body": "Inputs bekommen ihre ids von <code>useId()</code>, sodass Server und Browser übereinstimmen. Ein Server-Render zeigt keine Fehler, da sie noch niemand verursacht hat. Ein Formular außerhalb einer Komponente braucht eine eigene <code>id</code>."
+        },
+        "vapor": {
+          "title": "Vapor",
+          "body": "Dieselbe API funktioniert in Vapor-Komponenten und in Vapor innerhalb einer VDOM-App, in beiden getestet. Vue hat noch keinen Vapor-Server-Renderer, daher ist Server-Rendering nur für VDOM getestet."
+        }
+      }
+    },
+    "api": {
+      "title": "API-Referenz",
+      "intro": "Alles, was <code>useForm</code> annimmt und zurückgibt, und die übrigen Exporte.",
+      "options": "Optionen",
+      "returns": "Rückgabe",
+      "field": "Feld",
+      "list": "Listenfelder",
+      "exports": "Weitere Exporte",
+      "name": "Name",
+      "description": "Beschreibung",
+      "rows": {
+        "schema": "Ein Standard Schema (Zod, Valibot, ArkType, …) oder eine Ref darauf. Sein Eingabetyp typisiert die Felder; sein Ausgabetyp typisiert <code>onSubmit</code>.",
+        "validate": "Statt <code>schema</code>: eine Zuordnung von Pfaden zu einfachen Funktionen. <code>*</code> ist jeder Listenindex, <code>''</code> das Formular.",
+        "defaultValues": "Die Startwerte oder eine Ref oder ein Getter darauf. Kann <code>undefined</code> sein, solange sie laden.",
+        "onSubmit": "<code>(values, {'{'} form, event, element, submitter, formData {'}'})</code>, aufgerufen mit gültigen Werten.",
+        "onInvalid": "Wird mit den Fehlern aufgerufen, wenn ein Absenden die Validierung nicht besteht.",
+        "showErrors": "<code>'edited'</code> (Standard), <code>'blur'</code>, <code>'input'</code> oder <code>'submit'</code>, oder ein Modus pro Pfad mit <code>default</code>.",
+        "rules": "Zusätzliche Prüfungen pro Pfad, synchron oder asynchron, etwa ein API-Aufruf. Eine Regel kann auch ein Schema sein.",
+        "debounce": "Wie lange Regeln nach der letzten Änderung warten, in ms.",
+        "labels": "Übersetzbare Namen pro Pfad, in Meldungen als <code>{'{'}field{'}'}</code> verwendet.",
+        "i18n": "Eine i18n-Instanz nur für dieses Formular. Meist einmal am Plugin gesetzt.",
+        "id": "Das Präfix der ids der Inputs. Außerhalb einer Komponente nötig, wenn Sie auf dem Server rendern.",
+        "model": "Eine Ref pro Feld, für <code>v-model</code>. Gruppen sind beschreibbare Objekte, Listen sind Arrays.",
+        "errors": "Die anzuzeigende Meldung pro Pfad oder nichts. Eine Liste ist ein Eintrag.",
+        "attrs": "Pro Pfad, was auf den Input verteilt wird: <code>id</code>, <code>name</code>, ARIA, Blur, Schema-Grenzen und <code>errorId</code>.",
+        "handleSubmit": "Der <code>{'@'}submit</code>-Handler, oder <code>handleSubmit(fn)</code> für einen Handler, der <code>fn</code> aufruft.",
+        "submitting": "True, solange <code>onSubmit</code> läuft.",
+        "valid": "True, wenn nichts einen Fehler hat, angezeigt oder nicht.",
+        "dirty": "True, wenn ein Wert von seinem Standardwert abweicht.",
+        "touched": "True, sobald irgendein Feld verlassen wurde.",
+        "pending": "True, solange eine Regel läuft.",
+        "submitCount": "Wie oft das Formular abgesendet wurde.",
+        "values": "Alle Werte, schreibgeschützt.",
+        "errorList": "Die angezeigten Fehler, als <code>{'{'} path, message {'}'}</code>.",
+        "allErrors": "Jeder Fehler, angezeigt oder nicht.",
+        "reset": "<code>reset(values?)</code>: zurück zu den Standardwerten oder zu neuen. Nichts ist dirty oder touched.",
+        "validateFn": "<code>validate(path?)</code>: prüft das Formular oder eine Gruppe, zeigt deren Fehler und löst damit auf, ob sie gültig ist.",
+        "setValue": "<code>setValue(path, value)</code>, wie eine Nutzereingabe.",
+        "setValues": "<code>setValues(values)</code>, ohne etwas als dirty zu markieren.",
+        "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>, etwa die eines Servers. Jeder verschwindet, wenn sich sein Feld ändert.",
+        "clearErrors": "<code>clearErrors(path?)</code>: entfernt Fehler, die mit <code>setErrors</code> gesetzt wurden.",
+        "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>: läuft bei Nutzereingaben und <code>setValue</code>, nicht bei Resets oder geladenen Standardwerten.",
+        "fieldFn": "<code>field(path)</code>: ein Feld, mit allem unten Aufgeführten.",
+        "f_value": "Der Wert, beschreibbar.",
+        "f_error": "Die anzuzeigende Meldung oder nichts.",
+        "f_state": "<code>touched</code>, <code>dirty</code>, <code>valid</code>, <code>pending</code>.",
+        "f_attrs": "Was auf den Input verteilt wird, mit <code>id</code> und <code>errorId</code>.",
+        "f_methods": "<code>touch()</code>, <code>untouch()</code>, <code>validate()</code>, <code>reset()</code>, <code>watch()</code>.",
+        "l_items": "Die Zeilen, jede mit einem stabilen <code>key</code>, ihrem <code>index</code> und ihrem <code>field</code>.",
+        "l_ops": "<code>push</code>, <code>insert</code>, <code>remove</code>, <code>move</code>, <code>swap</code>, <code>replace</code>, <code>clear</code>. Der Touched-Zustand folgt einer Zeile, wenn sie verschoben wird.",
+        "formPlugin": "<code>app.use(formPlugin, {'{'} i18n, showErrors, keyPrefix {'}'})</code>: Standardwerte für jedes Formular.",
+        "provideFormConfig": "Dieselben Standardwerte für einen Komponentenbaum.",
+        "useFormContext": "Das Formular des nächsten Elternelements, das <code>useForm</code> aufgerufen hat, typisiert mit <code>useFormContext&lt;typeof schema&gt;()</code>.",
+        "useField": "<code>useField(() => props.name)</code>: ein Feld des Formulars des Elternelements, über seinen Namen.",
+        "msg": "<code>msg(key, params?, fallback?)</code>: eine Meldung aus Ihrem eigenen Katalog, für ein Schema oder eine Regel.",
+        "validator": "Aus <code>vael-form/validator</code>: eine <code>validate</code>-Zuordnung als Standard Schema."
+      }
+    }
+  },
+  "formKit": {
+    "required": "{field} ist erforderlich",
+    "invalidType": {
+      "default": "{field} ist ungültig",
+      "string": "{field} muss ein Text sein",
+      "number": "{field} muss eine Zahl sein",
+      "int": "{field} muss eine ganze Zahl sein",
+      "boolean": "{field} muss wahr oder falsch sein",
+      "date": "{field} muss ein gültiges Datum sein",
+      "array": "{field} muss eine Liste sein"
+    },
+    "tooSmall": {
+      "default": "{field} ist zu klein (Minimum {minimum})",
+      "string": "{field} muss mindestens {minimum} Zeichen lang sein",
+      "number": "{field} muss mindestens {minimum} sein",
+      "array": "{field} braucht mindestens {minimum} Einträge",
+      "date": "{field} muss am oder nach dem {minimum} liegen"
+    },
+    "tooBig": {
+      "default": "{field} ist zu groß (Maximum {maximum})",
+      "string": "{field} darf höchstens {maximum} Zeichen lang sein",
+      "number": "{field} darf höchstens {maximum} sein",
+      "array": "{field} darf höchstens {maximum} Einträge haben",
+      "date": "{field} muss am oder vor dem {maximum} liegen"
+    },
+    "invalidFormat": {
+      "default": "{field} hat nicht das richtige Format",
+      "email": "Geben Sie eine gültige E-Mail-Adresse ein",
+      "url": "Geben Sie eine gültige URL ein",
+      "uuid": "{field} muss eine gültige UUID sein",
+      "regex": "{field} hat nicht das richtige Format",
+      "startsWith": "{field} muss mit „{prefix}“ beginnen",
+      "endsWith": "{field} muss mit „{suffix}“ enden",
+      "includes": "{field} muss „{includes}“ enthalten"
+    },
+    "invalidValue": "Wählen Sie eine der verfügbaren Optionen für {field}",
+    "notMultipleOf": "{field} muss ein Vielfaches von {divisor} sein",
+    "invalidUnion": "{field} ist ungültig",
+    "unrecognizedKeys": "Unbekannte Felder: {keys}",
+    "custom": "{field} ist ungültig"
+  },
+  "formsDemo": {
+    "name": "Name",
+    "email": "E-Mail",
+    "age": "Alter",
+    "submit": "Prüfen"
   }
 }
