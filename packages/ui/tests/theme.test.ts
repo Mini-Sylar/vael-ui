@@ -98,14 +98,14 @@ test('theme.fontSize scales component text within its scope, and leaves the touc
   await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('18px'))
   expect(getComputedStyle(input).fontSize).toBe('18px')
   expect(getComputedStyle(plain).fontSize).toBe('20px')
-  expect(touchFontSize()).toBe('16px')
+  expect(touchFontSize()).toBe('0px')
   expect(getComputedStyle(document.documentElement).fontSize).toBe('16px')
 
   await screen.rerender({ theme: { fontSize: '12px' } })
   await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('11px'))
   expect(getComputedStyle(input).fontSize).toBe('11px')
   expect(getComputedStyle(plain).fontSize).toBe('12px')
-  expect(touchFontSize()).toBe('16px')
+  expect(touchFontSize()).toBe('0px')
   await screen.unmount()
 })
 
@@ -159,10 +159,9 @@ test('every form control shares the same touch font-size floor', () => {
   ]) {
     expect(floored, selector).toContain(selector)
   }
-  // 16px: the size under which iOS zooms a focused field.
   expect(
     getComputedStyle(document.documentElement).getPropertyValue('--ui-touch-font-size').trim(),
-  ).toBe('16px')
+  ).toBe('0px')
 })
 
 test('a nested ConfigProvider theme is scoped to its own subtree — it must NOT leak to buttons outside it', async () => {

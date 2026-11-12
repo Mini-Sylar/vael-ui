@@ -32,8 +32,9 @@
     --ui-overlay: rgb(0 0 0 / 0.4);
     --ui-radius: 10px;
     --ui-font-size: 1rem;
-    /* Floor for form-field text on touch screens, so iOS never zooms a focused field. 0px: fields match your text. */
-    --ui-touch-font-size: 16px;
+    /* Optional floor for form-field text on touch screens. 0px: fields match your text (pair with
+       preventFocusZoom() so iOS doesn't zoom a focused field). */
+    --ui-touch-font-size: 0px;
     --ui-border-strong: #d4d4d8;
 
     /* Below dialog: a drag preview floats over page content, never over a modal. */
