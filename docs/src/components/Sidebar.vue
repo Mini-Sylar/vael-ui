@@ -468,6 +468,11 @@ watch(
 .sidebar-scroll {
   --ui-indicator-bg: color-mix(in oklch, var(--ui-primary) 10%, transparent);
 }
+/* The current row's tint fades in from the bar, so the dither meets no edge. */
+.sidebar-scroll :deep(.ui-menu-list-indicator),
+.sidebar-scroll :deep(.ui-menu-list-item[aria-current='page']::after) {
+  mask-image: linear-gradient(to right, transparent, #000 2.5rem);
+}
 
 /* Sidebar rows have no shortcut hints to push right, unlike Menu/ContextMenu
    usage — so the label doesn't need to claim the row's full remaining width,
