@@ -442,7 +442,7 @@ watch(
   inset-block: 0;
   inset-inline-start: 100%;
   inline-size: 2rem;
-  background: radial-gradient(circle, var(--ui-primary) 0.6px, transparent 0.9px) 0 0 / 3px 3px;
+  background: radial-gradient(circle, var(--ui-primary) 0.6px, transparent 0.9px) 0 50% / 3px 3px;
   opacity: 0.35;
   mask-image: linear-gradient(to right, #000, transparent);
 }

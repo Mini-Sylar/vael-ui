@@ -59,7 +59,13 @@ export function useGlidingIndicator(
       }
       at = parent && box.contains(parent) ? parent : null
     }
-    const nextBottom = nextTop + target.offsetHeight
+    // Offsets round to whole px; within a pixel of them, the row's exact box is the same place.
+    const rect = target.getBoundingClientRect()
+    const exactTop = rect.top - box.getBoundingClientRect().top - box.clientTop + box.scrollTop
+    if (Math.abs(exactTop - nextTop) < 1) nextTop = exactTop
+    const nextBottom =
+      nextTop +
+      (Math.abs(rect.height - target.offsetHeight) < 1 ? rect.height : target.offsetHeight)
     // The first placement shows the bar at once, as the prerendered page did; later ones fade.
     const first = !placed
     if (first) el.style.transition = 'none'
