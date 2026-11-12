@@ -42,14 +42,13 @@
       background-color var(--ui-duration-press) ease;
   }
   /* variant="card" (the default): each row is a card. */
-  .ui-sortable--card .ui-sortable-item {
+  .ui-sortable-item.ui-sortable-item--card {
     padding: 0.5rem 0.625rem;
     border: 1px solid var(--ui-border);
     background: var(--ui-surface);
   }
   /* variant="plain": no box at rest; a held row lifts off the list on a surface of its own. */
-  .ui-sortable--plain
-    .ui-sortable-item:is([data-dragging], [data-grabbed], [data-sortable-preview]) {
+  .ui-sortable-item--plain:is([data-dragging], [data-grabbed], [data-sortable-preview]) {
     background: var(--ui-surface);
   }
   /* handle="item": the row is what you hold and what you focus. */

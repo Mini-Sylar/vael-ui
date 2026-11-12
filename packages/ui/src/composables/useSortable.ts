@@ -1247,8 +1247,13 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
    * row leaves the page with its old list's re-render, so the copy lands on its new one the way a
    * clone does: above every list, leaving each list's scrolling alone. Null when nothing is lifted. */
   function copyLiftedRow(): HTMLElement | null {
+    // The row stays where it was until its list re-renders; out of the top layer now, so it never
+    // keeps the lifted look (a list that keeps it, or a transfer that changes nothing).
+    if (previewEl && !previewIsCopy) dropFromTop(previewEl)
     if (!previewEl || previewIsCopy || toValue(options.dragPreview) || reducedMotion()) return null
     const copy = previewEl.cloneNode(true) as HTMLElement
+    copy.removeAttribute('popover')
+    copy.removeAttribute('data-sortable-lifted')
     copy.removeAttribute('data-dragging')
     copy.removeAttribute('id')
     copy.setAttribute('aria-hidden', 'true')

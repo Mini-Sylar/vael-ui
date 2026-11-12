@@ -690,3 +690,42 @@ test('Dialog: an unlayered class on ui.body overrides the padding under a header
   const body = await vi.waitFor(() => document.querySelector<HTMLElement>('.x-body')!)
   expect(getComputedStyle(body).paddingTop).toBe('0px')
 })
+
+test('Sortable clone preview keeps the card look outside the list', async () => {
+  const screen = await render(() =>
+    h(Sortable as never, {
+      items: [
+        { value: 'a', label: 'Alpha' },
+        { value: 'b', label: 'Bravo' },
+      ],
+      previewMode: 'clone',
+      motion: false,
+    }),
+  )
+  const handle = screen.container.querySelector<HTMLElement>('.ui-sortable-handle')!
+  const b = handle.getBoundingClientRect()
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 51,
+      button: 0,
+      clientX: b.left + 4,
+      clientY: b.top + 4,
+    }),
+  )
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId: 51,
+      clientX: b.left + 4,
+      clientY: b.top + 40,
+    }),
+  )
+  const copy = await vi.waitFor(() =>
+    document.querySelector<HTMLElement>('[data-sortable-preview]')!,
+  )
+  const style = getComputedStyle(copy)
+  expect(style.borderTopWidth).toBe('1px')
+  expect(style.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 51 }))
+})

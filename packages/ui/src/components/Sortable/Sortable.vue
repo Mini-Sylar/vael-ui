@@ -463,7 +463,10 @@ const themedUi = useThemedUi(
 const rootPart = computed(() =>
   resolveUiPart(cx, themedUi()?.root, 'ui-sortable', `ui-sortable--${props.variant}`),
 )
-const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-sortable-item'))
+// The variant is on each row too: a floating copy outside the list keeps its look.
+const itemPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.item, 'ui-sortable-item', `ui-sortable-item--${props.variant}`),
+)
 const handlePart = computed(() => resolveUiPart(cx, themedUi()?.handle, 'ui-sortable-handle'))
 
 defineExpose({
