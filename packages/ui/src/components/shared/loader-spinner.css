@@ -152,6 +152,14 @@
     }
   }
 
+  /* Forced colors drop backgrounds, which draw every type but the ring; keep them in CanvasText. */
+  @media (forced-colors: active) {
+    .ui-loader:is(.ui-loader--dots, .ui-loader--bars, .ui-loader--dither, .ui-loader--comet) {
+      forced-color-adjust: none;
+      color: CanvasText;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .ui-loader,
     .ui-loader:is(.ui-loader--dots, .ui-loader--bars, .ui-loader--dither, .ui-loader--comet) {

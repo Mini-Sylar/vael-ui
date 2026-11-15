@@ -1542,7 +1542,7 @@
         "setValue": "<code>setValue(path, value)</code>。ユーザーの編集として扱います。",
         "setValues": "<code>setValues(values)</code>。何も dirty にしません。",
         "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>。サーバーからのエラーなどに使います。それぞれ、そのフィールドが変わると消えます。",
-        "clearErrors": "<code>clearErrors(path?)</code>：<code>setErrors</code> で設定したエラーを消します。",
+        "clearErrors": "<code>clearErrors()</code>：<code>setErrors</code> で設定したエラーを消します。",
         "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>：ユーザーの編集と <code>setValue</code> で実行され、リセットや読み込まれた初期値では実行されません。",
         "fieldFn": "<code>field(path)</code>：以下のすべてを持つ、ひとつのフィールド。",
         "f_value": "値。書き込み可能です。",

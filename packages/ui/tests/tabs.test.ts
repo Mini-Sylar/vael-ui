@@ -105,7 +105,6 @@ test('exposed panelProps() returns matching tabpanel attributes', async () => {
       id: 'acct-panel-two',
       role: 'tabpanel',
       'aria-labelledby': 'acct-tab-two',
-      tabindex: 0,
     }),
   )
 })

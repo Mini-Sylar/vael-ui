@@ -122,10 +122,24 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     return true
   }
 
+  // Touch and pen: a press outside may be the start of a scroll, so close on its release instead.
+  let pendingTouch: number | undefined
   function onDocumentPointerdown(event: PointerEvent) {
+    pendingTouch = undefined
     if (!layer.isTopmost()) return
     if (!toValue(options.closeOnOutside ?? true)) return
-    if (isOutside(event.target)) requestClose('outside', event)
+    if (!isOutside(event.target)) return
+    if (event.pointerType && event.pointerType !== 'mouse') pendingTouch = event.pointerId
+    else requestClose('outside', event)
+  }
+  function onDocumentPointerup(event: PointerEvent) {
+    if (pendingTouch === undefined || event.pointerId !== pendingTouch) return
+    pendingTouch = undefined
+    if (layer.isTopmost()) requestClose('outside', event)
+  }
+  // The browser took the touch over for a scroll or zoom.
+  function onDocumentPointercancel(event: PointerEvent) {
+    if (event.pointerId === pendingTouch) pendingTouch = undefined
   }
 
   // Tab doesn't fire pointerdown; must close on focus-outside for keyboard.
@@ -150,6 +164,18 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     () => (isOpen.value ? ssrDocument() : undefined),
     'pointerdown',
     onDocumentPointerdown,
+    true,
+  )
+  useEventListener(
+    () => (isOpen.value ? ssrDocument() : undefined),
+    'pointerup',
+    onDocumentPointerup,
+    true,
+  )
+  useEventListener(
+    () => (isOpen.value ? ssrDocument() : undefined),
+    'pointercancel',
+    onDocumentPointercancel,
     true,
   )
   useEventListener(
@@ -251,6 +277,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
   }
 
   function deactivate() {
+    pendingTouch = undefined
     const wasOpen = isOpen.value
     layer.pop()
     isOpen.value = false

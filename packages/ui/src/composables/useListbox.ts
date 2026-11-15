@@ -127,7 +127,9 @@ export function useListbox<T>(options: UseListboxOptions<T>): UseListboxReturn {
       const list = items()
       const enabled = enabledIndices()
       const currentPos = enabled.indexOf(activeIndex.value)
-      const startPos = currentPos === -1 ? 0 : currentPos + 1
+      // A second letter refines the search, so the current option can still match.
+      const startPos =
+        currentPos === -1 ? 0 : typeaheadBuffer.length > 1 ? currentPos : currentPos + 1
       const matches = (i: number) =>
         options.getLabel(list[i]).trim().toLowerCase().startsWith(typeaheadBuffer)
       const ordered = [...enabled.slice(startPos), ...enabled.slice(0, startPos)]

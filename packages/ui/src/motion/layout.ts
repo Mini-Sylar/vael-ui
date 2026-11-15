@@ -439,9 +439,23 @@ export function followLayout(
   let group = groups.get(parent)
   if (!group) {
     const members = new Set<Element>()
+    // A style changing inside a member (something in a row animating) is left to the resize
+    // observer below: reading every place on each of its frames was a layout per frame.
+    const within = (node: Node) => {
+      for (let at = node.parentElement; at && at !== parent; at = at.parentElement)
+        if (members.has(at)) return true
+      return false
+    }
     const observer = new MutationObserver((records) => {
       // Assistive-tech state and the motion system's own marks don't move anything.
-      if (records.every((r) => r.type === 'attributes' && quietAttribute(r.attributeName))) return
+      if (
+        records.every(
+          (r) =>
+            r.type === 'attributes' &&
+            (quietAttribute(r.attributeName) || (r.attributeName === 'style' && within(r.target))),
+        )
+      )
+        return
       relayout(parent, members)
     })
     observer.observe(parent, {
@@ -450,8 +464,15 @@ export function followLayout(
       attributes: true,
       characterData: true,
     })
-    // Resized from outside (the window, a pane): places noted again, nothing slides.
-    const resize = new ResizeObserver(() => {
+    // Resized from outside (the window, a pane: its width changed): places noted again, nothing
+    // slides. A member resizing moves its siblings.
+    let width = -1
+    const resize = new ResizeObserver((entries) => {
+      const own = entries.find((entry) => entry.target === parent)
+      const outside = !!own && own.contentRect.width !== width
+      if (own) width = own.contentRect.width
+      if (!outside && entries.some((entry) => entry.target !== parent))
+        return relayout(parent, members)
       for (const each of members)
         if (each.isConnected) {
           placeOf.set(each, placeIn(each, parent))
@@ -463,9 +484,11 @@ export function followLayout(
     groups.set(parent, group)
   }
   group.members.add(el)
+  group.resize.observe(el)
   const own = group
   return () => {
     own.members.delete(el)
+    own.resize.unobserve(el)
     if (own.members.size) return
     own.observer.disconnect()
     own.resize.disconnect()

@@ -174,7 +174,7 @@
     </div>
     <!-- Always mounted: a live region created on demand isn't reliably read out.
          Outside role="tree", which may only hold tree items. -->
-    <span v-if="reorderable" class="ui-tree-status" role="status" aria-live="assertive">{{
+    <span v-if="reorderable" class="ui-tree-status" role="status" aria-live="polite">{{
       reorderAnnouncement
     }}</span>
   </div>
@@ -293,7 +293,6 @@ import {
   onMounted,
   provide,
   reactive,
-  ref,
   shallowRef,
   unref,
   useAttrs,
@@ -611,7 +610,8 @@ function activateNode(node: TreeNode) {
   else selectSingle(node)
 }
 
-const expandedKeys = ref(new Set<string | number>())
+// Replaced whole on every change, never mutated in place.
+const expandedKeys = shallowRef(new Set<string | number>())
 const normalizedQuery = computed(() => normalizeText(query.value.trim()))
 const isFiltering = computed(() => normalizedQuery.value.length > 0)
 // A search opens and closes many folders at once, so their rows swap instead of animating (the

@@ -28,8 +28,11 @@ function zone(): HTMLElement {
   return el
 }
 
+// How far the pull has opened: the content moves down by transform, the zone slides with it.
 function zoneHeight(): number {
-  return zone().getBoundingClientRect().height
+  const track = root().querySelector('.ui-pull-to-refresh-track')!
+  const transform = getComputedStyle(track).transform
+  return transform === 'none' ? 0 : new DOMMatrix(transform).m42
 }
 
 function state(): string | undefined {
@@ -256,4 +259,27 @@ test('wrapping content in a grid, it shrinks with the grid instead of growing to
   })
   const root = screen.container.querySelector<HTMLElement>('.ui-pull-to-refresh-root')!
   expect(root.getBoundingClientRect().width).toBe(320)
+})
+
+test('a pull moves the content by transform: no layout writes, the zone stays one size', async () => {
+  const onRefresh = vi.fn().mockResolvedValue(undefined)
+  await render(PullToRefreshFixture, { props: { onRefresh } })
+  await settle()
+  const before = zone().style.blockSize
+  const content = root().querySelector<HTMLElement>('.ui-pull-to-refresh-track')!
+  const top = content.offsetTop
+  const g = gesture('pointer', root())
+  g.start(20)
+  g.move(70)
+  await vi.waitFor(() => expect(zoneHeight()).toBeCloseTo(50, 0))
+  // Layout untouched: the content's place and the zone's size are where they were.
+  expect(content.offsetTop).toBe(top)
+  expect(zone().style.blockSize).toBe(before)
+  // The zone's bottom edge meets the content.
+  expect(zone().getBoundingClientRect().bottom).toBeCloseTo(content.getBoundingClientRect().top, 0)
+  // The indicator is centred in the gap.
+  const box = zone().querySelector('.ui-pull-to-refresh-indicator')!.getBoundingClientRect()
+  const gapTop = root().getBoundingClientRect().top
+  expect((box.top + box.bottom) / 2 - gapTop).toBeCloseTo(25, 0)
+  g.end(70)
 })

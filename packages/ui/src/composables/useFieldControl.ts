@@ -42,6 +42,9 @@ export interface UseFieldControlReturn {
 
 const isOn = (value: unknown) => value === true || value === 'true' || value === ''
 
+/** Whether `required` was set on the control itself (not a Field's), so a native submit checks it. */
+export const nativeRequired = (attrs: Record<string, unknown>) => isOn(attrs.required)
+
 export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldControlReturn {
   const ctx = inject(fieldKey, undefined)
   const ownId = useId()
@@ -83,7 +86,8 @@ export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldC
     labelledBy: () => (ctx && (ctx.hasLabel?.() ?? true) ? ctx.labelId : undefined),
     invalid: () => ctx?.invalid() ?? false,
     // A Field's `required`, or yours (a form library's schema says so): either one marks it.
-    required: () => (ctx?.required() ?? false) || isOn(attrs['aria-required']),
+    required: () =>
+      (ctx?.required() ?? false) || isOn(attrs['aria-required']) || isOn(attrs.required),
     disabled: () => ctx?.disabled() ?? false,
     onFocus: () => ctx?.reportFocus(true),
     onBlur: () => ctx?.reportFocus(false),

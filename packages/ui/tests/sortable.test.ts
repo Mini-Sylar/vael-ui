@@ -15,7 +15,7 @@ function order(screen: RenderResult<unknown>): string {
   return screen.container.querySelector('[data-testid="order"]')!.textContent!
 }
 function liveRegion(screen: RenderResult<unknown>): HTMLElement {
-  return screen.container.querySelector<HTMLElement>('[aria-live="assertive"]')!
+  return screen.container.querySelector<HTMLElement>('[aria-live="polite"]')!
 }
 
 test('renders one row per item, each with a real button handle in the tab order', async () => {

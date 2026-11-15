@@ -34,8 +34,12 @@
   .ui-scroll-area-viewport--both {
     overflow: auto;
   }
-  /* With nothing focusable inside, the scroller takes focus itself (useFocusableScroller). */
+  /* With nothing focusable inside, the scroller takes focus itself (useFocusableScroller). The
+     ring goes on the root: on the viewport its own scroll fade would mask it. */
   .ui-scroll-area-viewport:focus-visible {
+    outline: none;
+  }
+  .ui-scroll-area:has(> .ui-scroll-area-viewport:focus-visible) {
     outline: 2px solid var(--ui-primary);
     outline-offset: -2px;
   }

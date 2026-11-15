@@ -65,7 +65,7 @@ export interface TooltipProps {
   openDelay?: number
   /** Grace period after the pointer leaves, in milliseconds, so it can move onto the tooltip. @default 100 */
   closeDelay?: number
-  /** Hovering the tooltip itself keeps it open, so its content stays selectable and clickable. @default true */
+  /** Hovering the tooltip itself keeps it open, so its text can be selected. Keyboard users can't reach it, so put links and buttons in a Popover. @default true */
   interactive?: boolean
   /** Escape key closes the tooltip. @default true */
   closeOnEsc?: boolean
@@ -96,7 +96,8 @@ import { computed, inject, shallowRef, useAttrs, useId, useTemplateRef, watch } 
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance } from 'vue'
 import { elementOf } from '../../composables/dom'
-import { setDescribedBy, useTooltip } from '../../composables/useTooltip'
+import { useSlotTrigger } from '../../composables/slotTrigger'
+import { repeatsName, setDescribedBy, useTooltip } from '../../composables/useTooltip'
 import { useTooltipMotion } from '../../composables/useTooltipMotion'
 import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -143,8 +144,9 @@ function setTriggerEl(el: Element | ComponentPublicInstance<any> | null) {
   slotTriggerEl.value = el
 }
 
+const slotTrigger = useSlotTrigger(slotTriggerEl)
 const triggerElRef = computed<HTMLElement | null>(() =>
-  props.triggerEl !== undefined ? unwrapEl(props.triggerEl) : unwrapEl(slotTriggerEl.value),
+  props.triggerEl !== undefined ? unwrapEl(props.triggerEl) : slotTrigger(),
 )
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
@@ -204,13 +206,13 @@ const tooltipTransition = useTooltipMotion({
 
 // A content resize while open morphs the box from the old size, inside useTooltip.
 
-// Set aria-describedby only while visible (pointing to unmounted content is worse than none).
+// Set aria-describedby only while visible, and not when the hint only repeats the trigger's name.
 watch(
   [open, triggerElRef] as const,
   ([isOpen, el], previous) => {
     const previousEl = previous?.[1]
     if (previousEl && previousEl !== el) setDescribedBy(previousEl, tooltipId, false)
-    if (el) setDescribedBy(el, tooltipId, isOpen)
+    if (el) setDescribedBy(el, tooltipId, isOpen && !repeatsName(el, panelEl.value))
   },
   { flush: 'post' },
 )

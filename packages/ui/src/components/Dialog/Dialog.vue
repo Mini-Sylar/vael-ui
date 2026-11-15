@@ -114,7 +114,12 @@
               </p>
             </slot>
           </header>
-          <div :class="bodyPart.class" :style="bodyPart.style" v-scroll-mask="scrollFade">
+          <div
+            :class="bodyPart.class"
+            :style="bodyPart.style"
+            data-ui-focus-first
+            v-scroll-mask="scrollFade"
+          >
             <!-- `swap`: one keyed root inside; the old view leaves as the new one comes in. -->
             <Transition
               v-if="motion.resolved.value.swap"
@@ -144,7 +149,12 @@
               :phase="phase"
             />
           </div>
-          <footer v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
+          <footer
+            v-if="$slots.footer"
+            :class="footerPart.class"
+            :style="footerPart.style"
+            data-ui-focus-first
+          >
             <slot name="footer" :close="close" />
           </footer>
         </div>
@@ -188,12 +198,12 @@ export interface DialogProps {
    * @default 'dialog'
    */
   role?: 'dialog' | 'alertdialog'
-  /** Returns the element to focus on open; return `null` or `undefined` to focus the first focusable element. */
+  /** Returns the element to focus on open. Return `null` or `undefined` to focus an `[autofocus]` element, else the first control in the body or footer. */
   initialFocus?: () => HTMLElement | null | undefined
   /** Shows the built-in close button (×). Hide it when the footer carries the only sensible actions. @default true */
   showClose?: boolean
   /**
-   * `false` turns off the overlay, scroll lock, focus trap and the inert page behind it. Escape-close and layer stacking still apply.
+   * `false` turns off the overlay, scroll lock, focus trap and the inert page behind it. Escape-close, layer stacking, focus on open and focus return still apply.
    * @default true
    */
   modal?: boolean

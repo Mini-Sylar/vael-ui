@@ -84,6 +84,35 @@ function resolveTarget(el: HTMLElement): HTMLElement {
   return target
 }
 
+// Targets whose aria-label this directive set, so only those are updated or removed.
+const ownedLabels = new WeakSet<HTMLElement>()
+// Controls that can take a name from aria-label; form fields usually have a <label>.
+const NAMEABLE =
+  'button, a[href], summary, [tabindex], [role]:not([role="none"], [role="presentation"], [role="generic"])'
+
+function unnamed(el: HTMLElement): boolean {
+  if (el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby') || el.title) return false
+  if (el.textContent?.trim()) return false
+  return !el.querySelector('img[alt]:not([alt=""]), [aria-label]')
+}
+
+// A text tooltip names a control that has no name of its own, such as an icon-only button.
+function syncLabel(target: HTMLElement, content: TooltipDirectiveOptions['content']) {
+  const text = typeof content === 'string' ? content.trim() : ''
+  if (ownedLabels.has(target)) {
+    if (text) target.setAttribute('aria-label', text)
+    else dropLabel(target)
+  } else if (text && target.matches(NAMEABLE) && unnamed(target)) {
+    target.setAttribute('aria-label', text)
+    ownedLabels.add(target)
+  }
+}
+
+function dropLabel(target: HTMLElement) {
+  if (!ownedLabels.delete(target)) return
+  target.removeAttribute('aria-label')
+}
+
 // mounted's resolution reused verbatim on update/unmount — re-resolving there
 // could pick a different node if styles changed in between.
 const resolvedTargets = new WeakMap<HTMLElement, HTMLElement>()
@@ -102,13 +131,16 @@ function apply(
     resolvedTargets.set(el, target)
     target.setAttribute(TOOLTIP_ATTR, '')
   }
-  tooltipTargets.set(target, normalize(value, modifiers))
+  const options = normalize(value, modifiers)
+  tooltipTargets.set(target, options)
+  syncLabel(target, options.content)
   notify(target)
 }
 
 function teardown(el: HTMLElement) {
   const target = resolvedTargets.get(el) ?? el
   target.removeAttribute(TOOLTIP_ATTR)
+  dropLabel(target)
   tooltipTargets.delete(target)
   resolvedTargets.delete(el)
   notify(target)

@@ -176,6 +176,29 @@ export function openDialog<
   }
 }
 
+/**
+ * @internal After a host asks its overlay to close: a close that `open-change` or `beforeClose`
+ * refused clears the request, so `close()` works again and a later Escape settles with nothing.
+ */
+export function forgetIfRefused(
+  entry: { open: boolean; closeRequested: boolean; pendingResult: unknown },
+  isClosing: () => boolean,
+  stillOpen: () => boolean = () => entry.open,
+) {
+  const forget = () => {
+    if (!stillOpen() || !entry.open) return
+    entry.closeRequested = false
+    entry.pendingResult = undefined
+  }
+  if (!isClosing()) return forget()
+  // A guard is still deciding: judge once it has answered.
+  const stop = watch(isClosing, (closing) => {
+    if (closing) return
+    stop()
+    forget()
+  })
+}
+
 export function useDialogQueue() {
   return queue
 }

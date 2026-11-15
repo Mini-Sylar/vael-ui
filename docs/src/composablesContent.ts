@@ -175,7 +175,7 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'toast(title, options?)',
         type: 'number | string',
         description:
-          "Shows a toast with the default variant and returns its id for `dismiss(id)`: a number, or your own `id`. Showing an `id` that's already on screen updates that toast instead of adding another. Options: `id`, `description`, `variant`, `action: { label, onClick }`, and `duration` in ms (default 4000; `Infinity` keeps it until someone closes it). `pinned` shows the toast in its own section, where newer toasts can't cover it. `toaster` sends it to the `<Toaster>` with that `name` instead of the unnamed one.",
+          "Shows a toast with the default variant and returns its id for `dismiss(id)`: a number, or your own `id`. Showing an `id` that's already on screen updates that toast instead of adding another. Options: `id`, `description`, `variant`, `action: { label, onClick }`, and `duration` in ms (default 4000, or `Infinity` for toasts with an action; `Infinity` keeps it until someone closes it). `pinned` shows the toast in its own section, where newer toasts can't cover it. `toaster` sends it to the `<Toaster>` with that `name` instead of the unnamed one.",
       },
       {
         name: 'toast.success / .error / .warning / .info / .loading',
@@ -1397,8 +1397,7 @@ const shown = useTween(total, { duration: 600, easing: 'out' })`,
       {
         name: 'announcement',
         type: 'Ref<string>',
-        description:
-          'The text for screen readers. Render it in an `aria-live="assertive"` element.',
+        description: 'The text for screen readers. Render it in an `aria-live="polite"` element.',
       },
       {
         name: 'onHandlePointerdown / onHandleKeydown',

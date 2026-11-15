@@ -55,6 +55,7 @@
             :style="virtualListStyle"
             @keydown="onListKeydown"
             @focusin="onListFocusin"
+            @pointermove="onListPointermove"
           >
             <div
               ref="indicatorEl"
@@ -479,9 +480,10 @@ const triggerElRef = computed<HTMLElement | null>(() =>
 function openMenu() {
   open.value = true
 }
-// Close honors beforeClose; open() does not (nothing to defer).
-function toggle() {
-  open.value = !open.value
+// Closing from the trigger runs @open-change and beforeClose like any other close.
+function toggle(event: MouseEvent) {
+  if (open.value) requestClose('trigger', event)
+  else open.value = true
 }
 
 // Which end of the list takes focus once the panel is ready (ARIA menu button: ArrowUp -> last).
@@ -536,6 +538,7 @@ const {
   maxHeight,
   isClosing,
   close,
+  requestClose,
   cancelClose,
   layerIndex,
 } = usePopover(open, {
@@ -737,7 +740,8 @@ const { onKeydown, focusFirst, focusItem } = useMenu({
         entry.onSelect?.()
       }
     }
-    if (itemEl.dataset.keepOpen === undefined) close()
+    // Space toggles a checkbox or radio row and keeps the menu open (APG); Enter closes it.
+    if (itemEl.dataset.keepOpen === undefined && !spaceToggle) close()
   },
   onExpand: (itemEl) => {
     const indexAttr = itemEl.dataset.menuIndex
@@ -947,7 +951,8 @@ function onVirtualKeydown(event: KeyboardEvent): boolean {
       typeaheadTimer = setTimeout(() => {
         typeahead = ''
       }, TYPEAHEAD_RESET_MS)
-      const start = current === -1 ? 0 : current + 1
+      // A second letter refines the search, so the current row can still match.
+      const start = current === -1 ? 0 : typeahead.length > 1 ? current : current + 1
       for (let step = 0; step < count && target === undefined; step++) {
         const i = (start + step) % count
         const entry = props.items![i]!
@@ -961,9 +966,28 @@ function onVirtualKeydown(event: KeyboardEvent): boolean {
   focusIndex(target)
   return true
 }
+let spaceToggle = false
 function onListKeydown(event: KeyboardEvent) {
   if (virtualActive.value && onVirtualKeydown(event)) return
+  const focused = document.activeElement
+  spaceToggle =
+    event.key === ' ' && !!focused?.matches('[role="menuitemcheckbox"], [role="menuitemradio"]')
   onKeydown(event)
+  spaceToggle = false
+}
+
+// The row under the mouse takes focus, so Enter activates the highlighted row.
+const EDITABLE = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+function onListPointermove(event: PointerEvent) {
+  if (event.pointerType === 'touch' || !(event.target instanceof Element)) return
+  const row = event.target.closest<HTMLElement>(
+    ':is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"])',
+  )
+  if (!row || row === document.activeElement || row.closest('.ui-menu-body') !== listEl.value)
+    return
+  if (row.matches(':disabled, [aria-disabled="true"]')) return
+  if (document.activeElement?.matches(EDITABLE)) return
+  focusItem(row, { preventScroll: true })
 }
 
 // Before a scroll unmounts the focused row, focus moves to the list and its submenu closes.

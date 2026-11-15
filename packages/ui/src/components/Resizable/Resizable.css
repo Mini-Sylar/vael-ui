@@ -6,7 +6,8 @@
   .ui-resizable--vertical {
     transition-property: block-size;
   }
-  .ui-resizable[data-resizing] {
+  .ui-resizable[data-resizing],
+  .ui-resizable[data-motion='off'] {
     transition: none;
   }
   .ui-resizable--disabled .ui-resizable-handle {

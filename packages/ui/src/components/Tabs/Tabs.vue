@@ -202,7 +202,8 @@ function panelProps(item: T) {
     id: panelId(item),
     role: 'tabpanel' as const,
     'aria-labelledby': tabId(item),
-    tabindex: 0 as const,
+    // Only the shown panel is a tab stop; a hidden one would add a stray stop if left visible.
+    tabindex: active.value === item ? (0 as const) : undefined,
   }
 }
 

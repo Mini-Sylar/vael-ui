@@ -26,6 +26,8 @@ const TOOLBAR_ITEM_SELECTOR = [
   'select',
   'textarea',
   '[tabindex]:not([tabindex="-1"])',
+  // Already collected: the roving tabindex="-1" mustn't drop a custom focusable from the set.
+  '[data-toolbar-item]',
 ].join(', ')
 
 // Inputs that don't use the arrow keys themselves.
@@ -48,9 +50,11 @@ export function useToolbar(
   let current: HTMLElement | null = null
 
   function items(): HTMLElement[] {
-    return Array.from(
-      listEl.value?.querySelectorAll<HTMLElement>(TOOLBAR_ITEM_SELECTOR) ?? [],
-    ).filter((el) => !el.hasAttribute('data-toolbar-collapsed'))
+    const all = Array.from(listEl.value?.querySelectorAll<HTMLElement>(TOOLBAR_ITEM_SELECTOR) ?? [])
+    for (const el of all) {
+      if (!el.hasAttribute('data-toolbar-item')) el.setAttribute('data-toolbar-item', '')
+    }
+    return all.filter((el) => !el.hasAttribute('data-toolbar-collapsed'))
   }
 
   function isDisabled(el: HTMLElement): boolean {

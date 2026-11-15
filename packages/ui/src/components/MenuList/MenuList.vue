@@ -101,7 +101,7 @@ export interface MenuListProps<T extends MenuItemData = MenuItemData> {
 </script>
 
 <!--
-  Reuses useMenu for keyboard/roving. Rows stay native buttons and links (a nav is not a
+  Reuses useMenu for arrow keys, without roving tabindex. Rows stay native buttons and links (a nav is not a
   menu), marked with data-menu-item for useMenu's selector.
   Nested items are inert group labels (pair with Collapsible for collapsible groups).
 -->
@@ -110,7 +110,7 @@ import './MenuList.css'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
 import { nativeTag } from '../../composables/dom'
-import { computed, onMounted, useAttrs, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useMenu } from '../../composables/useMenu'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
@@ -129,7 +129,7 @@ const props = withDefaults(defineProps<MenuListProps<T>>(), {
 })
 
 const emit = defineEmits<{
-  /** Fires on click, or Enter/Space when the row has roving focus. */
+  /** Fires on click, or Enter/Space on a focused row. */
   select: [item: T]
 }>()
 
@@ -269,8 +269,10 @@ function rowClass(row: FlatRow, kind: 'item' | 'group'): string {
   )
 }
 
-const { onKeydown, initRoving } = useMenu({
+const { onKeydown } = useMenu({
   listEl: list,
+  // A nav of links, not a menu widget: every row stays a Tab stop; arrow keys are an extra.
+  roving: false,
   onSelect: (itemEl) => {
     const indexAttr = itemEl.dataset.menuIndex
     if (indexAttr === undefined) return
@@ -284,9 +286,6 @@ const { onKeydown, initRoving } = useMenu({
   // triggers), so ArrowRight/ArrowLeft are no-ops here, same as a bare
   // top-level useMenu with neither wired.
 })
-
-// Initialize roving focus without stealing focus (unlike Menu, always on-screen).
-onMounted(() => initRoving())
 
 defineExpose({
   /** Root element. */

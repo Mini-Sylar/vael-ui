@@ -65,7 +65,7 @@ export interface UseTooltipOptions {
   openDelay?: MaybeRefOrGetter<number>
   /** Grace period after the pointer leaves, ms — long enough to travel onto the tooltip. */
   closeDelay?: MaybeRefOrGetter<number>
-  /** Hovering the tooltip itself keeps it open (selectable/clickable content). */
+  /** Hovering the tooltip itself keeps it open, so its text can be selected. */
   interactive?: MaybeRefOrGetter<boolean>
   closeOnEsc?: MaybeRefOrGetter<boolean>
   onOpenChange?: (value: boolean, details: TooltipOpenChangeDetails) => void
@@ -577,8 +577,10 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     else openTimer = setTimeout(() => doOpen(false), delay)
   }
 
-  function pointerLeave() {
+  function pointerLeave(event?: PointerEvent) {
     suppressed = false
+    // Touch leaves right after lifting: a long-press tip closes on its own (below).
+    if (event?.pointerType === 'touch') return
     clearTimeout(openTimer)
     openTimer = undefined
     scheduleClose()
@@ -618,6 +620,9 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
   }
 
   // A touch held 500 ms within 10 px is a long press (the platform's convention): it shows the tip.
+  // It stays up 1500 ms after the finger lifts, or until the next tap elsewhere.
+  const TOUCH_HIDE_MS = 1500
+  const touchTip = shallowRef(false)
   let hold:
     | { x: number; y: number; timer: ReturnType<typeof setTimeout>; held: boolean }
     | undefined
@@ -639,6 +644,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       timer: setTimeout(() => {
         current.held = true
         show()
+        touchTip.value = open.value
       }, 500),
     }
     hold = current
@@ -649,9 +655,25 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       release()
   })
   useEventListener(options.triggerEl, 'pointerup', () => {
-    if (hold?.held) suppressNextClick = true
+    if (hold?.held) {
+      suppressNextClick = true
+      clearTimeout(closeTimer)
+      closeTimer = setTimeout(() => requestClose('pointer'), TOUCH_HIDE_MS)
+    }
     release()
   })
+  useEventListener(
+    () => (touchTip.value ? ssrWindow() : undefined),
+    'pointerdown',
+    (event: PointerEvent) => {
+      const target = event.target as Node | null
+      if (options.triggerEl.value?.contains(target) || options.positionerEl.value?.contains(target))
+        return
+      clearTimers()
+      requestClose('pointer', event)
+    },
+    true,
+  )
   useEventListener(options.triggerEl, ['pointercancel', 'pointerleave'], release)
   onScopeDispose(release)
   // A long-press that fires mid-gesture shouldn't also activate the trigger's own click handler right after.
@@ -690,7 +712,10 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       if (event.key !== 'Escape' || event.isComposing || isClosing.value) return
       if (!toValue(options.closeOnEsc ?? true)) return
       requestClose('escape', event)
-      if (!open.value || isClosing.value) event.preventDefault()
+      if (open.value && !isClosing.value) return
+      event.preventDefault()
+      // The pointer still on the trigger (or its icon) mustn't reopen it until it leaves.
+      if (options.triggerEl.value?.matches(':hover')) suppressed = true
     },
     true,
   )
@@ -706,6 +731,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
         warmth.lastHideAt = performance.now()
         visiblePeers.delete(peer)
         stopFollow()
+        touchTip.value = false
       }
     },
     { flush: 'post' },
@@ -753,6 +779,30 @@ export function setDescribedBy(el: HTMLElement, id: string, on: boolean) {
   if (on) ids.push(id)
   if (ids.length) el.setAttribute('aria-describedby', ids.join(' '))
   else el.removeAttribute('aria-describedby')
+}
+
+const squash = (text: string | null | undefined) =>
+  (text ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
+
+/** The trigger's accessible name, near enough: `aria-labelledby`, else `aria-label`, else its text. */
+export function accessibleName(el: HTMLElement): string {
+  const ids = el.getAttribute('aria-labelledby')?.trim()
+  if (ids) {
+    const doc = el.ownerDocument
+    return squash(
+      ids
+        .split(/\s+/)
+        .map((id) => doc.getElementById(id)?.textContent)
+        .join(' '),
+    )
+  }
+  return squash(el.getAttribute('aria-label')) || squash(el.textContent)
+}
+
+/** Whether the tooltip's text only repeats the trigger's name, so describing it would read it twice. */
+export function repeatsName(el: HTMLElement, panel: HTMLElement | null | undefined): boolean {
+  const hint = squash(panel?.textContent)
+  return !!hint && hint === accessibleName(el)
 }
 
 /** Headless tooltip behavior bound to a trigger element. `Tooltip.vue` is a thin skin over this. */

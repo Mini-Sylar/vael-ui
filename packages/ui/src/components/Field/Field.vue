@@ -45,7 +45,7 @@
       <slot name="description">{{ description }}</slot>
     </p>
     <Transition name="ui-field-error">
-      <p v-if="error" :id="errorId" role="alert" :class="errorPart.class" :style="errorPart.style">
+      <p v-if="error" :id="errorId" :class="errorPart.class" :style="errorPart.style">
         <slot name="error" :error="error">{{ error }}</slot>
       </p>
     </Transition>
@@ -85,7 +85,7 @@ const props = withDefaults(
     label?: string
     /** Help text below the control, linked via `aria-describedby`. */
     description?: string
-    /** Error message; renders with `role="alert"`. */
+    /** Error message, linked to the control with `aria-describedby`. */
     error?: string
     /** Shows a required marker and sets `aria-required` on the wrapped control. */
     required?: boolean

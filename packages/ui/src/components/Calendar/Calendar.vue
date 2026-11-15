@@ -339,16 +339,7 @@ import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import {
-  computed,
-  nextTick,
-  onMounted,
-  ref,
-  shallowRef,
-  useSlots,
-  useTemplateRef,
-  watch,
-} from 'vue'
+import { computed, nextTick, onMounted, shallowRef, useSlots, useTemplateRef, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -541,9 +532,9 @@ function modelAnchor(): Date | null {
 // Without a value, the month's 1st stands in for today until mount.
 const initialAnchor = modelAnchor() ?? startOfMonth(new Date())
 
-const viewDate = ref<Date>(startOfMonth(initialAnchor))
+const viewDate = shallowRef<Date>(startOfMonth(initialAnchor))
 // 1 = forward, -1 = backward; drives month-transition slide direction.
-const direction = ref(1)
+const direction = shallowRef(1)
 const motionOn = computed(() => !!props.motion)
 // Yours set: the engine plays the label and grid swaps; otherwise their CSS classes do.
 const swapMotion = useSwapMotion({
@@ -574,7 +565,7 @@ const swapped = (name: string, hooks: typeof labelSwap, mode?: 'out-in') =>
       }
 const labelTransition = computed(() => swapped('ui-calendar-label', labelSwap, 'out-in'))
 const gridTransition = computed(() => swapped('ui-calendar-grid', gridSwap))
-const focusedDate = ref<Date>(initialAnchor)
+const focusedDate = shallowRef<Date>(initialAnchor)
 
 onMounted(() => {
   const now = startOfDay(new Date())
@@ -583,12 +574,12 @@ onMounted(() => {
   focusedDate.value = now
   if (!isSameMonth(viewDate.value, now)) viewDate.value = startOfMonth(now)
 })
-const navLevel = ref<CalendarView>(props.view)
+const navLevel = shallowRef<CalendarView>(props.view)
 
 // Moving between days, months and years zooms: out going up a level, in coming back down,
 // around the cell that links the two levels (the month you're in, the year you picked).
 const LEVEL_DEPTH: Record<CalendarView, number> = { date: 0, month: 1, year: 2 }
-const zoom = ref<'in' | 'out'>('out')
+const zoom = shallowRef<'in' | 'out'>('out')
 let zoomLink = 'month'
 function linkCellOrigin() {
   const body = bodyEl.value
@@ -623,7 +614,7 @@ watch(
 function anchorZoom() {
   if (zoom.value === 'out') linkCellOrigin()
 }
-const hoveredDate = ref<Date | null>(null)
+const hoveredDate = shallowRef<Date | null>(null)
 
 const resolvedFirstDay = computed(() => props.firstDayOfWeek ?? resolveFirstDayOfWeek(props.locale))
 
@@ -687,15 +678,21 @@ const yearRows = computed<number[][]>(() => {
 
 const canDrill = computed(() => navLevel.value !== 'year')
 // The year grid's tab stop: the focused year while it's on show, else viewDate's.
-const focusedYear = ref(viewDate.value.getFullYear())
+const focusedYear = shallowRef(viewDate.value.getFullYear())
 const yearStop = computed(() =>
   yearsInWindow.value.includes(focusedYear.value)
     ? focusedYear.value
     : viewDate.value.getFullYear(),
 )
 
+// One formatter per locale, not one per cell per render.
+const monthYearFormatter = computed(
+  () => new Intl.DateTimeFormat(props.locale, { month: 'long', year: 'numeric' }),
+)
+const cellFormatter = computed(() => new Intl.DateTimeFormat(props.locale, { dateStyle: 'full' }))
+const monthFormatter = computed(() => new Intl.DateTimeFormat(props.locale, { month: 'short' }))
 function monthYearFormat(month: Date): string {
-  return new Intl.DateTimeFormat(props.locale, { month: 'long', year: 'numeric' }).format(month)
+  return monthYearFormatter.value.format(month)
 }
 const monthYearLabel = computed(() => monthYearFormat(viewDate.value))
 const yearLabel = computed(() => String(viewDate.value.getFullYear()))
@@ -728,7 +725,7 @@ const weekdayLabels = computed(() => {
   return (weeksOf(viewDate.value)[0] ?? []).map((day) => formatter.format(day))
 })
 function cellLabel(day: Date): string {
-  return new Intl.DateTimeFormat(props.locale, { dateStyle: 'full' }).format(day)
+  return cellFormatter.value.format(day)
 }
 // The ISO week of the row's Thursday, which shares its week with most of the row whatever day
 // the week starts on.
@@ -743,7 +740,7 @@ function weekLabel(week: Date[]): string {
   return messages.value.calendar.weekNumber.replace('{week}', String(isoWeek(week)))
 }
 function monthLabel(month: Date): string {
-  return new Intl.DateTimeFormat(props.locale, { month: 'short' }).format(month)
+  return monthFormatter.value.format(month)
 }
 
 function isToday(day: Date): boolean {
@@ -858,7 +855,7 @@ const canGoNext = computed(() => {
 })
 
 // Month/year grids stretch to the day view's last size, so drilling up or down doesn't jump.
-const dateBodySize = ref<{ inline: number; block: number } | null>(null)
+const dateBodySize = shallowRef<{ inline: number; block: number } | null>(null)
 const bodyMinSize = computed(() => {
   const size = dateBodySize.value
   if (navLevel.value === 'date' || !size) return undefined

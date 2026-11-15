@@ -255,8 +255,8 @@ test('BottomSheet: named by its title; the handle is a button whose arrows move 
   await expect.element(sheet).toBeVisible()
   const handle = page.getByRole('button', { name: 'Resize sheet' })
   await expect.element(handle).toBeVisible()
-  // Opening doesn't put focus on the grip.
-  await vi.waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('Close'))
+  // Opening puts focus on the content's first control, not on the grip or the header's close.
+  await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('Apply'))
 
   handle.element().focus()
   expect(snap()).toBe('small')
@@ -358,7 +358,7 @@ test('ContextMenu: closing returns focus to what had it, or to what was right-cl
   expect(document.activeElement).toBe(byTestId('card'))
 })
 
-test('Tour (modal): aria-modal, Tab stays in the callout, and closing returns focus to its button', async () => {
+test('Tour (modal): Tab cycles the callout and its live target, and closing returns focus to its button', async () => {
   const open = shallowRef(false)
   await render(
     () => [
@@ -387,16 +387,20 @@ test('Tour (modal): aria-modal, Tab stays in the callout, and closing returns fo
   await userEvent.click(byTestId('start')!)
   const callout = page.getByRole('dialog', { name: 'First' })
   await expect.element(callout).toBeVisible()
-  await expect.element(callout).toHaveAttribute('aria-modal', 'true')
+  // The target stays interactive, so it's part of the dialog: no aria-modal, inert isolates the rest.
+  expect(callout.element().hasAttribute('aria-modal')).toBe(false)
   await vi.waitFor(() => expect(callout.element().contains(document.activeElement)).toBe(true))
+  const target = document.getElementById('tour-target')
+  const inTour = () =>
+    callout.element().contains(document.activeElement) || document.activeElement === target
 
   for (let i = 0; i < 6; i++) {
     await userEvent.keyboard('{Tab}')
-    expect(callout.element().contains(document.activeElement)).toBe(true)
+    expect(inTour()).toBe(true)
   }
   for (let i = 0; i < 6; i++) {
     await userEvent.keyboard('{Shift>}{Tab}{/Shift}')
-    expect(callout.element().contains(document.activeElement)).toBe(true)
+    expect(inTour()).toBe(true)
   }
 
   await userEvent.keyboard('{Escape}')

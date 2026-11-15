@@ -1543,7 +1543,7 @@
         "setValue": "<code>setValue(path, value)</code>, as a user edit.",
         "setValues": "<code>setValues(values)</code>, without marking anything dirty.",
         "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>, such as a server’s. Each clears when its field changes.",
-        "clearErrors": "<code>clearErrors(path?)</code>: clears errors set with <code>setErrors</code>.",
+        "clearErrors": "<code>clearErrors()</code>: clears errors set with <code>setErrors</code>.",
         "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>: runs on user edits and <code>setValue</code>, not on resets or loaded defaults.",
         "fieldFn": "<code>field(path)</code>: one field, with everything below.",
         "f_value": "The value, writable.",

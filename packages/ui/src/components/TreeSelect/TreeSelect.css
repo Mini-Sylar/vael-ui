@@ -55,7 +55,7 @@
     transform: rotate(180deg);
   }
 
-  .ui-tree-select-panel {
+  .ui-popover-panel.ui-tree-select-panel {
     display: flex;
     flex-direction: column;
     contain: layout;

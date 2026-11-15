@@ -157,6 +157,12 @@ onMounted(initRoving)
           description:
             'Fires on ArrowLeft. Pass it only when this list is a submenu, to close it and return focus to the parent row. Without it, ArrowLeft does nothing.',
         },
+        {
+          name: 'roving',
+          type: 'boolean',
+          description:
+            'Keeps one Tab stop for the whole list, as a `role="menu"` needs. `false` leaves every item a Tab stop, as `<MenuList>` does for a nav of links. Defaults to `true`.',
+        },
       ],
       returns: [
         {
@@ -173,7 +179,7 @@ onMounted(initRoving)
         },
         {
           name: 'focusItem',
-          type: '(el: HTMLElement | undefined) => void',
+          type: '(el: HTMLElement | undefined, focusOptions?: FocusOptions) => void',
           description:
             "Makes `el` the Tab stop and focuses it, such as a submenu's parent row after the submenu closes.",
         },
@@ -181,7 +187,7 @@ onMounted(initRoving)
           name: 'initRoving',
           type: '() => void',
           description:
-            'Gives the first enabled item `tabindex="0"` without focusing it. Call it once on mount for a list that is always on screen, such as `<MenuList>`.',
+            'Gives the first enabled item `tabindex="0"` without focusing it. Call it once on mount for a menu that is always on screen.',
         },
       ],
     },
@@ -540,7 +546,7 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
           name: 'interactive',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Keeps the tooltip open while you hover it, so its content can be selected or clicked. Default `true`.',
+            'Keeps the tooltip open while you hover it, so its text can be selected. Keyboard users can’t reach it, so put links and buttons in a Popover. Default `true`.',
         },
         {
           name: 'closeOnEsc',
@@ -909,13 +915,13 @@ const { close, requestClose } = useDialog(open, { panelEl, wrapperEl })
           name: 'initialFocus',
           type: '() => HTMLElement | null | undefined',
           description:
-            "The element to focus on open. Return nothing to fall back to the panel's first focusable element, then the panel.",
+            "The element to focus on open. Return nothing to fall back to an `[autofocus]` element, then the panel's first focusable element (Dialog tries its body and footer before its header buttons), then the panel.",
         },
         {
           name: 'modal',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Locks scroll, traps Tab and moves focus. `false` skips all three; Escape and layer stacking still work. Default `true`. Read once per open.',
+            'Locks scroll, makes the page inert and traps Tab. `false` skips all three; Escape, layer stacking, focus on open and focus return still work. Default `true`. Read once per open.',
         },
         {
           name: 'closeOnHistoryBack',

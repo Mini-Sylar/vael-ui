@@ -4,6 +4,7 @@
     :class="rootPart.class"
     :style="[sizeStyle, rootPart.style]"
     :data-resizing="isDragging || undefined"
+    :data-motion="props.motion === false ? 'off' : undefined"
     :aria-disabled="disabled || undefined"
     v-bind="attrs"
   >

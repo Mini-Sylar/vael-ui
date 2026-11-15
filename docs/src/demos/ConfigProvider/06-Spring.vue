@@ -20,7 +20,7 @@
         <Tabs v-model:active="tab" :items="['orders', 'returns', 'refunds']">
           <template #default="{ items, itemProps, indicatorProps }">
             <span v-bind="indicatorProps('underline')" />
-            <button v-for="item in items" :key="item" v-bind="itemProps(item)">
+            <button v-for="item in items" :key="item" type="button" v-bind="itemProps(item)">
               {{ item[0]!.toUpperCase() + item.slice(1) }}
             </button>
           </template>

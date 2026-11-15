@@ -179,7 +179,7 @@ export const a11yContent: Record<string, A11yInfo> = {
     ],
     notes: [
       'Toasts render in a `<section aria-live="polite">` named “Notifications”, so screen readers announce them without moving focus. Error toasts are announced assertively. Pass `aria-label` to rename the section when a page has more than one Toaster.',
-      'Hovering or focusing the stack expands it and pauses every timer; timers also pause while the tab is hidden. Toasts close after 4000 ms by default, and loading toasts stay until they settle.',
+      'Hovering or focusing the stack expands it and pauses every timer; timers also pause while the tab is hidden. Toasts close after 4000 ms by default. Toasts with an action stay until someone closes them, so a keyboard user can reach the button, and loading toasts stay until they settle.',
       'The dismiss button is named “Dismiss” and the status icon is `aria-hidden`. A custom default slot replaces this markup, so label your own buttons.',
       'Dismissing a toast from the keyboard moves focus to a neighboring toast, or back to where focus came from.',
     ],
@@ -223,7 +223,7 @@ export const a11yContent: Record<string, A11yInfo> = {
     keyboard: [],
     notes: [
       'Renders a native `<input>` and adds no keys of its own.',
-      'Inside a `Field`, the label names the input. `aria-describedby` lists your own ids first, then the Field’s description and error. The error has `role="alert"`, so it is announced when it appears.',
+      'Inside a `Field`, the label names the input. `aria-describedby` lists your own ids first, then the Field’s description and error.',
       'Outside a `Field`, give it an `aria-label`, which goes to the input. It sets `aria-invalid` when invalid and `aria-required` when the `Field` is required.',
       'With `clearable`, a clear button named “Clear” shows while there’s text. It is a Tab stop, and clearing puts focus back in the input. The `#display` slot is `aria-hidden`; screen readers read the input underneath.',
     ],
@@ -429,8 +429,8 @@ export const a11yContent: Record<string, A11yInfo> = {
     keyboard: [],
     notes: [
       'The `<label>` points at the control with `for`. Controls without a native input, such as Select, Slider and Rating, use `aria-labelledby` instead. Without a `label`, nothing is linked, so name the control yourself.',
-      'The description and the error are linked to the control with `aria-describedby`. The error renders with `role="alert"`, so screen readers announce it when it appears.',
-      'While `error` is set, the control gets `aria-invalid="true"`. `required` sets `aria-required`, and the asterisk isn’t part of the accessible name.',
+      'The description and the error are linked to the control with `aria-describedby`, so screen readers read the error with the control. It isn’t an alert, so a failed submit with several errors doesn’t interrupt with each one.',
+      'While `error` is set, the control gets `aria-invalid="true"`. `required` sets `aria-required` only, and the asterisk isn’t part of the accessible name. Put `required` on the control itself to have a plain form submit check it too.',
       'Controls in `#prepend` and `#append` aren’t named by the label: give each one an `aria-label`.',
     ],
   },
@@ -698,7 +698,7 @@ export const a11yContent: Record<string, A11yInfo> = {
     notes: [
       'The panel has `role="dialog"`, or `role="alertdialog"` with the `role` prop, and `aria-modal="true"` while modal. `title` wires `aria-labelledby` and `description` wires `aria-describedby`.',
       'Without `title`, such as with a custom `#header`, pass `aria-label` or `aria-labelledby`: attributes go on the panel. The close and maximize buttons have built-in, translated labels.',
-      'On open, focus moves to `initialFocus()`, else the first focusable element, else the panel. On close, focus returns to the element that opened it. `modal: false` turns off the focus trap, the inert page and both focus moves.',
+      'On open, focus moves to `initialFocus()`, else an `[autofocus]` element, else the first control in the body or footer, else the first focusable element, else the panel. On close, focus returns to the element that opened it. `modal: false` turns off the focus trap and the inert page; focus still moves in, and returns on close unless you moved it elsewhere.',
       'Escape closes only the topmost layer. While modal, the rest of the page, or of the `container`, is `inert`; toasts, live regions, tooltips and overlays opened from inside stay usable.',
     ],
   },
@@ -751,7 +751,7 @@ export const a11yContent: Record<string, A11yInfo> = {
     notes: [
       'Built on Dialog: the panel has `role="dialog"` and `aria-modal="true"`, with the same focus trap, focus return and inert page.',
       '`title` names the sheet through `aria-labelledby`. Without it, or with a custom `#header`, pass `aria-label`; it goes on the panel.',
-      'With more than one snap point, the drag handle is a button named “Resize sheet”, and opening focuses the first control after it. With one, the handle is `aria-hidden`.',
+      'With more than one snap point, the drag handle is a button named “Resize sheet”. Opening focuses an `[autofocus]` element, else the content’s first control, else the header’s, never the handle. With one snap point, the handle is `aria-hidden`.',
       'The header’s close button has a built-in, translated label.',
     ],
   },
@@ -787,9 +787,10 @@ export const a11yContent: Record<string, A11yInfo> = {
       { keys: 'Escape', action: 'Closes the tooltip without closing a dialog or menu around it.' },
     ],
     notes: [
-      'The panel has `role="tooltip"`. While it’s open, the trigger’s `aria-describedby` includes its id, and your own ids stay.',
-      'It opens on `:focus-visible` only, so a mouse click doesn’t open it. On touch, a 500 ms long press opens it.',
-      'The tooltip describes the trigger but doesn’t name it. An icon-only trigger still needs an `aria-label`.',
+      'The panel has `role="tooltip"`. While it’s open, the trigger’s `aria-describedby` includes its id, and your own ids stay. A tooltip that only repeats the trigger’s name isn’t added, so it isn’t read twice.',
+      'It opens on `:focus-visible` only, so a mouse click doesn’t open it. On touch, a 500 ms long press opens it, and it closes 1.5 s after you lift your finger or when you tap elsewhere.',
+      'The tooltip describes the trigger but doesn’t name it. An icon-only trigger still needs an `aria-label`. `v-tooltip` with text sets that `aria-label` on a button or link with no name of its own.',
+      'Keyboard users can’t move into the tooltip. Put links and buttons in a Popover.',
       'The trigger must be focusable for keyboard users to reach the tooltip.',
     ],
   },
@@ -859,9 +860,9 @@ export const a11yContent: Record<string, A11yInfo> = {
       },
     ],
     notes: [
-      'The callout has `role="dialog"` and an `aria-label` from the step’s `title`, else the translated “Step {current} of {total}”. With `modal`, it also sets `aria-modal`.',
-      'Focus moves to the first focusable element in the callout on open and on every step change. When the tour ends, focus returns to the element that started it.',
-      'With `modal` (default), everything but the target and the callout is `inert`, and Tab stays inside the callout.',
+      'The callout has `role="dialog"`. Its visible title names it through `aria-labelledby` and its description through `aria-describedby`; with a custom slot or no title, it gets an `aria-label` from the step’s `title`, else the translated “Step {current} of {total}”. With `modal`, it sets `aria-modal` only when the target can’t be used (`disableInteraction`).',
+      'Focus moves to an `[autofocus]` element in the callout on open and on every step change, else the Next button, else the first focusable element. When the tour ends, focus returns to the element that started it.',
+      'With `modal` (default), everything but the target and the callout is `inert`, and Tab cycles through the callout, then the target’s controls.',
       'Arrow keys are ignored while focus is in a field or a widget that uses them, and `keyboardNav: false` turns them off. Right to left, ArrowLeft and ArrowRight swap.',
     ],
   },
@@ -884,6 +885,10 @@ export const a11yContent: Record<string, A11yInfo> = {
         action: 'Activates the focused item and closes the menu, or opens its submenu.',
       },
       {
+        keys: 'Space',
+        action: 'On a checkbox row, toggles it and keeps the menu open.',
+      },
+      {
         keys: 'ArrowRight',
         action: 'Opens the focused item’s submenu and focuses its first item.',
       },
@@ -901,13 +906,16 @@ export const a11yContent: Record<string, A11yInfo> = {
     notes: [
       'The trigger gets `aria-haspopup="menu"`, `aria-expanded`, and `aria-controls` while open. The list has `role="menu"` and is named by its trigger, and a submenu by its row.',
       'Rows are `role="menuitem"`, or `role="menuitemcheckbox"` with `aria-checked` when `checked` is set. Submenu rows add `aria-haspopup` and `aria-expanded`.',
-      'Items use a roving `tabindex`, and disabled items are skipped. With the default slot, render your own `role="menuitem"` elements.',
+      'Items use a roving `tabindex`, and disabled items are skipped. The row under the mouse takes focus, so Enter activates the row you see highlighted. With the default slot, render your own `role="menuitem"` elements.',
       'Right to left, ArrowLeft and ArrowRight swap, and submenus open to the left.',
     ],
   },
   MenuList: {
     keyboard: [
-      { keys: 'Tab', action: 'Moves focus into the list and out of it; the list is one Tab stop.' },
+      {
+        keys: 'Tab',
+        action: 'Moves focus from row to row; each row is a Tab stop, like any link.',
+      },
       {
         keys: 'ArrowDown / ArrowUp',
         action: 'Moves focus to the next or previous row, wrapping at the ends.',
@@ -942,8 +950,8 @@ export const a11yContent: Record<string, A11yInfo> = {
     ],
     notes: [
       'The root has `role="tablist"`, with `aria-orientation="vertical"` when vertical. Attributes such as `aria-label` go on it.',
-      '`itemProps(item)` gives each tab `role="tab"`, `aria-selected`, an `id` and a roving `tabindex`. In `automatic` mode, arrow keys select as they move.',
-      'Set `idBase` so tabs get `aria-controls`, and spread the exposed `panelProps(value)` on each panel for `role="tabpanel"`, `aria-labelledby` and `tabindex="0"`.',
+      '`itemProps(item)` gives each tab `role="tab"`, `type="button"`, `aria-selected`, an `id` and a roving `tabindex`. In `automatic` mode, arrow keys select as they move. In `manual` mode, Tab back into the list lands on the selected tab.',
+      'Set `idBase` so tabs get `aria-controls`, and spread the exposed `panelProps(value)` on each panel for `role="tabpanel"`, `aria-labelledby`, and `tabindex="0"` on the selected one.',
       'Right to left, ArrowLeft and ArrowRight swap.',
     ],
   },
@@ -1009,7 +1017,7 @@ export const a11yContent: Record<string, A11yInfo> = {
       },
     ],
     notes: [
-      'Sortable column headers set `aria-sort` to `ascending`, `descending` or `none`, and the header label is a `<button>`. The expand button has `aria-expanded`, and `aria-controls` while open.',
+      'The sorted column header sets `aria-sort` to `ascending` or `descending`, and each sortable header label is a `<button>`. A header click announces the new sort through a polite status region. The expand button has `aria-expanded`, and `aria-controls` while open.',
       'With row selection, the table is a `role="grid"` and rows carry `aria-selected`. With `selectionMode="row"`, rows are one Tab stop with a roving `tabindex`, and keys inside a cell’s own controls stay with them. In checkbox mode, each row’s Checkbox (a Radio with `single`) is named after its row, such as “Select row Alice”.',
       'Resize handles are focusable `role="separator"` elements. An always-mounted `role="status"` region announces new column widths and positions, and reads “Loading…” while `loading` sets `aria-busy`.',
       'With `scrollHeight`, the head and body are separate tables, so ARIA roles rebuild one table for screen readers. Right to left, ArrowLeft and ArrowRight swap.',
@@ -1133,7 +1141,7 @@ export const a11yContent: Record<string, A11yInfo> = {
       'Each header is a `<button>` with `aria-expanded` and `aria-controls`, inside an `<h3>`. Set `headingLevel` to match your page outline.',
       'Each panel has `role="region"` and `aria-labelledby` pointing at its header. A closed panel stays mounted as `hidden="until-found"`: out of the tab order and the accessibility tree, but the browser\'s find reaches it and opens its section. Where a browser has no `until-found`, it is `aria-hidden` and `inert` instead.',
       'A disabled item has a native `disabled` button, so Tab and the arrow keys skip it.',
-      "The arrow keys move only between this Accordion's own headers, so a nested Accordion keeps its own. With `collapsible` set to `false`, the last open section stays open.",
+      "The arrow keys move only between this Accordion's own headers, so a nested Accordion keeps its own. With `collapsible` set to `false`, the last open section stays open, and its header is `aria-disabled` but still focusable.",
     ],
   },
   Collapsible: {
@@ -1259,8 +1267,8 @@ export const a11yContent: Record<string, A11yInfo> = {
       { keys: 'Tab / Shift + Tab', action: 'Cancels a keyboard move as focus leaves the handle.' },
     ],
     notes: [
-      'Each item\'s handle is a `<button>` named by `labelKey`, with `aria-roledescription="sortable item"`. Its `aria-describedby` points at hidden instructions for the keys.',
-      'An always-mounted `role="status"` region with `aria-live="assertive"` announces each grab, move, drop and cancel with the position, such as “Position 2 of 5”.',
+      'Each item\'s handle is a `<button>` named by `labelKey`, with `aria-roledescription="sortable item"`, and `aria-pressed` while its item is grabbed. Its `aria-describedby` points at hidden instructions for the keys. Escape cancels a grab or drag without closing a Dialog or Drawer around the list.',
+      'An always-mounted `role="status"` region with `aria-live="polite"` announces each grab, move, drop and cancel with the position, such as “Position 2 of 5”.',
       'After a keyboard drop, focus stays on the moved item’s handle. Focus leaving the handle during a keyboard move cancels it. With `disabled`, the handles are disabled buttons.',
       'Right to left, ArrowLeft and ArrowRight swap.',
     ],

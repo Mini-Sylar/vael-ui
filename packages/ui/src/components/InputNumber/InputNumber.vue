@@ -14,6 +14,7 @@
     :name="name"
     :ui="innerUi"
     :aria-valuenow="modelValue ?? undefined"
+    :aria-valuetext="modelValue == null ? undefined : numberFormat.format(modelValue)"
     :aria-valuemin="min"
     :aria-valuemax="max"
     :data-ui-roll="animated || undefined"

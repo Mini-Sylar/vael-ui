@@ -184,6 +184,7 @@ import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance, StyleValue } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
+import { useSlotTrigger } from '../../composables/slotTrigger'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import {
   elementOf,
@@ -266,8 +267,10 @@ function setTriggerEl(el: Element | ComponentPublicInstance<any> | null) {
   slotTriggerEl.value = el
 }
 
-function toggle() {
-  open.value = !open.value
+function toggle(event: MouseEvent) {
+  // Closing from the trigger runs @open-change and beforeClose like any other close.
+  if (open.value) requestClose('trigger', event)
+  else open.value = true
 }
 
 // Only wired when openOnTriggerClick is true — same resolvePastDisplayContents +
@@ -283,10 +286,11 @@ function refreshResolvedTrigger() {
 watch(triggerWrapper, refreshResolvedTrigger, { immediate: true })
 useMutationObserver(triggerWrapper, refreshResolvedTrigger, { childList: true, subtree: true })
 
+const slotTrigger = useSlotTrigger(slotTriggerEl)
 const triggerElRef = computed<HTMLElement | null>(() => {
   if (props.triggerEl !== undefined) return unwrapEl(props.triggerEl)
-  if (slotTriggerEl.value) return unwrapEl(slotTriggerEl.value)
-  return props.openOnTriggerClick ? resolvedWrapperEl.value : null
+  if (props.openOnTriggerClick) return unwrapEl(slotTriggerEl.value) ?? resolvedWrapperEl.value
+  return slotTrigger()
 })
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
@@ -453,6 +457,7 @@ const {
   maxHeight,
   isClosing,
   close,
+  requestClose,
   cancelClose,
   layerIndex,
 } = usePopover(open, {

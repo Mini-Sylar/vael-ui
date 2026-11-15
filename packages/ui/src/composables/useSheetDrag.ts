@@ -350,6 +350,12 @@ export function useSheetDrag(
       if (!(atTop && draggingDown)) return
       dragSource = 'handle'
       beginDrag(event.clientY)
+      // Now the sheet's drag: a release over the backdrop must still reach the panel.
+      try {
+        ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+      } catch {
+        // Capture can fail for synthetic/non-standard pointer ids; not fatal.
+      }
       return
     }
     const list = offsets()
@@ -466,6 +472,8 @@ export function useSheetDrag(
   useEventListener(options.panelEl, 'pointermove', onPointerMove)
   useEventListener(options.panelEl, 'pointerup', onPointerUp)
   useEventListener(options.panelEl, 'pointercancel', onPointerCancel)
+  // Capture lost mid-drag (the panel left, or the browser took it): settle as a cancel.
+  useEventListener(options.panelEl, 'lostpointercapture', onPointerCancel)
   // The area changed size: a phone's toolbars hid or showed (Samsung Internet and Chrome collapse
   // them on scroll), the keyboard opened, or the container resized. Refit the panel and glide back
   // to the same snap point, so the sheet doesn't drift off it or leave a toolbar-tall strip with
@@ -477,12 +485,19 @@ export function useSheetDrag(
     const point = currentPoint()
     if (point) moveTo(offsetFor(point), true)
   }
+  // Only while open: a closed sheet costs nothing.
   useEventListener(
-    () => (typeof window === 'undefined' ? undefined : (window.visualViewport ?? window)),
+    () =>
+      typeof window === 'undefined' || !active.value
+        ? undefined
+        : (window.visualViewport ?? window),
     'resize',
     onAreaResize,
   )
-  useResizeObserver(() => toValue(options.bounds) ?? undefined, onAreaResize)
+  useResizeObserver(
+    () => (active.value ? (toValue(options.bounds) ?? undefined) : undefined),
+    onAreaResize,
+  )
 
   /** Back to where it rests (a refused dismiss springs back from where it was let go). */
   function settle() {

@@ -34,6 +34,7 @@
 @import './components/FileUpload/FileUpload.css';
 @import './components/Input/Input.css';
 @import './components/InputNumber/InputNumber.css';
+@import './components/internal/RequiredInput.css';
 @import './components/internal/TimeField.css';
 @import './components/Kbd/Kbd.css';
 @import './components/Knob/Knob.css';

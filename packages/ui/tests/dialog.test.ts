@@ -25,16 +25,11 @@ test('opens with dialog semantics, traps focus, escape closes and restores focus
   await expect.element(dialog).toHaveAttribute('aria-modal', 'true')
   await expect.element(dialog).toHaveAccessibleName('Example dialog')
 
-  // Focus moved into the panel (first focusable is the built-in close button)
-  await vi.waitFor(() => {
-    expect(document.querySelector('[role="dialog"]')!.contains(document.activeElement)).toBe(true)
-  })
+  // Focus moved into the panel: the body's first control, before the built-in close button
+  await vi.waitFor(() => expect(activeTestId()).toBe('first'))
   expect(document.body.style.overflow).toBe('hidden')
 
   // Tab cycles forward through panel content and wraps
-  expect(document.activeElement!.className).toContain('ui-dialog-close')
-  await userEvent.keyboard('{Tab}')
-  expect(activeTestId()).toBe('first')
   await userEvent.keyboard('{Tab}')
   expect(activeTestId()).toBe('second')
   await userEvent.keyboard('{Tab}')

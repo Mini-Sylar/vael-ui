@@ -101,7 +101,7 @@ import './FileUpload.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, nextTick, ref, shallowRef, useId, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { transitionGroupRef } from '../../composables/dom'
 import Button from '../Button/Button.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -327,7 +327,7 @@ useFormReset(modelValue, () => root.value)
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const dropzoneEl = useTemplateRef<HTMLElement>('dropzoneEl')
 
-const listEl = ref<HTMLElement | null>(null)
+const listEl = shallowRef<HTMLElement | null>(null)
 const groupKey = useId()
 const registerListEl = transitionGroupRef(listEl, groupKey)
 // Yours (an object, or a shared style): rows come and go on the motion system. Otherwise the
@@ -374,8 +374,19 @@ function onDropzoneClick(event: MouseEvent) {
 function onInputChange(event: Event) {
   const target = event.target as HTMLInputElement
   processFiles(Array.from(target.files ?? []))
-  target.value = '' // so picking the identical file again still fires change
+  syncInputFiles() // a rejected pick leaves the input
 }
+
+// The input holds the list, so `name` posts every file, dropped and pasted ones too.
+function syncInputFiles() {
+  const input = inputEl.value
+  if (!input || typeof DataTransfer === 'undefined') return
+  const transfer = new DataTransfer()
+  for (const file of modelValue.value) transfer.items.add(file)
+  input.files = transfer.files
+}
+watch(modelValue, syncInputFiles, { flush: 'post' })
+onMounted(() => modelValue.value.length > 0 && syncInputFiles())
 
 // Drop files or a folder on the dropzone, or paste them while it has focus or the pointer.
 const { isDragOver } = useFileDrop(dropzoneEl, {

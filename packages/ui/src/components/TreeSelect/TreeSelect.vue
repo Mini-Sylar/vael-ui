@@ -166,6 +166,12 @@
       />
     </template>
   </template>
+  <RequiredInput
+    v-if="nativeRequired(attrs)"
+    :filled="Array.isArray(model) ? model.length > 0 : model != null && model !== ''"
+    :control="() => controlEl"
+    :disabled="isDisabled"
+  />
 </template>
 
 <script lang="ts">
@@ -201,7 +207,7 @@ import type { ComponentExposed } from 'vue-component-type-helpers'
 import { usePopover } from '../../composables/usePopover'
 import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
-import { useFieldControl } from '../../composables/useFieldControl'
+import { nativeRequired, useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'
 import { useMessages, treeSelectMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
@@ -209,6 +215,7 @@ import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import Tree from '../Tree/Tree.vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
+import RequiredInput from '../internal/RequiredInput.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -221,7 +228,7 @@ const isTriggerAttr = (key: string) =>
 const panelOwnAttrs = computed(() =>
   Object.fromEntries(
     Object.entries(attrs).filter(
-      ([key]) => !isTriggerAttr(key) && key !== 'onFocus' && key !== 'onBlur',
+      ([key]) => !isTriggerAttr(key) && !['onFocus', 'onBlur', 'required'].includes(key),
     ),
   ),
 )

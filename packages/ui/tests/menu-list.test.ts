@@ -100,16 +100,16 @@ test('#item slot override replaces row content but keeps click behavior', async 
 // in that report is asserted individually so a future regression in any one
 // of them fails here instead of just "arrow keys are broken" with no clue
 // which assumption gave out.
-test('MenuList nested in an already-open Collapsible seeds roving tabindex on mount', async () => {
-  await render(MenuListInCollapsibleFixture)
+test('a nav of links keeps every row a Tab stop, before and after arrow keys', async () => {
+  const screen = await render(MenuListInCollapsibleFixture)
 
-  const general = document.querySelector('[data-menu-item]:not([tabindex="-1"])')
-  expect(general?.textContent?.trim()).toBe('Overview')
-  // The sub-list is a SEPARATE roving-focus scope from the top-level list —
-  // it seeds its own tabindex="0" independently, not by inheriting/sharing
-  // the top-level list's one Tab stop.
-  const subItems = Array.from(document.querySelectorAll('.ui-collapsible-panel [data-menu-item]'))
-  expect(subItems.map((el) => el.getAttribute('tabindex'))).toEqual(['0', '-1', '-1'])
+  const rows = () => Array.from(document.querySelectorAll('[data-menu-item]'))
+  expect(rows().every((el) => !el.hasAttribute('tabindex'))).toBe(true)
+
+  screen.getByRole('button', { name: 'General' }).element().focus()
+  await userEvent.keyboard('{ArrowDown}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Notifications'))
+  expect(rows().every((el) => !el.hasAttribute('tabindex'))).toBe(true)
 })
 
 test('ArrowDown/ArrowUp move roving focus within a Collapsible-nested MenuList, independent of the sibling top-level list', async () => {

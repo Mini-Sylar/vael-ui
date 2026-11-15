@@ -29,6 +29,23 @@ function edge(word: string, size: number): number {
   return Number.parseFloat(word) * size || 0
 }
 
+// Content that grows or shrinks moves the ends without a scroll, as rows loading in do. Rows added
+// to a box that keeps its size don't resize anything, so new children are watched too.
+function watchContent(root: Element, extra: Element | null | undefined, schedule: () => void) {
+  const sizes = new ResizeObserver(schedule)
+  const observe = () => {
+    for (const node of [root, ...root.children, extra]) if (node) sizes.observe(node)
+    schedule()
+  }
+  const children = new MutationObserver(observe)
+  children.observe(root, { childList: true })
+  observe()
+  return () => {
+    sizes.disconnect()
+    children.disconnect()
+  }
+}
+
 /**
  * The scroll position, from 0 to 1. With no target: the page (or `container`) from top to bottom.
  * With a target: its way through the viewport, by `offset`.
@@ -88,14 +105,11 @@ export function useScrollProgress(
       const source: EventTarget = box ?? window
       source.addEventListener('scroll', schedule, { passive: true })
       window.addEventListener('resize', schedule, { passive: true })
-      // Content that grows or shrinks moves the ends without a scroll, as rows loading in do.
-      const sizes = new ResizeObserver(schedule)
-      const root = box ?? document.body
-      for (const node of [root, ...root.children, el]) if (node) sizes.observe(node)
+      const unwatch = watchContent(box ?? document.body, el, schedule)
       stop = () => {
         source.removeEventListener('scroll', schedule)
         window.removeEventListener('resize', schedule)
-        sizes.disconnect()
+        unwatch()
       }
       measure()
     },
@@ -138,20 +152,10 @@ export function useScrollLength(
     (box) => {
       stop?.()
       window.addEventListener('resize', schedule, { passive: true })
-      const sizes = new ResizeObserver(schedule)
-      const root = box ?? document.body
-      const observe = () => {
-        for (const node of [root, ...root.children]) sizes.observe(node)
-        schedule()
-      }
-      // Rows added to a box that keeps its size don't resize anything, so watch the children too.
-      const children = new MutationObserver(observe)
-      children.observe(root, { childList: true })
-      observe()
+      const unwatch = watchContent(box ?? document.body, undefined, schedule)
       stop = () => {
         window.removeEventListener('resize', schedule)
-        sizes.disconnect()
-        children.disconnect()
+        unwatch()
       }
       measure()
     },

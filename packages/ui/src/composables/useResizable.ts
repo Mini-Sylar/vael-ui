@@ -193,10 +193,14 @@ export function useResizable(
 
   // One write a frame, however many pointer events arrive; it keeps ticking only while the
   // container is scrolling under the pointer.
-  function tick() {
+  let lastTick = 0
+  function tick(now: number) {
     frame = 0
     if (pointerId === null) return
-    const speed = edgeSpeed()
+    // EDGE_SPEED is per 60 Hz frame: scaled by the time since the last, so 120 Hz isn't faster.
+    const frames = lastTick ? Math.min(3, Math.max(0, (now - lastTick) * 0.06)) : 1
+    const speed = edgeSpeed() * frames
+    lastTick = speed ? now : 0
     if (speed && scroller) {
       if (horizontal()) scroller.scrollLeft += speed
       else scroller.scrollTop += speed
@@ -220,6 +224,7 @@ export function useResizable(
   function stop() {
     if (frame) cancelAnimationFrame(frame)
     frame = 0
+    lastTick = 0
     pointerId = null
     target = null
     scroller = null

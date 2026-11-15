@@ -1,0 +1,13 @@
+@layer ui-components {
+  /* Focusable for the browser's message, but never seen or clicked. */
+  .ui-required-input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+}

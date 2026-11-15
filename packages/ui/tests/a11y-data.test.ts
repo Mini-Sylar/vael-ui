@@ -263,7 +263,7 @@ function sortOrder(screen: RenderResult<unknown>): string {
   return screen.container.querySelector('[data-testid="order"]')!.textContent!
 }
 function sortLive(screen: RenderResult<unknown>): string {
-  return screen.container.querySelector('[aria-live="assertive"]')!.textContent!
+  return screen.container.querySelector('[aria-live="polite"]')!.textContent!
 }
 
 test('Sortable: Tab during a keyboard grab cancels it', async () => {

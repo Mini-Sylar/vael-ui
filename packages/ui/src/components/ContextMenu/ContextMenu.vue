@@ -236,7 +236,16 @@ function openAt(x: number, y: number) {
   return show(x, y)
 }
 
+let shownAt: { x: number; y: number } | null = null
 async function show(x: number, y: number) {
+  // Already open at this point (Android fires contextmenu on a long press too): keep it.
+  if (
+    open.value &&
+    shownAt &&
+    Math.hypot(x - shownAt.x, y - shownAt.y) <= LONG_PRESS_MOVE_TOLERANCE
+  )
+    return
+  shownAt = { x, y }
   setAnchorPosition(x, y)
   if (open.value) {
     open.value = false
@@ -246,6 +255,8 @@ async function show(x: number, y: number) {
 }
 
 function onContextMenu(event: MouseEvent) {
+  // The long press that fired this contextmenu must not open the menu a second time.
+  clearPress()
   if (props.disabled) return
   event.preventDefault()
   rememberFocus(event.target)

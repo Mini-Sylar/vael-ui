@@ -1542,7 +1542,7 @@
         "setValue": "<code>setValue(path, value)</code>, come una modifica dell'utente.",
         "setValues": "<code>setValues(values)</code>, senza segnare niente come dirty.",
         "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>, come quelli di un server. Ognuno sparisce quando il suo campo cambia.",
-        "clearErrors": "<code>clearErrors(path?)</code>: cancella gli errori impostati con <code>setErrors</code>.",
+        "clearErrors": "<code>clearErrors()</code>: cancella gli errori impostati con <code>setErrors</code>.",
         "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>: viene eseguita sulle modifiche dell'utente e su <code>setValue</code>, non sui reset o sui valori predefiniti caricati.",
         "fieldFn": "<code>field(path)</code>: un campo, con tutto ciò che segue.",
         "f_value": "Il valore, scrivibile.",

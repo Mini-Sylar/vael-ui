@@ -13,7 +13,8 @@ export interface ToastOptions {
   id?: string
   description?: string
   variant?: ToastVariant
-  /** ms. Defaults to 4000, or `Infinity` for `loading` toasts (dismissed programmatically). */
+  /** ms. Defaults to 4000, or `Infinity` for `loading` toasts and any toast with an `action`, so
+   * there's time to reach it (WCAG 2.2.1). */
   duration?: number
   action?: { label: string; onClick: () => void }
   /** Shows the toast in its own section beside the stack, where newer toasts can't cover it. It
@@ -110,7 +111,9 @@ function pushToast(
   // One server queue would reach every request; the browser runs this call again on hydration.
   if (!isClient) return options.id ?? nextId++
   const variant = options.variant ?? 'default'
-  const duration = options.duration ?? (variant === 'loading' ? Infinity : 4000)
+  // An action or a loading state stays until it settles or someone closes it.
+  const stays = variant === 'loading' || options.action !== undefined
+  const duration = options.duration ?? (stays ? Infinity : 4000)
   const queue = queueOf(options.toaster)
   const found = options.id === undefined ? undefined : findEntry(options.id)
   if (found) {

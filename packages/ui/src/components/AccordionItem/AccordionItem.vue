@@ -15,6 +15,7 @@
         :style="triggerPart.style"
         :aria-expanded="isOpenValue"
         :aria-controls="panelId"
+        :aria-disabled="isLockedValue || undefined"
         :disabled="disabled"
         data-accordion-trigger
         @click="onToggle"
@@ -113,6 +114,8 @@ if (!injectedCtx) {
 const ctx = injectedCtx
 
 const isOpenValue = computed(() => ctx.isOpen(props.value))
+// APG: an open panel that can't collapse marks its trigger aria-disabled, still focusable.
+const isLockedValue = computed(() => !props.disabled && ctx.isLocked(props.value))
 function onToggle() {
   if (props.disabled) return
   ctx.toggle(props.value)

@@ -61,9 +61,11 @@
       :inputmode="type === 'numeric' ? 'numeric' : 'text'"
       autocomplete="one-time-code"
       autocapitalize="off"
+      autocorrect="off"
       spellcheck="false"
       :disabled="isDisabled"
       :name="name"
+      :required="nativeRequired(attrs) || undefined"
       :aria-label="attrs['aria-label'] as string | undefined"
       :aria-labelledby="attrs['aria-labelledby'] as string | undefined"
       :aria-describedby="describedBy"
@@ -97,7 +99,7 @@ import {
 } from 'vue'
 import { useSlotPresence } from '../../composables/dom'
 import { useTabIndicator } from '../../composables/useTabIndicator'
-import { useFieldControl } from '../../composables/useFieldControl'
+import { nativeRequired, useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useFormReset } from '../../composables/useFormReset'
@@ -200,9 +202,16 @@ const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 
 const focusEvents = useFocusEvents(attrs, () => root.value)
 
-// The label and description name the input, so the wrapper doesn't get them.
+// The label, description and `required` belong to the input, so the wrapper doesn't get them.
 const rootAttrs = computed(() =>
-  omitAttrs(attrs, ['aria-label', 'aria-labelledby', 'aria-describedby', 'onFocus', 'onBlur']),
+  omitAttrs(attrs, [
+    'aria-label',
+    'aria-labelledby',
+    'aria-describedby',
+    'onFocus',
+    'onBlur',
+    'required',
+  ]),
 )
 const describedBy = computed(() => fieldControl.describedBy())
 

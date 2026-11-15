@@ -18,13 +18,13 @@ function shape(screen: RenderResult<unknown>): string {
   return screen.container.querySelector('[data-testid="shape"]')!.textContent!
 }
 function live(screen: RenderResult<unknown>): string {
-  return screen.container.querySelector('[aria-live="assertive"]')?.textContent?.trim() ?? ''
+  return screen.container.querySelector('[aria-live="polite"]')?.textContent?.trim() ?? ''
 }
 
 test('a reorderable tree marks its rows as draggable for assistive tech', async () => {
   const screen = await render(TreeReorderFixture)
   expect(rowFor(screen, 'a').getAttribute('aria-roledescription')).toBe('draggable tree item')
-  expect(screen.container.querySelector('[aria-live="assertive"]')).not.toBeNull()
+  expect(screen.container.querySelector('[aria-live="polite"]')).not.toBeNull()
 })
 
 test('keyboard: Space grabs a row and arrows move it among its siblings', async () => {

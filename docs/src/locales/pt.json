@@ -1542,7 +1542,7 @@
         "setValue": "<code>setValue(path, value)</code>, como uma edição do usuário.",
         "setValues": "<code>setValues(values)</code>, sem marcar nada como dirty.",
         "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>, como os de um servidor. Cada um some quando o campo dele muda.",
-        "clearErrors": "<code>clearErrors(path?)</code>: limpa os erros definidos com <code>setErrors</code>.",
+        "clearErrors": "<code>clearErrors()</code>: limpa os erros definidos com <code>setErrors</code>.",
         "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>: roda em edições do usuário e em <code>setValue</code>, não em resets nem em valores padrão carregados.",
         "fieldFn": "<code>field(path)</code>: um campo, com tudo o que vem abaixo.",
         "f_value": "O valor, gravável.",

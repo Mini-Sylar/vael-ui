@@ -375,7 +375,7 @@ export function restingRect(el: Element): DOMRect {
 }
 
 /** The first element in a Vapor block: a node, an array of blocks, a fragment or a component. */
-function firstElementOfBlock(block: unknown): HTMLElement | null {
+export function firstElementOfBlock(block: unknown): HTMLElement | null {
   if (block instanceof HTMLElement) return block
   if (block instanceof Node) return null
   if (Array.isArray(block)) {

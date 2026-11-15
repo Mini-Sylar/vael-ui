@@ -178,6 +178,11 @@ export interface UiMessages {
     loading: string
     /** Read after a keyboard column resize; `{label}` is the column, `{width}` its width in pixels. */
     columnWidth: string
+    /** Read after a header click sorts; `{label}` is the column. */
+    sortedAscending: string
+    sortedDescending: string
+    /** Read after a header click clears the sort; `{label}` is the column. */
+    sortCleared: string
   }
   /** Drag-to-reorder. These carry `{label}`, `{position}`, `{total}` and `{depth}` placeholders rather than being functions, so a consumer's own `t()` can return them as plain strings like every other entry here. */
   sortable: {
@@ -329,6 +334,9 @@ export const dataTableMessages: UiMessages['dataTable'] = {
   expandRow: 'Expand row',
   loading: 'Loading…',
   columnWidth: '{label}: {width} pixels',
+  sortedAscending: 'Sorted by {label}, ascending',
+  sortedDescending: 'Sorted by {label}, descending',
+  sortCleared: 'Sort cleared',
 }
 export const sortableMessages: UiMessages['sortable'] = {
   instructions:

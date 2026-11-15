@@ -15,6 +15,7 @@ import {
 } from './sortableAutoScroll'
 import type { ScrollReach } from './sortableAutoScroll'
 import { createClickGuard, inlineKey, isRtl, prefersReducedMotion } from './dom'
+import { useLayer } from './useLayerStack'
 
 /**
  * Reorder engine shared by every sortable surface. All ordering/nesting
@@ -1835,12 +1836,13 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     void commit()
   }
 
-  // Escape aborts a pointer drag too. Not a layer-stack concern — the preview
-  // isn't a dismissible surface with a scope to own the key — but abandoning a
-  // drag mid-flight is standard, so it listens for the length of the gesture.
+  // Escape aborts a pointer drag too, for the length of the gesture.
   function onWindowKeydown(event: KeyboardEvent) {
-    if (event.key !== 'Escape' || !isDragging.value) return
+    if (event.key !== 'Escape' || !isDragging.value || event.defaultPrevented) return
     event.preventDefault()
+    abortPointerDrag()
+  }
+  function abortPointerDrag() {
     dropSeq++
     clearTouchHoldTimer()
     releasePointer()
@@ -1887,6 +1889,15 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     },
     { flush: 'sync' },
   )
+  // A layer while grabbed, so Escape cancels the move before a Dialog or Drawer around it closes.
+  const layer = useLayer({
+    onDismiss: () => {
+      if (isDragging.value) abortPointerDrag()
+      else if (isGrabbed.value && source === 'keyboard') cancel()
+      else return false
+    },
+  })
+  watch(isGrabbed, (grabbed) => (grabbed ? layer.push() : layer.pop()), { flush: 'sync' })
   onScopeDispose(() => {
     if (typeof window !== 'undefined') window.removeEventListener('keydown', onWindowKeydown)
     clickGuard.disarm()
@@ -1957,8 +1968,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const key = inlineKey(event.key, event.currentTarget as Element)
 
     if (event.key === 'Escape') {
+      // The grab's layer already cancelled it.
+      if (!event.defaultPrevented) cancel()
       event.preventDefault()
-      cancel()
       return
     }
 

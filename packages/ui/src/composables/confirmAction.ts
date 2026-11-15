@@ -130,6 +130,8 @@ export function confirmAction(options: ConfirmActionOptions): ConfirmActionHandl
     keyof ConfirmActionBase | 'surface'
   >
   return openDialog(body ?? ConfirmEmptyBody, {
+    // A confirmation needs a response: screen readers announce it as an alert dialog.
+    role: 'alertdialog',
     ...dialogProps,
     onOpenChange,
     title,

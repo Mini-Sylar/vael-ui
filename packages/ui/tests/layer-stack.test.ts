@@ -40,15 +40,18 @@ test('focus trap only cycles within the topmost dialog', async () => {
   await vi.waitFor(() => expect(document.querySelectorAll('[role="dialog"]').length).toBe(2))
 
   const inner = document.querySelector('[aria-label="Inner"]')!
-  await vi.waitFor(() => expect(inner.contains(document.activeElement)).toBe(true))
+  // Opens on the body's field, before the close button.
+  await vi.waitFor(() =>
+    expect(document.activeElement?.getAttribute('data-testid')).toBe('inner-field'),
+  )
 
   await userEvent.keyboard('{Tab}')
-  // Tab must stay trapped inside the INNER dialog, not leak into the outer one.
+  // Tab must stay trapped inside the INNER dialog: it wraps to the inner close button.
   expect(inner.contains(document.activeElement)).toBe(true)
-  expect(document.activeElement?.getAttribute('data-testid')).toBe('inner-field')
-  await userEvent.keyboard('{Tab}')
-  // Wraps back to the inner close button — never reaches the outer dialog's own fields.
   expect(document.activeElement?.className).toContain('ui-dialog-close')
+  await userEvent.keyboard('{Tab}')
+  // Never reaches the outer dialog's own fields.
+  expect(document.activeElement?.getAttribute('data-testid')).toBe('inner-field')
 })
 
 test('scroll lock is reference-counted: stays engaged until every open dialog has closed', async () => {

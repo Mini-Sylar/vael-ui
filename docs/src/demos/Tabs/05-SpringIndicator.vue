@@ -11,7 +11,7 @@
       <Tabs v-model:active="active" :items="items">
         <template #default="{ items: list, itemProps, indicatorProps }">
           <span v-bind="indicatorProps('background')" />
-          <button v-for="item in list" :key="item" v-bind="itemProps(item)">
+          <button v-for="item in list" :key="item" type="button" v-bind="itemProps(item)">
             {{ item[0]!.toUpperCase() + item.slice(1) }}
           </button>
         </template>

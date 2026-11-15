@@ -152,6 +152,13 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     const size = Math.round(rawHeight)
     const key = keyOf(index)
     if (size > 0 && dynamicSizes.get(key) !== size) {
+      const before = sizeAt(index) ?? estimateSize.value
+      // A row above the view changing size would shift what's on screen: the scroll follows it.
+      const container = options.containerEl.value
+      if (container && index < count.value && dynamicOffsets.value[index]! < scrollTop.value) {
+        container.scrollTop += size - before
+        scrollTop.value = container.scrollTop
+      }
       dynamicSizes.set(key, size)
       sizeVersion.value++
     }

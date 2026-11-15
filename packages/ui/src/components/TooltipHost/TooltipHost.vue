@@ -90,7 +90,7 @@ import {
 import type { Component } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrDocument } from '../../ssr'
-import { setDescribedBy, useTooltipCore } from '../../composables/useTooltip'
+import { repeatsName, setDescribedBy, useTooltipCore } from '../../composables/useTooltip'
 import { TOOLTIP_ATTR, tooltipTargetListeners, tooltipTargets } from '../../directives/vTooltip'
 import Kbd from '../Kbd/Kbd.vue'
 import type { TooltipDirectiveOptions } from '../../directives/vTooltip'
@@ -189,7 +189,7 @@ useEventListener(ssrDocument, 'pointerout', (event: PointerEvent) => {
   if (!target || target !== currentEl.value) return
   const next = event.relatedTarget
   if (next instanceof Node && (target.contains(next) || positionerEl.value?.contains(next))) return
-  core.pointerLeave()
+  core.pointerLeave(event)
 })
 
 useEventListener(ssrDocument, 'focusin', (event: FocusEvent) => {
@@ -216,12 +216,13 @@ useEventListener(
 
 const tooltipId = useId()
 
+// A hint that only repeats the target's name isn't added as its description.
 watch(
-  [open, currentEl] as const,
+  [open, currentEl, content] as const,
   ([isOpen, el], previous) => {
     const previousEl = previous?.[1]
     if (previousEl && previousEl !== el) setDescribedBy(previousEl, tooltipId, false)
-    if (el) setDescribedBy(el, tooltipId, isOpen)
+    if (el) setDescribedBy(el, tooltipId, isOpen && !repeatsName(el, panelEl.value))
   },
   { flush: 'post' },
 )

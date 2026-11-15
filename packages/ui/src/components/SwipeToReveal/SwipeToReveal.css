@@ -50,6 +50,12 @@
   .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions[data-side='leading'] {
     transform-origin: left center;
   }
+  .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions[data-side='trailing']:dir(rtl) {
+    transform-origin: left center;
+  }
+  .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions[data-side='leading']:dir(rtl) {
+    transform-origin: right center;
+  }
   .ui-swipe-reveal-content {
     position: relative;
     z-index: 1;

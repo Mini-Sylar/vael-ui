@@ -1,6 +1,6 @@
 import { getCurrentScope, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { createClickGuard } from './dom'
+import { createClickGuard, isRtl } from './dom'
 
 export type SwipeRevealSide = 'leading' | 'trailing'
 
@@ -29,7 +29,7 @@ export interface UseSwipeRevealReturn {
   /** True for the entire span of a COMMITTED drag (past DRAG_THRESHOLD) —
    * never set for a plain tap, matching useResizable's isDragging shape. */
   isDragging: Ref<boolean>
-  /** Live SIGNED px offset for `transform: translateX()`: `>0` leading edge revealed, `<0` trailing, `0` closed. */
+  /** Live SIGNED px offset, logical: `>0` leading edge revealed, `<0` trailing, `0` closed. Negate it for `translateX()` right to left. */
   offset: Ref<number>
   /** The revealed (or settling-toward) edge, or `null` when closed. */
   openSide: Ref<SwipeRevealSide | null>
@@ -150,6 +150,8 @@ export function useSwipeReveal(
   let startTime = 0
   let liveOffset = 0
   let dragEl: HTMLElement | null = null
+  // Right to left: leading is on the right, so a drag's x runs the other way.
+  let flip = 1
   // Swallows the trailing click after a drag-to-open.
   const clickGuard = createClickGuard()
   if (getCurrentScope()) onScopeDispose(clickGuard.disarm)
@@ -165,11 +167,12 @@ export function useSwipeReveal(
     startTime = performance.now()
     liveOffset = startOffset
     dragEl = event.currentTarget as HTMLElement
+    flip = isRtl(dragEl) ? -1 : 1
   }
 
   function onPointerMove(event: PointerEvent) {
     if (pointerId === null || event.pointerId !== pointerId) return
-    const dx = event.clientX - startX
+    const dx = (event.clientX - startX) * flip
     const dy = event.clientY - startY
     if (!committed) {
       if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return
@@ -203,7 +206,7 @@ export function useSwipeReveal(
     if (!wasCommitted) return
 
     clickGuard.arm()
-    const dx = event.clientX - startX
+    const dx = (event.clientX - startX) * flip
     // Edge this drag worked toward — offset sign at release, or the drag direction if it's at rest.
     const side: SwipeRevealSide =
       liveOffset > 0 || (liveOffset === 0 && dx > 0) ? 'leading' : 'trailing'

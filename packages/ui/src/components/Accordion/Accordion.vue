@@ -16,6 +16,8 @@ import type { InjectionKey } from 'vue'
 
 export interface AccordionContext {
   isOpen: (value: string) => boolean
+  /** Open and can't close: `collapsible` is off and it's the last open item. */
+  isLocked: (value: string) => boolean
   toggle: (value: string) => void
   motion: () => boolean
   /** The `motion` object, for each item's `states`. */
@@ -84,6 +86,14 @@ function isOpen(itemValue: string): boolean {
   return props.multiple ? Array.isArray(open) && open.includes(itemValue) : open === itemValue
 }
 
+function isLocked(itemValue: string): boolean {
+  if (props.collapsible) return false
+  const open = current()
+  return props.multiple
+    ? Array.isArray(open) && open.length === 1 && open[0] === itemValue
+    : open === itemValue
+}
+
 function toggle(itemValue: string) {
   const open = current()
   if (props.multiple) {
@@ -126,6 +136,7 @@ defineSlots<{
 
 provide(accordionKey, {
   isOpen,
+  isLocked,
   toggle,
   motion: () => props.motion !== false,
   states: () => rawProps.motion,

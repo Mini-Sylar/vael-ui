@@ -934,6 +934,7 @@ const SAMPLE_SLOT_TEXT: Record<string, string> = {
   Card: 'Card content',
   Tag: 'Tag',
   Kbd: '⌘K',
+  Skeleton: 'Your content, drawn as bones while it loads',
 }
 const sampleSlotText = computed(() => SAMPLE_SLOT_TEXT[props.name])
 // `icon` makes Button square, so the preview needs an actual icon and a name for it.

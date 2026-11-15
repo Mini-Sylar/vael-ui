@@ -1542,7 +1542,7 @@
         "setValue": "<code>setValue(path, value)</code>，视同用户编辑。",
         "setValues": "<code>setValues(values)</code>，不会标记任何内容为已修改。",
         "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>，例如来自服务器的错误。每个错误在其字段变化时清除。",
-        "clearErrors": "<code>clearErrors(path?)</code>：清除用 <code>setErrors</code> 设置的错误。",
+        "clearErrors": "<code>clearErrors()</code>：清除用 <code>setErrors</code> 设置的错误。",
         "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>：在用户编辑和 <code>setValue</code> 时运行，重置或加载默认值时不运行。",
         "fieldFn": "<code>field(path)</code>：单个字段，包含以下所有内容。",
         "f_value": "值，可写。",
