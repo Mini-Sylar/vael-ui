@@ -1,12 +1,18 @@
 import { watchEffect } from 'vue'
-import type { Directive, DirectiveBinding } from 'vue'
+import type { Component, Directive, DirectiveBinding } from 'vue'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../composables/useFloatingPosition'
 import type { TooltipCloseReason } from '../composables/useTooltip'
 import type { BeforeClose } from '../motion/types'
 
 export interface TooltipDirectiveOptions {
-  content: string
+  /** The text, or a component for markup (a status dot, dates, a progress bar), given `props`. */
+  content: string | Component
+  /** Props for a `content` component. */
+  props?: Record<string, unknown>
+  /** While open, the tooltip tracks a mouse or pen along the target's edge, clamped to it: for
+   * a wide target, such as a timeline bar. Touch keeps the long press. */
+  follow?: boolean
   /** A shortcut's keys, shown after the text as `Kbd`s: `['⌘', 'K']`. */
   keys?: string[]
   side?: Side

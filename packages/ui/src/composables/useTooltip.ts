@@ -8,7 +8,7 @@ import type { ElRef } from './dom'
 import { ssrWindow } from '../ssr'
 import { useCloseGuard } from './useCloseGuard'
 import type { BeforeClose } from '../motion/types'
-import { prefersReducedMotion } from './dom'
+import { isRtl, prefersReducedMotion } from './dom'
 
 export type TooltipCloseReason = 'pointer' | 'focus' | 'trigger' | 'escape' | 'programmatic'
 
@@ -59,6 +59,8 @@ export interface UseTooltipOptions {
   align?: MaybeRefOrGetter<Align>
   sideOffset?: MaybeRefOrGetter<number>
   alignOffset?: MaybeRefOrGetter<number>
+  /** Tracks a mouse or pen along the trigger while open, in place of `align` and `alignOffset`. */
+  follow?: MaybeRefOrGetter<boolean>
   /** Delay before a cold open, ms. Warm opens are always instant. */
   openDelay?: MaybeRefOrGetter<number>
   /** Grace period after the pointer leaves, ms — long enough to travel onto the tooltip. */
@@ -73,6 +75,9 @@ export interface UseTooltipOptions {
 
 // Core state machine; TooltipHost drives intents via delegation.
 export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
+  const following = () => !!toValue(options.follow)
+  // The pointer's distance from the trigger's centre, along its edge, while following.
+  const followOffset = shallowRef(0)
   const {
     positionerStyle: floatingStyle,
     placement,
@@ -82,9 +87,9 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     floatingEl: options.positionerEl,
     active: open,
     side: () => toValue(options.side) ?? 'top',
-    align: options.align,
+    align: () => (following() ? 'center' : (toValue(options.align) ?? 'center')),
     sideOffset: options.sideOffset,
-    alignOffset: options.alignOffset,
+    alignOffset: () => (following() ? followOffset.value : (toValue(options.alignOffset) ?? 0)),
     // A route change can remove the trigger while a delegated TooltipHost stays mounted - closing
     // outright beats leaving it repositioned against a detached node (which degenerates to (0,0)).
     onReferenceDisconnected: () => {
@@ -402,6 +407,11 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       target = point
       return
     }
+    // Following the pointer: the box keeps up with it, no glide behind it.
+    if (following()) {
+      commit(point)
+      return
+    }
     if (distanceBetween(target, point) > REPOSITION_MIN_DISTANCE) {
       clearTravelSchedule()
       const token = ++travelToken
@@ -497,8 +507,39 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     vanish: () => requestClose('pointer'),
   }
 
+  // Follow: the last mouse or pen point over the trigger. Measured once when it opens or changes
+  // trigger, then at most once a frame while it moves; nothing runs while closed.
+  let pointer: { x: number; y: number } | null = null
+  let followFrame = 0
+  let rtl: boolean | undefined
+  function measureFollow() {
+    followFrame = 0
+    const el = options.triggerEl.value
+    if (!el || !pointer || !following()) return
+    const box = el.getBoundingClientRect()
+    const placed = positionerStyle.value.visibility === 'visible'
+    const side = placed ? (placement.value.split('-')[0] as Side) : (toValue(options.side) ?? 'top')
+    const across = side === 'top' || side === 'bottom'
+    const half = (across ? box.width : box.height) / 2
+    const from = across ? pointer.x - box.left - half : pointer.y - box.top - half
+    rtl ??= isRtl(options.positionerEl.value ?? el)
+    const offset = Math.round(Math.max(-half, Math.min(half, from)))
+    followOffset.value = across && rtl ? -offset : offset
+  }
+  function trackPointer(event: PointerEvent) {
+    if (event.pointerType === 'touch' || !following()) return
+    pointer = { x: event.clientX, y: event.clientY }
+    if (open.value && !followFrame) followFrame = requestAnimationFrame(measureFollow)
+  }
+  function stopFollow() {
+    if (followFrame) cancelAnimationFrame(followFrame)
+    followFrame = 0
+    rtl = undefined
+  }
+
   function doOpen(wasWarm: boolean) {
     openTimer = undefined
+    measureFollow()
     instant.value = wasWarm
     if (wasWarm) {
       // The newest peer first: an earlier one may still be fading out where it was, and a sweep
@@ -521,6 +562,9 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
 
   function pointerEnter(event?: PointerEvent) {
     if (event?.pointerType === 'touch') return
+    if (event) trackPointer(event)
+    // A new trigger while open: its offset changes with it, or the box flies to the old one first.
+    if (open.value) measureFollow()
     clearTimeout(closeTimer)
     if (isClosing.value) {
       cancelClose()
@@ -541,6 +585,9 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
   }
 
   function focusEnter() {
+    // Opened from the keyboard: centred, not where a mouse last was.
+    pointer = null
+    followOffset.value = 0
     // Touch owns its own trigger (long-press, below) - WebKit can mark a tapped button's resulting focus as `:focus-visible`, which would otherwise open the tooltip on every plain tap.
     if (lastPointerWasTouch) return
     const trigger = options.triggerEl.value
@@ -597,6 +644,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     hold = current
   })
   useEventListener(options.triggerEl, 'pointermove', (event: PointerEvent) => {
+    trackPointer(event)
     if (hold && !hold.held && Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > 10)
       release()
   })
@@ -657,6 +705,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
         warmth.visible = Math.max(0, warmth.visible - 1)
         warmth.lastHideAt = performance.now()
         visiblePeers.delete(peer)
+        stopFollow()
       }
     },
     { flush: 'post' },
@@ -665,6 +714,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
   onScopeDispose(() => {
     clearTimers()
     clearTravelSchedule()
+    stopFollow()
     visiblePeers.delete(peer)
     if (open.value) {
       warmth.visible = Math.max(0, warmth.visible - 1)

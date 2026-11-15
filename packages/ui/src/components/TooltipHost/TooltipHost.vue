@@ -24,8 +24,12 @@
         >
           <span class="ui-tooltip-content">
             <slot :content="content" :side="resolvedSide" :keys="keys"
-              >{{ content
-              }}<span v-if="keys.length" class="ui-tooltip-keys"
+              ><component
+                :is="content"
+                v-if="typeof content !== 'string'"
+                v-bind="contentProps"
+              /><template v-else>{{ content }}</template
+              ><span v-if="keys.length" class="ui-tooltip-keys"
                 ><Kbd v-for="key in keys" :key="key">{{ key }}</Kbd></span
               ></slot
             >
@@ -83,6 +87,7 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
+import type { Component } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrDocument } from '../../ssr'
 import { setDescribedBy, useTooltipCore } from '../../composables/useTooltip'
@@ -98,7 +103,7 @@ const props = withDefaults(defineProps<TooltipHostProps>(), { motion: undefined 
 
 defineSlots<{
   /** Custom tooltip body; defaults to the text `content`, then the `keys` as `Kbd`s. */
-  default(props: { content: string; side: Side; keys: string[] }): unknown
+  default(props: { content: string | Component; side: Side; keys: string[] }): unknown
 }>()
 
 const currentEl = shallowRef<HTMLElement | null>(null)
@@ -121,6 +126,7 @@ const core = useTooltipCore(open, {
   openDelay: () => config.value?.openDelay ?? props.openDelay ?? 400,
   closeDelay: () => config.value?.closeDelay ?? props.closeDelay ?? 100,
   beforeClose: () => config.value?.beforeClose ?? props.beforeClose,
+  follow: () => config.value?.follow ?? false,
 })
 const {
   positionerStyle,
@@ -134,6 +140,7 @@ const {
 } = core
 
 const content = computed(() => config.value?.content ?? '')
+const contentProps = computed(() => config.value?.props ?? {})
 const keys = computed(() => config.value?.keys ?? [])
 // Per-target override with host default (like side/openDelay/closeDelay).
 const forceMount = computed(() => config.value?.forceMount ?? props.forceMount ?? false)

@@ -21,3 +21,20 @@ test('a container: its content past the box, and it follows the content growing'
   scope.stop()
   box.remove()
 })
+
+test('rows added to a box that keeps its size are counted', async () => {
+  const box = document.createElement('div')
+  box.style.cssText = 'height: 100px; width: 100px; overflow: auto'
+  const row = () => Object.assign(document.createElement('div'), { style: 'height: 50px' })
+  box.append(row(), row(), row())
+  document.body.append(box)
+  const scope = effectScope()
+  const length = scope.run(() => useScrollLength(shallowRef(box)))!
+  await nextTick()
+  expect(length.value).toBe(50)
+  await new Promise((resolve) => setTimeout(resolve, 100)) // let the observers settle first
+  box.append(row(), row())
+  await vi.waitFor(() => expect(length.value).toBe(150))
+  scope.stop()
+  box.remove()
+})

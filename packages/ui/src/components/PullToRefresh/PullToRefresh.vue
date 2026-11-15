@@ -91,7 +91,7 @@ export interface PullToRefreshProps {
 
 <!-- Custom #indicator animations go inside slot content, not zone (which owns block-size state) -->
 <script setup lang="ts">
-import { prefersReducedMotion } from '../../composables/dom'
+import { elementOf, prefersReducedMotion } from '../../composables/dom'
 import { withProviderDefaults } from '../../config'
 import './PullToRefresh.css'
 import '../shared/tokens.css'
@@ -122,12 +122,7 @@ defineSlots<{
   indicator(props: { state: PullToRefreshState; progress: number; pullDistance: number }): unknown
 }>()
 
-function unwrapEl(el: unknown): HTMLElement | null {
-  if (!el) return null
-  if (el instanceof HTMLElement) return el
-  if (typeof el === 'object' && 'el' in el) return (el as { el: HTMLElement | null }).el ?? null
-  return null
-}
+const unwrapEl = elementOf
 
 // No CSS transitions when turned off, or when the user prefers reduced motion.
 function noMotion(): boolean {

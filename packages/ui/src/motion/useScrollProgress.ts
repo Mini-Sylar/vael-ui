@@ -140,10 +140,18 @@ export function useScrollLength(
       window.addEventListener('resize', schedule, { passive: true })
       const sizes = new ResizeObserver(schedule)
       const root = box ?? document.body
-      for (const node of [root, ...root.children]) sizes.observe(node)
+      const observe = () => {
+        for (const node of [root, ...root.children]) sizes.observe(node)
+        schedule()
+      }
+      // Rows added to a box that keeps its size don't resize anything, so watch the children too.
+      const children = new MutationObserver(observe)
+      children.observe(root, { childList: true })
+      observe()
       stop = () => {
         window.removeEventListener('resize', schedule)
         sizes.disconnect()
+        children.disconnect()
       }
       measure()
     },

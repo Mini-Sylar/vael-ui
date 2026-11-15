@@ -71,6 +71,9 @@ const props = withDefaults(
      * @default 'end'
      */
     edge?: ResizeEdge
+    /** Snaps the size to a multiple of `step` on release, the drag itself staying smooth, and
+     * an arrow key resizes one step. Unset, a drag doesn't snap and an arrow key moves 16 px. */
+    step?: number
     /** Disables dragging and keyboard resizing, and removes the handle from the tab order. @default false */
     disabled?: boolean
     /** Accessible label for the handle. @default 'Resize' */
@@ -111,6 +114,7 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(modelV
   max: () => props.max,
   direction: () => props.direction,
   edge: () => props.edge,
+  step: () => props.step,
   disabled: () => props.disabled,
 })
 

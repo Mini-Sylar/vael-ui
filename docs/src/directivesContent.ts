@@ -180,7 +180,24 @@ export const directivesContent: Record<string, DirectiveContent> = {
         type: 'string',
         description: 'The tooltip text, shorthand for `{ content }`.',
       },
-      { name: 'content', type: 'string', description: 'The tooltip text. Required in both forms.' },
+      {
+        name: 'content',
+        type: 'string | Component',
+        description:
+          'The tooltip text, or a component for markup such as a status dot or a progress bar. Required in both forms. A component is drawn in the same shared tooltip, so it still opens at once and glides between targets.',
+      },
+      {
+        name: 'props',
+        type: 'Record<string, unknown>',
+        description:
+          'The props for a `content` component: `{ content: ProjectTip, props: { project } }`.',
+      },
+      {
+        name: 'follow',
+        type: 'boolean',
+        description:
+          'While open, the tooltip follows a mouse or pen along the target, and stops at its ends: for a wide target, such as a timeline bar. Opened from the keyboard, it stays centred. Touch keeps its long press.',
+      },
       {
         name: 'side',
         type: "'top' | 'bottom' | 'left' | 'right'",

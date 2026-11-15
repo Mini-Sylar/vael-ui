@@ -185,7 +185,12 @@ import type { ComponentPublicInstance, StyleValue } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
-import { useDOMTarget, resolvePastDisplayContents, type DOMTarget } from '../../composables/dom'
+import {
+  elementOf,
+  useDOMTarget,
+  resolvePastDisplayContents,
+  type DOMTarget,
+} from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
@@ -254,12 +259,7 @@ defineSlots<{
   }): unknown
 }>()
 
-function unwrapEl(el: unknown): HTMLElement | null {
-  if (!el) return null
-  if (el instanceof HTMLElement) return el
-  if (typeof el === 'object' && 'el' in el) return (el as { el: HTMLElement | null }).el ?? null
-  return null
-}
+const unwrapEl = elementOf
 
 const slotTriggerEl = shallowRef<Element | ComponentPublicInstance<any> | null>(null)
 function setTriggerEl(el: Element | ComponentPublicInstance<any> | null) {

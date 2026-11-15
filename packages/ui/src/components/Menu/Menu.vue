@@ -356,6 +356,7 @@ import { createSlotRelay } from '../../composables/useSlotRelay'
 // this module finishes evaluating.
 import MenuSelf from './Menu.vue'
 import {
+  elementOf,
   isRtl,
   resolvePastDisplayContents,
   nativeTag,
@@ -457,12 +458,7 @@ function tagOf(entry: MenuItemData): string {
   return entry.items ? 'button' : (entry.as ?? 'button')
 }
 
-function unwrapEl(el: unknown): HTMLElement | null {
-  if (!el) return null
-  if (el instanceof HTMLElement) return el
-  if (typeof el === 'object' && 'el' in el) return (el as { el: HTMLElement | null }).el ?? null
-  return null
-}
+const unwrapEl = elementOf
 
 const triggerWrapper = useTemplateRef<HTMLElement>('triggerWrapper')
 // External triggerEl prop overrides slot-based trigger. `.ui-menu-trigger` is `display: contents` (see Menu.css), so it has a zero rect — resolve past it to the real trigger element, or floating-ui anchors the panel at (0,0).

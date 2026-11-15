@@ -55,6 +55,9 @@ export interface TooltipProps {
   sideOffset?: number
   /** Shifts the tooltip along the alignment axis, in pixels. @default 0 */
   alignOffset?: number
+  /** While open, the tooltip tracks a mouse or pen along the trigger's edge, clamped to it, in
+   * place of `align` and `alignOffset`: for a wide trigger, such as a timeline bar. @default false */
+  follow?: boolean
   /**
    * Delay before a cold open, in milliseconds. Warm-group opens (another tooltip visible or recently hidden) are instant.
    * @default 400
@@ -92,6 +95,7 @@ import '../../motion/timing.css'
 import { computed, inject, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance } from 'vue'
+import { elementOf } from '../../composables/dom'
 import { setDescribedBy, useTooltip } from '../../composables/useTooltip'
 import { useTooltipMotion } from '../../composables/useTooltipMotion'
 import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
@@ -132,12 +136,7 @@ defineSlots<{
   }): unknown
 }>()
 
-function unwrapEl(el: unknown): HTMLElement | null {
-  if (!el) return null
-  if (el instanceof HTMLElement) return el
-  if (typeof el === 'object' && 'el' in el) return (el as { el: HTMLElement | null }).el ?? null
-  return null
-}
+const unwrapEl = elementOf
 
 const slotTriggerEl = shallowRef<Element | ComponentPublicInstance<any> | null>(null)
 function setTriggerEl(el: Element | ComponentPublicInstance<any> | null) {
@@ -181,6 +180,7 @@ const {
   align: () => props.align,
   sideOffset: () => props.sideOffset,
   alignOffset: () => props.alignOffset,
+  follow: () => props.follow,
   openDelay: () => props.openDelay,
   closeDelay: () => props.closeDelay,
   interactive: () => props.interactive,

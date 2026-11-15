@@ -373,3 +373,42 @@ export function restingRect(el: Element): DOMRect {
   for (const [animation, time] of moved) animation.currentTime = time
   return rect
 }
+
+/** The first element in a Vapor block: a node, an array of blocks, a fragment or a component. */
+function firstElementOfBlock(block: unknown): HTMLElement | null {
+  if (block instanceof HTMLElement) return block
+  if (block instanceof Node) return null
+  if (Array.isArray(block)) {
+    for (const part of block) {
+      const found = firstElementOfBlock(part)
+      if (found) return found
+    }
+    return null
+  }
+  if (block && typeof block === 'object') {
+    const inner = block as { nodes?: unknown; block?: unknown }
+    return firstElementOfBlock(inner.nodes ?? inner.block)
+  }
+  return null
+}
+
+/**
+ * The element behind a template ref: an element, a component exposing `el` (Button's convention),
+ * any other component's root element, in either build.
+ */
+export function elementOf(ref: unknown): HTMLElement | null {
+  if (!ref) return null
+  if (ref instanceof HTMLElement) return ref
+  if (typeof ref !== 'object') return null
+  if ('el' in ref) return elementOf((ref as { el: unknown }).el)
+  // A VDOM component: its root, or the first element after a fragment's anchor.
+  const root = (ref as { $el?: unknown }).$el
+  if (root instanceof HTMLElement) return root
+  if (root instanceof Node) {
+    let node = root.nextSibling
+    while (node && !(node instanceof HTMLElement)) node = node.nextSibling
+    return node
+  }
+  // A Vapor component instance.
+  return firstElementOfBlock((ref as { block?: unknown }).block)
+}

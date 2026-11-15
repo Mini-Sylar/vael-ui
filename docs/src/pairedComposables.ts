@@ -1186,7 +1186,7 @@ const { rootStyle, onTrackPointerdown, onThumbPointerdown, onThumbKeydown } = us
         {
           name: 'isDragging',
           type: 'Ref<boolean>',
-          description: '`true` from pointer down until release.',
+          description: '`true` from pointer down until release. A move counts from its first 4 px.',
         },
         {
           name: 'activeThumb',
@@ -1419,7 +1419,7 @@ const { rootStyle, onDialPointerdown, onDialKeydown } = useDial(zoom, {
       name: 'useResizable',
       installNames: ['useResizable'],
       description:
-        "The headless drag and keyboard engine behind `<Resizable>`. It turns a handle's pointer drag into a size in px on your ref. Mid drag, the size stretches past `min` and `max` with rubber-band resistance, then settles back within them on release. Arrow keys resize by 16 px, and Home and End jump to `min` and `max`. `<Resizable>` adds the panel, the separator role and its ARIA values. Use the composable when the handle and the panel live apart in your own layout.",
+        "The headless drag and keyboard engine behind `<Resizable>`. It turns a handle's pointer drag into a size in px on your ref, written once a frame. Mid drag, the size stretches past `min` and `max` with rubber-band resistance, then settles back within them on release. Escape puts it back where the drag started. Arrow keys resize by 16 px, and Home and End jump to `min` and `max`. `<Resizable>` adds the panel, the separator role and its ARIA values. Use the composable when the handle and the panel live apart in your own layout.",
       exampleCode: `<script setup lang="ts">
 import { ref } from 'vue'
 import { useResizable } from 'vael-ui'
@@ -1484,6 +1484,29 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
           description: 'Ignores pointer and key input while `true`. Default `false`.',
         },
         {
+          name: 'step',
+          type: 'MaybeRefOrGetter<number | undefined>',
+          description:
+            "Snaps to a multiple of `step` on release, a day on a timeline say, while the drag itself stays smooth. An arrow key moves one step. Unset, a drag doesn't snap and an arrow key moves 16 px.",
+        },
+        {
+          name: 'offset',
+          type: 'Ref<number>',
+          description:
+            "Where it starts, for a span such as a timeline bar. An `edge: 'start'` handle then moves the start and the size together, so the far end stays put, and `onMovePointerdown` moves the whole span. Two instances over the same two refs, one per edge, make a bar. A handle pulled past `min` flips the span over its other end.",
+        },
+        {
+          name: 'bounds',
+          type: 'MaybeRefOrGetter<[number, number]>',
+          description: 'With `offset`: the span stays between these, start and end.',
+        },
+        {
+          name: 'scrollEl',
+          type: 'MaybeRefOrGetter<HTMLElement | null>',
+          description:
+            'A scrolling container. Near its edges it scrolls under the pointer during a drag, faster the closer the pointer gets, and the drag follows. Set its `scroll-padding` to what covers it, such as a sticky column, and the edge is measured from there.',
+        },
+        {
           name: 'onCommit',
           type: '() => void',
           description:
@@ -1491,6 +1514,17 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
         },
       ],
       returns: [
+        {
+          name: 'onMovePointerdown',
+          type: '(event: PointerEvent) => void',
+          description:
+            "With `offset`: bind it on the span to move it whole. It starts after 4 px of travel, so a still press stays a click, and the click after a move, or after Escape, doesn't fire.",
+        },
+        {
+          name: 'onMoveKeydown',
+          type: '(event: KeyboardEvent) => void',
+          description: 'With `offset`: the arrow keys move the whole span a step.',
+        },
         {
           name: 'onHandlePointerdown',
           type: '(event: PointerEvent) => void',
@@ -1506,7 +1540,7 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
         {
           name: 'isDragging',
           type: 'Ref<boolean>',
-          description: '`true` from pointer down until release.',
+          description: '`true` from pointer down until release. A move counts from its first 4 px.',
         },
       ],
     },
