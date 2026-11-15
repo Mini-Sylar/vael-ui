@@ -659,6 +659,8 @@ const resolvedAlign = computed<TreeSelectAlign>(() => {
 })
 
 defineExpose({
+  /** Root element: the trigger frame. */
+  el: triggerEl,
   /** Trigger element: the frame around the combobox and its clear button. Focusing it focuses the combobox. */
   triggerEl,
   /** Panel element (null while closed). */

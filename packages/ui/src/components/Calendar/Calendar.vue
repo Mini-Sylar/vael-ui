@@ -1285,6 +1285,8 @@ function cellPart(day: Date, month: Date) {
 
 defineExpose({
   /** Root element. */
+  el: rootEl,
+  /** Root element (same as `el`). */
   rootEl,
   /** Day grid element (`null` while the month or year grid shows). */
   gridEl,

@@ -42,7 +42,6 @@ const PER_BUILD_MODULES = new Set([
   'composables/indicatorStretch',
   'composables/dateText',
   'composables/useFormReset',
-  'composables/slotTrigger',
   'motion/springNames',
   'composables/useEasedHeight',
   'composables/useFold',

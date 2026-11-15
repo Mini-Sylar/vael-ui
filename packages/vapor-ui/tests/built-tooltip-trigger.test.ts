@@ -23,3 +23,20 @@ test('Vapor: setTriggerEl attaches a plain element and a component', async () =>
     app.unmount()
   }
 })
+
+test('Vapor: a component that exposes no element gets a dev warning naming the fix', async () => {
+  const { default: Root } = await import('./fixtures/TooltipTriggerClosedRoot.vue')
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  const host = document.createElement('div')
+  document.body.appendChild(host)
+  const app = createVaporApp(Root)
+  app.mount(host)
+  try {
+    await vi.waitFor(() =>
+      expect(warn.mock.calls.some(([m]) => String(m).includes('defineExpose({ el })'))).toBe(true),
+    )
+  } finally {
+    app.unmount()
+    warn.mockRestore()
+  }
+})

@@ -96,7 +96,6 @@ import { computed, inject, shallowRef, useAttrs, useId, useTemplateRef, watch } 
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance } from 'vue'
 import { elementOf } from '../../composables/dom'
-import { useSlotTrigger } from '../../composables/slotTrigger'
 import { repeatsName, setDescribedBy, useTooltip } from '../../composables/useTooltip'
 import { useTooltipMotion } from '../../composables/useTooltipMotion'
 import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
@@ -144,9 +143,10 @@ function setTriggerEl(el: Element | ComponentPublicInstance<any> | null) {
   slotTriggerEl.value = el
 }
 
-const slotTrigger = useSlotTrigger(slotTriggerEl)
 const triggerElRef = computed<HTMLElement | null>(() =>
-  props.triggerEl !== undefined ? unwrapEl(props.triggerEl) : slotTrigger(),
+  props.triggerEl !== undefined
+    ? unwrapEl(props.triggerEl, 'Tooltip triggerEl')
+    : unwrapEl(slotTriggerEl.value, 'Tooltip setTriggerEl'),
 )
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')

@@ -137,7 +137,9 @@ const zoneEl = useTemplateRef<HTMLElement>('zoneEl')
 // into an already-scrollable layout shouldn't force that layout to restructure around our root.
 const ownsScroll = computed(() => props.scrollEl === undefined)
 useFocusableScroller(root, ownsScroll)
-const scrollEl = computed(() => (ownsScroll.value ? root.value : unwrapEl(props.scrollEl)))
+const scrollEl = computed(() =>
+  ownsScroll.value ? root.value : unwrapEl(props.scrollEl, 'PullToRefresh scrollEl'),
+)
 
 const messages = useMessages({ pullToRefresh: pullToRefreshMessages })
 

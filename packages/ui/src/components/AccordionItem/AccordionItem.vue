@@ -184,6 +184,8 @@ const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-accordio
 const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-accordion-chevron'))
 
 defineExpose({
+  /** Root element. */
+  el: item,
   /** Panel element, always mounted. */
   panelEl: panel,
   /** The built-in chevron, for your own engine to turn. Null when the `#trigger` slot replaces it. */

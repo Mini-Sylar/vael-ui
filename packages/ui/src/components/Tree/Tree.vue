@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="treeRoot"
     class="ui-tree-root"
     v-bind="rootAttrs"
     :data-motion="props.motion ? undefined : 'off'"
@@ -705,6 +706,7 @@ function isVisible(node: TreeNode): boolean {
 const visibleRootNodes = computed(() => props.items.filter(isVisible))
 
 // Roving tabindex + keyboard nav (own copy due to tree semantics).
+const treeRoot = useTemplateRef<HTMLElement>('treeRoot')
 const listEl = useTemplateRef<HTMLElement>('listEl')
 // Single selection: the new row's highlight slides in from where the last one was, or fades in
 // when that's more than a few rows away. CSS owns the motion; this only measures the distance.
@@ -1491,6 +1493,8 @@ provide<TreeRowContext>(
 )
 
 defineExpose({
+  /** Root element. */
+  el: treeRoot,
   /** The `role="tree"` list element. */
   listEl,
   /** The hover and keyboard highlight, sliding between rows. With `motion: false` it moves at once, for your own animation. */

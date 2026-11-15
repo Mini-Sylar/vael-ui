@@ -474,7 +474,9 @@ watch(triggerWrapper, refreshResolvedTrigger, { immediate: true, flush: 'post' }
 useMutationObserver(triggerWrapper, refreshResolvedTrigger, { childList: true, subtree: true })
 
 const triggerElRef = computed<HTMLElement | null>(() =>
-  props.triggerEl !== undefined ? unwrapEl(props.triggerEl) : resolvedTriggerEl.value,
+  props.triggerEl !== undefined
+    ? unwrapEl(props.triggerEl, 'Menu triggerEl')
+    : resolvedTriggerEl.value,
 )
 
 function openMenu() {

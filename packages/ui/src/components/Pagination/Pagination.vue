@@ -407,6 +407,8 @@ const sizeSelectPart = computed(() =>
 )
 
 defineExpose({
+  /** Root element. */
+  el: root,
   /** The page-number list. */
   listEl,
   /** The sliding highlight behind the current page. */

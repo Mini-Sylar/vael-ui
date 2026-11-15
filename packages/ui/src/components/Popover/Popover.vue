@@ -184,7 +184,6 @@ import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance, StyleValue } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
-import { useSlotTrigger } from '../../composables/slotTrigger'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import {
   elementOf,
@@ -286,11 +285,10 @@ function refreshResolvedTrigger() {
 watch(triggerWrapper, refreshResolvedTrigger, { immediate: true })
 useMutationObserver(triggerWrapper, refreshResolvedTrigger, { childList: true, subtree: true })
 
-const slotTrigger = useSlotTrigger(slotTriggerEl)
 const triggerElRef = computed<HTMLElement | null>(() => {
-  if (props.triggerEl !== undefined) return unwrapEl(props.triggerEl)
+  if (props.triggerEl !== undefined) return unwrapEl(props.triggerEl, 'Popover triggerEl')
   if (props.openOnTriggerClick) return unwrapEl(slotTriggerEl.value) ?? resolvedWrapperEl.value
-  return slotTrigger()
+  return unwrapEl(slotTriggerEl.value, 'Popover setTriggerEl')
 })
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
