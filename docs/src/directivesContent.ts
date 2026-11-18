@@ -172,7 +172,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
   vTooltip: {
     label: 'v-tooltip',
     description:
-      'Shows a tooltip on hover and keyboard focus. Every `v-tooltip` in the app shares one `<TooltipHost />`, which you mount near your app root (see the Global Setup guide). The Vapor build exports its own version under the same name from `vael-ui/vapor`.',
+      'Shows a tooltip on hover and keyboard focus. Every `v-tooltip` in the app shares one `<TooltipHost />`, which you mount near your app root (see the Global Setup guide). Style it through the `ui` prop of `TooltipHost`; `--ui-tooltip-bg` and `--ui-tooltip-color` set its colours. The Vapor build exports its own version under the same name from `vael-ui/vapor`.',
     installNames: ['vTooltip'],
     value: [
       {

@@ -422,7 +422,8 @@ const rawProps = withDefaults(
      */
     revertOnBlur?: boolean
     /** What Tab commits before focus moves on. `'select'`: the highlighted row, once you type or move
-     * the highlight with the keyboard. `'create'` (`allowCustom` only): the typed text, or the item it names. */
+     * the highlight with the keyboard. `'create'` (`allowCustom` only): the typed text, or the item it names.
+     * Tab always moves focus on; with `multiple`, Enter commits and keeps it, for the next tag. */
     tabBehavior?: ComboboxTabBehavior
     /** Opens the panel on focus, before you type. Unset means on; set `false` to require typing first. */
     openOnFocus?: boolean

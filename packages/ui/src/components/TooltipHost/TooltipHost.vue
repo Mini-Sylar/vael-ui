@@ -64,7 +64,7 @@ export interface TooltipHostProps {
    * object moves them your way. Warm opens stay instant either way.
    */
   motion?: TooltipMotion
-  /** Class and style overrides for each part. */
+  /** Class and style overrides for each part. Set `--ui-tooltip-bg` and `--ui-tooltip-color` on `panel` to recolour it. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>

@@ -10,7 +10,7 @@
   .ui-tooltip-panel {
     position: relative;
     padding: 0.375rem 0.625rem;
-    color: var(--ui-primary-contrast);
+    color: var(--ui-tooltip-color, var(--ui-primary-contrast));
     font-size: calc(var(--ui-font-size) * 0.8125);
     line-height: 1.4;
     max-inline-size: 18rem;
@@ -21,7 +21,7 @@
     inset: 0;
     z-index: -1;
     border-radius: calc(var(--ui-radius) - 2px);
-    background: var(--ui-primary);
+    background: var(--ui-tooltip-bg, var(--ui-primary));
     box-shadow: var(--ui-panel-shadow);
     transform-origin: inherit;
     scale: var(--ui-tooltip-morph-x, 1) var(--ui-tooltip-morph-y, 1);

@@ -81,7 +81,7 @@ export interface TooltipProps {
   motion?: TooltipMotion
   /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
-  /** Class and style overrides for each part. */
+  /** Class and style overrides for each part. Set `--ui-tooltip-bg` and `--ui-tooltip-color` on `panel` to recolour it. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
