@@ -268,10 +268,12 @@ export type MotionStep<N extends string = string> = MotionTiming & {
 export type StaggerFrom = 'end' | 'center' | 'edges' | 'random'
 
 /**
- * Elements one after another: `true` spaces them by the stagger token (40 ms) in page order;
+ * Elements one after another: `true` spaces them by the stagger token (40 ms) in page order, for up to
+ * 7 steps (about 0.3 s): later elements come in with the last one;
  * `'end'`, `'center'` or `'edges'` start the wave there instead, and `'random'` shuffles the order (across a grid, `'center'` and
  * `'edges'` go by where each sits: from the middle cell, or from the corners). A number is the
- * seconds between them; a function gives each its own start: `(index, count) => seconds`.
+ * seconds between them, however far it goes; a function gives each its own start:
+ * `(index, count) => seconds`.
  */
 export type Stagger = boolean | StaggerFrom | number | ((index: number, count: number) => number)
 
