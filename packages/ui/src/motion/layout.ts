@@ -5,7 +5,9 @@ import { onBeforeUpdate } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
 import { cssSize, quietAttribute, sizeTimingOf } from './size'
+import { springEasing } from './springEasing'
 import { resolveTiming, track } from './timing'
+import { speedOf } from './velocity'
 import type { ElementHookContext, MotionResult, MotionTiming, MotionValues } from './types'
 import { LAYOUT_ID } from './ids'
 import { runHook } from './hook'
@@ -510,6 +512,8 @@ export interface LeavingPlace {
   floats?: boolean
   /** In a box that follows its size, what came after it in the flow, and where each was. */
   after?: { el: HTMLElement; was: DOMRect }[]
+  /** How fast it was moving as it started leaving (a throw, a live value), per second, by key. */
+  speed?: Partial<Record<string, number>>
 }
 
 // An element that can be lifted out and placed: HTML, or an icon's outermost <svg>.
@@ -532,7 +536,8 @@ export function placeOnLeave(el: Element): LeavingPlace | undefined {
   }
   const floats = /^(absolute|fixed)$/.test(style.position)
   const after = floats ? undefined : followersIn(el)
-  return { parent: el.parentNode, next: el.nextSibling, box, at, look, floats, after }
+  const speed = speedOf(el)
+  return { parent: el.parentNode, next: el.nextSibling, box, at, look, floats, after, speed }
 }
 
 /** Inside a box that follows its size, the siblings after it in the flow that close its gap. */
@@ -763,7 +768,10 @@ export function leaveInPlace(
       )
       if (moves) translateTaken = true
       if (!Object.keys(frame).length) return undefined
-      const { duration, easing } = resolveTiming(el, group.timing ?? timing)
+      const resolved = resolveTiming(el, group.timing ?? timing)
+      // A spring carries on at the speed it was moving: a thrown card keeps going, it doesn't stop.
+      const carried = resolved.spring ? carry(group.values, place) : 0
+      const { duration, easing } = carried ? springEasing(resolved.spring!, carried) : resolved
       return el.animate([{ ...frame, offset: 1 }], {
         duration,
         easing,
@@ -773,4 +781,25 @@ export function leaveInPlace(
     })
     void track(Promise.all(runs).then(gone, gone))
   }
+}
+
+// The speed an exit's spring starts at, relative to how far it goes (per second): for the one
+// moving value in `values` that was moving as it left, from where it was to where it's going.
+function carry(values: MotionValues, place: LeavingPlace): number {
+  const look = place.look ?? {}
+  const now: Record<string, number> = {}
+  const [tx = '0', ty = '0'] = (look.translate ?? '').split(' ')
+  now.x = parseFloat(tx) || 0
+  now.y = parseFloat(ty) || 0
+  now.rotate = parseFloat(look.rotate ?? '') || 0
+  now.scale = parseFloat(look.scale ?? '') || 1
+  const keys = (['x', 'y', 'rotate', 'scale'] as const).filter(
+    (key) => key in values && place.speed?.[key],
+  )
+  if (keys.length !== 1) return 0
+  const key = keys[0]!
+  const to = Number((values as Record<string, unknown>)[key])
+  const distance = to - now[key]!
+  if (!Number.isFinite(to) || Math.abs(distance) < 0.5) return 0
+  return place.speed![key]! / distance
 }

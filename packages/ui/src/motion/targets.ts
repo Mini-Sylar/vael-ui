@@ -3,7 +3,6 @@
 import { mergeTargets } from './context'
 import type { ResolvedMotion } from './context'
 import type { PresenceEntry } from './presence'
-import { valuesAt } from './playable'
 import type { MotionValues, MotionWhere, TargetMotion } from './types'
 import { motionWarn } from './warn'
 
@@ -57,4 +56,8 @@ export const exitOf = (
   t: TargetMotion,
   where: MotionWhere,
   otherwise: MotionValues,
-): MotionValues => (t.exit === false ? {} : (valuesAt(t.exit, where) ?? otherwise))
+): MotionValues => {
+  // A function may decide, as it leaves, to leave at once.
+  const exit = typeof t.exit === 'function' ? t.exit(where) : t.exit
+  return exit === false ? {} : (exit ?? otherwise)
+}

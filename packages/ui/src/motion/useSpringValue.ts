@@ -27,8 +27,11 @@ export interface SpringHandle {
   readonly velocity: number
   readonly target: number
   readonly isAnimating: boolean
-  /** Re-targets from the CURRENT presentation value and velocity, never from the previous target — that's what makes a spring interruptible mid-flight instead of jumping. Pass `velocity` to hand off a gesture's release speed so there's no seam between drag and animation. */
-  set: (target: number, options?: { velocity?: number }) => void
+  /** Re-targets from the CURRENT presentation value and velocity, never from the previous target — that's what makes a spring interruptible mid-flight instead of jumping. Pass `velocity` to hand off a gesture's release speed so there's no seam between drag and animation. `damping` and `response` replace the spring's own for this flight only: a throw can have give while a button press settles with none. */
+  set: (
+    target: number,
+    options?: { velocity?: number; damping?: number; response?: number },
+  ) => void
   /** Teleports with no motion (initial placement, or a reduced-motion path). */
   jump: (value: number) => void
   /** Parks at the current value, dropping the remaining motion. */
@@ -91,13 +94,16 @@ export function createSpring(
   const response = options.response ?? DEFAULT_RESPONSE
   const epsilon = options.epsilon ?? DEFAULT_EPSILON
 
+  // What this flight uses: a `set` can name its own, and the next one starts from the defaults.
+  let flightDamping = damping
+  let flightResponse = response
   let state: SpringState = { value: initial, velocity: 0 }
   let target = initial
   let animating = false
 
   const runner = {
     advance(dt: number) {
-      state = stepSpring(state, target, dt, damping, response)
+      state = stepSpring(state, target, dt, flightDamping, flightResponse)
       const settled = Math.abs(state.value - target) < epsilon && Math.abs(state.velocity) < epsilon
       if (settled) {
         state = { value: target, velocity: 0 }
@@ -123,6 +129,8 @@ export function createSpring(
     },
     set(next, setOptions) {
       target = next
+      flightDamping = setOptions?.damping ?? damping
+      flightResponse = setOptions?.response ?? response
       if (setOptions?.velocity != null) state.velocity = setOptions.velocity
       if (Math.abs(state.value - target) < epsilon && Math.abs(state.velocity) < epsilon) {
         state = { value: target, velocity: 0 }

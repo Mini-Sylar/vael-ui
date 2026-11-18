@@ -19,8 +19,10 @@ const still = (values: MotionValues) =>
   Object.fromEntries(Object.entries(values).filter(([key]) => !MOVES.test(key))) as MotionValues
 
 export function holdTarget(el: HTMLElement) {
-  const player = createStatePlayer()
+  let player = createStatePlayer()
   let first = true
+  // Holding a look (`update`) since the last scrub: a scrub lets it go first.
+  let holding = false
   let scrubbed: Animation[] | undefined
   let chase: ReturnType<typeof createSpring> | undefined
   let chaseKey = ''
@@ -53,6 +55,15 @@ export function holdTarget(el: HTMLElement) {
         again: changed && !first ? [ON] : undefined,
       })
       first = false
+      holding = true
+      // From a scrub to a held look: the hold above started from what the scrub showed, so the
+      // scrub can go now without a jump.
+      if (scrubbed) {
+        for (const run of scrubbed) run.cancel()
+        scrubbed = undefined
+        chase?.destroy()
+        chase = undefined
+      }
       // Its first look isn't a move; a change is, once it has played (never an endless loop).
       if (!moved || opening) return
       const change = ++changes
@@ -64,6 +75,14 @@ export function holdTarget(el: HTMLElement) {
     },
     /** `progress`: the keyframes held at this point, 0 to 1; `rebuild` when they changed. */
     scrub(values: MotionValues, progress: number, timing: MotionTiming, rebuild: boolean) {
+      // From a held look to a scrub: let the held look go, or it stays under the keyframes.
+      if (holding) {
+        player.dispose()
+        player = createStatePlayer()
+        first = true
+        holding = false
+        rebuild = true
+      }
       const quiet = prefersReducedMotion() || motionOffAt(el)
       if (quiet !== calm) rebuild = true
       calm = quiet

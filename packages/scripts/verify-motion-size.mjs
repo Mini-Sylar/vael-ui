@@ -128,13 +128,20 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // runtime 7.75 → 7.8 KB, states 8.05 → 8.15 KB (2026-11-18): no code change. The same source builds
 // 40 and 76 B larger after the toolchain update (rolldown 1.2.16 → 1.2.19, unplugin-vue 8.0.1).
 // Measured 7937 and 8279 B.
+// runtime 7.8 → 8.05 KB, states 8.15 → 8.4 KB, linked 3.15 → 3.4 KB (2026-11-18): keyframe lists
+// of different lengths each spread over the whole run (`rotate: [-25, 0, 25]` next to five opacity
+// keyframes turned 25° halfway), in the keyframe builder all three share. Measured 8198, 8545 and 3454 B.
+// button 1.38 → 1.4 KB (2026-11-18): an `exit` function may return `false` to leave at once, read
+// by the check that decides whether CSS can play a look. Measured 1415 B.
+// up front 9.7 → 9.75 KB (2026-11-18): an exit carries on at the speed its element was moving (a
+// throw, a live value), and an entrance that ends hands live values back their own. Measured 9955 B.
 const BUDGET = {
-  upFront: 9.7 * 1024,
-  runtime: 7.8 * 1024,
+  upFront: 9.75 * 1024,
+  runtime: 8.05 * 1024,
   morph: 1.55 * 1024,
-  button: 1.38 * 1024,
-  states: 8.15 * 1024,
-  linked: 3.15 * 1024,
+  button: 1.4 * 1024,
+  states: 8.4 * 1024,
+  linked: 3.4 * 1024,
 }
 
 // Every chunk a file pulls in statically.

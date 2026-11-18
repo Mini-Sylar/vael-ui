@@ -9,9 +9,9 @@ export function isTimed(raw: unknown): raw is TimedValue<unknown> {
 
 /** Values written as a function of where the element is (a swap's direction, its index). */
 export const valuesAt = (
-  values: MotionValues | ((where: MotionWhere) => MotionValues) | false | undefined,
+  values: MotionValues | ((where: MotionWhere) => MotionValues | false) | false | undefined,
   where: MotionWhere,
-): MotionValues | undefined => (typeof values === 'function' ? values(where) : values || undefined)
+): MotionValues | undefined => (typeof values === 'function' ? values(where) : values) || undefined
 
 /**
  * When the element at `index` of `count` starts, in seconds after the first. A word is spaced by
