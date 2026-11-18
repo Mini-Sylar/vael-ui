@@ -10,6 +10,7 @@ const MOTION = [
   'useScrollProgress',
   'useScrollLength',
   'settled',
+  'mapRange',
   'springEasing',
   'useSpringValue',
   'useTween',

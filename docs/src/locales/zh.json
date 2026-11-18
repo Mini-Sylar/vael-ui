@@ -442,6 +442,7 @@
     "useNumberFormat": "用相同的选项按语言环境格式化和解析数字，使输入文本与格式化后的显示始终一致。用于你自己的数字字段，或让 AnimatedNumber 使用相同的格式。",
     "useColorScheme": "在浅色、深色和跟随系统模式之间切换，还可以让新配色从点击处呈圆形扩散。用于主题切换，传入你自己的存储函数即可记住选择。",
     "useHaptic": "在支持的手机上播放触感反馈：轻点、轻撞、短促的成功、警告或错误模式，或你自定义的模式。用于确认某个操作的时刻。",
+    "mapRange": "通过对齐两个范围，把一个数字换算成另一个：把拖动的偏移变成倾斜，把滚动变成不透明度。配合 v-animate 中的实时值使用。",
     "springEasing": "把弹簧转换成 CSS linear() 曲线及其稳定时间。用它让 element.animate() 或 CSS 过渡使用与 vael-ui 相同的弹簧。",
     "preventFocusZoom": "阻止 iOS 在表单字段获得焦点时放大页面，让字段与其余文字大小一致。在客户端调用一次，例如在 main.ts 中。",
     "useFloatingPosition": "Popover、Menu 和 Tooltip 背后的定位引擎，基于 Floating UI 构建。用它构建你自己的锚定浮层。",
@@ -455,6 +456,8 @@
     "useScrollLock": "像对话框打开时那样，锁定页面或任意元素的滚动，且不会造成布局偏移。用于你自己的浮层和全屏面板。",
     "moveTreeNode": "将节点及其子树原地移动到新的父节点和索引。不可能的移动（例如把文件夹放进它自己里面）不会改变任何内容。用它把拖放移动应用到你的树数据上。",
     "useFileDrop": "把任意元素变成文件放置区，拖拽经过子元素时悬停状态保持稳定，并忽略拖入的文本或链接。用它构建你自己的放置区。",
+    "useWheel": "沿一排项目拖动、甩动、滚动或用按键移动的位置，并停在某一项上：滚轮选择器、轮播、分页器。每一项以 CSS 变量读取它与停靠点的距离。",
+    "useDrag": "松手时决定去向的拖动：元素跟随指针，松手后按你返回的位置移动，弹簧保留甩出的速度。适用于卡片堆叠和滑动关闭。",
     "useScrollLength": "页面或容器可滚动的距离（px），以 ref 形式提供。会随内容增减而更新。"
   },
   "autoImport": {
@@ -603,6 +606,7 @@
     "yoursIntro": "<code>v-animate</code> 让你自己的元素拥有同样的动效：入场、离场、平滑适应内容的尺寸，或在布局变化时滑动到新位置。它和用于你自己元素的其他工具都从 <code>vael-ui/motion</code> 导入;在 Vapor 组件中,改为从那里导入 <code>vAnimateVapor</code>。",
     "yoursComposables": "要实现你自己的动效，可使用背后的这些组合式函数：",
     "composable": {
+      "mapRange": "通过对齐两个范围，把一个数字换算成另一个。",
       "springEasing": "把弹簧转换为 CSS 缓动和稳定所需的时间。",
       "useSpringValue": "一个沿弹簧追随目标的值。",
       "useScrollProgress": "0 到 1 的滚动进度，用于跟随滚动的动效。",
@@ -856,7 +860,7 @@
         },
         "drag": {
           "title": "拖动",
-          "body": "可拖动的组件（BottomSheet、SwipeToReveal、Sortable、Slider）已经内置了拖动。要让人重新排序你自己的列表，或在列表之间移动条目，请用 <code>v-draggable</code> 配合 <code>useSortableGroup</code>：与 Sortable 相同的引擎和动效。对自由拖动的元素（例如用 VueUse 的 <code>useDraggable</code>），把它的偏移放在 <code>animate</code> 里，松手时设回 0，<code>v-animate</code> 会用弹簧把它带回原位。"
+          "body": "可以拖动的组件（BottomSheet、SwipeToReveal、Sortable、Slider）已经内置了。要重新排序你自己的列表，或在列表之间移动项目，请用 <code>v-draggable</code> 配合 <code>useSortableGroup</code>。对于要扔出去或滑动移除的东西，<code>useDrag</code> 让元素跟随手指移动，并在松手时询问 <code>onRelease</code> 它该去哪里。用 <code>animate</code> 中的实时值把外观与拖动联系起来，这是一个每帧都会被跟随、且不会重新渲染的 getter：<code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>。<code>mapRange</code> 对齐两个范围，于是卡片在拖动过程中从 -12° 转到 12°。在扔出途中被移除时，它的 <code>exit</code> 会以扔出的速度继续。"
         },
         "own": {
           "title": "你自己的组件",

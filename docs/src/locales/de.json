@@ -461,6 +461,7 @@
     "useNumberFormat": "Formatiert und analysiert Zahlen für ein Gebietsschema mit denselben Optionen, sodass eingegebener Text und formatierte Anzeige immer übereinstimmen. Nutzen Sie es für eigene Zahlenfelder oder um AnimatedNumber dasselbe Format zu geben.",
     "useColorScheme": "Wechselt zwischen hellem, dunklem und System-Modus und kann das neue Farbschema von einem Klick aus kreisförmig ausbreiten. Nutzen Sie es für einen Theme-Umschalter, und übergeben Sie eigene Speicherfunktionen, um die Auswahl zu merken.",
     "useHaptic": "Spielt haptisches Feedback auf Telefonen ab, die es unterstützen: ein leichtes Ticken, einen Stoß, ein kurzes Erfolgs-, Warn- oder Fehlermuster oder Ihr eigenes. Nutzen Sie es für Momente, die etwas bestätigen.",
+    "mapRange": "Macht aus einer Zahl eine andere, indem zwei Bereiche übereinandergelegt werden: aus dem Versatz beim Ziehen eine Neigung, aus dem Scrollen eine Deckkraft. Passt zu einem Live-Wert in v-animate.",
     "springEasing": "Macht aus einer Feder eine CSS-linear()-Kurve samt Einschwingzeit. Nutzen Sie es, um element.animate() oder einer CSS-Transition dieselbe Feder wie vael-ui zu geben.",
     "preventFocusZoom": "Verhindert, dass iOS hineinzoomt, wenn ein Formularfeld den Fokus erhält, damit Felder zur übrigen Schriftgröße passen können. Rufen Sie es einmal auf dem Client auf, etwa in main.ts.",
     "useFloatingPosition": "Die Positionierungs-Engine hinter Popover, Menu und Tooltip, auf Basis von Floating UI. Nutzen Sie sie, um eigene verankerte Panels zu bauen.",
@@ -474,6 +475,8 @@
     "useScrollLock": "Sperrt das Scrollen der Seite oder eines beliebigen Elements ohne Layoutsprung, so wie Dialoge es tun, solange sie geöffnet sind. Nutzen Sie es für Ihre eigenen Overlays und Vollbild-Panels.",
     "moveTreeNode": "Verschiebt einen Knoten samt Teilbaum direkt an einen neuen Elternknoten und Index. Eine unmögliche Verschiebung, etwa ein Ordner in sich selbst, ändert nichts. Nutzen Sie es, um eine Drag-and-drop-Verschiebung auf Ihre Baumdaten anzuwenden.",
     "useFileDrop": "Macht jedes Element zum Ablageziel für Dateien, mit einem Drag-over-Zustand, der über Kindelementen stabil bleibt und gezogenen Text oder Links ignoriert. Nutzen Sie es, um Ihre eigene Drop-Zone zu bauen.",
+    "useWheel": "Eine Position entlang einer Reihe von Elementen, die man zieht, wirft, scrollt oder per Taste weiterschaltet und die auf einem Element einrastet: eine Auswahlwalze, ein Karussell, ein Pager. Die Elemente lesen ihren Abstand als CSS-Variablen.",
+    "useDrag": "Ein Ziehen, das beim Loslassen entscheidet: Das Element folgt dem Zeiger und landet dann dort, wo du es hinschickst, auf einer Feder, die das Tempo des Wurfs behält. Für Kartenstapel und Wischen zum Schließen.",
     "useScrollLength": "Wie weit die Seite oder ein Container scrollen kann, in px, als Ref. Der Wert folgt dem Inhalt, wenn er wächst oder schrumpft."
   },
   "nuxt": {
@@ -603,6 +606,7 @@
     "yoursIntro": "<code>v-animate</code> gibt Ihren eigenen Elementen dieselbe Bewegung: einen Auftritt, einen Abgang, eine Größe, die sich weich an ihren Inhalt anpasst, oder ein Gleiten an einen neuen Platz, wenn sich das Layout ändert. Diese und die übrigen Werkzeuge für eigene Elemente importierst du aus <code>vael-ui/motion</code>; in einer Vapor-Komponente importierst du stattdessen <code>vAnimateVapor</code> von dort.",
     "yoursComposables": "Für eigene Bewegung nutzen Sie die Composables dahinter:",
     "composable": {
+      "mapRange": "Macht aus einer Zahl eine andere, indem zwei Bereiche übereinandergelegt werden.",
       "springEasing": "Macht aus einer Feder ein CSS-Easing und ihre Einschwingzeit.",
       "useSpringValue": "Ein Wert, der seinem Ziel auf einer Feder folgt.",
       "useScrollProgress": "Scroll-Fortschritt von 0 bis 1, für Bewegung am Scrollen.",
@@ -856,7 +860,7 @@
         },
         "drag": {
           "title": "Ziehen",
-          "body": "Die Komponenten, die man ziehen kann (BottomSheet, SwipeToReveal, Sortable, Slider), bringen das schon mit. Damit man deine eigene Liste umsortieren oder Einträge zwischen Listen verschieben kann, nimm <code>v-draggable</code> mit <code>useSortableGroup</code>: dieselbe Engine und Bewegung wie bei Sortable. Für ein frei gezogenes Element (etwa mit VueUse's <code>useDraggable</code>) halte seinen Versatz in <code>animate</code> und setze ihn beim Loslassen auf 0 zurück: <code>v-animate</code> federt es zurück."
+          "body": "Die Komponenten, die man ziehen kann (BottomSheet, SwipeToReveal, Sortable, Slider), bringen das schon mit. Um eine eigene Liste umzusortieren oder Einträge zwischen Listen zu verschieben, nimm <code>v-draggable</code> mit <code>useSortableGroup</code>. Für alles, was man wirft oder wegwischt, bewegt <code>useDrag</code> das Element mit dem Finger und fragt <code>onRelease</code>, wohin es geht. Verknüpfe ein Aussehen mit dem Ziehen über einen Live-Wert in <code>animate</code>, einen Getter, dem es jedes Frame folgt, ohne neu zu rendern: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. <code>mapRange</code> legt zwei Bereiche übereinander, sodass sich die Karte über den Weg von -12° bis 12° dreht. Mitten im Wurf entfernt, fliegt ihr <code>exit</code> mit dem Tempo des Wurfs weiter."
         },
         "own": {
           "title": "Ihre eigenen Komponenten",

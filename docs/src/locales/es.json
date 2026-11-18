@@ -442,6 +442,7 @@
     "useNumberFormat": "Formatea y analiza números para un idioma con las mismas opciones, así el texto escrito y su vista formateada siempre coinciden. Úsalo para tus propios campos numéricos, o para dar a AnimatedNumber el mismo formato.",
     "useColorScheme": "Cambia entre los modos claro, oscuro y del sistema, y puede extender el nuevo esquema en un círculo desde un clic. Úsalo para un selector de tema, y pasa tus propias funciones de almacenamiento para recordar la elección.",
     "useHaptic": "Reproduce una respuesta háptica en los teléfonos que la admiten: un toque ligero, un golpe, un patrón corto de éxito, advertencia o error, o uno propio. Úsalo para momentos que confirman algo.",
+    "mapRange": "Convierte un número en otro alineando dos rangos: el desplazamiento de un arrastre en una inclinación, un desplazamiento de la página en una opacidad. Úsalo con un valor en vivo en v-animate.",
     "springEasing": "Convierte un resorte en una curva CSS linear() y su tiempo de asentamiento. Úsalo para dar a element.animate() o a una transición CSS el mismo resorte que vael-ui.",
     "preventFocusZoom": "Evita que iOS amplíe la página cuando un campo de formulario recibe el foco, para que los campos puedan coincidir con el resto de tu texto. Llámalo una vez en el cliente, por ejemplo en main.ts.",
     "useFloatingPosition": "El motor de posicionamiento detrás de Popover, Menu y Tooltip, construido sobre Floating UI. Úsalo para crear tus propios paneles anclados.",
@@ -455,6 +456,8 @@
     "useScrollLock": "Bloquea el desplazamiento de la página o de cualquier elemento sin saltos de diseño, como hacen los diálogos mientras están abiertos. Úsalo para tus propias superposiciones y paneles a pantalla completa.",
     "moveTreeNode": "Mueve un nodo y su subárbol a un nuevo padre e índice, en el mismo lugar. Un movimiento imposible, como una carpeta dentro de sí misma, no cambia nada. Úsalo para aplicar un movimiento de arrastrar y soltar a los datos de tu árbol.",
     "useFileDrop": "Convierte cualquier elemento en una zona para soltar archivos, con un estado de arrastre que se mantiene estable sobre los elementos hijos e ignora el texto o los enlaces arrastrados. Úsalo para crear tu propia zona de soltar.",
+    "useWheel": "Una posición que arrastras, lanzas, desplazas o avanzas con las teclas a lo largo de una fila de elementos, y que se detiene en uno: un selector de rueda, un carrusel, un paginador. Cada elemento lee su distancia como variables CSS.",
+    "useDrag": "Un arrastre que decide al soltar: el elemento sigue al puntero y luego va adonde indiques, con un muelle que conserva la velocidad del lanzamiento. Para mazos de tarjetas y deslizar para descartar.",
     "useScrollLength": "Cuánto puede desplazarse la página o un contenedor, en px, como ref. Sigue al contenido cuando crece o se encoge."
   },
   "autoImport": {
@@ -603,6 +606,7 @@
     "yoursIntro": "<code>v-animate</code> da a tus propios elementos el mismo movimiento: una entrada, una salida, un tamaño que se ajusta suavemente a su contenido o un deslizamiento a un nuevo sitio cuando cambia el diseño. Esta y el resto de herramientas para tus propios elementos se importan desde <code>vael-ui/motion</code>; en un componente Vapor, importa <code>vAnimateVapor</code> desde ahí.",
     "yoursComposables": "Para un movimiento propio, usa los composables que hay detrás:",
     "composable": {
+      "mapRange": "Convierte un número en otro alineando dos rangos.",
       "springEasing": "Convierte un resorte en un easing de CSS y su tiempo de asentamiento.",
       "useSpringValue": "Un valor que sigue a su objetivo sobre un resorte.",
       "useScrollProgress": "Progreso del scroll de 0 a 1, para movimiento ligado al scroll.",
@@ -856,7 +860,7 @@
         },
         "drag": {
           "title": "Arrastrar",
-          "body": "Los componentes que se arrastran (BottomSheet, SwipeToReveal, Sortable, Slider) ya lo traen. Para reordenar tu propia lista o mover elementos entre listas, usa <code>v-draggable</code> con <code>useSortableGroup</code>: el mismo motor y movimiento que Sortable. Para un elemento arrastrado libremente (por ejemplo con <code>useDraggable</code> de VueUse), guarda su desplazamiento en <code>animate</code> y vuélvelo a 0 al soltar: <code>v-animate</code> lo devuelve con un muelle."
+          "body": "Los componentes que se arrastran (BottomSheet, SwipeToReveal, Sortable, Slider) ya lo traen. Para reordenar tu propia lista, o mover elementos entre listas, usa <code>v-draggable</code> con <code>useSortableGroup</code>. Para todo lo que se lanza o se desliza para quitarlo, <code>useDrag</code> mueve el elemento con el dedo y pregunta a <code>onRelease</code> adónde va. Enlaza un aspecto al arrastre con un valor en vivo en <code>animate</code>, un getter que sigue en cada fotograma sin volver a renderizar: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. <code>mapRange</code> alinea dos rangos, así la tarjeta gira de -12° a 12° a lo largo del arrastre. Si se quita a mitad del lanzamiento, su <code>exit</code> sigue a la velocidad con que la lanzaste."
         },
         "own": {
           "title": "Tus propios componentes",

@@ -503,6 +503,7 @@
     "useNumberFormat": "Formats and parses numbers for a locale with the same options, so typed text and its formatted display always match. Use it for your own number fields, or to give AnimatedNumber the same format.",
     "useColorScheme": "Switches between light, dark and system modes, and can spread the new scheme in a circle from a click. Use it for a theme toggle, and pass your own storage functions to remember the choice.",
     "useHaptic": "Plays haptic feedback on phones that support it: a light tick, a bump, a short success, warning or error pattern, or your own. Use it for moments that commit something.",
+    "mapRange": "Turns one number into another by lining up two ranges: a drag's offset into a tilt, a scroll into an opacity. Pair it with a live value in v-animate.",
     "springEasing": "Turns a spring into a CSS linear() curve and its settle time. Use it to give element.animate() or a CSS transition the same spring as vael-ui.",
     "preventFocusZoom": "Stops iOS from zooming in when a form field gets focus, so fields can match the rest of your text size. Call it once on the client, such as in main.ts.",
     "useFloatingPosition": "The positioning engine behind Popover, Menu and Tooltip, built on Floating UI. Use it to build your own anchored panels.",
@@ -511,6 +512,8 @@
     "useHoverIndicator": "The sliding hover and keyboard highlight behind vael-ui’s lists. Use it to give your own lists the same highlight.",
     "useSpringValue": "Interruptible spring physics in three forms: a reactive value, an imperative spring that writes each frame without re-rendering, and the pure step function behind both. Use it for motion that can change target partway.",
     "useScrollProgress": "Scroll progress as a ref from 0 to 1: the page's, or an element's way through the screen. Pass it to v-animate's progress as a getter.",
+    "useWheel": "A position you drag, throw, scroll or step along a line of items, resting on one: a picker drum, a carousel, a pager. Items read their distance from the resting spot as CSS variables.",
+    "useDrag": "A drag that decides on release: the element follows the pointer, then goes where you return on a spring that keeps the throw's speed. For card decks and swipe to dismiss.",
     "useScrollLength": "How far the page or a container can scroll, in px, as a ref. It follows the content growing or shrinking.",
     "settled": "Resolves once nothing vael-ui started is still animating, everywhere or on one element. For tests.",
     "useTabIndicator": "The sliding selection indicator behind Tabs, SelectButton, MenuList and Pagination. Use it for your own segmented controls and lists.",
@@ -603,6 +606,7 @@
     "yoursIntro": "<code>v-animate</code> gives your own elements the same motion: an entrance, an exit, a size that eases to fit its content, or a slide to a new place when the layout changes. It and the rest of the tools for your own elements import from <code>vael-ui/motion</code>; a Vapor component imports <code>vAnimateVapor</code> from there in place of <code>vAnimate</code>.",
     "yoursComposables": "For motion of your own, use the composables behind it:",
     "composable": {
+      "mapRange": "Turns one number into another by lining up two ranges.",
       "springEasing": "Turns a spring into a CSS easing and its settle time.",
       "useSpringValue": "A value that follows its target on a spring.",
       "useScrollProgress": "Scroll progress from 0 to 1, for scroll-linked motion.",
@@ -857,7 +861,7 @@
         },
         "drag": {
           "title": "Dragging",
-          "body": "The components that drag (BottomSheet, SwipeToReveal, Sortable, Slider) have it built in. To let people reorder your own list, or move items between lists, use <code>v-draggable</code> with <code>useSortableGroup</code>: the same engine and motion as Sortable. For an element dragged freely (with VueUse's <code>useDraggable</code>, say), hold its offset in <code>animate</code> and set it back to 0 on release: <code>v-animate</code> springs it home."
+          "body": "The components that drag (BottomSheet, SwipeToReveal, Sortable, Slider) have it built in. To reorder your own list, or move items between lists, use <code>v-draggable</code> with <code>useSortableGroup</code>. For anything you throw or swipe away, <code>useDrag</code> moves the element with your finger and asks <code>onRelease</code> where it goes. Link a look to the drag with a live value in <code>animate</code>, a getter it follows every frame without re-rendering: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. <code>mapRange</code> lines up two ranges, so the card turns from -12° to 12° across the drag. Removed mid-throw, its <code>exit</code> carries on at the speed you threw it."
         },
         "own": {
           "title": "Your own components",

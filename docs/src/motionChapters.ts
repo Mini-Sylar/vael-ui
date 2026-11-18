@@ -92,7 +92,7 @@ const page = {
       { id: 'size', demo: 'elements/06-Size' },
       { id: 'fromCode', demo: 'elements/14-FromCode' },
       { id: 'tween', demo: 'elements/16-Tween' },
-      { id: 'drag' },
+      { id: 'drag', demo: 'elements/19-DragAndThrow' },
       { id: 'own', demo: 'elements/07-YourComponent' },
     ],
   },

@@ -478,6 +478,47 @@ function onSave() {
     ],
   },
 
+  mapRange: {
+    description:
+      "Turns one number into another by lining up two ranges. `mapRange(x, [0, 300], [0, 1])` gives 0 when `x` is 0, 0.5 at 150 and 1 at 300; past either end it stays at the end value. Give more points to bend it: `mapRange(x, [-300, 0, 300], [-20, 0, 20])` tilts a card from -20° to 20° as it's dragged across. Its usual partner is a live value in `v-animate`, a getter followed every frame: link a drag, a scroll or a slider to a look without re-rendering.",
+    installNames: ['mapRange'],
+    exampleCode: `import { mapRange } from 'vael-ui/motion'
+
+mapRange(150, [0, 300], [0, 1]) // 0.5
+mapRange(-40, [0, 300], [0, 1]) // 0: held at the end
+mapRange(450, [0, 300, 600], [1, 1, 0]) // 0.5: solid until 300, then fades
+
+// The card tilts with the drag, every frame, with no render:
+// v-animate="{ animate: { rotate: () => mapRange(drag.x.value, [-300, 300], [-20, 20]) } }"`,
+    params: [
+      {
+        name: 'value',
+        type: 'number',
+        description:
+          'The number to turn into another: an offset, a scroll position, a slider value.',
+      },
+      {
+        name: 'from',
+        type: 'number[]',
+        description:
+          'Points along the range it comes from, in increasing order: `[0, 300]`, or more to bend the line.',
+      },
+      {
+        name: 'to',
+        type: 'number[]',
+        description:
+          'What each of those points becomes: `to[i]` for `from[i]`. Between two points it moves in a straight line.',
+      },
+    ],
+    returns: [
+      {
+        name: 'result',
+        type: 'number',
+        description:
+          'The number in the new range. Below the first point it’s `to[0]`, above the last it’s the last of `to`.',
+      },
+    ],
+  },
   springEasing: {
     description:
       'Turns a spring into a CSS `linear()` curve and the time it takes to settle, in ms. It\'s the curve vael-ui uses for `ConfigProvider`\'s `:motion="{ spring }"`. The result has the same shape as the options `element.animate()` takes, so your own animations can move on the same spring without a library. Damping below 1 overshoots.',
@@ -866,6 +907,185 @@ async function sent() {
         type: 'Readonly<Ref<number>>',
         description:
           'The scrollable distance in px: the content past what shows. `0` on the server.',
+      },
+    ],
+  },
+  useWheel: {
+    description:
+      'A position you can grab along one line of items: drag it, throw it, scroll it with a mouse wheel or step it with the keys, and it comes to rest on an item on a spring that keeps your speed. It draws nothing. Each item near the resting spot gets its distance from it as `--ui-wheel-offset` (in items) and `--ui-wheel-distance` (in px), and your CSS or `v-animate` turns that into a look: a 3D picker drum, a flat list, a carousel, a pager. Only the items near the spot are written each frame, so a long list costs the same as a short one. For a plain sideways list of cards, native CSS scroll snap is simpler and costs nothing; reach for `useWheel` for a loop, a picker, or a look that follows the position. It adds no roles, so give the element the pattern it is: `role="spinbutton"` with `aria-valuenow` for a picker column, or `aria-roledescription="carousel"` with Previous and Next buttons for a carousel, as in the examples.',
+    installNames: ['useWheel'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'model',
+        type: 'Ref<number>',
+        description:
+          'The index of the item it rests on. It updates once the wheel comes to rest, and setting it moves the wheel there.',
+      },
+      {
+        name: 'options.el',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description:
+          'The element you drag, scroll and focus. Its children are the items, in order.',
+      },
+      { name: 'options.count', type: 'MaybeRefOrGetter<number>', description: 'How many items.' },
+      {
+        name: 'options.size',
+        type: "MaybeRefOrGetter<number | 'auto'>",
+        description:
+          "Each item's length along the axis, in px. Default `36`. `'auto'` makes each item as long as `el`, for one page at a time.",
+      },
+      {
+        name: 'options.orientation',
+        type: "MaybeRefOrGetter<'vertical' | 'horizontal'>",
+        description:
+          "Which way it moves. Default `'vertical'`. Horizontal runs the other way right to left.",
+      },
+      {
+        name: 'options.loop',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Wraps past the last item back to the first.',
+      },
+      {
+        name: 'options.disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Ignores the pointer, the mouse wheel and the keys.',
+      },
+      {
+        name: 'options.onTick',
+        type: '(index: number) => void',
+        description:
+          'Runs for each item that passes the resting spot, and once for the item it lands on. Pass `useHaptic().selection` for a click per item.',
+      },
+      {
+        name: 'options.onSettle',
+        type: '(index: number) => void',
+        description: 'Runs once it has come to rest.',
+      },
+      {
+        name: 'options.sizes',
+        type: 'MaybeRefOrGetter<number[]>',
+        description: 'For a carousel: a length for each item, when they differ.',
+      },
+      {
+        name: 'options.gap',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'For a carousel: space between items, in px. Default `0`.',
+      },
+      {
+        name: 'options.align',
+        type: "MaybeRefOrGetter<'start' | 'center' | 'end'>",
+        description: "For a carousel: where an item rests in `el`. Default `'center'`.",
+      },
+      {
+        name: 'options.dragFree',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'For a carousel: comes to rest wherever a throw ends, instead of on an item.',
+      },
+      {
+        name: 'options.slidesToScroll',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'For a carousel: items per rest: `2` moves two at a time. Default `1`.',
+      },
+      {
+        name: 'options.containScroll',
+        type: 'MaybeRefOrGetter<boolean>',
+        description:
+          'For a carousel: stops with the last item flush against the end of `el`, so no empty space shows after it.',
+      },
+    ],
+    returns: [
+      {
+        name: 'position',
+        type: 'Ref<number>',
+        description: 'Where it is right now, in items: 2.5 is halfway from item 2 to item 3.',
+      },
+      {
+        name: 'index',
+        type: 'ComputedRef<number>',
+        description: 'The item it rests on, or is heading for.',
+      },
+      {
+        name: 'isDragging',
+        type: 'Ref<boolean>',
+        description: 'Whether a pointer is dragging it.',
+      },
+      {
+        name: 'goTo(i, { animate? })',
+        type: '(i: number, options?: { animate?: boolean }) => void',
+        description:
+          'Moves to item `i` on a spring, or at once with `animate: false`. A loop takes the short way round.',
+      },
+      {
+        name: 'step(n)',
+        type: '(n: number) => void',
+        description:
+          'Moves `n` rests forward, or back when negative: for Previous and Next buttons.',
+      },
+      {
+        name: 'progressOf(i, reach?)',
+        type: '(i: number, reach?: number) => number',
+        description:
+          "Item `i`'s place among the `reach` items either side of the spot (default 3), from 0 to 1. Pass it to `v-animate` as `progress`.",
+      },
+      {
+        name: 'onKeydown',
+        type: '(event: KeyboardEvent) => void',
+        description:
+          'Bind it to `@keydown` on `el`: the arrow keys along the axis, Home, End, Page Up and Page Down.',
+      },
+    ],
+  },
+  useDrag: {
+    description:
+      "A drag that decides on release. The element follows the pointer exactly, by its own `translate`. When you let go, `onRelease` gets where it is, how fast it was going and where that throw would land, and returns where it goes: off to the side, somewhere else, or home. It gets there on a spring that keeps the throw's speed, and can be caught again mid-flight. Use it for a card deck, a swipe to dismiss, or anything you throw. Escape during a drag puts it back. A drag can't be done from the keyboard, so give every throw a button too, such as Like and Pass in the deck, that calls `throwTo`.",
+    installNames: ['useDrag'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'options.el',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description: 'The element you drag. A new element, such as the next card, starts at home.',
+      },
+      {
+        name: 'options.axis',
+        type: "MaybeRefOrGetter<'x' | 'y' | 'both'>",
+        description:
+          "Moves along one axis only. Default `'both'`. With one axis, a drag that starts along the other is left to the page, so a list still scrolls.",
+      },
+      {
+        name: 'options.onRelease',
+        type: '(release) => { x, y } | null',
+        description:
+          'Runs when the pointer lets go, with `offset`, `velocity` (px per second) and `projected`, where the throw would land. Return where it goes, in px from home, or `null` for home.',
+      },
+      {
+        name: 'options.onRest',
+        type: '(offset: { x, y }) => void',
+        description: 'Runs once it comes to rest: take a thrown card off the deck here.',
+      },
+    ],
+    returns: [
+      {
+        name: 'x, y',
+        type: 'Ref<number>',
+        description:
+          'How far it is from home, in px, live. Link a look to them with a `v-animate` `progress` getter, as the examples do: it follows every frame without re-rendering.',
+      },
+      {
+        name: 'isDragging',
+        type: 'Ref<boolean>',
+        description: 'Whether a pointer is dragging it.',
+      },
+      {
+        name: 'throwTo(to, { velocity? })',
+        type: '(to: { x, y }, options?) => void',
+        description: 'Sends it to `to` on a spring, as if thrown: a button that does the swipe.',
+      },
+      {
+        name: 'reset({ animate? })',
+        type: '(options?: { animate?: boolean }) => void',
+        description: 'Brings it home on a spring, or at once with `animate: false`.',
       },
     ],
   },

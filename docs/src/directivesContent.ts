@@ -56,15 +56,15 @@ export const directivesContent: Record<string, DirectiveContent> = {
       },
       {
         name: 'exit',
-        type: 'MotionValues | ((where) => MotionValues) | false',
+        type: 'MotionValues | ((where) => MotionValues | false) | false',
         description:
-          'Where it leaves to, inside a `v-if` or `v-for`. Unset, it leaves back the way it came, quicker. `false` leaves at once.',
+          'Where it leaves to, inside a `v-if` or `v-for`. Unset, it leaves back the way it came, quicker. `false` leaves at once, and a function can return `false` to leave at once that time. On a spring, it carries on at the speed the element was moving: a card thrown with `useDrag` keeps going.',
       },
       {
         name: 'animate',
-        type: 'MotionValues',
+        type: 'AnimateValues',
         description:
-          'A look it holds while bound, moving to each new one from wherever it is on screen: `{ rotate: open ? 180 : 0 }`. Keyframe arrays play once per change, or loop with `repeat`.',
+          'A look it holds while bound, moving to each new one from wherever it is on screen: `{ rotate: open ? 180 : 0 }`. Keyframe arrays play once per change, or loop with `repeat`. A getter or ref is followed every frame without re-rendering: `{ rotate: () => mapRange(drag.x.value, [-300, 300], [-20, 20]) }`. `{ value: getter, spring }` follows it on a spring instead.',
       },
       {
         name: 'spring / duration / easing',
@@ -133,7 +133,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
       },
       {
         name: 'progress',
-        type: 'number',
+        type: 'number | (() => number)',
         description:
           'With keyframe arrays in `animate`: holds them at this point, from 0 to 1, so a swipe or a scroll scrubs them.',
       },

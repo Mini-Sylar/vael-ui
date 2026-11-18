@@ -45,12 +45,20 @@ export const composableCategories: ComposableCategory[] = [
       'useTabIndicator',
       'useHoverIndicator',
       'springEasing',
+      'mapRange',
     ],
   },
   {
     key: 'dragAndDrop',
     name: 'Drag & Drop',
-    items: ['useSortable', 'useSortableGroup', 'moveTreeNode', 'useFileDrop'],
+    items: [
+      'useDrag',
+      'useWheel',
+      'useSortable',
+      'useSortableGroup',
+      'moveTreeNode',
+      'useFileDrop',
+    ],
   },
 ]
 
@@ -60,6 +68,8 @@ export const allComposables = composableCategories.flatMap((c) => c.items)
 // page is visited, like NEW_COMPONENTS.
 export const NEW_COMPOSABLES: Record<string, string> = {
   useAnimate: '2026-11-05',
+  useDrag: '2026-11-18',
+  useWheel: '2026-11-18',
   useColorScheme: '2026-10-21',
   useFileDrop: '2026-10-21',
   useFloatingPosition: '2026-10-21',
@@ -73,6 +83,7 @@ export const NEW_COMPOSABLES: Record<string, string> = {
   useTween: '2026-10-26',
   useTabIndicator: '2026-10-21',
   springEasing: '2026-10-21',
+  mapRange: '2026-11-18',
 }
 
 export function composableCategoryOf(name: string): string | undefined {
