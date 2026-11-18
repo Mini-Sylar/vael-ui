@@ -2101,11 +2101,7 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   overflow: auto;
   /* Same reasoning as DemoFrame's .demo-preview: show the component's real
      default look, not the docs chrome's own Geist Variable branding. */
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 /* Sortable with previewMode "clone": the original stays as the placeholder, moving to where the

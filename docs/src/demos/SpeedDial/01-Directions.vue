@@ -20,9 +20,7 @@
         />
       </div>
     </div>
-    <p class="demo-status">
-      Last action: <strong>{{ lastSelected ?? 'none yet' }}</strong>
-    </p>
+    <p class="demo-status">Last action: <strong>{{ lastSelected ?? 'none yet' }}</strong></p>
   </section>
 </template>
 

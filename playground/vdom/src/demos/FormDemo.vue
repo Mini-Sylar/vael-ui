@@ -31,9 +31,7 @@
       </div>
     </form>
 
-    <p v-if="submittedValues" class="note">
-      Submitted: <code>{{ submittedValues }}</code>
-    </p>
+    <p v-if="submittedValues" class="note">Submitted: <code>{{ submittedValues }}</code></p>
   </section>
 </template>
 

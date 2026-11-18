@@ -206,11 +206,7 @@ const code = computed(() =>
   /* The docs chrome's Geist Variable is a docs-branding choice, not part of
      the library. Components here should show their real, unstyled default,
      which inherits system-ui unless a consumer app overrides it. */
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 /* A picker in a Field would otherwise shrink to its placeholder ("Pick a city"); give it room for

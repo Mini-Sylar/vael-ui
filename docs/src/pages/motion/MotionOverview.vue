@@ -61,9 +61,7 @@ import { vAnimate } from "vael-ui/motion"
     <p v-html="t('motionDocs.yoursComposables')" />
     <ul class="motion-composables">
       <li v-for="item in composables" :key="item.name">
-        <RouterLink :to="item.to"
-          ><code>{{ item.name }}</code></RouterLink
-        >
+        <RouterLink :to="item.to"><code>{{ item.name }}</code></RouterLink>
         <span>{{ t(`motionDocs.composable.${item.name}`) }}</span>
       </li>
     </ul>

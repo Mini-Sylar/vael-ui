@@ -8,9 +8,7 @@
         :class="labelPart.class"
         :style="labelPart.style"
       >
-        <slot name="label"
-          ><span class="ui-field-label-text">{{ label }}</span></slot
-        >
+        <slot name="label"><span class="ui-field-label-text">{{ label }}</span></slot>
         <span v-if="required" class="ui-field-required" aria-hidden="true"></span>
       </label>
       <div v-if="$slots.prepend || $slots.append" :class="groupPart.class" :style="groupPart.style">

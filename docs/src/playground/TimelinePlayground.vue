@@ -170,11 +170,7 @@ const code = computed(() => {
   align-items: flex-start;
   justify-content: center;
   min-height: 9rem;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 .playground-preview::before {

@@ -5,8 +5,7 @@
       urgent ×
     </Button>
     <p class="demo-status">
-      Last result: <strong>{{ lastResult }}</strong
-      ><br />
+      Last result: <strong>{{ lastResult }}</strong><br />
       Live queue (<code>usePopoverQueue()</code>): <strong>{{ queue.length }}</strong> open
     </p>
   </section>

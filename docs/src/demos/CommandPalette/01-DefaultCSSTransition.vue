@@ -2,9 +2,8 @@
   <section class="demo">
     <h3>Default, with a shortcut and icons</h3>
     <p class="note">
-      Press <Kbd>{{ modKeyLabel }}</Kbd
-      >+<Kbd>K</Kbd> anywhere on this page, or click the button. <code>shortcut</code> is opt-in:
-      nothing listens for the keys until you set it.
+      Press <Kbd>{{ modKeyLabel }}</Kbd>+<Kbd>K</Kbd> anywhere on this page, or click the button.
+      <code>shortcut</code> is opt-in: nothing listens for the keys until you set it.
     </p>
     <div class="row">
       <Button @click="basicOpen = true">Open command palette</Button>

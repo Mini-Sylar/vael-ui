@@ -11,17 +11,13 @@
       <figure>
         <Slider v-model="cssValue" class="fluid-slider fluid-css" aria-label="Brightness">
           <template #track="{ percents }">
-            <span class="fluid-label"
-              ><span>Brightness</span><span>{{ cssValue }}%</span></span
-            >
+            <span class="fluid-label"><span>Brightness</span><span>{{ cssValue }}%</span></span>
             <span
               class="fluid-fill"
               :style="{ clipPath: clipTo(percents[0] ?? 0) }"
               aria-hidden="true"
             >
-              <span class="fluid-label"
-                ><span>Brightness</span><span>{{ cssValue }}%</span></span
-              >
+              <span class="fluid-label"><span>Brightness</span><span>{{ cssValue }}%</span></span>
             </span>
           </template>
         </Slider>
@@ -35,9 +31,7 @@
           aria-label="Brightness"
         >
           <template #track>
-            <span class="fluid-label"
-              ><span>Brightness</span><span>{{ springValue }}%</span></span
-            >
+            <span class="fluid-label"><span>Brightness</span><span>{{ springValue }}%</span></span>
             <span ref="springFill" class="fluid-fill" aria-hidden="true">
               <span class="fluid-label"
                 ><span>Brightness</span><span>{{ springValue }}%</span></span

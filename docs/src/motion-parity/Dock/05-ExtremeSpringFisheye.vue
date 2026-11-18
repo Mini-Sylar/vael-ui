@@ -17,9 +17,7 @@
         @select="launched = $event.label"
       />
     </div>
-    <p class="demo-status">
-      Last launched: <strong>{{ launched ?? 'none yet' }}</strong>
-    </p>
+    <p class="demo-status">Last launched: <strong>{{ launched ?? 'none yet' }}</strong></p>
   </section>
 </template>
 

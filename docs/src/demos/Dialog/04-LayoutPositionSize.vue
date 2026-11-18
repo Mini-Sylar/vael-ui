@@ -43,8 +43,8 @@
     >
       <template #default>
         <p>
-          Anchored to <code>{{ demoPosition }}</code
-          >: enter/exit slides from that edge instead of scaling from center.
+          Anchored to <code>{{ demoPosition }}</code>: enter/exit slides from that edge instead of
+          scaling from center.
         </p>
       </template>
     </Dialog>
