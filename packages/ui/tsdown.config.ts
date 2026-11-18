@@ -15,6 +15,7 @@ export default defineConfig({
     // Shared with the Vapor build but not public: their own files, not exported.
     ...collectBarrelEntries('./src/internal.ts', process.cwd()),
   },
+  format: 'esm',
   platform: 'neutral',
   plugins: [Vue({ isProduction: true, template: { compilerOptions: { comments: false } } })],
   dts: { tsc: { vue: true } },
