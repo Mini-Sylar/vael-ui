@@ -72,9 +72,11 @@
     animation-name: ui-toast-swipe-out-down;
   }
 
+  /* Already swiped away: as it starts to leave it would show again, opaque, where the finger let go. */
   .ui-toast-leave-active[data-swipe-out='true'] {
     transition: none;
     animation: none;
+    opacity: 0;
   }
 
   @keyframes ui-toast-swipe-out-left {

@@ -522,6 +522,11 @@ export type {
 
 export { default as SwipeToReveal } from './components/SwipeToReveal/SwipeToReveal.vue'
 export { useSwipeReveal, resolveSwipeCommit } from './composables/useSwipeReveal'
+
+export { useWheel } from './composables/useWheel'
+export type { UseWheelOptions, UseWheelReturn } from './composables/useWheel'
+export { useDrag } from './composables/useDrag'
+export type { DragPoint, DragRelease, UseDragOptions, UseDragReturn } from './composables/useDrag'
 export type {
   SwipeRevealSide,
   SwipeCommitInput,

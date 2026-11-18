@@ -3,6 +3,7 @@ import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 import { prefersReducedMotion } from './dom'
+import { createVelocityTracker, dampen } from './gesture'
 import { flingTiming } from '../motion/fling'
 
 export interface SheetSnapPoint {
@@ -63,11 +64,6 @@ const AXIS_LOCK_THRESHOLD = 8 // px — movement before a content drag commits t
 const VELOCITY_WINDOW = 80 // ms
 // Shifted-log curve (Vaul); viewport-scale range.
 const RUBBER_BAND_DAMPEN = 60
-
-// Shifted-log dampen.
-function dampen(overshoot: number): number {
-  return RUBBER_BAND_DAMPEN * Math.log(1 + overshoot / RUBBER_BAND_DAMPEN)
-}
 
 function reducedMotion(): boolean {
   return prefersReducedMotion()
@@ -245,25 +241,10 @@ export function useSheetDrag(
   let dragStartOffset = 0
   let dragStartTime = 0
   let dragStartScrollTop = 0
-  let samples: { t: number; y: number }[] = []
-
-  // Keep one sample older than the window, so a release right after a pause still has two points.
-  function addSample(clientY: number) {
-    const now = performance.now()
-    samples.push({ t: now, y: clientY })
-    const firstInWindow = samples.findIndex((sample) => now - sample.t <= VELOCITY_WINDOW)
-    if (firstInWindow > 1) samples = samples.slice(firstInWindow - 1)
-  }
-
-  function releaseVelocity(): number {
-    const last = samples.at(-1)
-    if (!last) return 0
-    const anchor =
-      samples.find((sample) => last.t - sample.t <= VELOCITY_WINDOW && sample !== last) ??
-      samples.at(-2)
-    if (!anchor || last.t === anchor.t) return 0
-    return (last.y - anchor.y) / (last.t - anchor.t)
-  }
+  // Release speed over the end of the drag only, so a slow drag that ends in a flick reads as one.
+  const tracker = createVelocityTracker(VELOCITY_WINDOW)
+  const addSample = (clientY: number) => tracker.add(clientY)
+  const releaseVelocity = () => tracker.velocity()
 
   function beginDrag(clientY: number) {
     const point = currentPoint()
@@ -271,7 +252,7 @@ export function useSheetDrag(
     dragStartY = clientY
     dragStartOffset = lastAppliedOffset
     dragStartTime = performance.now()
-    samples = [{ t: dragStartTime, y: clientY }]
+    tracker.reset(clientY, dragStartTime)
     isDragging.value = true
     moveTo(dragStartOffset, false, true)
     // Room for the highest snap point up front, so no drag frame resizes the body.
@@ -368,7 +349,7 @@ export function useSheetDrag(
     const topBoundary = Math.min(...list)
     const nextOffset =
       rawOffset < topBoundary
-        ? Math.max(0, topBoundary - dampen(topBoundary - rawOffset))
+        ? Math.max(0, topBoundary - dampen(topBoundary - rawOffset, RUBBER_BAND_DAMPEN))
         : rawOffset
     moveTo(nextOffset, false, true)
   }

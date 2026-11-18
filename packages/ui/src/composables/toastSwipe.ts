@@ -2,6 +2,7 @@
 // press is the Toaster's own (it must capture the pointer at once); moving and letting go are here.
 import type { Ref } from 'vue'
 import type { ToastId } from './useToast'
+import { createVelocityTracker } from './gesture'
 
 const SWIPE_THRESHOLD = 45 // px
 const SWIPE_VELOCITY_THRESHOLD = 0.11 // px/ms
@@ -25,6 +26,11 @@ export function createToastSwipe(o: {
   /** Let go: the timers resume unless the pointer is still over the stack. */
   settle: () => void
 }) {
+  // One swipe at a time: the speed of the toast under the finger, over the end of the swipe.
+  const trackX = createVelocityTracker()
+  const trackY = createVelocityTracker()
+  let tracking: ToastId | null = null
+
   function allowedDirections(): Array<'left' | 'right' | 'up' | 'down'> {
     return ['left', 'right', o.bottom() ? 'down' : 'up']
   }
@@ -71,6 +77,13 @@ export function createToastSwipe(o: {
       s.y = 0
     }
     s.swiping = true
+    if (tracking !== id) {
+      tracking = id
+      trackX.reset(0, start.time)
+      trackY.reset(0, start.time)
+    }
+    trackX.add(s.x)
+    trackY.add(s.y)
   }
 
   function up(id: ToastId) {
@@ -79,12 +92,13 @@ export function createToastSwipe(o: {
     o.pointerStart.delete(id)
     o.swipeAxis.delete(id)
     o.activeSwipeId.value = null
+    // Read before anything returns early, so the next swipe starts its own samples.
+    const velocity = tracking === id ? Math.abs((axis === 'x' ? trackX : trackY).velocity()) : 0
+    tracking = null
     const s = o.swipeState.get(id)
     if (!start || !s) return
 
     const delta = axis === 'x' ? s.x : s.y
-    const elapsed = Math.max(1, performance.now() - start.time)
-    const velocity = Math.abs(delta) / elapsed
 
     if (axis && (Math.abs(delta) >= SWIPE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD)) {
       s.swiping = false

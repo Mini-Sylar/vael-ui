@@ -1,6 +1,7 @@
 import { onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { inlineKey, isRtl } from './dom'
+import { dampen } from './gesture'
 
 export type ResizeDirection = 'horizontal' | 'vertical'
 
@@ -56,9 +57,6 @@ const EDGE_ZONE = 56
 const EDGE_SPEED = 18
 
 // Shifted-log curve (Vaul); springs back via CSS transition.
-function dampen(overshoot: number): number {
-  return RUBBER_BAND_DAMPEN * Math.log(1 + overshoot / RUBBER_BAND_DAMPEN)
-}
 
 export function useResizable(
   model: Ref<number>,
@@ -84,8 +82,8 @@ export function useResizable(
   }
   function rubberBand(value: number, hi: number): number {
     const lo = min()
-    if (value > hi) return hi + dampen(value - hi)
-    if (value < lo) return lo - dampen(lo - value)
+    if (value > hi) return hi + dampen(value - hi, RUBBER_BAND_DAMPEN)
+    if (value < lo) return lo - dampen(lo - value, RUBBER_BAND_DAMPEN)
     return value
   }
   const snap = (value: number) => {

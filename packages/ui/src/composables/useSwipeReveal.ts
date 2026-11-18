@@ -1,6 +1,7 @@
 import { getCurrentScope, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { createClickGuard, isRtl } from './dom'
+import { createVelocityTracker, dampen } from './gesture'
 
 export type SwipeRevealSide = 'leading' | 'trailing'
 
@@ -49,10 +50,6 @@ const DISTANCE_FRACTION = 0.5
 const DRAG_THRESHOLD = 8 // px
 // Tighter dampen (short fixed distance, like pull-to-refresh)
 const RUBBER_BAND_DAMPEN = 40
-
-function dampen(overshoot: number): number {
-  return RUBBER_BAND_DAMPEN * Math.log(1 + overshoot / RUBBER_BAND_DAMPEN)
-}
 
 // Pure decision function, testable without pointer simulation.
 export function resolveSwipeCommit({
@@ -108,8 +105,8 @@ export function useSwipeReveal(
   function rubberBand(value: number): number {
     const hi = leadingWidth()
     const lo = -trailingWidth()
-    if (value > hi) return hi + dampen(value - hi)
-    if (value < lo) return lo - dampen(lo - value)
+    if (value > hi) return hi + dampen(value - hi, RUBBER_BAND_DAMPEN)
+    if (value < lo) return lo - dampen(lo - value, RUBBER_BAND_DAMPEN)
     return value
   }
 
@@ -147,7 +144,7 @@ export function useSwipeReveal(
   let startX = 0
   let startY = 0
   let startOffset = 0
-  let startTime = 0
+  const tracker = createVelocityTracker()
   let liveOffset = 0
   let dragEl: HTMLElement | null = null
   // Right to left: leading is on the right, so a drag's x runs the other way.
@@ -164,10 +161,10 @@ export function useSwipeReveal(
     startX = event.clientX
     startY = event.clientY
     startOffset = offset.value
-    startTime = performance.now()
     liveOffset = startOffset
     dragEl = event.currentTarget as HTMLElement
     flip = isRtl(dragEl) ? -1 : 1
+    tracker.reset(event.clientX * flip)
   }
 
   function onPointerMove(event: PointerEvent) {
@@ -190,6 +187,7 @@ export function useSwipeReveal(
         // Capture can fail for synthetic/non-standard pointer ids; not fatal.
       }
     }
+    tracker.add(event.clientX * flip)
     event.preventDefault()
     liveOffset = rubberBand(startOffset + dx)
     offset.value = liveOffset
@@ -211,15 +209,15 @@ export function useSwipeReveal(
     const side: SwipeRevealSide =
       liveOffset > 0 || (liveOffset === 0 && dx > 0) ? 'leading' : 'trailing'
     const width = side === 'leading' ? leadingWidth() : trailingWidth()
-    const signedOpening = side === 'leading' ? dx : -dx
-    const elapsed = Math.max(1, performance.now() - startTime)
-    const velocity = Math.abs(signedOpening) / elapsed
+    // The speed it left with, along the way it was opening: negative is back toward closed.
+    tracker.add(event.clientX * flip)
+    const openingVelocity = side === 'leading' ? tracker.velocity() : -tracker.velocity()
     const shouldOpen =
       width <= 0
         ? false
         : resolveSwipeCommit({
-            velocity,
-            towardOpen: signedOpening > 0,
+            velocity: Math.abs(openingVelocity),
+            towardOpen: openingVelocity > 0,
             openFraction: Math.abs(liveOffset) / width,
           })
     openSide.value = shouldOpen ? side : null

@@ -3,6 +3,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { useScrollState } from './useScrollState'
 import type { ElRef } from './dom'
+import { createVelocityTracker, dampen } from './gesture'
 
 export type PullToRefreshState = 'idle' | 'pulling' | 'ready' | 'loading' | 'done'
 
@@ -34,11 +35,6 @@ const DAMPEN_FACTOR = 40 // px scale for the log curve below
 const VELOCITY_THRESHOLD = 0.5 // px/ms — a decisive flick commits even short of `threshold`
 const VELOCITY_MIN_DISTANCE_FRACTION = 0.5 // of `threshold` — guards a near-zero-distance jerk from reading as "fast"
 const COMMIT_THRESHOLD = 8 // px — matches useSheetDrag's AXIS_LOCK_THRESHOLD; a thumb's incidental jitter at scrollTop 0 shouldn't commit to a pull
-
-/** Shifted log curve (Vaul's formula); overshoot creeps with resistance. */
-function dampen(overshoot: number): number {
-  return DAMPEN_FACTOR * Math.log(1 + overshoot / DAMPEN_FACTOR)
-}
 
 /*
   Touch events, not Pointer Events, drive the pull.
@@ -78,7 +74,8 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
   type DragSource = { kind: 'touch' | 'pointer'; id: number }
   let drag: DragSource | null = null
   let startY = 0
-  let startTime = 0
+  // Speed over the end of the pull: a slow pull that ends in a flick reads as a flick.
+  const tracker = createVelocityTracker()
   let dragging = false
   let captured = false
   let refreshToken: symbol | null = null
@@ -122,7 +119,7 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
     const el = options.scrollEl.value
     if (!el || el.scrollTop !== 0 || isScrolling.value || drag !== null) return false
     startY = y
-    startTime = performance.now()
+    tracker.reset(0)
     dragging = false
     captured = false
     return true
@@ -145,16 +142,16 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
     // Re-checked every move even after committing - reversing back past the start hands the gesture back to native scroll instead of staying locked into `pull` for the rest of the touch.
     if (delta <= 0) return 'release'
     const max = maxPullValue()
-    pullDistance.value = delta <= max ? delta : max + dampen(delta - max)
+    pullDistance.value = delta <= max ? delta : max + dampen(delta - max, DAMPEN_FACTOR)
     state.value = pullDistance.value >= thresholdValue() ? 'ready' : 'pulling'
+    tracker.add(pullDistance.value)
     return 'pull'
   }
 
   function endDrag(commit: boolean) {
     const wasDragging = dragging
     const wasReady = state.value === 'ready'
-    const elapsed = Math.max(1, performance.now() - startTime)
-    const velocity = pullDistance.value / elapsed
+    const velocity = tracker.velocity()
     const wasFastFlick =
       velocity > VELOCITY_THRESHOLD &&
       pullDistance.value >= thresholdValue() * VELOCITY_MIN_DISTANCE_FRACTION
