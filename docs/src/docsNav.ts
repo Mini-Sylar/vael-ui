@@ -58,6 +58,7 @@ const MOTION_COMPOSABLES = [
   // Gestures that ride the same springs and pair with v-animate; filed under Drag & Drop too.
   'useDrag',
   'useWheel',
+  'usePanZoom',
 ]
 const MOTION_UTILITIES = ['springEasing', 'mapRange', 'settled']
 

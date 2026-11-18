@@ -41,6 +41,8 @@ export interface UseDragOptions {
   el: ElRef<HTMLElement | null>
   /** `'x'` or `'y'` to move along one axis only. Default both. */
   axis?: MaybeRefOrGetter<'x' | 'y' | 'both'>
+  /** Ignores the pointer: for a drag that only applies some of the time. */
+  disabled?: MaybeRefOrGetter<boolean>
   /**
    * The spring it settles on: a name or `{ damping, response }`. Unset, the nearest
    * ConfigProvider's `spring`, else the default every component uses. A hand's release gets a little give, reduced motion none.
@@ -142,7 +144,7 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
   let userSelect = ''
 
   function onPointerdown(event: PointerEvent) {
-    if (pointerId !== null) return
+    if (toValue(options.disabled) || pointerId !== null) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
     pointerId = event.pointerId
     committed = false

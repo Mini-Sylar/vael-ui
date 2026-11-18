@@ -457,6 +457,7 @@
     "moveTreeNode": "Sposta un nodo e il suo sottoalbero sotto un nuovo genitore e indice, sul posto. Uno spostamento impossibile, come una cartella dentro sé stessa, non cambia nulla. Usalo per applicare uno spostamento drag-and-drop ai dati del tuo albero.",
     "useFileDrop": "Trasforma qualsiasi elemento in un'area di rilascio per file, con uno stato di trascinamento che resta stabile sopra gli elementi figli e ignora testo o link trascinati. Usalo per costruire la tua zona di rilascio.",
     "useWheel": "Una posizione che trascini, lanci, scorri o fai avanzare con i tasti lungo una fila di elementi, e che si ferma su uno: un selettore a rullo, un carosello, un paginatore. Ogni elemento legge la sua distanza come variabili CSS.",
+    "usePanZoom": "Sposta, pizzica e ingrandisce un contenuto in un riquadro: un'immagine, una mappa, un diagramma. Trascina con il dito o il mouse, pizzica con due dita, tocca due volte per ingrandire.",
     "useDrag": "Un trascinamento che decide al rilascio: l'elemento segue il puntatore, poi va dove indichi con una molla che conserva la velocità del lancio. Per mazzi di carte e scorrimento per chiudere.",
     "useScrollLength": "Quanto può scorrere la pagina o un contenitore, in px, come ref. Segue il contenuto quando cresce o si riduce."
   },

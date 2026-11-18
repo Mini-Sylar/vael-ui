@@ -457,6 +457,7 @@
     "moveTreeNode": "Mueve un nodo y su subárbol a un nuevo padre e índice, en el mismo lugar. Un movimiento imposible, como una carpeta dentro de sí misma, no cambia nada. Úsalo para aplicar un movimiento de arrastrar y soltar a los datos de tu árbol.",
     "useFileDrop": "Convierte cualquier elemento en una zona para soltar archivos, con un estado de arrastre que se mantiene estable sobre los elementos hijos e ignora el texto o los enlaces arrastrados. Úsalo para crear tu propia zona de soltar.",
     "useWheel": "Una posición que arrastras, lanzas, desplazas o avanzas con las teclas a lo largo de una fila de elementos, y que se detiene en uno: un selector de rueda, un carrusel, un paginador. Cada elemento lee su distancia como variables CSS.",
+    "usePanZoom": "Desplaza, pellizca y amplía el contenido de una caja: una imagen, un mapa, un diagrama. Arrastra con el dedo o el ratón, pellizca con dos dedos, toca dos veces para ampliar.",
     "useDrag": "Un arrastre que decide al soltar: el elemento sigue al puntero y luego va adonde indiques, con un muelle que conserva la velocidad del lanzamiento. Para mazos de tarjetas y deslizar para descartar.",
     "useScrollLength": "Cuánto puede desplazarse la página o un contenedor, en px, como ref. Sigue al contenido cuando crece o se encoge."
   },

@@ -1039,6 +1039,99 @@ async function sent() {
       },
     ],
   },
+  usePanZoom: {
+    description:
+      'Pans, pinches and zooms content inside a box: an image, a map, a diagram. It moves the content with its own `translate` and `scale`, from its top left corner. One finger or the mouse pans, two fingers pinch, and a double tap zooms in and back out. Hold ctrl and scroll to zoom around the cursor. Content stays inside the box, gives a little at the edges, and keeps coasting after a flick. It sets `touch-action: none` on the box, so the page does not scroll there on touch.',
+    installNames: ['usePanZoom'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'options.el',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description:
+          'The box you pan and zoom in. It receives the pointer, the wheel and the focus.',
+      },
+      {
+        name: 'options.content',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description: 'The element that moves. Default: the first child of `el`.',
+      },
+      {
+        name: 'options.minScale',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'The smallest scale. Default `1`, the content at its own size.',
+      },
+      {
+        name: 'options.maxScale',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'The largest scale. Default `4`.',
+      },
+      {
+        name: 'options.doubleTapScale',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'The scale a double tap zooms to. Default `2`.',
+      },
+      {
+        name: 'options.disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Ignores the pointer, the wheel and the keys.',
+      },
+      {
+        name: 'options.spring',
+        type: 'MaybeRefOrGetter<Spring | SpringName>',
+        description:
+          "The spring it settles on: a name or `{ damping, response }`. Default: the ConfigProvider's `spring`, else the default every component uses.",
+      },
+    ],
+    returns: [
+      {
+        name: 'x, y',
+        type: 'Ref<number>',
+        description: 'Where the top left of the content is, in px from where it sits at rest.',
+      },
+      {
+        name: 'scale',
+        type: 'Ref<number>',
+        description: 'How big the content is. `1` is its own size.',
+      },
+      {
+        name: 'isDragging',
+        type: 'Ref<boolean>',
+        description: 'Whether a pointer is panning or pinching.',
+      },
+      {
+        name: 'isZoomed',
+        type: 'ComputedRef<boolean>',
+        description: 'Whether it is zoomed in past `minScale`.',
+      },
+      {
+        name: 'zoomTo(scale, { at?, animate? })',
+        type: '(scale: number, options?) => void',
+        description:
+          'Zooms to `scale` around `at`, a point in px inside `el`. Default: its centre.',
+      },
+      {
+        name: 'zoomBy(factor, { at?, animate? })',
+        type: '(factor: number, options?) => void',
+        description: 'Zooms by a factor from where it is: `1.5` in, `1 / 1.5` out.',
+      },
+      {
+        name: 'panBy({ x, y }, { animate? })',
+        type: '(by: { x, y }, options?) => void',
+        description: 'Moves by `by` px, kept inside the content.',
+      },
+      {
+        name: 'reset({ animate? })',
+        type: '(options?) => void',
+        description: 'Back to `minScale`, centred.',
+      },
+      {
+        name: 'onKeydown',
+        type: '(event: KeyboardEvent) => void',
+        description: '`+`, `-`, `0` and the arrow keys. Bind it to `@keydown` on `el`.',
+      },
+    ],
+  },
   useDrag: {
     description:
       'Drags an element and decides where it goes when you let go. It follows the pointer with its own `translate`. `onRelease` receives its offset, its speed and where the throw would land. It returns where the element goes, or nothing to send it home. The element moves on a spring that keeps the throw speed, and Escape puts it back. A drag has no keyboard form, so add a button that calls `throwTo`.',
@@ -1062,6 +1155,11 @@ async function sent() {
         type: 'MaybeRefOrGetter<Spring | SpringName>',
         description:
           "The spring it settles on: a name or `{ damping, response }`. Default: the ConfigProvider's `spring`, else the default every component uses.",
+      },
+      {
+        name: 'options.disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Ignores the pointer, for a drag that applies only some of the time.',
       },
       {
         name: 'options.onRelease',

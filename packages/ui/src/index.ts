@@ -525,6 +525,8 @@ export { useSwipeReveal, resolveSwipeCommit } from './composables/useSwipeReveal
 
 export { useWheel } from './composables/useWheel'
 export type { UseWheelOptions, UseWheelReturn } from './composables/useWheel'
+export { usePanZoom } from './composables/usePanZoom'
+export type { UsePanZoomOptions, UsePanZoomReturn } from './composables/usePanZoom'
 export { useDrag } from './composables/useDrag'
 export type { DragPoint, DragRelease, UseDragOptions, UseDragReturn } from './composables/useDrag'
 export type {

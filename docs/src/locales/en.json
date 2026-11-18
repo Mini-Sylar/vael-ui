@@ -513,6 +513,7 @@
     "useSpringValue": "Interruptible spring physics in three forms: a reactive value, an imperative spring that writes each frame without re-rendering, and the pure step function behind both. Use it for motion that can change target partway.",
     "useScrollProgress": "Scroll progress as a ref from 0 to 1: the page's, or an element's way through the screen. Pass it to v-animate's progress as a getter.",
     "useWheel": "A position you drag, throw, scroll or step along a line of items, resting on one: a picker drum, a carousel, a pager. Items read their distance from the resting spot as CSS variables.",
+    "usePanZoom": "Pans, pinches and zooms content in a box: an image, a map, a diagram. Pan with a finger or the mouse, pinch with two fingers, double tap to zoom.",
     "useDrag": "A drag that decides on release: the element follows the pointer, then goes where you return on a spring that keeps the throw's speed. For card decks and swipe to dismiss.",
     "useScrollLength": "How far the page or a container can scroll, in px, as a ref. It follows the content growing or shrinking.",
     "settled": "Resolves once nothing vael-ui started is still animating, everywhere or on one element. For tests.",

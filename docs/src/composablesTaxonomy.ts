@@ -54,6 +54,7 @@ export const composableCategories: ComposableCategory[] = [
     items: [
       'useDrag',
       'useWheel',
+      'usePanZoom',
       'useSortable',
       'useSortableGroup',
       'moveTreeNode',
@@ -69,6 +70,7 @@ export const allComposables = composableCategories.flatMap((c) => c.items)
 export const NEW_COMPOSABLES: Record<string, string> = {
   useAnimate: '2026-11-05',
   useDrag: '2026-11-18',
+  usePanZoom: '2026-11-18',
   useWheel: '2026-11-18',
   useColorScheme: '2026-10-21',
   useFileDrop: '2026-10-21',
