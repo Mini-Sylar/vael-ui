@@ -15,13 +15,15 @@ import { isTimed } from './playable'
 import { motionOffAt } from './styleHolder'
 import { groupValues, reducePresence, toKeyframe } from './values'
 import { markNamed, markSliding } from './presence'
+import { fly, flightBox, needsFlight, turnOf } from './flight'
+import type { Turn } from './flight'
 
 // Just now: the same flush, however long that render takes, or soon after it (a late tick, an
 // async part). Timed from the flush's end: a slow render used to run the clock out mid-swap.
 const FRESH = 34
 // Every box that just left under an id, with where it sat (its parent), so each newcomer can take
 // the one nearest it: two copies of a tab row on a page each keep their own underline.
-type Left = { box: DOMRect; at: number; near: Element | null }
+type Left = { box: DOMRect; at: number; near: Element | null; el: Element; turn?: Turn }
 const boxes = new Map<string, Left[]>()
 const fresh = (left: { at: number }) => performance.now() - left.at <= FRESH
 // How deep the nearest element holding both sits: deeper is closer.
@@ -38,6 +40,9 @@ function closeness(near: Element | null, el: Element): number {
 // Where it shows: a row being dragged waits hidden in its place while a copy floats under the
 // pointer, so a trip starting from it starts from the copy (Sortable and v-draggable mark both).
 function shownBox(el: Element): DOMRect {
+  // On a flight, where its copy is: a trip back starts from there.
+  const flying = flightBox(el)
+  if (flying) return flying
   const copy = el.hasAttribute('data-sortable-source')
     ? document.querySelector('[data-sortable-preview]')
     : null
@@ -109,7 +114,7 @@ export function rememberLayout(el: Element, id: string): void {
   }
   if (!box.width && !box.height) return
   // Still in its flush until the microtasks after it.
-  const left: Left = { box, at: Infinity, near: el.parentElement }
+  const left: Left = { box, at: Infinity, near: el.parentElement, el, turn: turnOf(el) }
   boxes.set(id, [...(boxes.get(id) ?? []), left])
   queueMicrotask(() => (left.at = performance.now()))
   // Not taken by then, it's let go, with the parent it left from.
@@ -145,17 +150,47 @@ export function arriveLayout(
     if (rest.length) boxes.set(id, rest)
     else boxes.delete(id)
     if (!before) return otherwise()
+    // Its twin is flying in from where it was: a node a Transition still holds (a closing dialog's
+    // panel) would show a second copy under it, so it goes at once.
+    if (before.el.isConnected && before.el instanceof HTMLElement)
+      before.el.style.visibility = 'hidden'
     if (prefersReducedMotion() || pageHidden() || motionOffAt(el)) return moved?.()
     const now = el.getBoundingClientRect()
-    const run = slide(el, before.box, now, timing)
+    // Clipped on its way by an ancestor: a copy flies in the top layer, to wherever it ends up.
+    const turned = !!before.turn || !!turnOf(el)
+    const run = needsFlight(el, before.box, now, turned)
+      ? flyOf(el, before.box, now, timing, before.turn)
+      : slide(el, before.box, now, timing)
     if (!run) return moved?.()
-    raiseWhile(el, run)
+    if (!flightBox(el)) raiseWhile(el, run)
     const done = run.finished.then(moved, () => {})
     if (name) {
       markNamed(el, name)
       markSliding(name, Number(run.effect?.getComputedTiming().endTime ?? 0), done)
     }
   })
+}
+
+function flyOf(el: HTMLElement, from: DOMRect, to: DOMRect, timing: MotionTiming, turn?: Turn) {
+  const far = Math.max(
+    Math.abs(from.left - to.left),
+    Math.abs(from.top - to.top),
+    Math.abs(from.width - to.width),
+  )
+  const { duration, easing } = resolveTiming(el, timing, undefined, far)
+  const run = fly(
+    el,
+    from,
+    {
+      duration,
+      easing,
+      delay: ((timing as { delay?: number }).delay ?? 0) * 1000,
+      resize: (timing as { layout?: unknown }).layout !== 'position',
+    },
+    turn,
+  )
+  if (run) void track(run.finished.catch(() => {}))
+  return run
 }
 
 // On its way it passes over what's around it (cards with their own stacking, later in the page),
@@ -295,8 +330,10 @@ function placeIn(el: Element, parent: Element): Place | undefined {
   if (el instanceof HTMLElement && parent instanceof HTMLElement) {
     const via = el.offsetParent
     if (via === parent) return { x: el.offsetLeft, y: el.offsetTop, via }
+    // Both read against the same box, so the gap between them is the same whichever box that is: an
+    // ancestor mid-entrance holds it for a while, then lets go, and that isn't a change of box.
     if (via === parent.offsetParent)
-      return { x: el.offsetLeft - parent.offsetLeft, y: el.offsetTop - parent.offsetTop, via }
+      return { x: el.offsetLeft - parent.offsetLeft, y: el.offsetTop - parent.offsetTop, via: null }
   }
   const box = el.getBoundingClientRect()
   const at = parent.getBoundingClientRect()
