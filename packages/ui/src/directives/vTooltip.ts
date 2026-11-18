@@ -4,6 +4,7 @@ import type { Side } from '@floating-ui/dom'
 import type { Align } from '../composables/useFloatingPosition'
 import type { TooltipCloseReason } from '../composables/useTooltip'
 import type { BeforeClose } from '../motion/types'
+import type { UiPartValue } from '../classes'
 
 export interface TooltipDirectiveOptions {
   /** The text, or a component for markup (a status dot, dates, a progress bar), given `props`. */
@@ -26,6 +27,8 @@ export interface TooltipDirectiveOptions {
   beforeClose?: BeforeClose<TooltipCloseReason>
   /** Per-target override for TooltipHost's `forceMount` prop. */
   forceMount?: boolean
+  /** Class and style for this target's tooltip, in place of TooltipHost's `ui` for a part you name: `{ panel: { style: { '--ui-tooltip-bg': 'crimson' } } }`. */
+  ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 
 export type TooltipDirectiveValue = string | TooltipDirectiveOptions | null | undefined

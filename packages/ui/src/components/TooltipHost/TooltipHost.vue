@@ -228,10 +228,15 @@ watch(
 )
 
 const cx = useClassMerge()
-const themedUi = useThemedUi(
+const hostUi = useThemedUi(
   (theme) => theme.tooltip,
   () => props.ui,
 )
+// The target's own `ui` replaces the host's for each part it names, as a local `ui` replaces a theme's.
+const themedUi = () => {
+  const own = config.value?.ui
+  return own ? { ...hostUi(), ...own } : hostUi()
+}
 const themeScope = inject(themeScopeKey, undefined)
 
 const positionerPart = computed(() =>

@@ -172,7 +172,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
   vTooltip: {
     label: 'v-tooltip',
     description:
-      'Shows a tooltip on hover and keyboard focus. Every `v-tooltip` in the app shares one `<TooltipHost />`, which you mount near your app root (see the Global Setup guide). Style it through the `ui` prop of `TooltipHost`; `--ui-tooltip-bg` and `--ui-tooltip-color` set its colours. The Vapor build exports its own version under the same name from `vael-ui/vapor`.',
+      'Shows a tooltip on hover and keyboard focus. Every `v-tooltip` in the app shares one `<TooltipHost />`, which you mount near your app root (see the Global Setup guide). Style every tooltip through the `ui` prop of `TooltipHost`, or one through its `ui` option; `--ui-tooltip-bg` and `--ui-tooltip-color` set the colours. The Vapor build exports its own version under the same name from `vael-ui/vapor`.',
     installNames: ['vTooltip'],
     value: [
       {
@@ -231,6 +231,12 @@ export const directivesContent: Record<string, DirectiveContent> = {
         name: 'forceMount',
         type: 'boolean',
         description: "Overrides TooltipHost's `forceMount` prop for this target.",
+      },
+      {
+        name: 'ui',
+        type: 'Partial<{ positioner: UiPartValue; panel: UiPartValue }>',
+        description:
+          "Class and style for this target's tooltip, in place of TooltipHost's `ui` for each part you name. Set `--ui-tooltip-bg` and `--ui-tooltip-color` on `panel` to recolour it.",
       },
     ],
     modifiers: [
