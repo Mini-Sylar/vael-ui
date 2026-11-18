@@ -12,7 +12,7 @@ import { composablesContent } from './src/composablesContent.ts'
 import { pairedComposables } from './src/pairedComposables.ts'
 import { DIRECTIVES } from './src/directivesTaxonomy.ts'
 import { directivesContent } from './src/directivesContent.ts'
-import messages from './src/locales/en.json'
+import messages from './src/locales/en.json' with { type: 'json' }
 import { a11yContent } from './src/a11yContent.ts'
 import { writeLlms } from './scripts/llms.mjs'
 import { highlightPrerenderedCode } from './scripts/highlight-prerendered.ts'

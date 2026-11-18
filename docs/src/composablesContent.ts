@@ -1,5 +1,5 @@
 import type { MetaRow } from './types'
-import { appearanceHeadCode } from './appearanceHeadCode'
+import { appearanceHeadCode } from './appearanceHeadCode.ts'
 
 export interface ComposableContent {
   description: string
