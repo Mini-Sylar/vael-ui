@@ -47,14 +47,14 @@ for (const match of uiIndex.matchAll(
 
 const outPath = join(__dirname, '../ui/dist/vapor/index.d.ts')
 const lines = [
-  `export { ${componentNames.join(', ')}, vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask, vDraggableVapor as vDraggable, vHoverIndicatorVapor as vHoverIndicator } from '../index'`,
+  `export { ${componentNames.join(', ')}, vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask, vDraggableVapor as vDraggable, vHoverIndicatorVapor as vHoverIndicator } from '../index.js'`,
 ]
 if (componentExtraValueNames.length > 0) {
-  lines.push(`export { ${componentExtraValueNames.join(', ')} } from '../index'`)
+  lines.push(`export { ${componentExtraValueNames.join(', ')} } from '../index.js'`)
 }
 const allTypeNames = typeNames
 if (allTypeNames.length > 0)
-  lines.push(`export type { ${allTypeNames.join(', ')} } from '../index'`)
+  lines.push(`export type { ${allTypeNames.join(', ')} } from '../index.js'`)
 
 // Types only — safe to re-export from the sibling dist/index.d.ts (unlike the
 // runtime .js side, see generate-vapor.mjs, types aren't subject to the circular-reexport issue).
@@ -76,9 +76,9 @@ for (const match of uiIndex.matchAll(/export\s+(type\s+)?\{([^}]+)\}\s+from\s+'(
   }
 }
 if (composableValues.size > 0)
-  lines.push(`export { ${[...composableValues].join(', ')} } from '../index'`)
+  lines.push(`export { ${[...composableValues].join(', ')} } from '../index.js'`)
 if (composableTypes.size > 0)
-  lines.push(`export type { ${[...composableTypes].join(', ')} } from '../index'`)
+  lines.push(`export type { ${[...composableTypes].join(', ')} } from '../index.js'`)
 const composableCount = composableValues.size
 
 writeFileSync(outPath, lines.join('\n') + '\n')

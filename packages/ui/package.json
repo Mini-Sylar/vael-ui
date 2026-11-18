@@ -98,6 +98,7 @@
     "test": "pnpm gen && vitest run",
     "test:spikes": "vitest run --config vitest.spikes.config.ts",
     "check:dts": "vue-tsc --noEmit -p dts-check/tsconfig.json",
+    "check:exports": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --profile esm-only --exclude-entrypoints style.css layers.css",
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
