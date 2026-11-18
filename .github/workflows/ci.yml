@@ -64,6 +64,8 @@ jobs:
       - run: pnpm install
 
       - run: pnpm build
+      # What an app ships per component: fails when one grows more than 1% over its baseline.
+      - run: pnpm size:app
       - run: pnpm test:vapor:only
       - run: pnpm test:vapor-interop:only
       - name: Check for missing changeset
