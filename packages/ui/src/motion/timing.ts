@@ -1,12 +1,11 @@
 // Timing and settled(): shared by the runtime and the states player, so neither drags in the other.
 import { settleFor, springArrival, springEasing, springOf } from './springEasing'
-import { SPRINGS } from './springNames'
+import { DEFAULT_SPRING, SPRINGS } from './springNames'
 import type { SpringName } from './springNames'
 import { cssDuration, cssEasing } from './ease'
 import type { MotionTiming, Spring } from './types'
 
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
-const DEFAULT_SPRING: Spring = { damping: 1, response: 0.32 }
 
 export interface ResolvedTiming {
   easing: string

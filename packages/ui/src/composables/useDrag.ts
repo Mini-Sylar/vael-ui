@@ -3,23 +3,23 @@ import type { MaybeRefOrGetter, Ref } from 'vue'
 import { motionOffAt } from '../motion/styleHolder'
 import { publishSpeed } from '../motion/velocity'
 import { createSpring } from '../motion/useSpringValue'
+import type { SpringName } from '../motion/springNames'
+import type { Spring } from '../motion/types'
 import { createClickGuard, prefersReducedMotion } from './dom'
 import type { ElRef } from './dom'
-import { createVelocityTracker } from './gesture'
+import {
+  createVelocityTracker,
+  DRAG_THRESHOLD,
+  gestureSprings,
+  screenPerTranslate,
+} from './gesture'
 
 // A drag that decides on release: the element follows the pointer 1:1, and when it lets go you
 // say where it goes (thrown out, snapped somewhere, or back home) and it gets there on a spring
 // that keeps the throw's speed. A card deck, a swipe to dismiss, a sheet.
 
-/** Movement before a press is a drag, not a click (the same as the wheel and the sheet). */
-const DRAG_THRESHOLD = 8
 /** Apple's scroll deceleration: where a throw would come to rest if nothing caught it. */
 const DECELERATION = 0.998
-// Home after a hand lets go has a little give (the hand applied force). Leaving, and anything a
-// button or code starts, settles with none.
-const HOME = { damping: 0.7, response: 0.35 }
-const SETTLE = { damping: 1, response: 0.35 }
-const REDUCED = { damping: 1, response: 0.2 }
 const EPSILON = 0.5
 
 export interface DragPoint {
@@ -41,6 +41,11 @@ export interface UseDragOptions {
   el: ElRef<HTMLElement | null>
   /** `'x'` or `'y'` to move along one axis only. Default both. */
   axis?: MaybeRefOrGetter<'x' | 'y' | 'both'>
+  /**
+   * The spring it settles on: a name or `{ damping, response }`. Unset, the nearest
+   * ConfigProvider's `spring`, else the default every component uses. A hand's release gets a little give, reduced motion none.
+   */
+  spring?: MaybeRefOrGetter<Spring | SpringName | undefined>
   /**
    * Runs when it's let go. Return where it goes, px from home (thrown out of view, say), or
    * nothing for home. Escape during a drag, or a cancelled touch, goes home without asking.
@@ -70,6 +75,8 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
   const y = shallowRef(0)
   const isDragging = shallowRef(false)
 
+  // One source for the springs: the app's (or the one you name), with give for a hand's release.
+  const springs = () => gestureSprings(toValue(options.el), toValue(options.spring))
   // Each axis is its own spring, so a throw up and to the side keeps both speeds.
   let moving = false
   const frame = () => {
@@ -80,11 +87,11 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
       options.onRest?.({ x: x.value, y: y.value })
     }
   }
-  const sx = createSpring(0, { ...HOME, epsilon: EPSILON }, (v) => {
+  const sx = createSpring(0, { ...springs().settle, epsilon: EPSILON }, (v) => {
     x.value = v
     frame()
   })
-  const sy = createSpring(0, { ...HOME, epsilon: EPSILON }, (v) => {
+  const sy = createSpring(0, { ...springs().settle, epsilon: EPSILON }, (v) => {
     y.value = v
     frame()
   })
@@ -102,7 +109,12 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
       return frame()
     }
     const reduced = prefersReducedMotion()
-    const spring = reduced ? REDUCED : thrown && to.x === 0 && to.y === 0 ? HOME : SETTLE
+    const all = springs()
+    const spring = reduced
+      ? all.reduced
+      : thrown && to.x === 0 && to.y === 0
+        ? all.home
+        : all.settle
     moving = true
     sx.set(to.x, { ...spring, velocity: reduced ? 0 : velocity.x })
     sy.set(to.y, { ...spring, velocity: reduced ? 0 : velocity.y })
@@ -122,6 +134,11 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
   let start = { x: 0, y: 0 }
   let from = { x: 0, y: 0 }
   let committed = false
+  // The px of the drag threshold not yet followed: it starts under the finger, not ahead of it, and
+  // catches up over the next few moves instead of jumping.
+  let slack = { x: 0, y: 0 }
+  // Screen px per px of translate: 1 unless an ancestor is scaled.
+  let unit = { x: 1, y: 1 }
   let userSelect = ''
 
   function onPointerdown(event: PointerEvent) {
@@ -134,6 +151,8 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
     sx.stop()
     sy.stop()
     from = { x: x.value, y: y.value }
+    const el = toValue(options.el)
+    unit = el ? screenPerTranslate(el) : { x: 1, y: 1 }
     trackX.reset(event.clientX)
     trackY.reset(event.clientY)
     window.addEventListener('pointermove', onPointermove)
@@ -165,6 +184,7 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
         return
       }
       committed = true
+      slack = { x: Math.sign(dx) * DRAG_THRESHOLD, y: Math.sign(dy) * DRAG_THRESHOLD }
       isDragging.value = true
       moving = true
       const el = toValue(options.el)
@@ -180,8 +200,10 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
     }
     trackX.add(event.clientX)
     trackY.add(event.clientY)
-    if (axis() !== 'y') sx.jump(from.x + dx)
-    if (axis() !== 'x') sy.jump(from.y + dy)
+    // The finger's screen distance, in the element's own px (an ancestor may scale them).
+    slack = { x: slack.x * 0.8, y: slack.y * 0.8 }
+    if (axis() !== 'y') sx.jump(from.x + (dx - slack.x) / unit.x)
+    if (axis() !== 'x') sy.jump(from.y + (dy - slack.y) / unit.y)
     if (event.cancelable) event.preventDefault()
   }
 
@@ -197,8 +219,8 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
     trackX.add(event.clientX)
     trackY.add(event.clientY)
     const velocity = {
-      x: axis() !== 'y' ? trackX.velocity() * 1000 : 0,
-      y: axis() !== 'x' ? trackY.velocity() * 1000 : 0,
+      x: axis() !== 'y' ? (trackX.velocity() * 1000) / unit.x : 0,
+      y: axis() !== 'x' ? (trackY.velocity() * 1000) / unit.y : 0,
     }
     const coast = DECELERATION / (1 - DECELERATION) / 1000
     const offset = { x: x.value, y: y.value }
@@ -242,7 +264,7 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
       // How fast it's moving, for a `v-animate` exit that takes over: a thrown card keeps going.
       const unpublish = publishSpeed(el, () =>
         isDragging.value
-          ? { x: trackX.velocity() * 1000, y: trackY.velocity() * 1000 }
+          ? { x: (trackX.velocity() * 1000) / unit.x, y: (trackY.velocity() * 1000) / unit.y }
           : { x: sx.velocity, y: sy.velocity },
       )
       onCleanup(() => {

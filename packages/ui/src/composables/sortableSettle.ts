@@ -1,8 +1,7 @@
+import { DEFAULT_SPRING } from '../motion/springNames'
 import { stepSpring } from '../motion/springStep'
 import type { SortableAxis } from './useSortable'
 
-/** Same as useSortable's DROP_SPRING: critically damped, no bounce for a row settling into a slot. */
-const RESPONSE = 0.28
 const EPSILON = 0.05
 const MAX_DT = 1 / 30
 /** A release velocity past this is a synthetic event's single jump, not a flick. */
@@ -162,7 +161,7 @@ export function createSettler(options: {
     for (const row of rows.values()) {
       const { offset, velocity } = row
       if (offset.x === 0 && offset.y === 0 && velocity.x === 0 && velocity.y === 0) continue
-      const { damping, response } = options.spring?.() ?? { damping: 1, response: RESPONSE }
+      const { damping, response } = options.spring?.() ?? DEFAULT_SPRING
       const x = stepSpring({ value: offset.x, velocity: velocity.x }, 0, dt, damping, response)
       const y = stepSpring({ value: offset.y, velocity: velocity.y }, 0, dt, damping, response)
       const still = (s: { value: number; velocity: number }) =>

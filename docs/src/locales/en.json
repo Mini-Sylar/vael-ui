@@ -861,7 +861,7 @@
         },
         "drag": {
           "title": "Dragging",
-          "body": "The components that drag (BottomSheet, SwipeToReveal, Sortable, Slider) have it built in. To reorder your own list, or move items between lists, use <code>v-draggable</code> with <code>useSortableGroup</code>. For anything you throw or swipe away, <code>useDrag</code> moves the element with your finger and asks <code>onRelease</code> where it goes. Link a look to the drag with a live value in <code>animate</code>, a getter it follows every frame without re-rendering: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. <code>mapRange</code> lines up two ranges, so the card turns from -12° to 12° across the drag. Removed mid-throw, its <code>exit</code> carries on at the speed you threw it."
+          "body": "<code>v-draggable</code> reorders your own lists, and <code>useSortableGroup</code> moves items between them. For anything you throw or swipe away, use <code>useDrag</code>: the element follows your finger, and <code>onRelease</code> decides where it goes. Link a look to the drag with a getter in <code>animate</code>: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. The getter runs every frame without re-rendering. An exit on a spring keeps the speed of the throw."
         },
         "own": {
           "title": "Your own components",

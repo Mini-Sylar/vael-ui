@@ -1,10 +1,18 @@
 import { computed, getCurrentScope, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
+import type { SpringName } from '../motion/springNames'
+import type { Spring } from '../motion/types'
 import { motionOffAt } from '../motion/styleHolder'
 import { createSpring } from '../motion/useSpringValue'
 import { createClickGuard, isRtl, prefersReducedMotion } from './dom'
 import type { ElRef } from './dom'
-import { createVelocityTracker, dampen } from './gesture'
+import {
+  createVelocityTracker,
+  dampen,
+  DRAG_THRESHOLD,
+  gestureSprings,
+  limitOvershoot,
+} from './gesture'
 import { wheelLayout } from './wheelLayout'
 
 // A wheel you can grab: a one-axis position you drag, throw, scroll with a mouse wheel or step with
@@ -15,20 +23,12 @@ import { wheelLayout } from './wheelLayout'
 /** Apple's scroll deceleration (0.998 is a page; this is a short strip): where a fling would stop. */
 const DECELERATION = 0.995
 /** It snaps to the nearest row this long after the last tick of a mouse wheel. */
-const WHEEL_IDLE = 110
+const WHEEL_IDLE = 60
+/** The same, while it is stretched past an end of a list. */
+const WHEEL_IDLE_STRETCHED = 45
 /** Rows a wheel notch moves per px of delta, before the cap that keeps a long row 1:1. */
-const WHEEL_ROWS_PER_PX = 0.012
-/** Movement before a press is a drag, not a click (the same as the sheet and swipe-to-reveal). */
-const DRAG_THRESHOLD = 8
-/** px per second below which a release is a placement, not a throw. */
-const THROW_SPEED = 80
-// A button or a key applies no force, so it settles with no give; only a throw bounces. The travel
-// is a few rows, so it takes far more give than a sheet's 0.8 to show: 0.6 overshoots about 3 px
-// on a one-row throw and 20 px on a six-row one.
-const SETTLE = { damping: 1, response: 0.35 }
-const THROWN = { damping: 0.6, response: 0.35 }
-// Reduced motion keeps the drag and drops the throw: a short, critically damped settle.
-const REDUCED = { damping: 1, response: 0.2 }
+/** Wheel deltas up to this (px) move it 1:1; larger ones, a mouse notch, are eased. */
+const WHEEL_FINE = 30
 // Half a pixel, and half a pixel a second, is rest: nothing on screen still moves, and the model
 // updates as soon as the motion looks done.
 const EPSILON = 0.5
@@ -60,6 +60,11 @@ export interface UseWheelOptions {
   /** Stops with the last slide's end at the end of `el`, so no empty space shows after it. */
   containScroll?: MaybeRefOrGetter<boolean>
   disabled?: MaybeRefOrGetter<boolean>
+  /**
+   * The spring it settles on: a name or `{ damping, response }`. Unset, the nearest
+   * ConfigProvider's `spring`, else the default every component uses. A throw gets a little give, reduced motion none.
+   */
+  spring?: MaybeRefOrGetter<Spring | SpringName | undefined>
   /** Runs once it has come to rest on `index` (the model already changed when it was chosen). */
   onSettle?: (index: number) => void
   /**
@@ -211,7 +216,9 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
     arrived = false
   }
 
-  const spring = createSpring(px, { ...SETTLE, epsilon: EPSILON }, (value) => {
+  // One source for the springs: the app's (or the one you name), with give for a throw.
+  const springs = () => gestureSprings(toValue(options.el), toValue(options.spring))
+  const spring = createSpring(px, { ...springs().settle, epsilon: EPSILON }, (value) => {
     px = value
     position.value = rowNow()
     paint()
@@ -265,8 +272,11 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
     moving = true
     headFor(target)
     select()
+    // From past an end (a stretch just let go of) it comes back quickly and without a bounce.
+    const pastEnd = !loops() && (px < l.lo - 0.5 || px > l.hi + 0.5)
     if (opts.animate === false || motionOff()) spring.jump(to)
-    else spring.set(to, prefersReducedMotion() ? REDUCED : SETTLE)
+    else if (prefersReducedMotion()) spring.set(to, springs().reduced)
+    else spring.set(to, pastEnd ? springs().end : springs().settle)
   }
   const step = (n: number) => goTo(Math.round(heading.value) + n * snapEvery())
 
@@ -275,6 +285,11 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
   let startPointer = 0
   let startPx = 0
   let committed = false
+  // The px of the drag threshold not yet followed: the content starts under the finger, not 8 px
+  // ahead of it, and catches up over the next few moves instead of jumping.
+  let slack = 0
+  // Screen px per px along the axis: 1 unless it or an ancestor is scaled.
+  let scale = 1
   let userSelect = ''
   const along = (event: { clientX: number; clientY: number }) =>
     axis() === 'x' ? event.clientX : event.clientY
@@ -288,6 +303,11 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
     // Catch it mid-flight: the pointer takes over from where the spring is.
     spring.stop()
     startPx = px
+    const el = toValue(options.el)
+    const rect = el?.getBoundingClientRect()
+    const own = el ? (axis() === 'x' ? el.offsetWidth : el.offsetHeight) : 0
+    const screen = rect ? (axis() === 'x' ? rect.width : rect.height) : 0
+    scale = own && screen ? screen / own : 1
     moving = true
     settleRow = null
     tracker.reset(startPointer)
@@ -302,6 +322,7 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
     if (!committed) {
       if (Math.abs(delta) < DRAG_THRESHOLD) return
       committed = true
+      slack = Math.sign(delta) * DRAG_THRESHOLD
       isDragging.value = true
       const el = toValue(options.el)
       if (el) {
@@ -316,7 +337,9 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
     }
     tracker.add(along(event))
     // Dragging forward brings the earlier rows into view, so the position goes back.
-    const next = soft(startPx - delta * dir())
+    // The finger's screen distance, in the wheel's own px.
+    slack *= 0.8
+    const next = soft(startPx - ((delta - slack) / scale) * dir())
     heading.value = layout.value.rowAt(next)
     spring.jump(next)
     if (event.cancelable) event.preventDefault()
@@ -336,7 +359,7 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
     // A cancelled touch carries no real position: the drag's own samples are all there is.
     if (event.type === 'pointerup') tracker.add(along(event))
     // px/ms along the axis → px/s, the other way round (dragging forward is toward row 0).
-    const pxPerSecond = -tracker.velocity() * 1000 * dir()
+    const pxPerSecond = (-tracker.velocity() * 1000 * dir()) / scale
     const l = layout.value
     const reduced = prefersReducedMotion()
     // Where it would stop if left to coast (Apple's projection), then where it rests near that.
@@ -345,12 +368,25 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
     heading.value = l.rowAt(to)
     headFor(heading.value)
     select()
-    // The spring is already where the drag left it: it carries the release speed on. Only a throw
-    // has give; a slow placement, or reduced motion, settles with none.
-    const thrown = !reduced && Math.abs(pxPerSecond) >= THROW_SPEED
+    // The spring is already where the drag left it: it carries the release speed on and lands on
+    // the app's spring as given (an end of a list is handled below).
     if (motionOff()) return spring.jump(to)
+    // At an end of a list there is nothing past it to swing out into: it rubber-bands back with no
+    // bounce, and only a little way (a throw's speed is lowered to fit).
+    const atEnd = !loops() && (to <= l.lo || to >= l.hi)
+    if (atEnd && !reduced) {
+      const sign = to >= l.hi ? 1 : -1
+      const settle = springs().end
+      const speed = limitOvershoot(
+        sign * (px - to),
+        sign * pxPerSecond,
+        settle.response ?? 0.4,
+        Math.min(l.pitch * 0.5, 20),
+      )
+      return spring.set(to, { ...settle, velocity: sign * speed })
+    }
     spring.set(to, {
-      ...(reduced ? REDUCED : thrown ? THROWN : SETTLE),
+      ...(reduced ? springs().reduced : springs().settle),
       velocity: reduced ? 0 : pxPerSecond,
     })
   }
@@ -362,11 +398,16 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
   // loop; across the axis (a vertical scroll over a carousel), it's the page's.
   let gesture: 'wheel' | 'page' | null = null
   let gestureTimer = 0
+  // The wheel is still pushing past an end and has already bounced once this gesture.
+  let bounced = false
   function onWheel(event: WheelEvent) {
     if (toValue(options.disabled) || !count()) return
     if (event.ctrlKey) return // a pinch-zoom, not a scroll
     window.clearTimeout(gestureTimer)
-    gestureTimer = window.setTimeout(() => (gesture = null), WHEEL_IDLE)
+    gestureTimer = window.setTimeout(() => {
+      gesture = null
+      bounced = false
+    }, WHEEL_IDLE)
     const lines = event.deltaMode === 1 ? 16 : 1
     const alongDelta = axis() === 'x' ? event.deltaX : event.deltaY
     const acrossDelta = axis() === 'x' ? event.deltaY : event.deltaX
@@ -380,19 +421,53 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
     event.preventDefault()
     // Inside its gesture, a sideways or empty event just keeps the page still.
     if (!delta) return
+    const outward = !loops() && ((delta > 0 && px >= l.hi - 0.5) || (delta < 0 && px <= l.lo + 0.5))
+    if (outward) {
+      // At an end with the wheel still pushing (trackpad momentum): one small stretch that comes
+      // straight back. Holding it out until the events stop reads as sticking, then sliding in.
+      if (!bounced) {
+        bounced = true
+        const settle = springs().end
+        const sign = delta > 0 ? 1 : -1
+        const w = (2 * Math.PI) / (settle.response ?? 0.25)
+        const stretch = Math.min(l.pitch * 0.3, 12)
+        moving = true
+        settleRow = null
+        heading.value = l.rowAt(sign > 0 ? l.hi : l.lo)
+        spring.set(sign > 0 ? l.hi : l.lo, { ...settle, velocity: sign * w * Math.E * stretch })
+      }
+      window.clearTimeout(wheelTimer)
+      wheelTimer = window.setTimeout(() => {
+        wheelTimer = 0
+        goTo(Math.round(rowNow() / snapEvery()) * snapEvery())
+      }, WHEEL_IDLE)
+      return
+    }
     spring.stop()
     moving = true
     settleRow = null
-    // A notch moves a picker about a row; a long row is followed 1:1.
-    const perPx = Math.min(1, WHEEL_ROWS_PER_PX * l.pitch)
-    const next = soft(px + delta * perPx)
+    // A trackpad's small deltas move it 1:1, like a finger. A mouse notch (100 or more) is eased
+    // down to about a row and a half, so one click doesn't skip rows.
+    const mag = Math.abs(delta)
+    const eased = mag <= WHEEL_FINE ? mag : WHEEL_FINE + (mag - WHEEL_FINE) * 0.45
+    // Past an end the pull stretches only a little: there is no finger, and trackpad momentum
+    // would otherwise carry it a long way out into nothing.
+    const stretch = Math.min(l.pitch * 0.3, 12)
+    const moved = Math.sign(delta) * eased
+    const next = loops()
+      ? px + moved
+      : Math.min(l.hi + stretch, Math.max(l.lo - stretch, soft(px + moved)))
     heading.value = l.rowAt(next)
     spring.jump(next)
     window.clearTimeout(wheelTimer)
-    wheelTimer = window.setTimeout(() => {
-      wheelTimer = 0
-      goTo(snaps() ? Math.round(rowNow() / snapEvery()) * snapEvery() : rowNow())
-    }, WHEEL_IDLE)
+    wheelTimer = window.setTimeout(
+      () => {
+        wheelTimer = 0
+        goTo(snaps() ? Math.round(rowNow() / snapEvery()) * snapEvery() : rowNow())
+        // Stretched past an end, it lets go sooner: waiting there reads as a stall.
+      },
+      !loops() && (next < l.lo - 0.5 || next > l.hi + 0.5) ? WHEEL_IDLE_STRETCHED : WHEEL_IDLE,
+    )
   }
 
   function onKeydown(event: KeyboardEvent) {
@@ -460,7 +535,7 @@ export function useWheel(model: Ref<number>, options: UseWheelOptions): UseWheel
     const to = layout.value.pxOf(heading.value)
     // Mid-flight it carries on to the same slide at its new place; at rest it moves there at once.
     if (moving) {
-      spring.set(to, prefersReducedMotion() ? REDUCED : SETTLE)
+      spring.set(to, prefersReducedMotion() ? springs().reduced : springs().settle)
       return
     }
     spring.jump(to)

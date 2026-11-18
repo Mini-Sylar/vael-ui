@@ -2,9 +2,8 @@
   <section class="demo">
     <h3>A time picker</h3>
     <p class="note">
-      Two looping wheels. Drag or throw them, scroll with the mouse wheel, or focus one and use the
-      arrow keys. Each row reads its own <code>--ui-wheel-offset</code>, so a frame restyles a
-      handful of rows and renders nothing. On a phone, every row that passes ticks.
+      Drag it, throw it, scroll it or press the arrow keys. Each row reads its own
+      <code>--ui-wheel-offset</code>. On a phone, every row that passes ticks.
     </p>
     <div class="wheel-row">
       <div
@@ -70,17 +69,20 @@ const columns = [
 /* Rows on a cylinder: each turns by its distance from the centre and sits out at the radius. */
 .wheel {
   --row: 36px;
-  --angle: 22deg;
-  --radius: calc(var(--row) / tan(var(--angle)));
+  /* The turn between neighbouring rows. The radius makes their arc as long as a row. */
+  --angle: 26deg;
+  --radius: calc(var(--row) / (2 * sin(var(--angle) / 2)));
   position: relative;
   inline-size: 4.5rem;
   block-size: calc(var(--row) * 5);
-  perspective: 700px;
+  perspective: 520px;
+  perspective-origin: 50% 50%;
   overflow: hidden;
   cursor: grab;
   border-radius: var(--ui-radius);
   background: var(--ui-surface);
-  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  /* Shading at the top and bottom, where the drum turns away. */
+  mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent);
 }
 /* The band behind the row it rests on (a pseudo-element, so not one of the wheel's items). */
 .wheel::before {
@@ -95,8 +97,11 @@ const columns = [
 .wheel:active {
   cursor: grabbing;
 }
+/* A row on the drum: out to the radius, turned to its place, and the drum pushed back by the same
+   radius, so the row in the middle is at its true size and the ones above and below curve away. */
 .wheel-item {
   --d: var(--ui-wheel-offset, 9);
+  --turn: clamp(-90deg, var(--d) * var(--angle), 90deg);
   position: absolute;
   inset-inline: 0;
   inset-block-start: calc(50% - var(--row) / 2);
@@ -106,8 +111,10 @@ const columns = [
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
   backface-visibility: hidden;
-  transform: rotateX(calc(var(--d) * var(--angle) * -1)) translateZ(var(--radius));
-  opacity: calc(1 - min(1, abs(var(--d)) / 3));
+  transform: translateZ(calc(var(--radius) * -1)) rotateX(calc(var(--turn) * -1))
+    translateZ(var(--radius));
+  /* Facing you is full strength; turning away dims with the angle, as a lit cylinder does. */
+  opacity: calc(cos(var(--turn)) * cos(var(--turn)));
 }
 .wheel-readout {
   font-size: 1.25rem;

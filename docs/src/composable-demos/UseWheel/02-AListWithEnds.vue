@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>A list with ends</h3>
     <p class="note">
-      Without <code>loop</code>, pulling past the first or last year gives, then springs back. Home
-      and End jump to the ends, and Page Up and Page Down move a screenful.
+      Without <code>loop</code>, the ends stretch a little and spring back. Home, End, Page Up and
+      Page Down jump.
     </p>
     <div class="wheel-row">
       <div

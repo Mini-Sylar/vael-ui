@@ -860,7 +860,7 @@
         },
         "drag": {
           "title": "Glisser",
-          "body": "Les composants qu'on fait glisser (BottomSheet, SwipeToReveal, Sortable, Slider) le font déjà. Pour réordonner votre propre liste, ou déplacer des éléments d'une liste à l'autre, utilisez <code>v-draggable</code> avec <code>useSortableGroup</code>. Pour tout ce qu'on lance ou qu'on balaie, <code>useDrag</code> déplace l'élément avec le doigt et demande à <code>onRelease</code> où il va. Liez un aspect au glissement avec une valeur vivante dans <code>animate</code>, un getter suivi à chaque image sans nouveau rendu : <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. <code>mapRange</code> fait correspondre deux plages, si bien que la carte tourne de -12° à 12° sur toute la course. Retirée en plein lancer, son <code>exit</code> continue à la vitesse du lancer."
+          "body": "<code>v-draggable</code> réordonne vos propres listes, et <code>useSortableGroup</code> déplace des éléments entre elles. Pour tout ce que vous lancez ou balayez, utilisez <code>useDrag</code> : l'élément suit votre doigt, et <code>onRelease</code> décide où il va. Liez un aspect au glissement avec un getter dans <code>animate</code> : <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. Le getter s'exécute à chaque image sans nouveau rendu. Une sortie sur ressort garde la vitesse du lancer."
         },
         "own": {
           "title": "Vos propres composants",

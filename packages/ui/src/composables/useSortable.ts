@@ -1,7 +1,9 @@
 import { nextTick, onScopeDispose, shallowRef, toValue, useId, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
+import { DEFAULT_SPRING } from '../motion/springNames'
 import { createSpring } from '../motion/useSpringValue'
 import type { SpringHandle } from '../motion/useSpringValue'
+import { createVelocityTracker, DRAG_THRESHOLD } from './gesture'
 import { createSettler } from './sortableSettle'
 import type { Point } from './sortableSettle'
 import { measureGrid, nearestSlot, slotAt, slotOffset, translateOf, wraps } from './sortableGrid'
@@ -162,13 +164,12 @@ export function resolveRowShifts(
 // --- runtime -----------------------------------------------------------------
 
 /** Tap-vs-drag hysteresis, shared with useSwipeReveal — lets a vertical scroll through untouched. */
-const DRAG_THRESHOLD = 8
 /** Apple's move/reposition spring. Bounce is deliberately absent: a reorder settles into a slot, it doesn't get thrown. */
 /** A floating copy's placeholder, from takeCopy() to the landing (possibly in another list). */
 const copySources = new WeakMap<HTMLElement, HTMLElement>()
 
-export const SHIFT_SPRING = { damping: 1, response: 0.32 }
-export const DROP_SPRING = { damping: 1, response: 0.28 }
+export const SHIFT_SPRING = DEFAULT_SPRING
+export const DROP_SPRING = DEFAULT_SPRING
 
 export type SortableSource = 'pointer' | 'keyboard'
 /** `'y'` reorders a column of rows; `'x'` reorders a row of items (table columns, tabs). A list
@@ -835,7 +836,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const landsHome = !!copy
     if (copy && el && value != null) {
       reveal(el)
-      landCopy(copy, el, value, alongVelocity(velocity))
+      landCopy(copy, el, value, alongVelocity(velocity()))
     }
     const glidesHome = !landsHome && !!el && source === 'pointer'
     if (el && glidesHome) {
@@ -851,7 +852,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
         el,
         value!,
         { x: current.left - rest.left, y: current.top - rest.top },
-        alongVelocity(velocity),
+        alongVelocity(velocity()),
         true,
       )
     }
@@ -1059,7 +1060,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       const rect = previewEl.getBoundingClientRect()
       before.set(draggedEl, { x: rect.left, y: rect.top })
     }
-    const releaseVelocity = velocity
+    const releaseVelocity = velocity()
     const shiftVelocities = captureShiftVelocities()
 
     holdLayout(container())
@@ -1157,7 +1158,6 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let pendingValue: string | number | null = null
   let dragEl: HTMLElement | null = null
   let lastAlong = 0
-  let lastTime = 0
   const clickGuard = createClickGuard()
   let previewEl: HTMLElement | null = null
   // Whether `previewEl` is a floating copy ('clone') rather than the real row lifted out
@@ -1575,7 +1575,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     previewEl = null
     previewIsCopy = false
   }
-  let velocity = 0
+  // How fast the pointer was going along the axis when it let go (px/s, for the drop handoff): the
+  // end of the drag, not its average, and zero if it held still first.
+  const tracker = createVelocityTracker()
+  const velocity = () => tracker.velocity() * 1000
   /** Where along the axis the row was grabbed, from its start. */
   let grabAlong = 0
 
@@ -1588,9 +1591,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     startX = event.clientX
     startY = event.clientY
     lastAlong = axis() === 'x' ? event.clientX : event.clientY
-    lastTime = performance.now()
     lastPointerEvent = event
-    velocity = 0
+    tracker.reset(lastAlong)
     isTouchPointer = event.pointerType === 'touch'
     listenToPointer()
     // Resolved through the consumer's own accessor, not a DOM selector — Tree
@@ -1721,12 +1723,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
     event.preventDefault()
     if (!replayingPointer) {
-      const now = performance.now()
-      const elapsed = Math.max(1, now - lastTime)
       const pos = axis() === 'x' ? event.clientX : event.clientY
-      velocity = ((pos - lastAlong) / elapsed) * 1000 // px/s, for the drop handoff
+      tracker.add(pos)
       lastAlong = pos
-      lastTime = now
     }
 
     const shift = scrollShift()
@@ -2027,7 +2026,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       draggedBlockSize: () => blockHeight + rowGap,
       sourceSlot: () => sourceSlot,
       previewRect: () => previewEl?.getBoundingClientRect() ?? null,
-      releaseVelocity: () => velocity,
+      releaseVelocity: velocity,
       setPending: (pending) => (isPending.value = pending),
       onHostChange: (isHost) => {
         isGroupHost = isHost

@@ -165,13 +165,14 @@ export type LiveValue<V> = (() => V) | Readonly<Ref<V>>
 /**
  * `v-animate`'s `animate`: any motion value, or a live one that it follows as it changes (`x:
  * drag.x`, `rotate: () => mapRange(drag.x.value, [-300, 300], [-20, 20])`). `{ value: live,
- * spring }` follows it on a spring instead of exactly: a stack settling after the cards above it.
+ * spring }` follows it on a spring instead of exactly (a stack settling after the cards above
+ * it); `spring: true` is the app's spring.
  */
 export type AnimateValues = {
   [K in keyof StyleProps]?:
     | MotionValues[K]
     | LiveValue<NonNullable<StyleProps[K]>>
-    | { value: LiveValue<NonNullable<StyleProps[K]>>; spring?: Spring | SpringName }
+    | { value: LiveValue<NonNullable<StyleProps[K]>>; spring?: Spring | SpringName | true }
 }
 
 /** Where an element is: in a swap, `direction` (1 forward, -1 back, 0 neither); in a list, `index`. */

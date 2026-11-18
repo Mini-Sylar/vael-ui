@@ -860,7 +860,7 @@
         },
         "drag": {
           "title": "拖动",
-          "body": "可以拖动的组件（BottomSheet、SwipeToReveal、Sortable、Slider）已经内置了。要重新排序你自己的列表，或在列表之间移动项目，请用 <code>v-draggable</code> 配合 <code>useSortableGroup</code>。对于要扔出去或滑动移除的东西，<code>useDrag</code> 让元素跟随手指移动，并在松手时询问 <code>onRelease</code> 它该去哪里。用 <code>animate</code> 中的实时值把外观与拖动联系起来，这是一个每帧都会被跟随、且不会重新渲染的 getter：<code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>。<code>mapRange</code> 对齐两个范围，于是卡片在拖动过程中从 -12° 转到 12°。在扔出途中被移除时，它的 <code>exit</code> 会以扔出的速度继续。"
+          "body": "<code>v-draggable</code> 为你自己的列表重新排序，<code>useSortableGroup</code> 在列表之间移动项目。对于要扔出去或滑动移除的东西，用 <code>useDrag</code>：元素跟随手指，<code>onRelease</code> 决定它去哪里。用 <code>animate</code> 中的 getter 把外观与拖动联系起来：<code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>。getter 每帧运行且不会重新渲染。弹簧式的 exit 会保持扔出的速度。"
         },
         "own": {
           "title": "你自己的组件",

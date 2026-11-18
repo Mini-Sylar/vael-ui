@@ -2,10 +2,8 @@
   <section class="demo">
     <h3>Slides of different widths, two at a time</h3>
     <p class="note">
-      <code>sizes</code> gives each slide its width, <code>align: 'start'</code> rests them against
-      the left edge, <code>slidesToScroll: 2</code> moves two at a time, and
-      <code>containScroll</code> stops with the last one flush, so no empty space shows. A vertical
-      scroll over it still scrolls the page, and links inside still click.
+      <code>sizes</code> sets each width. <code>slidesToScroll: 2</code> moves two at a time.
+      <code>containScroll</code> stops the last slide flush with the end.
     </p>
     <div
       ref="el"

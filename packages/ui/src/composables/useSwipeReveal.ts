@@ -1,7 +1,7 @@
 import { getCurrentScope, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { createClickGuard, isRtl } from './dom'
-import { createVelocityTracker, dampen } from './gesture'
+import { createVelocityTracker, dampen, DRAG_THRESHOLD } from './gesture'
 
 export type SwipeRevealSide = 'leading' | 'trailing'
 
@@ -46,8 +46,6 @@ export interface UseSwipeRevealReturn {
 const VELOCITY_THRESHOLD = 0.11 // px/ms
 // Distance threshold: midpoint for binary open/closed
 const DISTANCE_FRACTION = 0.5
-// Tap vs drag disambiguation; passes vertical scroll through
-const DRAG_THRESHOLD = 8 // px
 // Tighter dampen (short fixed distance, like pull-to-refresh)
 const RUBBER_BAND_DAMPEN = 40
 

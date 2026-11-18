@@ -860,7 +860,7 @@
         },
         "drag": {
           "title": "Trascinare",
-          "body": "I componenti che si trascinano (BottomSheet, SwipeToReveal, Sortable, Slider) lo fanno già. Per riordinare una tua lista, o spostare elementi tra liste, usa <code>v-draggable</code> con <code>useSortableGroup</code>. Per tutto ciò che si lancia o si scorre via, <code>useDrag</code> muove l'elemento con il dito e chiede a <code>onRelease</code> dove va. Collega un aspetto al trascinamento con un valore live in <code>animate</code>, un getter seguito a ogni fotogramma senza nuovo rendering: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. <code>mapRange</code> allinea due intervalli, così la carta ruota da -12° a 12° lungo il trascinamento. Rimossa a metà lancio, il suo <code>exit</code> prosegue alla velocità del lancio."
+          "body": "<code>v-draggable</code> riordina le tue liste, e <code>useSortableGroup</code> sposta elementi tra di esse. Per tutto ciò che lanci o scorri via, usa <code>useDrag</code>: l'elemento segue il dito e <code>onRelease</code> decide dove va. Collega un aspetto al trascinamento con un getter in <code>animate</code>: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. Il getter gira a ogni fotogramma senza nuovo rendering. Un'uscita su molla mantiene la velocità del lancio."
         },
         "own": {
           "title": "I tuoi componenti",

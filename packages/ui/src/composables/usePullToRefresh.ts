@@ -3,7 +3,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { useScrollState } from './useScrollState'
 import type { ElRef } from './dom'
-import { createVelocityTracker, dampen } from './gesture'
+import { createVelocityTracker, dampen, DRAG_THRESHOLD } from './gesture'
 
 export type PullToRefreshState = 'idle' | 'pulling' | 'ready' | 'loading' | 'done'
 
@@ -34,7 +34,6 @@ const DEFAULT_DONE_HOLD_MS = 650
 const DAMPEN_FACTOR = 40 // px scale for the log curve below
 const VELOCITY_THRESHOLD = 0.5 // px/ms — a decisive flick commits even short of `threshold`
 const VELOCITY_MIN_DISTANCE_FRACTION = 0.5 // of `threshold` — guards a near-zero-distance jerk from reading as "fast"
-const COMMIT_THRESHOLD = 8 // px — matches useSheetDrag's AXIS_LOCK_THRESHOLD; a thumb's incidental jitter at scrollTop 0 shouldn't commit to a pull
 
 /*
   Touch events, not Pointer Events, drive the pull.
@@ -136,7 +135,7 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
     const delta = y - startY
     if (!dragging) {
       if (el.scrollTop !== 0) return 'release'
-      if (delta <= COMMIT_THRESHOLD) return 'ignore'
+      if (delta <= DRAG_THRESHOLD) return 'ignore'
       dragging = true
     }
     // Re-checked every move even after committing - reversing back past the start hands the gesture back to native scroll instead of staying locked into `pull` for the rest of the touch.

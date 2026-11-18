@@ -860,7 +860,7 @@
         },
         "drag": {
           "title": "ドラッグ",
-          "body": "ドラッグできるコンポーネント（BottomSheet、SwipeToReveal、Sortable、Slider）には最初から備わっています。自分のリストを並べ替えたり、リスト間で項目を移したりするには、<code>v-draggable</code> と <code>useSortableGroup</code> を使います。投げたりスワイプで消したりするものには、<code>useDrag</code> が要素を指に合わせて動かし、離したときの行き先を <code>onRelease</code> に尋ねます。見た目をドラッグに結びつけるには、<code>animate</code> にライブ値（再レンダリングせず毎フレーム追従するゲッター）を渡します：<code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>。<code>mapRange</code> は 2 つの範囲を対応させるので、ドラッグに合わせてカードが -12° から 12° まで傾きます。投げている途中で取り除くと、<code>exit</code> は投げた速さのまま続きます。"
+          "body": "<code>v-draggable</code> は自分のリストを並べ替え、<code>useSortableGroup</code> は項目をリスト間で移します。投げたりスワイプで消したりするものには <code>useDrag</code> を使います。要素は指に追従し、<code>onRelease</code> が行き先を決めます。見た目をドラッグに結びつけるには、<code>animate</code> にゲッターを渡します：<code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>。ゲッターは再レンダリングせず毎フレーム実行されます。スプリングの exit は投げた速さを保ちます。"
         },
         "own": {
           "title": "自作のコンポーネント",

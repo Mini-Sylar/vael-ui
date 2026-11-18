@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>One page at a time</h3>
     <p class="note">
-      With <code>size: 'auto'</code> each page is as wide as the element, whatever its width, and
-      stays in place when the window resizes. The dots call <code>goTo</code>.
+      <code>size: 'auto'</code> makes each page as wide as the element. The dots call
+      <code>goTo</code>.
     </p>
     <div
       ref="el"

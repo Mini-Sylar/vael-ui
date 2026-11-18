@@ -2,11 +2,10 @@
   <section class="demo">
     <h3>A card deck</h3>
     <p class="note">
-      Drag the top card and throw it past either side, or let it go near the middle and it comes
-      back. <code>onRelease</code> decides from where the throw would land. Each card's look follows
-      the drag live in <code>v-animate</code> (the tilt, the stack rising), and a thrown card's
-      <code>exit</code> carries on at the speed you threw it. Undo flies a card back in with its
-      <code>initial</code>.
+      Throw the top card past either side, or let go near the middle to send it back.
+      <code>onRelease</code> decides from where the throw lands. Live values in
+      <code>v-animate</code> tilt the card and lift the stack. A card's <code>exit</code> keeps the
+      speed you threw it at. Undo flies a card back in with <code>initial</code>.
     </p>
     <div class="deck">
       <article
@@ -16,16 +15,15 @@
         v-animate="{
           animate: {
             rotate: () => (i === 0 ? mapRange(drag.x.value, [-width(), width()], [-12, 12]) : 0),
-            scale: { value: () => mapRange(slot(i), [0, 3], [1, 0.82]), spring: 'smooth' },
-            opacity: { value: () => mapRange(slot(i), [2, 3], [1, 0]), spring: 'smooth' },
+            scale: { value: () => mapRange(slot(i), [0, 3], [1, 0.82]), spring: true },
+            opacity: { value: () => mapRange(slot(i), [2, 3], [1, 0]), spring: true },
           },
           initial: () => (back ? { x: back * far(), rotate: back * 25, opacity: 0 } : {}),
           exit: () => ({
-            x: { value: gone * far(), spring: 'smooth' },
-            rotate: { value: gone * 25, spring: 'smooth' },
+            x: gone * far(),
+            rotate: gone * 25,
             opacity: { value: 0, duration: 450, easing: 'cubic-bezier(0.7, 0, 0.84, 0)' },
           }),
-          spring: 'smooth',
         }"
         class="deck-card"
         :class="{ 'deck-card--top': i === 0 }"

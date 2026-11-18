@@ -3,7 +3,7 @@ import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 import { prefersReducedMotion } from './dom'
-import { createVelocityTracker, dampen } from './gesture'
+import { createVelocityTracker, dampen, DRAG_THRESHOLD } from './gesture'
 import { flingTiming } from '../motion/fling'
 
 export interface SheetSnapPoint {
@@ -59,7 +59,6 @@ const SHORT_DRAG_FRACTION = 0.4 // of viewport height — Vaul's step-one-snap-p
 // Of the lowest snap point's height: a slow drag must go this far below it to close (Vaul's value).
 const CLOSE_THRESHOLD = 0.25
 const NESTED_DISPLACEMENT = 16 // px — Vaul's own recede distance for stacked sheets
-const AXIS_LOCK_THRESHOLD = 8 // px — movement before a content drag commits to an axis; matches useSwipeReveal
 // Only the end of a drag counts, so a slow drag that ends in a flick reads as a flick.
 const VELOCITY_WINDOW = 80 // ms
 // Shifted-log curve (Vaul); viewport-scale range.
@@ -319,7 +318,7 @@ export function useSheetDrag(
     if (dragSource === 'content') {
       const dx = event.clientX - dragStartX
       const dy = event.clientY - dragStartY
-      if (Math.abs(dx) < AXIS_LOCK_THRESHOLD && Math.abs(dy) < AXIS_LOCK_THRESHOLD) return
+      if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return
       // Horizontally-dominant → belongs to something nested (a swipe-to-reveal row), not a dismiss.
       if (Math.abs(dx) >= Math.abs(dy)) {
         dragSource = null
@@ -367,15 +366,13 @@ export function useSheetDrag(
     const currentOffset = dragStartOffset + (event.clientY - dragStartY)
     const draggedDistance = dragStartY - event.clientY // positive = dragged up (toward open)
     const hasDraggedUp = draggedDistance > 0
-    const elapsed = Math.max(1, performance.now() - dragStartTime)
-    const velocity = Math.abs(draggedDistance) / elapsed
     const dismissible = toValue(options.dismissible) ?? true
     const currentIndex = list.findIndex((point) => point.id === activeSnap.value)
 
     // Speed and direction come from the end of the gesture, so a slow drag that ends in a flick
-    // reads as a flick; the whole-drag average covers a release with no recent movement.
+    // reads as a flick, and a quick one that stops and holds before release doesn't.
     const endVelocity = releaseVelocity() // px/ms, positive = down
-    const speed = Math.max(velocity, Math.abs(endVelocity))
+    const speed = Math.abs(endVelocity)
     const movingDown = endVelocity !== 0 ? endVelocity > 0 : !hasDraggedUp
     const last = list.length - 1
     // Closing takes a sheet let go below where it rests at its lowest. A raised sheet pulled back

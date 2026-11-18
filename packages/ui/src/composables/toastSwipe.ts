@@ -2,7 +2,7 @@
 // press is the Toaster's own (it must capture the pointer at once); moving and letting go are here.
 import type { Ref } from 'vue'
 import type { ToastId } from './useToast'
-import { createVelocityTracker } from './gesture'
+import { createVelocityTracker, dampen } from './gesture'
 
 const SWIPE_THRESHOLD = 45 // px
 const SWIPE_VELOCITY_THRESHOLD = 0.11 // px/ms
@@ -34,9 +34,9 @@ export function createToastSwipe(o: {
   function allowedDirections(): Array<'left' | 'right' | 'up' | 'down'> {
     return ['left', 'right', o.bottom() ? 'down' : 'up']
   }
-  function dampen(delta: number) {
-    return delta / (1.5 + Math.abs(delta) / 20)
-  }
+  // Pulled the way it can't go, it resists from the first pixel: the shared rubber band at a short
+  // range, which matches Sonner's own curve within a few px (8 px at 20, 15 px at 100).
+  const resist = (delta: number) => Math.sign(delta) * dampen(Math.abs(delta), 5)
 
   function state(id: ToastId): SwipeState {
     let s = o.swipeState.get(id)
@@ -66,14 +66,14 @@ export function createToastSwipe(o: {
       s.y =
         (wantsDown && allowed.includes('down')) || (!wantsDown && allowed.includes('up'))
           ? dy
-          : dampen(dy)
+          : resist(dy)
       s.x = 0
     } else {
       const wantsRight = dx > 0
       s.x =
         (wantsRight && allowed.includes('right')) || (!wantsRight && allowed.includes('left'))
           ? dx
-          : dampen(dx)
+          : resist(dx)
       s.y = 0
     }
     s.swiping = true

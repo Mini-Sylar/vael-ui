@@ -2,9 +2,8 @@
   <section class="demo">
     <h3>A looping carousel, with v-animate</h3>
     <p class="note">
-      The same wheel, laid out sideways. Each card's <code>progress</code> is its place among the
-      three either side of the centre (<code>progressOf</code>), and the keyframes describe the look
-      at each of those seven places, so there is no CSS maths.
+      The wheel's <code>--ui-wheel-distance</code> places each card, so it holds under reduced
+      motion. <code>v-animate</code> adds the tilt, scale and fade with <code>progressOf</code>.
     </p>
     <div
       ref="el"
@@ -45,7 +44,7 @@ const index = shallowRef(0)
 const wheel = useWheel(index, {
   el: useTemplateRef('el'),
   count: places.length,
-  size: 220,
+  size: 170,
   orientation: 'horizontal',
   loop: true,
 })
@@ -53,7 +52,6 @@ const wheel = useWheel(index, {
 // One value for each place from three to the left (progress 0) to three to the right (1).
 const places7 = [-3, -2, -1, 0, 1, 2, 3]
 const look = {
-  x: places7.map((d) => d * 170),
   rotateY: places7.map((d) => d * -32),
   scale: places7.map((d) => 1 - Math.min(0.3, Math.abs(d) * 0.12)),
   opacity: places7.map((d) => 1 - Math.min(1, Math.abs(d) / 3)),
@@ -79,6 +77,8 @@ const look = {
   color: white;
   font-weight: 600;
   background: oklch(0.55 0.15 var(--hue));
+  /* Where it is: the wheel writes each card's distance from the centre. */
+  translate: var(--ui-wheel-distance, 200vw) 0;
 }
 .coverflow-controls {
   display: flex;

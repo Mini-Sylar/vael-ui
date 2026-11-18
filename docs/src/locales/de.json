@@ -860,7 +860,7 @@
         },
         "drag": {
           "title": "Ziehen",
-          "body": "Die Komponenten, die man ziehen kann (BottomSheet, SwipeToReveal, Sortable, Slider), bringen das schon mit. Um eine eigene Liste umzusortieren oder Einträge zwischen Listen zu verschieben, nimm <code>v-draggable</code> mit <code>useSortableGroup</code>. Für alles, was man wirft oder wegwischt, bewegt <code>useDrag</code> das Element mit dem Finger und fragt <code>onRelease</code>, wohin es geht. Verknüpfe ein Aussehen mit dem Ziehen über einen Live-Wert in <code>animate</code>, einen Getter, dem es jedes Frame folgt, ohne neu zu rendern: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. <code>mapRange</code> legt zwei Bereiche übereinander, sodass sich die Karte über den Weg von -12° bis 12° dreht. Mitten im Wurf entfernt, fliegt ihr <code>exit</code> mit dem Tempo des Wurfs weiter."
+          "body": "<code>v-draggable</code> sortiert deine eigenen Listen um, <code>useSortableGroup</code> verschiebt Einträge zwischen ihnen. Für alles, was du wirfst oder wegwischst, nimm <code>useDrag</code>: Das Element folgt deinem Finger, und <code>onRelease</code> entscheidet, wohin es geht. Verknüpfe ein Aussehen mit dem Ziehen über einen Getter in <code>animate</code>: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. Der Getter läuft jedes Frame ohne neues Rendern. Ein Exit auf einer Feder behält das Tempo des Wurfs."
         },
         "own": {
           "title": "Ihre eigenen Komponenten",

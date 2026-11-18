@@ -87,13 +87,18 @@ const release = (x: number, y: number) =>
     new PointerEvent('pointerup', { pointerId: 1, clientX: x, clientY: y, bubbles: true }),
   )
 
-test('the element follows the pointer once it has moved past the threshold', () => {
+test('the element follows the pointer once past the threshold, catching up from under the finger', () => {
   const { el, drag } = setup()
   press(el, 100, 100)
   move(104, 100)
   expect(drag.x.value).toBe(0)
+  // The first move past the threshold starts 8 px short, so it doesn't jump...
   move(160, 130)
-  expect([drag.x.value, drag.y.value]).toEqual([60, 30])
+  expect(drag.x.value).toBeGreaterThan(40)
+  expect(drag.x.value).toBeLessThan(60)
+  // ...and is on the finger within a few moves.
+  for (let i = 0; i < 20; i++) move(160, 130)
+  expect([Math.round(drag.x.value), Math.round(drag.y.value)]).toEqual([60, 30])
   expect(drag.isDragging.value).toBe(true)
   release(160, 130)
 })

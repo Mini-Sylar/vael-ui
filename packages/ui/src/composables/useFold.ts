@@ -1,11 +1,11 @@
 import { onScopeDispose, shallowRef, watch } from 'vue'
 import type { Ref } from 'vue'
+import { DEFAULT_SPRING } from '../motion/springNames'
 import { prefersReducedMotion } from './dom'
 
 // A critically damped spring: no overshoot, and it keeps whatever speed it has when its target
 // changes, so a click mid-way turns the motion around instead of restarting it. `response` is the
 // time it takes to cover most of the distance; it settles under 300ms.
-const RESPONSE = 0.28
 const STEP = 1 / 240
 // A frame's timestamp can predate the click that scheduled it, and a stalled tab hands over
 // seconds at once; both get one nominal frame instead.
@@ -23,7 +23,7 @@ export interface FoldSpring {
   response: number
 }
 /** Critically damped, so a tree's folders settle without overshoot unless a style says otherwise. */
-export const DEFAULT_FOLD_SPRING: FoldSpring = { damping: 1, response: RESPONSE }
+export const DEFAULT_FOLD_SPRING: FoldSpring = { damping: 1, response: DEFAULT_SPRING.response! }
 
 /** The spring a fold runs on: its own going open, the same pace without the bounce going shut. */
 export function foldSpring(spring: FoldSpring, open: boolean): FoldSpring {

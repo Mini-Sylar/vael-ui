@@ -64,7 +64,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
         name: 'animate',
         type: 'AnimateValues',
         description:
-          'A look it holds while bound, moving to each new one from wherever it is on screen: `{ rotate: open ? 180 : 0 }`. Keyframe arrays play once per change, or loop with `repeat`. A getter or ref is followed every frame without re-rendering: `{ rotate: () => mapRange(drag.x.value, [-300, 300], [-20, 20]) }`. `{ value: getter, spring }` follows it on a spring instead.',
+          'A look it holds while bound, moving to each new one from wherever it is on screen: `{ rotate: open ? 180 : 0 }`. Keyframe arrays play once per change, or loop with `repeat`. A getter or ref is followed every frame without re-rendering: `{ rotate: () => mapRange(drag.x.value, [-300, 300], [-20, 20]) }`. `{ value: getter, spring }` follows it on a spring instead, and `spring: true` uses the spring of the app.',
       },
       {
         name: 'spring / duration / easing',

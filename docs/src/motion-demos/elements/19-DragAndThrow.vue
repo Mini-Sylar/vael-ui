@@ -8,7 +8,7 @@
         v-animate="{
           animate: { rotate: () => mapRange(drag.x.value, [-200, 200], [-12, 12]) },
           exit: () => ({
-            x: { value: Math.sign(drag.x.value || 1) * 400, spring: 'smooth' },
+            x: Math.sign(drag.x.value || 1) * 400,
             opacity: 0,
           }),
         }"

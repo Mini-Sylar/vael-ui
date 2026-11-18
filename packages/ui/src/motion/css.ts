@@ -13,6 +13,7 @@ import { collectEntries } from './presence'
 import { exitOf, targetsOf } from './targets'
 import { holdUnseen } from './ids'
 import type { TargetGroup } from './targets'
+import { DEFAULT_SPRING } from './springNames'
 import type { MotionTiming, MotionValues, Spring } from './types'
 import { isTimed } from './values'
 import { dev } from './warn'
@@ -31,7 +32,6 @@ const PROPS = [
 ] as const
 type Prop = (typeof PROPS)[number]
 const MOVES = new Set<Prop>(['translate', 'scale', 'rotate', 'clip-path'])
-const DEFAULT_SPRING: Spring = { damping: 1, response: 0.32 }
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
 const FADE_CAP = 250
 const SAFETY_CAP = 3000

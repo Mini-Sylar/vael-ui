@@ -3,7 +3,8 @@
 // element, so an exit that takes over carries on at that speed.
 import { isRef, shallowRef, toValue, watchEffect } from 'vue'
 import type { ShallowRef } from 'vue'
-import { springOf } from './springNames'
+import { DEFAULT_SPRING, springOf } from './springNames'
+import { motionSpringAt } from './styleHolder'
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
 import type { MotionValues, Spring, SpringName } from './types'
@@ -13,7 +14,8 @@ import type { VelocityTracker } from './velocity'
 
 interface LiveEntry {
   read: () => unknown
-  spring?: Spring | SpringName
+  /** A spring to follow it on; `true` is the app's (the nearest ConfigProvider's, else the default). */
+  spring?: Spring | SpringName | true
 }
 
 const isLive = (raw: unknown) => typeof raw === 'function' || isRef(raw)
@@ -27,7 +29,7 @@ const shares = (key: string) =>
 function liveOf(raw: unknown): LiveEntry | undefined {
   if (isLive(raw)) return { read: () => toValue(raw as () => unknown) }
   if (raw && typeof raw === 'object' && !Array.isArray(raw) && 'value' in raw) {
-    const { value, spring } = raw as { value: unknown; spring?: Spring | SpringName }
+    const { value, spring } = raw as { value: unknown; spring?: Spring | SpringName | true }
     if (isLive(value)) return { read: () => toValue(value as () => unknown), spring }
   }
   return undefined
@@ -125,6 +127,13 @@ export function followLive(
     changed.add(key)
     if (typeof value === 'number') (trackers.get(key) ?? begin(key, value)).add(value)
   }
+  // The app's spring tracks a moving input (a drag), so it rings no harder than damping 0.6 there:
+  // a very bouncy app spring would otherwise fling it. One you give is used as given.
+  const springNow = (spring: Spring | SpringName | true | undefined): Spring => {
+    if (spring !== true && spring) return springOf(spring) as Spring
+    const app = springOf(motionSpringAt(el) ?? DEFAULT_SPRING) as Spring
+    return { ...app, damping: Math.max(app.damping ?? 1, 0.6) }
+  }
   const follower: Follower = {
     readers: live,
     shape: shapeOf(live),
@@ -148,7 +157,7 @@ export function followLive(
     begin(key, start)
     springs.set(
       key,
-      createSpring(start, { ...springOf(entry.spring), epsilon: 0.01 }, (value) => {
+      createSpring(start, { ...springNow(entry.spring), epsilon: 0.01 }, (value) => {
         note(key, value)
         write()
       }),
@@ -162,7 +171,8 @@ export function followLive(
         const spring = springs.get(key)
         if (!spring) note(key, value)
         else if (instant()) spring.jump(Number(value))
-        else spring.set(Number(value))
+        // Read as it moves, so a change of the app's spring (a settings toggle) is followed.
+        else spring.set(Number(value), springNow(entry.spring))
       }
       write()
     },

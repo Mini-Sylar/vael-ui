@@ -480,7 +480,7 @@ function onSave() {
 
   mapRange: {
     description:
-      "Turns one number into another by lining up two ranges. `mapRange(x, [0, 300], [0, 1])` gives 0 when `x` is 0, 0.5 at 150 and 1 at 300; past either end it stays at the end value. Give more points to bend it: `mapRange(x, [-300, 0, 300], [-20, 0, 20])` tilts a card from -20° to 20° as it's dragged across. Its usual partner is a live value in `v-animate`, a getter followed every frame: link a drag, a scroll or a slider to a look without re-rendering.",
+      'Maps a number from one range onto another. `mapRange(x, [0, 300], [0, 1])` gives 0 at 0, 0.5 at 150 and 1 at 300. Past either end it holds the end value. Add points to bend the line: `mapRange(x, [-300, 0, 300], [-20, 0, 20])`. Use it with a live value in `v-animate`.',
     installNames: ['mapRange'],
     exampleCode: `import { mapRange } from 'vael-ui/motion'
 
@@ -912,7 +912,7 @@ async function sent() {
   },
   useWheel: {
     description:
-      'A position you can grab along one line of items: drag it, throw it, scroll it with a mouse wheel or step it with the keys, and it comes to rest on an item on a spring that keeps your speed. It draws nothing. Each item near the resting spot gets its distance from it as `--ui-wheel-offset` (in items) and `--ui-wheel-distance` (in px), and your CSS or `v-animate` turns that into a look: a 3D picker drum, a flat list, a carousel, a pager. Only the items near the spot are written each frame, so a long list costs the same as a short one. For a plain sideways list of cards, native CSS scroll snap is simpler and costs nothing; reach for `useWheel` for a loop, a picker, or a look that follows the position. It adds no roles, so give the element the pattern it is: `role="spinbutton"` with `aria-valuenow` for a picker column, or `aria-roledescription="carousel"` with Previous and Next buttons for a carousel, as in the examples.',
+      'Moves a position along a list of items. You drag it, throw it, scroll it or step it with the keys, and it rests on one item. It draws nothing. Each item near the resting spot gets `--ui-wheel-offset` (in items) and `--ui-wheel-distance` (in px). Place items with those variables, and style them with `v-animate` and `progressOf`. Add `role="spinbutton"` for a picker, or `aria-roledescription="carousel"` and Previous and Next buttons for a carousel. For a plain list of cards, CSS scroll snap is simpler.',
     installNames: ['useWheel'],
     hasLiveDemo: true,
     params: [
@@ -920,7 +920,7 @@ async function sent() {
         name: 'model',
         type: 'Ref<number>',
         description:
-          'The index of the item it rests on. It updates once the wheel comes to rest, and setting it moves the wheel there.',
+          'The index of the item it rests on. It changes when an item is chosen, and setting it moves the wheel.',
       },
       {
         name: 'options.el',
@@ -933,23 +933,28 @@ async function sent() {
         name: 'options.size',
         type: "MaybeRefOrGetter<number | 'auto'>",
         description:
-          "Each item's length along the axis, in px. Default `36`. `'auto'` makes each item as long as `el`, for one page at a time.",
+          "Item length along the axis, in px. Default `36`. `'auto'` matches the length of `el`.",
       },
       {
         name: 'options.orientation',
         type: "MaybeRefOrGetter<'vertical' | 'horizontal'>",
-        description:
-          "Which way it moves. Default `'vertical'`. Horizontal runs the other way right to left.",
+        description: "`'vertical'` (default) or `'horizontal'`. Horizontal reverses right to left.",
       },
       {
         name: 'options.loop',
         type: 'MaybeRefOrGetter<boolean>',
-        description: 'Wraps past the last item back to the first.',
+        description: 'Wraps from the last item to the first.',
       },
       {
         name: 'options.disabled',
         type: 'MaybeRefOrGetter<boolean>',
         description: 'Ignores the pointer, the mouse wheel and the keys.',
+      },
+      {
+        name: 'options.spring',
+        type: 'MaybeRefOrGetter<Spring | SpringName>',
+        description:
+          "The spring it settles on: a name or `{ damping, response }`. Default: the ConfigProvider's `spring`, else the default every component uses.",
       },
       {
         name: 'options.onTick',
@@ -960,45 +965,44 @@ async function sent() {
       {
         name: 'options.onSettle',
         type: '(index: number) => void',
-        description: 'Runs once it has come to rest.',
+        description: 'Runs when it comes to rest.',
       },
       {
         name: 'options.sizes',
         type: 'MaybeRefOrGetter<number[]>',
-        description: 'For a carousel: a length for each item, when they differ.',
+        description: 'Item lengths by index, when they differ.',
       },
       {
         name: 'options.gap',
         type: 'MaybeRefOrGetter<number>',
-        description: 'For a carousel: space between items, in px. Default `0`.',
+        description: 'Space between items, in px. Default `0`.',
       },
       {
         name: 'options.align',
         type: "MaybeRefOrGetter<'start' | 'center' | 'end'>",
-        description: "For a carousel: where an item rests in `el`. Default `'center'`.",
+        description: "Where an item rests in `el`: `'start'`, `'center'` (default) or `'end'`.",
       },
       {
         name: 'options.dragFree',
         type: 'MaybeRefOrGetter<boolean>',
-        description: 'For a carousel: comes to rest wherever a throw ends, instead of on an item.',
+        description: 'Rests where a throw ends instead of on an item.',
       },
       {
         name: 'options.slidesToScroll',
         type: 'MaybeRefOrGetter<number>',
-        description: 'For a carousel: items per rest: `2` moves two at a time. Default `1`.',
+        description: 'Items per step. `2` moves two at a time. Default `1`.',
       },
       {
         name: 'options.containScroll',
         type: 'MaybeRefOrGetter<boolean>',
-        description:
-          'For a carousel: stops with the last item flush against the end of `el`, so no empty space shows after it.',
+        description: 'Stops with the last item flush against the end of `el`.',
       },
     ],
     returns: [
       {
         name: 'position',
         type: 'Ref<number>',
-        description: 'Where it is right now, in items: 2.5 is halfway from item 2 to item 3.',
+        description: 'Where it is now, in items. 2.5 is halfway from item 2 to item 3.',
       },
       {
         name: 'index',
@@ -1013,56 +1017,62 @@ async function sent() {
       {
         name: 'goTo(i, { animate? })',
         type: '(i: number, options?: { animate?: boolean }) => void',
-        description:
-          'Moves to item `i` on a spring, or at once with `animate: false`. A loop takes the short way round.',
+        description: 'Moves to item `i`. A loop takes the short way. `animate: false` jumps.',
       },
       {
         name: 'step(n)',
         type: '(n: number) => void',
         description:
-          'Moves `n` rests forward, or back when negative: for Previous and Next buttons.',
+          'Moves `n` steps forward, or back when negative. Use it for Previous and Next buttons.',
       },
       {
         name: 'progressOf(i, reach?)',
         type: '(i: number, reach?: number) => number',
         description:
-          "Item `i`'s place among the `reach` items either side of the spot (default 3), from 0 to 1. Pass it to `v-animate` as `progress`.",
+          'Place of item `i` among the `reach` items either side of the resting spot (default 3), from 0 to 1. Pass it to `v-animate` as `progress`.',
       },
       {
         name: 'onKeydown',
         type: '(event: KeyboardEvent) => void',
         description:
-          'Bind it to `@keydown` on `el`: the arrow keys along the axis, Home, End, Page Up and Page Down.',
+          'The arrow keys along the axis, Home, End, Page Up and Page Down. Bind it to `@keydown` on `el`.',
       },
     ],
   },
   useDrag: {
     description:
-      "A drag that decides on release. The element follows the pointer exactly, by its own `translate`. When you let go, `onRelease` gets where it is, how fast it was going and where that throw would land, and returns where it goes: off to the side, somewhere else, or home. It gets there on a spring that keeps the throw's speed, and can be caught again mid-flight. Use it for a card deck, a swipe to dismiss, or anything you throw. Escape during a drag puts it back. A drag can't be done from the keyboard, so give every throw a button too, such as Like and Pass in the deck, that calls `throwTo`.",
+      'Drags an element and decides where it goes when you let go. It follows the pointer with its own `translate`. `onRelease` receives its offset, its speed and where the throw would land. It returns where the element goes, or nothing to send it home. The element moves on a spring that keeps the throw speed, and Escape puts it back. A drag has no keyboard form, so add a button that calls `throwTo`.',
     installNames: ['useDrag'],
     hasLiveDemo: true,
     params: [
       {
         name: 'options.el',
         type: 'MaybeRefOrGetter<HTMLElement | null>',
-        description: 'The element you drag. A new element, such as the next card, starts at home.',
+        description:
+          'The element you drag, scroll and focus. Its children are the items, in order.',
       },
       {
         name: 'options.axis',
         type: "MaybeRefOrGetter<'x' | 'y' | 'both'>",
         description:
-          "Moves along one axis only. Default `'both'`. With one axis, a drag that starts along the other is left to the page, so a list still scrolls.",
+          "`'x'`, `'y'` or `'both'` (default). With one axis, a drag across it stays the page's.",
+      },
+      {
+        name: 'options.spring',
+        type: 'MaybeRefOrGetter<Spring | SpringName>',
+        description:
+          "The spring it settles on: a name or `{ damping, response }`. Default: the ConfigProvider's `spring`, else the default every component uses.",
       },
       {
         name: 'options.onRelease',
         type: '(release) => { x, y } | null',
         description:
-          'Runs when the pointer lets go, with `offset`, `velocity` (px per second) and `projected`, where the throw would land. Return where it goes, in px from home, or `null` for home.',
+          'Runs on release with `offset`, `velocity` (px/s) and `projected`, where the throw would land. Return where it goes in px, or `null` for home.',
       },
       {
         name: 'options.onRest',
         type: '(offset: { x, y }) => void',
-        description: 'Runs once it comes to rest: take a thrown card off the deck here.',
+        description: 'Runs when it comes to rest. Remove a thrown card here.',
       },
     ],
     returns: [
@@ -1070,7 +1080,7 @@ async function sent() {
         name: 'x, y',
         type: 'Ref<number>',
         description:
-          'How far it is from home, in px, live. Link a look to them with a `v-animate` `progress` getter, as the examples do: it follows every frame without re-rendering.',
+          'Distance from home, in px. Read them in a `v-animate` getter to follow them without re-rendering.',
       },
       {
         name: 'isDragging',
@@ -1080,12 +1090,13 @@ async function sent() {
       {
         name: 'throwTo(to, { velocity? })',
         type: '(to: { x, y }, options?) => void',
-        description: 'Sends it to `to` on a spring, as if thrown: a button that does the swipe.',
+        description:
+          'Sends it to `to` on a spring, as if thrown. Use it for a button that does the swipe.',
       },
       {
         name: 'reset({ animate? })',
         type: '(options?: { animate?: boolean }) => void',
-        description: 'Brings it home on a spring, or at once with `animate: false`.',
+        description: 'Sends it home. `animate: false` jumps.',
       },
     ],
   },

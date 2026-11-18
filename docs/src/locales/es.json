@@ -860,7 +860,7 @@
         },
         "drag": {
           "title": "Arrastrar",
-          "body": "Los componentes que se arrastran (BottomSheet, SwipeToReveal, Sortable, Slider) ya lo traen. Para reordenar tu propia lista, o mover elementos entre listas, usa <code>v-draggable</code> con <code>useSortableGroup</code>. Para todo lo que se lanza o se desliza para quitarlo, <code>useDrag</code> mueve el elemento con el dedo y pregunta a <code>onRelease</code> adónde va. Enlaza un aspecto al arrastre con un valor en vivo en <code>animate</code>, un getter que sigue en cada fotograma sin volver a renderizar: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. <code>mapRange</code> alinea dos rangos, así la tarjeta gira de -12° a 12° a lo largo del arrastre. Si se quita a mitad del lanzamiento, su <code>exit</code> sigue a la velocidad con que la lanzaste."
+          "body": "<code>v-draggable</code> reordena tus propias listas, y <code>useSortableGroup</code> mueve elementos entre ellas. Para todo lo que lanzas o deslizas para quitar, usa <code>useDrag</code>: el elemento sigue tu dedo y <code>onRelease</code> decide adónde va. Enlaza un aspecto al arrastre con un getter en <code>animate</code>: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. El getter se ejecuta en cada fotograma sin volver a renderizar. Una salida con muelle conserva la velocidad del lanzamiento."
         },
         "own": {
           "title": "Tus propios componentes",

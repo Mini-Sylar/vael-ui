@@ -2,17 +2,16 @@
   <section class="demo">
     <h3>Swipe a notice away</h3>
     <p class="note">
-      <code>axis: 'x'</code> moves it sideways only, and a drag that starts up or down is left to
-      the page, so it still scrolls. It fades as you drag it (a live value with
-      <code>mapRange</code>), and thrown past a third of its width it's removed, its
-      <code>exit</code> carrying on at the speed you threw it. Short of that it springs home.
+      <code>axis: 'x'</code> moves it sideways and leaves vertical drags to the page. It fades as
+      you drag, using <code>mapRange</code>. Past a third of its width, or thrown, it leaves at the
+      speed you threw it.
     </p>
     <div
       v-if="shown"
       ref="notice"
       v-animate="{
         animate: { opacity: () => mapRange(Math.abs(drag.x.value), [0, width()], [1, 0.2]) },
-        exit: () => ({ x: { value: gone * width() * 1.2, spring: 'smooth' }, opacity: 0 }),
+        exit: () => ({ x: gone * width() * 1.2, opacity: 0 }),
       }"
       class="notice"
     >

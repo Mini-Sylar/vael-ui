@@ -38,5 +38,22 @@
     "demo": "spring in from their edge",
     "check": "clean at rest",
     "reason": "The toast's countdown runs for its whole lifetime, longer than the wait for rest."
+  },
+  {
+    "page": "composables/useDrag",
+    "demo": "A card deck",
+    "check": "visible at rest",
+    "reason": "The cards sit stacked, each behind the one in front, by design."
+  },
+  {
+    "page": "components/Drawer",
+    "check": "mid-motion",
+    "reason": "A hover indicator fades out as the pointer leaves a row and in again as it reaches the next: it follows the pointer, not a motion that went wrong."
+  },
+  {
+    "page": "motion/side-by-side",
+    "demo": "the dialog morphs out of its button (GSAP)",
+    "check": "mid-motion",
+    "reason": "The GSAP morph hides the close button while the dialog grows out of its trigger and reveals it at the end, by design."
   }
 ]

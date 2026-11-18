@@ -73,7 +73,7 @@ import { useMotionStyle } from '../../motion/context'
 import { useSpringValue } from '../../motion/useSpringValue'
 import { isRtl, prefersReducedMotion } from '../../composables/dom'
 import type { Spring, SwipeToRevealMotion } from '../../motion/types'
-import { springOf } from '../../motion/springNames'
+import { DEFAULT_SPRING, springOf } from '../../motion/springNames'
 
 defineOptions({ inheritAttrs: false })
 
@@ -112,7 +112,6 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { motion: true })
-const DEFAULT_SPRING = { damping: 1, response: 0.32 }
 
 const emit = defineEmits<{
   /** Fires once per settled interaction, with `open` and the open edge (or `null`). */

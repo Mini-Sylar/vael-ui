@@ -13,7 +13,7 @@
 // browser, rest is awaited inside the page in one call, and a press that did nothing isn't repeated.
 // Exceptions live in allow.json, each with its reason (optionally for one setup).
 import { createRequire } from 'node:module'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { cpus } from 'node:os'
 import { fileURLToPath } from 'node:url'
 
@@ -80,7 +80,16 @@ const MOTION = [
   'motion/blocks',
   'motion/side-by-side',
 ]
-let pages = [...Object.keys(manifest).map((name) => `components/${name}`), ...MOTION]
+// The composable pages that have demos: a folder (UseWheel) or one file (UseSortableDemo).
+const COMPOSABLES = readdirSync(here('../../../docs/src/composable-demos'), { withFileTypes: true })
+  .map((d) => d.name.replace(/Demo\.vue$/, '').replace(/\.vue$/, ''))
+  .filter((n) => /^Use[A-Z]/.test(n))
+  .map((n) => `composables/${n[0].toLowerCase()}${n.slice(1)}`)
+let pages = [
+  ...Object.keys(manifest).map((name) => `components/${name}`),
+  ...COMPOSABLES,
+  ...MOTION,
+]
 if (args.only)
   pages = pages.filter((p) => args.only.split(',').some((o) => p === o || p.endsWith(`/${o}`)))
 
@@ -139,6 +148,15 @@ function compare(first, third) {
   }
   return lost
 }
+
+// How a hand moves a draggable: [name, steps, ms, hold ms before letting go]. A slow nudge, a
+// flick, a quick drag that stops and holds (not a throw), and a hard throw to the other side.
+const GESTURES = [
+  ['slow nudge', 12, 480, 200],
+  ['flick', 6, 70, 0],
+  ['quick drag then hold', 6, 70, 350],
+  ['throw left', 5, 45, 0],
+]
 
 // What a user presses in a demo; never the demo's own Code toggle.
 const CONTROL = ['button', '[role="tab"]', '[role="switch"]', '[role="checkbox"]']
@@ -330,6 +348,14 @@ async function runJob(browser, { setup, page: path }) {
         }
         step('overlay handled')
         const moved = await p.evaluate(() => window.__stress.end())
+        // Skipped with motion off or reduced: instant jumps are what those setups ask for.
+        if (setup !== 'off' && setup !== 'reduced')
+          for (const m of Object.values(moved))
+            for (const detail of m.flags ?? []) {
+              if (said.has(`mid ${where.demo} ${detail}`)) continue
+              said.add(`mid ${where.demo} ${detail}`)
+              report({ ...where, check: 'mid-motion', detail })
+            }
         step('recorded')
         // Where the press left it: an overlay that opened, and the control's own state.
         const state = await controls
@@ -379,6 +405,63 @@ async function runJob(browser, { setup, page: path }) {
       }
     }
   }
+  // Gestures: what a hand does to what a demo lets you drag, as a real pointer would, at the speeds users have: a slow nudge, a flick, a quick drag that stops and
+  // holds, and a hard throw. Each is recorded like a press, and left to rest.
+  if (!FUZZ)
+    for (let d = 0; d < count; d++) {
+      const demo = p.locator('section.demo').nth(d)
+      // What useDrag and useWheel drive says so itself: they set `touch-action` on it, which also
+      // names the axis (`pan-y` moves sideways, `pan-x` up and down, `none` any way).
+      const targets = demo.locator(
+        '[style*="touch-action: pan-y"]:visible, [style*="touch-action: pan-x"]:visible, [style*="touch-action: none"]:visible',
+      )
+      const n = await targets.count()
+      if (!n) continue
+      const title =
+        (
+          (await demo
+            .locator('h3')
+            .first()
+            .textContent({ timeout: 500 })
+            .catch(() => '')) ?? ''
+        ).trim() || `#${d}`
+      for (let t = 0; t < n; t++) {
+        const target = targets.nth(t)
+        const touch = (await target.getAttribute('style')) ?? ''
+        const axis = touch.includes('pan-x') ? 'y' : touch.includes('pan-y') ? 'x' : 'both'
+        for (const [name, steps, ms, hold] of GESTURES) {
+          await demo.evaluate((el) => el.scrollIntoView({ block: 'center' })).catch(() => {})
+          const box = await target.boundingBox({ timeout: 1500 }).catch(() => null)
+          if (!box) break
+          const x = box.x + box.width / 2
+          const y = box.y + box.height / 2
+          const where = { ...base, demo: title, control: `drag ${t}: ${name}` }
+          await p.evaluate((i) => window.__stress.begin(i), d)
+          await p.mouse.move(x, y)
+          await p.mouse.down()
+          // Along the axis it moves (horizontal unless it only moves vertically), the way it's thrown.
+          const dir = name === 'throw left' ? -1 : 1
+          for (let i = 1; i <= steps; i++) {
+            const along = (i / steps) * 90 * dir
+            await p.mouse.move(x + (axis === 'y' ? 0 : along), y + (axis === 'y' ? along : 0))
+            await p.waitForTimeout(ms / steps)
+          }
+          await p.waitForTimeout(hold)
+          await p.mouse.up()
+          const r = await afterPress(d, where, `after the ${name}`)
+          const moved = await p.evaluate(() => window.__stress.end())
+          if (setup !== 'off' && setup !== 'reduced')
+            for (const m of Object.values(moved))
+              for (const detail of m.flags ?? []) {
+                if (said.has(`mid ${title} ${detail}`)) continue
+                said.add(`mid ${title} ${detail}`)
+                report({ ...where, check: 'mid-motion', detail })
+              }
+          void r
+          if (await back(p.url())) break
+        }
+      }
+    }
   for (const w of new Set(warnings))
     report({ ...base, demo: '', control: '', check: 'console', detail: w })
   if (process.env.STRESS_TRACE) {
