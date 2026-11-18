@@ -49,14 +49,15 @@ minimumReleaseAgeExclude:
   - '@vue/shared@3.6.0-rc.15'
   - vue-component-meta@3.3.10
   - motion-v@2.4.0 || 2.4.4 || 2.11.1
-  - '@intlify/core-base@11.4.12'
-  - '@intlify/devtools-types@11.4.12'
-  - '@intlify/message-compiler@11.4.12'
-  - '@intlify/shared@11.4.12'
+  - '@intlify/core-base@11.4.12 || 12.0.0-alpha.13'
+  - '@intlify/devtools-types@11.4.12 || 12.0.0-alpha.13'
+  - '@intlify/message-compiler@11.4.12 || 12.0.0-alpha.13'
+  - '@intlify/shared@11.4.12 || 12.0.0-alpha.13'
   - '@vueuse/core@15.0.0'
   - '@vueuse/metadata@15.0.0'
   - '@vueuse/shared@15.0.0'
   - unplugin-vue@8.0.0
   - unplugin@3.4.0
-  - vue-i18n@11.4.12
+  - vue-i18n@11.4.12 || 12.0.0-alpha.13
   - vael-form@0.0.3
+  - '@intlify/vue-i18n-core@12.0.0-alpha.13'

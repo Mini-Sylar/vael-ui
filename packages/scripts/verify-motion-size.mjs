@@ -125,12 +125,15 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // hydration, RTL in the first paint, one shared v-show observer, a provider walk per owner, quiet
 // attributes skipped by the layout and size observers, pixel-true CSS-engine springs; a repeated
 // part listens again when its states change. Measured 9913 and 8203 B.
+// runtime 7.75 → 7.8 KB, states 8.05 → 8.15 KB (2026-11-18): no code change. The same source builds
+// 40 and 76 B larger after the toolchain update (rolldown 1.2.16 → 1.2.19, unplugin-vue 8.0.1).
+// Measured 7937 and 8279 B.
 const BUDGET = {
   upFront: 9.7 * 1024,
-  runtime: 7.75 * 1024,
+  runtime: 7.8 * 1024,
   morph: 1.55 * 1024,
   button: 1.38 * 1024,
-  states: 8.05 * 1024,
+  states: 8.15 * 1024,
   linked: 3.15 * 1024,
 }
 
