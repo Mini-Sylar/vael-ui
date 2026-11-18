@@ -20,7 +20,7 @@ jobs:
     # Playwright's image has Chromium and every library it needs, so nothing is downloaded or
     # apt-installed per run. Keep its tag at the lockfile's Playwright version (checked below).
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
     strategy:
       fail-fast: false
       matrix:
@@ -38,7 +38,7 @@ jobs:
       - name: Playwright image matches the lockfile
         run: |
           installed=$(node -p "require('./packages/ui/node_modules/playwright/package.json').version")
-          if [ "$installed" != "1.64.1" ]; then
+          if [ "$installed" != "1.65.1" ]; then
             echo "playwright is $installed: change the image tag in this workflow to v$installed-noble"
             exit 1
           fi
@@ -48,7 +48,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
     steps:
       - uses: actions/checkout@v7
         with:
