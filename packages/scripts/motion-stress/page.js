@@ -201,6 +201,8 @@
         if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue
         // Hit-testing sees through it (a floating label), so it can't tell.
         if (getComputedStyle(el).pointerEvents === 'none') continue
+        // A face with a hidden back is turned away half the time, and hit-testing can't tell which.
+        if (getComputedStyle(el).backfaceVisibility === 'hidden') continue
         const r = el.getBoundingClientRect()
         if (r.width < 4 || r.height < 4) continue
         const x = r.left + r.width / 2
