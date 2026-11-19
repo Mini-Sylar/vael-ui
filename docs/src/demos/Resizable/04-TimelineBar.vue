@@ -2,30 +2,30 @@
   <section class="demo">
     <h3>A timeline bar: two ends and a move</h3>
     <p class="note">
-      Two <code>useResizable</code> over the same <code>offset</code> and size make a bar: pull
-      either end, or drag the bar itself to move it. The drag stays smooth and snaps to a day on
-      release; Escape puts it back; near the edge the timeline scrolls. Focus an end or the bar and
-      use the arrow keys for a day at a time.
+      One <code>useResizable</code> with an <code>offset</code> makes a bar: each end's handle names
+      its edge, and the bar itself moves it. The drag stays smooth and snaps to a day on release;
+      Escape puts it back; near the edge the timeline scrolls. Focus an end or the bar and use the
+      arrow keys for a day at a time.
     </p>
     <div ref="scroller" class="timeline">
       <div class="track" :style="{ inlineSize: `${DAYS * DAY}px` }">
         <div
           class="bar"
-          :class="{ 'is-live': startEnd.isDragging.value || endEnd.isDragging.value }"
+          :class="{ 'is-live': bar.isDragging.value }"
           :style="{ insetInlineStart: `${start}px`, inlineSize: `${size}px` }"
           role="group"
           :aria-label="`Launch, ${label}`"
           tabindex="0"
-          @pointerdown="endEnd.onMovePointerdown"
-          @keydown="endEnd.onMoveKeydown"
+          @pointerdown="bar.onMovePointerdown"
+          @keydown="bar.onMoveKeydown"
         >
           <span
             class="end is-start"
             role="separator"
             aria-label="Start date"
             tabindex="0"
-            @pointerdown.stop="startEnd.onHandlePointerdown"
-            @keydown.stop="startEnd.onHandleKeydown"
+            @pointerdown.stop="bar.onHandlePointerdown($event, 'start')"
+            @keydown.stop="bar.onHandleKeydown($event, 'start')"
           />
           Launch
           <span
@@ -33,8 +33,8 @@
             role="separator"
             aria-label="End date"
             tabindex="0"
-            @pointerdown.stop="endEnd.onHandlePointerdown"
-            @keydown.stop="endEnd.onHandleKeydown"
+            @pointerdown.stop="bar.onHandlePointerdown($event, 'end')"
+            @keydown.stop="bar.onHandleKeydown($event, 'end')"
           />
         </div>
       </div>
@@ -53,15 +53,13 @@ const scroller = useTemplateRef<HTMLElement>('scroller')
 const start = shallowRef(4 * DAY)
 const size = shallowRef(10 * DAY)
 
-const shared = {
+const bar = useResizable(size, {
   offset: start,
-  bounds: [0, DAYS * DAY] as [number, number],
+  bounds: [0, DAYS * DAY],
   step: DAY,
   min: DAY,
   scrollEl: scroller,
-}
-const startEnd = useResizable(size, { ...shared, edge: 'start' })
-const endEnd = useResizable(size, { ...shared, edge: 'end' })
+})
 
 // The days it covers, rounded live: the drag itself isn't stepped.
 const label = computed(() => {

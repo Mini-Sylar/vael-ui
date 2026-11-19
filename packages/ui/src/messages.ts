@@ -96,6 +96,10 @@ export interface UiMessages {
   resizable: {
     /** The handle's name, when no `ariaLabel` prop is given. */
     label: string
+    /** The handle on the start edge's name, with `edge="both"`. */
+    start: string
+    /** The handle on the end edge's name, with `edge="both"`. */
+    end: string
   }
   chip: {
     remove: string
@@ -280,7 +284,11 @@ export const speedDialMessages: UiMessages['speedDial'] = { label: 'Actions' }
 export const toolbarMessages: UiMessages['toolbar'] = { more: 'More' }
 export const stepperMessages: UiMessages['stepper'] = { completed: 'Completed' }
 export const bottomSheetMessages: UiMessages['bottomSheet'] = { resize: 'Resize sheet' }
-export const resizableMessages: UiMessages['resizable'] = { label: 'Resize' }
+export const resizableMessages: UiMessages['resizable'] = {
+  label: 'Resize',
+  start: 'Resize start',
+  end: 'Resize end',
+}
 export const chipMessages: UiMessages['chip'] = { remove: 'Remove' }
 export const splitButtonMessages: UiMessages['splitButton'] = { more: 'More actions' }
 export const breadcrumbMessages: UiMessages['breadcrumb'] = { label: 'Breadcrumb' }

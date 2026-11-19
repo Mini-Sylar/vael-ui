@@ -1499,7 +1499,19 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
           name: 'offset',
           type: 'Ref<number>',
           description:
-            "Where it starts, for a span such as a timeline bar. An `edge: 'start'` handle then moves the start and the size together, so the far end stays put, and `onMovePointerdown` moves the whole span. Two instances over the same two refs, one per edge, make a bar. A handle pulled past `min` flips the span over its other end.",
+            "Where it starts, for a span such as a timeline bar. An `edge: 'start'` handle then moves the start and the size together, so the far end stays put, and `onMovePointerdown` moves the whole span. One instance makes a bar: each end's handle names its edge, `onHandlePointerdown(event, 'start')` and `onHandlePointerdown(event, 'end')`. A handle pulled past `min` flips the span over its other end.",
+        },
+        {
+          name: 'centered',
+          type: 'MaybeRefOrGetter<boolean>',
+          description:
+            'Resizes from the middle: the edge you pull follows the pointer and the opposite edge moves the same distance the other way, so the size changes twice as far and the centre stays put. With `offset`, the start moves to keep it there. Default `false`.',
+        },
+        {
+          name: 'flip',
+          type: 'MaybeRefOrGetter<boolean>',
+          description:
+            'With `offset`: a handle pulled past `min` flips the span over its other end, so one press can pull a span out either way. Default `true`. Set `false` to stop at `min` instead, as a panel does.',
         },
         {
           name: 'bounds',
@@ -1533,15 +1545,15 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
         },
         {
           name: 'onHandlePointerdown',
-          type: '(event: PointerEvent) => void',
+          type: "(event: PointerEvent, edge?: 'start' | 'end') => void",
           description:
-            'Bind it on the handle. Give the handle `touch-action: none`, so a touch drag resizes instead of scrolling.',
+            "Bind it on the handle. Give the handle `touch-action: none`, so a touch drag resizes instead of scrolling. A span has two handles: name the one you pressed. Left out, it's the `edge` option.",
         },
         {
           name: 'onHandleKeydown',
-          type: '(event: KeyboardEvent) => void',
+          type: "(event: KeyboardEvent, edge?: 'start' | 'end') => void",
           description:
-            'Bind it on the handle, and give the handle `tabindex="0"` so it can take focus.',
+            'Bind it on the handle, and give the handle `tabindex="0"` so it can take focus. Name its edge as `onHandlePointerdown` does.',
         },
         {
           name: 'isDragging',

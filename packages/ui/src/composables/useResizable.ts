@@ -20,12 +20,25 @@ export interface UseResizableOptions {
    */
   step?: MaybeRefOrGetter<number | undefined>
   /**
-   * Where it starts, for a span such as a timeline bar: a second model beside the size. An
-   * `edge: 'start'` handle then moves the start and the size together, so the far end stays put,
-   * and `onMovePointerdown` / `onMoveKeydown` move the start alone. A handle pulled past `min`
+   * Where it starts, for a span such as a timeline bar: a second model beside the size. A handle
+   * for the `'start'` edge then moves the start and the size together, so the far end stays put,
+   * and `onMovePointerdown` / `onMoveKeydown` move the start alone. One instance covers both
+   * ends: each handle names its edge, `onHandlePointerdown(event, 'start')`. A handle pulled past `min`
    * flips the span over its other end, so one press can pull a span out either way.
    */
-  offset?: Ref<number>
+  offset?: Ref<number> | (() => Ref<number> | undefined)
+  /**
+   * With `offset`: a handle pulled past `min` flips the span over its other end, so one press can
+   * pull a span out either way (a timeline bar). `false` stops it at `min` instead, for a panel.
+   * @default true
+   */
+  flip?: MaybeRefOrGetter<boolean>
+  /**
+   * Resizes from the middle: the edge you pull follows the pointer and the opposite edge moves the
+   * same distance the other way, so the centre stays put. With `offset`, the start moves to keep
+   * it there. @default false
+   */
+  centered?: MaybeRefOrGetter<boolean>
   /** With `offset`: the span stays within `[start, end]`. */
   bounds?: MaybeRefOrGetter<[number, number] | undefined>
   /** A scrolling container: near its edges it scrolls under the pointer during a drag, and the
@@ -39,8 +52,13 @@ export interface UseResizableReturn {
   /** True for the entire span of a pointer drag — from pointerdown to release. A move counts
    * from when it first moves, so a still press stays a click. */
   isDragging: Ref<boolean>
-  onHandlePointerdown: (event: PointerEvent) => void
-  onHandleKeydown: (event: KeyboardEvent) => void
+  /**
+   * Press on a handle. With `offset`, a span has two handles: name the one you pressed,
+   * `onHandlePointerdown(event, 'start')`. Left out, it's the `edge` option.
+   */
+  onHandlePointerdown: (event: PointerEvent, edge?: ResizeEdge) => void
+  /** The arrow keys, Home and End on a handle; name its edge as `onHandlePointerdown` does. */
+  onHandleKeydown: (event: KeyboardEvent, edge?: ResizeEdge) => void
   /** With `offset`: press on the whole span to move it. */
   onMovePointerdown: (event: PointerEvent) => void
   /** With `offset`: the arrow keys move the whole span a step. */
@@ -63,21 +81,26 @@ export function useResizable(
   options: UseResizableOptions = {},
 ): UseResizableReturn {
   const isDragging = shallowRef(false)
-  const offset = options.offset
+  // A getter lets a component turn the span on and off as its props change.
+  const spanStart = () => (typeof options.offset === 'function' ? options.offset() : options.offset)
 
   const min = () => toValue(options.min) ?? 0
   const max = () => toValue(options.max) ?? Infinity
   const direction = () => toValue(options.direction) ?? 'horizontal'
   const edge = () => toValue(options.edge) ?? 'end'
+  // The edge a handle names when pressed or keyed, else the option. Anything else is ignored.
+  const edgeOf = (named?: unknown): ResizeEdge =>
+    named === 'start' || named === 'end' ? named : edge()
   const isDisabled = () => toValue(options.disabled) ?? false
+  const centered = () => toValue(options.centered) ?? false
   const step = () => toValue(options.step) || undefined
-  const bounds = () => (offset ? toValue(options.bounds) : undefined) ?? [-Infinity, Infinity]
+  const bounds = () => (spanStart() ? toValue(options.bounds) : undefined) ?? [-Infinity, Infinity]
   const horizontal = () => direction() === 'horizontal'
 
   // The most the size may be from where it starts: `max`, and the span's end bound.
   const sizeMax = (start: number) => Math.min(max(), bounds()[1] - start)
 
-  function clamp(value: number, start = offset?.value ?? 0): number {
+  function clamp(value: number, start = spanStart()?.value ?? 0): number {
     return Math.min(sizeMax(start), Math.max(min(), value))
   }
   function rubberBand(value: number, hi: number): number {
@@ -93,6 +116,8 @@ export function useResizable(
 
   type Mode = 'resize' | 'move'
   let mode: Mode = 'resize'
+  // The edge of the handle being dragged.
+  let grip: ResizeEdge = 'end'
   let pointerId: number | null = null
   let target: HTMLElement | null = null
   // Right to left, the trailing edge is on the left: a drag that grows it moves the other way.
@@ -119,15 +144,16 @@ export function useResizable(
   const scrollOf = (el: HTMLElement | null) =>
     !el ? 0 : horizontal() ? el.scrollLeft : el.scrollTop
 
-  function begin(event: PointerEvent, as: Mode) {
+  function begin(event: PointerEvent, as: Mode, named?: ResizeEdge) {
     if (isDisabled() || event.button > 0) return
     mode = as
+    grip = edgeOf(named)
     pointerId = event.pointerId
     target = event.currentTarget as HTMLElement
     startCoord = lastCoord = coordOf(event)
     mirrored = horizontal() && isRtl(target)
     startSize = liveSize = model.value
-    startOffset = liveOffset = offset?.value ?? 0
+    startOffset = liveOffset = spanStart()?.value ?? 0
     scroller = toValue(options.scrollEl) ?? null
     startScroll = scrollOf(scroller)
     if (scroller) {
@@ -147,6 +173,7 @@ export function useResizable(
 
   /** Where the drag puts things now, from the pointer and how far the container has scrolled. */
   function apply() {
+    const offset = spanStart()
     const travel = lastCoord - startCoord + (scrollOf(scroller) - startScroll)
     const delta = travel * (mirrored ? -1 : 1)
     const [lo, hi] = bounds()
@@ -155,13 +182,22 @@ export function useResizable(
       if (offset) offset.value = liveOffset
       return
     }
-    if (offset) {
+    if (centered()) {
+      // The pulled edge follows the pointer and the other mirrors it: twice the size change.
+      const grow = grip === 'end' ? delta : -delta
+      const room = offset ? Math.min(startOffset - lo, hi - startOffset - startSize) : Infinity
+      liveSize = rubberBand(startSize + 2 * grow, Math.min(max(), startSize + 2 * room))
+      if (offset) {
+        liveOffset = startOffset - (liveSize - startSize) / 2
+        offset.value = liveOffset
+      }
+    } else if (offset) {
       // The far end stays put. Pulled past `min`, the span flips over it, so a span can be
       // pulled out either way from one press.
-      const fromStart = edge() === 'start'
+      const fromStart = grip === 'start'
       const reach = startSize + (fromStart ? -delta : delta)
       const m = min()
-      const flipped = reach < m
+      const flipped = reach < m && (toValue(options.flip) ?? true)
       anchorAtEnd = fromStart !== flipped
       const far = fromStart ? startOffset + startSize : startOffset
       anchor = flipped ? far + (fromStart ? -m : m) : far
@@ -170,7 +206,7 @@ export function useResizable(
       liveOffset = anchorAtEnd ? anchor - liveSize : anchor
       offset.value = liveOffset
     } else {
-      const signed = edge() === 'end' ? delta : -delta
+      const signed = grip === 'end' ? delta : -delta
       liveSize = rubberBand(startSize + signed, sizeMax(startOffset))
     }
     model.value = liveSize
@@ -246,9 +282,17 @@ export function useResizable(
 
   // Release overshoot back within bounds, and onto the step; CSS eases it there.
   function settle() {
+    const offset = spanStart()
     const [lo, hi] = bounds()
     if (mode === 'move') {
       if (offset) offset.value = Math.min(Math.max(snap(liveOffset), lo), hi - model.value)
+      return
+    }
+    if (centered()) {
+      const room = offset ? Math.min(startOffset - lo, hi - startOffset - startSize) : Infinity
+      const size = Math.min(Math.max(snap(liveSize), min()), max(), startSize + 2 * room)
+      if (offset) offset.value = startOffset - (size - startSize) / 2
+      model.value = size
       return
     }
     if (offset) {
@@ -268,6 +312,7 @@ export function useResizable(
     stop()
     if (!wasMoved) return
     model.value = startSize
+    const offset = spanStart()
     if (offset) offset.value = startOffset
     // The button is still down: its release would click the span.
     swallowClick(false)
@@ -333,13 +378,25 @@ export function useResizable(
     return key === forwardKey ? amount : key === backwardKey ? -amount : 0
   }
 
-  function onHandleKeydown(event: KeyboardEvent) {
+  function onHandleKeydown(event: KeyboardEvent, named?: ResizeEdge) {
     if (isDisabled()) return
-    const fromStart = edge() === 'start' && offset
+    const side = edgeOf(named)
+    const offset = spanStart()
+    const middle = centered()
+    const fromStart = !middle && side === 'start' && offset
     const start = offset?.value ?? 0
     const end = start + model.value
-    // The largest it can be: up to `max`, within the bounds on the side the handle moves.
-    const top = fromStart ? Math.min(max(), end - bounds()[0]) : sizeMax(start)
+    // The largest it can be: up to `max`, within the bounds on the side the handle moves (both
+    // sides, from the middle).
+    const [lo, hi] = bounds()
+    const top = middle
+      ? Math.min(
+          max(),
+          model.value + 2 * (offset ? Math.max(0, Math.min(start - lo, hi - end)) : Infinity),
+        )
+      : fromStart
+        ? Math.min(max(), end - lo)
+        : sizeMax(start)
     let size: number
     if (event.key === 'Home') size = min()
     // With no max there's nowhere for End to go, so the key passes through.
@@ -347,16 +404,18 @@ export function useResizable(
     else {
       const delta = keyDelta(event)
       if (!delta) return
-      size = model.value + (edge() === 'end' ? delta : -delta)
+      size = model.value + (side === 'end' ? delta : -delta) * (middle ? 2 : 1)
     }
     event.preventDefault()
     const next = Math.min(Math.max(size, min()), top)
     if (fromStart) offset.value = end - next
+    else if (middle && offset) offset.value = start - (next - model.value) / 2
     model.value = next
     options.onCommit?.()
   }
 
   function onMoveKeydown(event: KeyboardEvent) {
+    const offset = spanStart()
     if (isDisabled() || !offset) return
     const delta = keyDelta(event)
     if (!delta) return
@@ -368,10 +427,10 @@ export function useResizable(
 
   return {
     isDragging,
-    onHandlePointerdown: (event) => begin(event, 'resize'),
+    onHandlePointerdown: (event, named) => begin(event, 'resize', named),
     onHandleKeydown,
     onMovePointerdown: (event) => {
-      if (offset) begin(event, 'move')
+      if (spanStart()) begin(event, 'move')
     },
     onMoveKeydown,
   }

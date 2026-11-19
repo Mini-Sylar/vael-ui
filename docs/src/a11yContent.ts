@@ -1184,6 +1184,7 @@ export const a11yContent: Record<string, A11yInfo> = {
       'The handle has `role="separator"` and is a Tab stop. With `disabled`, it leaves the tab order.',
       'It sets `aria-valuenow` to the size in pixels and `aria-valuemin` to `min`. `aria-valuemax` is `max`, or the room its container gives it when there’s no `max`.',
       'The handle is named “Resize” by default (the `resizable.label` message). Pass `aria-label` to say which panel it resizes.',
+      'With `edge="both"` there are two handles, named “Resize start” and “Resize end” (the `resizable.start` and `resizable.end` messages). With `v-model:offset` the panel itself is a Tab stop: the arrow keys move the whole span a step.',
       'Right to left, ArrowLeft and ArrowRight swap.',
     ],
   },

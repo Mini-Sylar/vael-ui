@@ -206,14 +206,16 @@
               />
             </template>
             <template v-else-if="isResizable">
-              <component
-                :is="activeComponent"
-                :key="resetKey"
-                v-bind="boundProps"
-                class="resizable-preview"
-              >
-                Drag the handle
-              </component>
+              <div class="resizable-stage" :style="resizableStage">
+                <component
+                  :is="activeComponent"
+                  :key="resetKey"
+                  v-bind="boundProps"
+                  class="resizable-preview"
+                >
+                  Drag the handle
+                </component>
+              </div>
             </template>
             <template v-else-if="isTabs">
               <component
@@ -653,6 +655,7 @@ import {
   watch,
   watchEffect,
   type Component,
+  type CSSProperties,
 } from 'vue'
 import { RouterLink } from 'vue-router'
 import * as VaelUi from 'vael-ui'
@@ -798,6 +801,21 @@ const isTabs = computed(() => props.name === 'Tabs')
 const TABS_PLACEHOLDER_ITEMS = ['Overview', 'Activity', 'Settings']
 const tabsActive = shallowRef(TABS_PLACEHOLDER_ITEMS[0])
 const isResizable = computed(() => props.name === 'Resizable')
+// The panel sits in a slot as big as it can get, anchored on the side its handle isn't, so the slot
+// stays centred in the preview and the panel grows from a fixed edge instead of re-centring.
+const resizableStage = computed<CSSProperties>(() => {
+  const max = Number(values.max)
+  const room = Number.isFinite(max) && max > 0 ? max : 320
+  const vertical = values.direction === 'vertical'
+  const anchor =
+    values.edge === 'start' ? 'flex-end' : values.edge === 'both' ? 'center' : 'flex-start'
+  return {
+    display: 'flex',
+    flexDirection: vertical ? 'column' : 'row',
+    justifyContent: anchor,
+    [vertical ? 'blockSize' : 'inlineSize']: `${room}px`,
+  }
+})
 const isScrollArea = computed(() => props.name === 'ScrollArea')
 const isPullToRefresh = computed(() => props.name === 'PullToRefresh')
 const refresh = () => new Promise<void>((resolve) => setTimeout(resolve, 1000))
@@ -2175,6 +2193,9 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   block-size: 100%;
 }
 
+.resizable-stage {
+  flex: none;
+}
 .resizable-preview {
   display: flex;
   align-items: center;
