@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>One value drives several looks</h3>
     <p class="note">
-      <code>mapRange</code> turns the slider's number into whatever each part needs: an angle for
-      the needle, a hue for the dial, a size for the label. Three points bend the hue, so the dial
-      runs cold to warm to hot. Past either end the value is held.
+      <code>mapRange</code> turns one number into whatever each part needs: an angle for the needle,
+      a hue for the dial, a size for the reading. Three points bend the hue from cold through warm
+      to hot. Past either end, the value holds.
     </p>
     <div class="gauge" :style="{ '--hue': hue }">
       <div class="dial">

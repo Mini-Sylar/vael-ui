@@ -423,7 +423,8 @@
     "noParameters": "引数は取りません。",
     "noReturns": "文書化するものは何もありません。",
     "parameters": "パラメータ",
-    "returns": "返品"
+    "returns": "返品",
+    "which": "どれを使うか"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "オーバーレイと確認",
@@ -1173,7 +1174,39 @@
         "app": "アプリ全体のモーション",
         "other": "その他"
       },
-      "reference": "リファレンス"
+      "reference": "リファレンス",
+      "places": "{n} か所 | {n} か所"
+    },
+    "anatomy": {
+      "label": "v-animate の構成",
+      "forms": {
+        "alone": "単独で",
+        "group": "グループで",
+        "component": "コンポーネント内で"
+      },
+      "roles": {
+        "directive": "ディレクティブ",
+        "name": "名前",
+        "modifier": "修飾子",
+        "value": "値",
+        "none": "名前なし"
+      },
+      "tips": {
+        "directive": "ディレクティブ",
+        "name": "名前",
+        "modifier": "修飾子（任意）",
+        "value": "値（任意）",
+        "none": "名前は不要"
+      },
+      "directive": "この要素がマウント、離脱、変化するときにモーションを再生します。",
+      "modifier": "組み込みの見た目（.fade、.rise、.drop、.pop、.blur）、スプリング（.snappy、.smooth、.bouncy、.gentle）、または .stagger。いくつでも重ねられます。",
+      "value": "stagger、delay、exit などのオプションです。修飾子だけで足りるので、必要になるまで省略できます。",
+      "name": {
+        "group": "同じ名前の要素は 1 つのグループになるため、stagger が順番に再生し、after: 'rows' で別の要素がその完了を待てます。",
+        "component": "Dialog はこの名前で要素を見つけます。motion.targets.rows が動き方を決め、要素はダイアログと一緒に出入りします。"
+      },
+      "none": "この要素は単独なので、名前は不要です。",
+      "rule": "名前を付けるのは、ほかの何かがその要素を指す必要があるときだけです。stagger のグループ、after、コンポーネントの motion.targets などです。それ以外は付けません。"
     }
   },
   "recipes": {

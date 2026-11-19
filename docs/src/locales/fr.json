@@ -423,7 +423,8 @@
     "noParameters": "Ne prend aucun argument.",
     "noReturns": "Rien à documenter.",
     "parameters": "Paramètres",
-    "returns": "Retours"
+    "returns": "Retours",
+    "which": "Lequel choisir ?"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Superpositions et confirmation",
@@ -1173,7 +1174,39 @@
         "app": "Le mouvement de ton app",
         "other": "Autres"
       },
-      "reference": "Référence"
+      "reference": "Référence",
+      "places": "{n} endroit | {n} endroits"
+    },
+    "anatomy": {
+      "label": "Anatomie de v-animate",
+      "forms": {
+        "alone": "Seul",
+        "group": "Dans un groupe",
+        "component": "Dans un composant"
+      },
+      "roles": {
+        "directive": "Directive",
+        "name": "Nom",
+        "modifier": "Modificateur",
+        "value": "Valeur",
+        "none": "Sans nom"
+      },
+      "tips": {
+        "directive": "La directive",
+        "name": "Le nom",
+        "modifier": "Un modificateur (facultatif)",
+        "value": "La valeur (facultative)",
+        "none": "Pas besoin de nom"
+      },
+      "directive": "joue un mouvement quand l'élément apparaît, part ou change.",
+      "modifier": "un style intégré (.fade, .rise, .drop, .pop, .blur), un ressort (.snappy, .smooth, .bouncy, .gentle) ou .stagger. Cumulez-en autant que vous voulez.",
+      "value": "des options comme stagger, delay ou exit. Un modificateur seul suffit, omettez-la tant que vous n'en avez pas besoin.",
+      "name": {
+        "group": "les éléments qui portent le même nom forment un groupe : stagger les joue l'un après l'autre et after: 'rows' laisse un autre élément les attendre.",
+        "component": "c'est ainsi que le Dialog retrouve les éléments : son motion.targets.rows règle leur mouvement, et ils arrivent et partent avec le dialogue."
+      },
+      "none": "cet élément est seul, il n'a donc pas besoin de nom.",
+      "rule": "Ne donnez un nom que si autre chose doit désigner l'élément : un groupe stagger, after ou le motion.targets d'un composant. Sinon, laissez-le sans nom."
     }
   },
   "recipes": {

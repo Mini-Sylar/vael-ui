@@ -2,10 +2,9 @@
   <section class="demo">
     <h3>Move to a folder, never into itself</h3>
     <p class="note">
-      Choose a folder and where to put it. <code>moveTreeNode</code> refuses a folder inside its own
-      subtree, which would detach the branch and lose it; <code>isDescendantOf</code> is what it
-      asks, and you can ask it too to leave those folders out of the list. Try moving
-      <em>Projects</em> into <em>Drafts</em>.
+      Choose a folder and a destination. <code>moveTreeNode</code> refuses to move a folder into its
+      own subtree, which would detach the branch. It asks <code>isDescendantOf</code> first, and you
+      can ask it too. Try moving <em>Projects</em> into <em>Drafts</em>.
     </p>
     <div class="row">
       <Field label="Move">

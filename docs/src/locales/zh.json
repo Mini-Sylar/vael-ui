@@ -423,7 +423,8 @@
     "noParameters": "不接受任何争论。",
     "noReturns": "没有什么可记录的。",
     "parameters": "参数",
-    "returns": "退货"
+    "returns": "退货",
+    "which": "该用哪个？"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "浮层与确认",
@@ -1173,7 +1174,39 @@
         "app": "应用的整体动效",
         "other": "其他"
       },
-      "reference": "参考"
+      "reference": "参考",
+      "places": "{n} 处 | {n} 处"
+    },
+    "anatomy": {
+      "label": "v-animate 的结构",
+      "forms": {
+        "alone": "单独使用",
+        "group": "在一组中",
+        "component": "在组件中"
+      },
+      "roles": {
+        "directive": "指令",
+        "name": "名称",
+        "modifier": "修饰符",
+        "value": "值",
+        "none": "无名称"
+      },
+      "tips": {
+        "directive": "指令",
+        "name": "名称",
+        "modifier": "修饰符（可选）",
+        "value": "值（可选）",
+        "none": "无需名称"
+      },
+      "directive": "在元素挂载、离开或变化时播放动效。",
+      "modifier": "内置外观（.fade、.rise、.drop、.pop、.blur）、弹簧（.snappy、.smooth、.bouncy、.gentle）或 .stagger。可叠加任意多个。",
+      "value": "stagger、delay、exit 等选项。只用修饰符就够了，需要时再加。",
+      "name": {
+        "group": "同名元素属于同一组，所以 stagger 会依次播放它们，after: 'rows' 可让另一个元素等待它们。",
+        "component": "Dialog 就是靠它找到这些元素：它的 motion.targets.rows 决定它们如何运动，它们随对话框一起出现和消失。"
+      },
+      "none": "这个元素是独立的，不需要名称。",
+      "rule": "只有当别的东西需要指向某个元素时才加名称：stagger 分组、after，或组件的 motion.targets。否则不要加。"
     }
   },
   "recipes": {

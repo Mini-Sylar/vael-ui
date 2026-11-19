@@ -13,6 +13,8 @@ export interface ComposableContent {
    * custom child component, whose source is concatenated into the shown
    * code block too, so the code readers see actually matches what runs. */
   extraSourceFiles?: string[]
+  /** Short lines for choosing between this export and a neighbour, shown in a hint box under the description. */
+  hint?: string[]
   /** Shown when there's no live demo: a realistic, accurate usage snippet. */
   exampleCode?: string
   /** Optional script that must run in the HTML head before Vue loads. */
@@ -750,9 +752,14 @@ const { mode, resolvedMode, setMode } = useColorScheme({
 
   useAnimate: {
     description:
-      "Plays motion from your code, for something an event starts: a wrong code shaking, an item flying to the cart, a success card building in. `animate(target, values, options)` takes the same values and timing as `v-animate`, follows the app's spring, `motion: false` and reduced motion, and leaves the end as the element's own style. Give it a list of steps instead and it plays them one after another as one sequence. `useAnimate()` is the same `animate` scoped to a component: selectors match inside its element, and whatever it started stops when the component unmounts. For motion that plays when elements come in, use `v-animate` with `after` and `stagger` in the template instead.",
+      "Plays motion from your code, for something an event starts: a wrong code shaking, an item flying to the cart, a success card building in. `animate(target, values, options)` takes the same values and timing as `v-animate`, and follows the app's spring, `motion: false` and reduced motion. The end stays as the element's own style. Pass a list of steps and it plays them one after another as one sequence. To play motion as elements come in, use `v-animate` with `after` and `stagger` in the template.",
+    hint: [
+      '`useAnimate()`: use it in a component. Selectors match inside your element, and what it started stops when the component unmounts.',
+      '`animate`: use it only outside a component, such as a shared `shake(el)` helper that other code calls with an element, or a test.',
+    ],
     installNames: ['useAnimate', 'animate'],
-    exampleCode: `import { useTemplateRef } from 'vue'
+    exampleCode: `// In a component: useAnimate, scoped to it.
+import { useTemplateRef } from 'vue'
 import { useAnimate } from 'vael-ui/motion'
 
 const { animate } = useAnimate(useTemplateRef('card'))
@@ -769,6 +776,13 @@ async function sent() {
     ['.check path', { pathLength: [0, 1] }, { at: 'card:60%' }],
     ['.title', { opacity: [0, 1], y: [6, 0] }, { at: '-0.15' }],
   ])
+}
+
+// Outside a component, say in shake.ts: plain animate, given the element itself.
+import { animate } from 'vael-ui/motion'
+
+export function shake(el: Element) {
+  return animate(el, { x: [0, -8, 8, -4, 0] }, { duration: 300 })
 }`,
     params: [
       {
@@ -1193,6 +1207,10 @@ async function sent() {
   useDrag: {
     description:
       'Drags an element and decides where it goes when you let go. It follows the pointer with its own `translate`. `onRelease` receives its offset, its speed and where the throw would land. It returns where the element goes, or nothing to send it home. The element moves on a spring that keeps the throw speed, and Escape puts it back. A drag has no keyboard form, so add a button that calls `throwTo`.',
+    hint: [
+      '`useDrag`: use it to move one element freely and decide where it lands when you let go.',
+      '`v-draggable` or `useSortable`: use them to reorder the children of a container.',
+    ],
     installNames: ['useDrag'],
     hasLiveDemo: true,
     params: [
@@ -1328,7 +1346,12 @@ const shown = useTween(total, { duration: 600, easing: 'out' })`,
   },
   useSpringValue: {
     description:
-      "vael-ui's spring engine: the physics behind Sortable, Tree and DataTable reordering, and behind every sliding indicator set to a spring. A spring has no duration. You give it a target, and it moves there from where it is now, at the speed it already has. So every animation can be interrupted: call `set()` mid-flight and the value turns toward the new target with no jump. `useSpringValue` returns a ref to bind in a template. `createSpring` calls `onFrame` with each frame instead, so a value that drives a style never re-renders a component. `stepSpring` is the pure step under both, for tests and plots. One shared `requestAnimationFrame` loop runs every moving spring, and it stops once they all rest.",
+      "vael-ui's spring engine: the physics behind Sortable, Tree and DataTable reordering, and every sliding indicator set to a spring. A spring has no duration. You give it a target, and it moves there from where it is, at the speed it already has. So every animation is interruptible: call `set()` mid-flight and the value turns toward the new target with no jump. One shared `requestAnimationFrame` loop runs every moving spring and stops once they all rest.",
+    hint: [
+      '`useSpringValue`: use it when the template reads the value. It returns a ref.',
+      '`createSpring`: use it when the value writes straight to an element, as in a gesture. It calls `onFrame` each frame, so nothing re-renders.',
+      '`stepSpring`: use it in tests and plots. It is the pure step under both.',
+    ],
     installNames: ['useSpringValue', 'createSpring', 'stepSpring'],
     hasLiveDemo: true,
     params: [

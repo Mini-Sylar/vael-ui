@@ -2,10 +2,9 @@
   <section class="demo">
     <h3>The same spring in a CSS transition</h3>
     <p class="note">
-      The result also drops into a plain <code>transition</code>: set the duration and easing as
-      properties and flip a class. A drawer, a card or a toggle then moves on the same spring as
-      vael-ui's own components. Open and close it quickly: a CSS transition turns around from where
-      it is.
+      The result also drops into a plain <code>transition</code>. Set the duration and easing as CSS
+      properties and toggle a class: the drawer then moves on the same spring as vael-ui's
+      components. Toggle it twice in a row, and the transition turns around from where it is.
     </p>
     <Button size="sm" @click="open = !open">{{ open ? 'Close' : 'Open' }} the drawer</Button>
     <div class="stage">

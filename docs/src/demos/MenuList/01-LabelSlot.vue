@@ -2,10 +2,9 @@
   <section class="demo">
     <h3>A count at the end of each row</h3>
     <p class="note">
-      <code>#label</code> replaces the text of a row and keeps its icon. Anything after the text
-      goes to the row's far end, and the current page's indicator and the hover highlight stay as
-      they are. A <code>disabled</code> row stays dim, badge included, and is skipped by the arrow
-      keys.
+      <code>#label</code> replaces a row's text and keeps its icon. Content after the text moves to
+      the row's far end, and the page indicator and hover highlight stay as they are. A
+      <code>disabled</code> row stays dim, badge included, and the arrow keys skip it.
     </p>
     <div class="pair">
       <MenuList :items="mailboxes" active="inbox" class="list" aria-label="Mailboxes">

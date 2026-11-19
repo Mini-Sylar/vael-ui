@@ -442,7 +442,8 @@
     "noParameters": "Akzeptiert keine Argumente.",
     "noReturns": "Nichts zu dokumentieren.",
     "parameters": "Parameter",
-    "returns": "Rückgaben"
+    "returns": "Rückgaben",
+    "which": "Welche nehme ich?"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Overlays & Bestätigung",
@@ -1173,7 +1174,39 @@
         "app": "Die Bewegung deiner App",
         "other": "Weitere"
       },
-      "reference": "Referenz"
+      "reference": "Referenz",
+      "places": "{n} Stelle | {n} Stellen"
+    },
+    "anatomy": {
+      "label": "Aufbau von v-animate",
+      "forms": {
+        "alone": "Allein",
+        "group": "In einer Gruppe",
+        "component": "In einer Komponente"
+      },
+      "roles": {
+        "directive": "Direktive",
+        "name": "Name",
+        "modifier": "Modifikator",
+        "value": "Wert",
+        "none": "Kein Name"
+      },
+      "tips": {
+        "directive": "Die Direktive",
+        "name": "Der Name",
+        "modifier": "Ein Modifikator (optional)",
+        "value": "Der Wert (optional)",
+        "none": "Kein Name nötig"
+      },
+      "directive": "spielt Bewegung ab, wenn das Element erscheint, verschwindet oder sich ändert.",
+      "modifier": "ein eingebauter Look (.fade, .rise, .drop, .pop, .blur), eine Feder (.snappy, .smooth, .bouncy, .gentle) oder .stagger. Beliebig kombinierbar.",
+      "value": "Optionen wie stagger, delay oder exit. Ein Modifikator allein genügt, lass den Wert weg, bis du einen brauchst.",
+      "name": {
+        "group": "Elemente mit demselben Namen bilden eine Gruppe, daher spielt stagger sie nacheinander ab, und after: 'rows' lässt ein anderes Element auf sie warten.",
+        "component": "So findet der Dialog die Elemente: sein motion.targets.rows legt fest, wie sie sich bewegen, und sie kommen und gehen mit dem Dialog."
+      },
+      "none": "dieses Element steht für sich und braucht keinen Namen.",
+      "rule": "Gib einen Namen nur, wenn etwas anderes auf das Element zeigen muss: eine Stagger-Gruppe, after oder motion.targets einer Komponente. Sonst lass ihn weg."
     }
   },
   "recipes": {

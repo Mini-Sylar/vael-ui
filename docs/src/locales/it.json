@@ -423,7 +423,8 @@
     "noParameters": "Non accetta argomenti.",
     "noReturns": "Niente da documentare.",
     "parameters": "Parametri",
-    "returns": "Ritorni"
+    "returns": "Ritorni",
+    "which": "Quale usare?"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Overlay e conferma",
@@ -1173,7 +1174,39 @@
         "app": "Il movimento della tua app",
         "other": "Altre"
       },
-      "reference": "Riferimento"
+      "reference": "Riferimento",
+      "places": "{n} punto | {n} punti"
+    },
+    "anatomy": {
+      "label": "Anatomia di v-animate",
+      "forms": {
+        "alone": "Da solo",
+        "group": "In un gruppo",
+        "component": "In un componente"
+      },
+      "roles": {
+        "directive": "Direttiva",
+        "name": "Nome",
+        "modifier": "Modificatore",
+        "value": "Valore",
+        "none": "Nessun nome"
+      },
+      "tips": {
+        "directive": "La direttiva",
+        "name": "Il nome",
+        "modifier": "Un modificatore (facoltativo)",
+        "value": "Il valore (facoltativo)",
+        "none": "Nessun nome necessario"
+      },
+      "directive": "riproduce movimento quando l'elemento si monta, esce o cambia.",
+      "modifier": "un aspetto integrato (.fade, .rise, .drop, .pop, .blur), una molla (.snappy, .smooth, .bouncy, .gentle) o .stagger. Combinane quanti vuoi.",
+      "value": "opzioni come stagger, delay o exit. Basta un modificatore, quindi omettilo finché non ti serve.",
+      "name": {
+        "group": "gli elementi con lo stesso nome formano un gruppo, quindi stagger li riproduce uno dopo l'altro e after: 'rows' lascia che un altro elemento li aspetti.",
+        "component": "così il Dialog trova gli elementi: il suo motion.targets.rows decide come si muovono, ed entrano e escono con il dialogo."
+      },
+      "none": "questo elemento è da solo, quindi non serve un nome.",
+      "rule": "Dai un nome solo quando qualcos'altro deve puntare all'elemento: un gruppo stagger, after o il motion.targets di un componente. Altrimenti lascialo senza."
     }
   },
   "recipes": {

@@ -4,8 +4,8 @@
     <p class="note">
       The same slider twice. The first draws its fill from the <code>#track</code> slot's
       <code>percents</code>. The second follows the value on a <code>createSpring</code>, and
-      <code>v-animate</code> live values link its size to the exposed <code>dragging</code> and the
-      overdrag: it grows while you hold it and stretches with resistance past either end.
+      <code>v-animate</code> live values tie its size to the exposed <code>dragging</code> and to
+      the overdrag: it grows while you hold it and stretches past either end.
     </p>
     <div class="pair">
       <figure>

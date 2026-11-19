@@ -2,10 +2,9 @@
   <section class="demo">
     <h3>The thumb overshoots when you let go</h3>
     <p class="note">
-      <code>createSpring</code> from <code>vael-ui/motion</code> throws the thumb out and settles it
-      back. Flick the thumb and let go: it overshoots and settles back, farther for a faster flick.
-      The spring writes a <code>transform</code> on the exposed <code>thumbEls</code>, which adds to
-      the <code>translate</code> Slider places the thumb with.
+      Flick the thumb and let go: it overshoots, then settles back on a <code>createSpring</code>,
+      farther for a faster flick. The spring writes a <code>transform</code> on the exposed
+      <code>thumbEls</code>, which adds to the <code>translate</code> Slider places the thumb with.
     </p>
     <div class="row">
       <Slider

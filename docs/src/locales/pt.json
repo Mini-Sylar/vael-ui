@@ -423,7 +423,8 @@
     "noParameters": "Não aceita argumentos.",
     "noReturns": "Nada a documentar.",
     "parameters": "Parâmetros",
-    "returns": "Devoluções"
+    "returns": "Devoluções",
+    "which": "Qual usar?"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Sobreposições e confirmação",
@@ -1173,7 +1174,39 @@
         "app": "O movimento da tua app",
         "other": "Outras"
       },
-      "reference": "Referência"
+      "reference": "Referência",
+      "places": "{n} lugar | {n} lugares"
+    },
+    "anatomy": {
+      "label": "Anatomia do v-animate",
+      "forms": {
+        "alone": "Sozinho",
+        "group": "Num grupo",
+        "component": "Num componente"
+      },
+      "roles": {
+        "directive": "Diretiva",
+        "name": "Nome",
+        "modifier": "Modificador",
+        "value": "Valor",
+        "none": "Sem nome"
+      },
+      "tips": {
+        "directive": "A diretiva",
+        "name": "O nome",
+        "modifier": "Um modificador (opcional)",
+        "value": "O valor (opcional)",
+        "none": "Não precisa de nome"
+      },
+      "directive": "toca movimento quando o elemento é montado, sai ou muda.",
+      "modifier": "um visual integrado (.fade, .rise, .drop, .pop, .blur), uma mola (.snappy, .smooth, .bouncy, .gentle) ou .stagger. Combine quantos quiser.",
+      "value": "opções como stagger, delay ou exit. Um modificador sozinho basta, então omita-o até precisar.",
+      "name": {
+        "group": "elementos com o mesmo nome formam um grupo, então o stagger os toca um após o outro e after: 'rows' deixa outro elemento esperar por eles.",
+        "component": "é assim que o Dialog encontra os elementos: o seu motion.targets.rows define como se movem, e eles entram e saem com o diálogo."
+      },
+      "none": "este elemento está sozinho, então não precisa de nome.",
+      "rule": "Dê um nome só quando outra coisa precisa apontar para o elemento: um grupo com stagger, after ou o motion.targets de um componente. Caso contrário, deixe sem."
     }
   },
   "recipes": {

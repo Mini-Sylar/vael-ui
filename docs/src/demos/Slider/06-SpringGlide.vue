@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Spring glide</h3>
     <p class="note">
-      Arrow keys and track clicks glide the thumb and the fill on the spring, and a drag still
-      follows the pointer 1:1. The spring writes <code>--ui-slider-p0</code> on the exposed
-      <code>trackEl</code> each frame and removes it once it settles.
+      Arrow keys and track clicks glide the thumb and fill on a spring, and a drag still follows the
+      pointer 1:1. Each frame, the spring writes <code>--ui-slider-p0</code> on the exposed
+      <code>trackEl</code>, and it removes the property once it settles.
     </p>
     <div class="row">
       <Slider

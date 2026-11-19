@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>A card that leans toward the pointer</h3>
     <p class="note">
-      Move over the card. <code>mapRange</code> turns the pointer's place on it into a tilt, and the
-      getters in <code>v-animate</code> follow it every frame without rendering this component.
-      Leaving, the pointer goes back to the middle and it settles.
+      Move over the card. <code>mapRange</code> turns the pointer's place into a tilt, and the
+      getters in <code>v-animate</code> follow it every frame without rendering this component. When
+      the pointer leaves, the card settles level.
     </p>
     <div ref="stage" class="stage" @pointermove="lean" @pointerleave="level">
       <div

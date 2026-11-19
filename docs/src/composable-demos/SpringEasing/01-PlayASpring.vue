@@ -4,9 +4,9 @@
     <p class="note">
       <code>springEasing</code> turns a spring into the options
       <code>element.animate()</code> takes, so your own animation moves on a spring with no library.
-      Shape one, press Play, and the ball moves with
-      <code>ball.animate(frames, springEasing(spring))</code>. The curve is the
-      <code>linear()</code> easing it returned: below 1, damping overshoots the target line.
+      Shape a spring, press Play, and the ball moves with
+      <code>ball.animate(frames, springEasing(spring))</code>. Below 1, damping overshoots the
+      dashed target line.
     </p>
     <div class="track">
       <div ref="ball" class="ball" />

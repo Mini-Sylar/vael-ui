@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Draggable dialog</h3>
     <p class="note">
-      <code>useDrag</code> with a <code>handle</code> moves the panel by its header, and a throw
-      carries on at the speed you let go and settles on a spring, inside the window. With the grip
-      button focused, the arrow keys move it 10 px, or 50 px with Shift. It opens centered again.
+      <code>useDrag</code> with a <code>handle</code> moves the panel by its header. A throw carries
+      on at the speed you let go and settles on a spring, inside the window. With the grip focused,
+      the arrow keys move it 10 px, or 50 px with Shift. It reopens centered.
     </p>
     <Button @click="open = true">Open dialog</Button>
     <Dialog ref="dialog" v-model:open="open" :aria-labelledby="titleId">

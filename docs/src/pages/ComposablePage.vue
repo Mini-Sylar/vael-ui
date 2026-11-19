@@ -4,6 +4,11 @@
     <h1>{{ name }}</h1>
     <p v-if="description" class="description"><RichText :text="description" /></p>
     <p v-if="details" class="details"><RichText :text="details" /></p>
+    <Message v-if="content.hint" class="hint" variant="info" :title="t('composable.which')">
+      <ul class="hint-list">
+        <li v-for="line in content.hint" :key="line"><RichText :text="line" /></li>
+      </ul>
+    </Message>
 
     <section id="install" class="section">
       <h2>{{ t('component.install') }}</h2>
@@ -44,6 +49,7 @@ import { useHead } from '@unhead/vue'
 import { composableCategoryOf } from '../composablesTaxonomy'
 import { composablesContent } from '../composablesContent'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
+import { Message } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import DocsPager from '../components/DocsPager.vue'
 import MetaTable from '../components/MetaTable.vue'
@@ -222,6 +228,16 @@ useBreadcrumbSchema(() => [
   margin-bottom: 1.5rem;
 }
 
+.hint {
+  max-inline-size: 72ch;
+  margin-block-end: 1.75rem;
+}
+.hint-list {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding-inline-start: 1.1rem;
+}
 .details {
   max-inline-size: 72ch;
   line-height: 1.65;

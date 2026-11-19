@@ -21,6 +21,7 @@
       <ul v-if="items(section.id).length" class="mc-list">
         <li v-for="(item, i) in items(section.id)" :key="i" v-html="item" />
       </ul>
+      <VAnimateAnatomy v-if="section.anatomy" />
       <CodeBlock
         v-if="section.code"
         :lang="section.code.trimStart().startsWith('<') ? 'vue' : 'typescript'"
@@ -39,6 +40,7 @@ import { useI18n } from 'vue-i18n'
 import GuideLayout from '../../components/GuideLayout.vue'
 import MotionDemo from '../../components/MotionDemo.vue'
 import CodeBlock from '../../components/CodeBlock.vue'
+import VAnimateAnatomy from '../../components/VAnimateAnatomy.vue'
 import { API_REFERENCE, MOTION_CHAPTERS, SECTION_OPTIONS } from '../../motionChapters'
 
 const { t, tm, rt } = useI18n()

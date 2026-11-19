@@ -20,6 +20,7 @@
     <section v-for="extra in content.sections" :id="extra.id" :key="extra.id" class="section">
       <h2>{{ extra.title }}</h2>
       <p><RichText :text="extra.body" /></p>
+      <VAnimateAnatomy v-if="name === 'vAnimate' && extra.id === 'names'" />
       <CodeBlock v-if="extra.code" lang="vue" :code="extra.code" />
     </section>
 
@@ -44,6 +45,7 @@ import { useHead } from '@unhead/vue'
 import { directivesContent } from '../directivesContent'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import CodeBlock from '../components/CodeBlock.vue'
+import VAnimateAnatomy from '../components/VAnimateAnatomy.vue'
 import DocsPager from '../components/DocsPager.vue'
 import MetaTable from '../components/MetaTable.vue'
 import RichText from '../components/RichText.vue'

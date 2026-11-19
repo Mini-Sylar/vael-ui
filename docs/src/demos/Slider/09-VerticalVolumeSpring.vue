@@ -3,9 +3,8 @@
     <h3>Vertical volume: CSS and spring</h3>
     <p class="note">
       A phone-style volume control built on <code>orientation="vertical"</code>. The spring version
-      follows the value on a <code>createSpring</code>, grows while you hold it, and
-      <code>v-animate</code> live values stretch it when you drag past the top or bottom, then
-      spring it back.
+      follows the value on a <code>createSpring</code> and grows while you hold it. Drag past the
+      top or bottom, and <code>v-animate</code> live values stretch it, then spring it back.
     </p>
     <div class="pair">
       <figure>

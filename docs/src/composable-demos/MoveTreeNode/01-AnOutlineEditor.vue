@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>An outline with indent and outdent</h3>
     <p class="note">
-      Pick a line and move it with the buttons. Each one works out a
-      <code>{ parentValue, index }</code> and hands it to <code>moveTreeNode</code>, which moves the
-      line with everything under it. A move that can't happen, such as indenting the first line,
+      Pick a line and move it with the buttons. Each button works out a
+      <code>{ parentValue, index }</code> and passes it to <code>moveTreeNode</code>, which moves
+      the line with everything under it. A move that can't happen, such as indenting the first line,
       returns <code>false</code> and changes nothing.
     </p>
     <div class="row">

@@ -65,7 +65,8 @@
     "parameters": "Parameters",
     "noParameters": "Takes no arguments.",
     "returns": "Returns",
-    "noReturns": "Nothing to document."
+    "noReturns": "Nothing to document.",
+    "which": "Which one?"
   },
   "component": {
     "vdom": "VDOM",
@@ -1174,7 +1175,39 @@
         "app": "Your app's motion",
         "other": "Other"
       },
-      "reference": "Reference"
+      "reference": "Reference",
+      "places": "{n} place | {n} places"
+    },
+    "anatomy": {
+      "label": "Anatomy of v-animate",
+      "forms": {
+        "alone": "On its own",
+        "group": "In a group",
+        "component": "In a component"
+      },
+      "roles": {
+        "directive": "Directive",
+        "name": "Name",
+        "modifier": "Modifier",
+        "value": "Value",
+        "none": "No name"
+      },
+      "tips": {
+        "directive": "The directive",
+        "name": "The name",
+        "modifier": "A modifier (optional)",
+        "value": "The value (optional)",
+        "none": "No name needed"
+      },
+      "directive": "plays motion when this element mounts, leaves or changes.",
+      "modifier": "a built-in look (.fade, .rise, .drop, .pop, .blur), a spring (.snappy, .smooth, .bouncy, .gentle) or .stagger. Stack as many as you like.",
+      "value": "options such as stagger, delay or exit. A modifier on its own is enough, so leave it out until you need one.",
+      "name": {
+        "group": "elements with the same name are one group, so stagger plays them one after another and after: 'rows' lets another element wait for them.",
+        "component": "this is how the Dialog finds the elements: its motion.targets.rows sets how they move, and they come and go with the dialog."
+      },
+      "none": "this element stands alone, so it needs no name.",
+      "rule": "Add a name only when something else has to point at the element: a stagger group, after, or a component's motion.targets. Otherwise leave it off."
     }
   },
   "recipes": {

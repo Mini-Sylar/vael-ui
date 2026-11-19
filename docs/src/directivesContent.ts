@@ -345,7 +345,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
   vDraggable: {
     label: 'v-draggable',
     description:
-      "Lets you reorder a container's children by dragging them: tabs, files or any plain array, without the full `<Sortable>` component. It runs the same engine as `<Sortable>` and `Tree`, so the motion and drag preview match. Rows are tracked by position, so there's no keyboard support and no screen reader announcements; use `<Sortable>` when you need those. While you drag, the grabbed element floats as a preview and the original hides in place, with no styling from you.",
+      "Lets you reorder a container's children by dragging them: tabs, files or any plain array, without the full `<Sortable>` component. It runs the same engine as `<Sortable>` and `Tree`, so the motion and drag preview match. Rows are tracked by position, so there's no keyboard support and no screen reader announcements; use `<Sortable>` when you need those. It only reorders: to move one element freely and decide where it lands when you let go (a card, a toast, a dialog), use `useDrag`. While you drag, the grabbed element floats as a preview and the original hides in place, with no styling from you.",
     installNames: ['vDraggable'],
     value: [
       { name: 'T[]', type: 'T[]', description: 'The array itself, reordered in place on drop.' },

@@ -423,7 +423,8 @@
     "noParameters": "No acepta argumentos.",
     "noReturns": "Nada que documentar.",
     "parameters": "Parámetros",
-    "returns": "Devoluciones"
+    "returns": "Devoluciones",
+    "which": "¿Cuál uso?"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Superposiciones y confirmación",
@@ -1173,7 +1174,39 @@
         "app": "El movimiento de tu app",
         "other": "Otras"
       },
-      "reference": "Referencia"
+      "reference": "Referencia",
+      "places": "{n} lugar | {n} lugares"
+    },
+    "anatomy": {
+      "label": "Anatomía de v-animate",
+      "forms": {
+        "alone": "Solo",
+        "group": "En un grupo",
+        "component": "En un componente"
+      },
+      "roles": {
+        "directive": "Directiva",
+        "name": "Nombre",
+        "modifier": "Modificador",
+        "value": "Valor",
+        "none": "Sin nombre"
+      },
+      "tips": {
+        "directive": "La directiva",
+        "name": "El nombre",
+        "modifier": "Un modificador (opcional)",
+        "value": "El valor (opcional)",
+        "none": "No necesita nombre"
+      },
+      "directive": "reproduce movimiento cuando el elemento se monta, sale o cambia.",
+      "modifier": "un aspecto integrado (.fade, .rise, .drop, .pop, .blur), un resorte (.snappy, .smooth, .bouncy, .gentle) o .stagger. Combina los que quieras.",
+      "value": "opciones como stagger, delay o exit. Basta con un modificador, así que omítelo hasta que lo necesites.",
+      "name": {
+        "group": "los elementos con el mismo nombre forman un grupo, así que stagger los reproduce uno tras otro y after: 'rows' deja que otro elemento los espere.",
+        "component": "así encuentra el Dialog los elementos: su motion.targets.rows decide cómo se mueven, y entran y salen con el diálogo."
+      },
+      "none": "este elemento va solo, así que no necesita nombre.",
+      "rule": "Pon un nombre solo cuando algo más tenga que señalar al elemento: un grupo con stagger, after o el motion.targets de un componente. Si no, déjalo sin nombre."
     }
   },
   "recipes": {

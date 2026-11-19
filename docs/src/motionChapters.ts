@@ -5,7 +5,7 @@ export interface MotionChapter {
   routeName: string
   path: string
   /** `code`: a snippet shown under the section's words, before its demo. */
-  sections: { id: string; demo?: string; code?: string }[]
+  sections: { id: string; demo?: string; code?: string; anatomy?: boolean }[]
 }
 
 export const MOTION_CHAPTERS: MotionChapter[] = [
@@ -29,6 +29,7 @@ export const MOTION_CHAPTERS: MotionChapter[] = [
       { id: 'appear', demo: 'elements/01-AppearAndLeave' },
       {
         id: 'names',
+        anatomy: true,
         code: `<!-- On its own: no name. -->
 <p v-animate.rise>Saved</p>
 
