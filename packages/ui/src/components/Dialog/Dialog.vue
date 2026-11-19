@@ -582,6 +582,8 @@ const motion = useComponentMotion({
   // grow from the trigger keep the drawer curve, which ConfigProvider's spring drives.
   defaults: () => builtInLook().initial,
   exitDefaults: () => builtInLook().exit,
+  // A style's `overlay` look is for a centred overlay: it would replace an edge panel's slide.
+  roleApplies: () => !(isSidePosition.value || isEdgePanel.value),
   timing: () => ({ duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' }),
   // forceMount means you drive the motion; otherwise the engine plays the built-in look too.
   owns: () => !props.forceMount,

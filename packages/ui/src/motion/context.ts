@@ -104,6 +104,8 @@ export function resolveMotion(input: {
   instance: Instance
   style: MotionStyle | undefined
   providerOff: boolean
+  /** Whether the style's `role` values apply: not to a panel that slides in from an edge. */
+  roleApplies?: boolean
 }): ResolvedMotion {
   const {
     role,
@@ -115,9 +117,11 @@ export function resolveMotion(input: {
     instance,
     style,
     providerOff,
+    roleApplies = true,
   } = input
   const own = isObject(instance) ? instance : undefined
-  const roleStyle = isObject(style?.[role]) ? (style![role] as Record<string, unknown>) : undefined
+  const roleStyle =
+    roleApplies && isObject(style?.[role]) ? (style![role] as Record<string, unknown>) : undefined
   const keyStyle = isObject(style?.[key]) ? (style![key] as Record<string, unknown>) : undefined
 
   const parts = (field: 'initial' | 'exit', base: Parts): Parts => {
