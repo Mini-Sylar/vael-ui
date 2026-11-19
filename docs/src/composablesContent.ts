@@ -1198,7 +1198,13 @@ async function sent() {
         name: 'options.el',
         type: 'MaybeRefOrGetter<HTMLElement | null>',
         description:
-          'The element you drag, scroll and focus. Its children are the items, in order.',
+          'The element you drag. It moves by its own `translate`, so nothing else is restyled.',
+      },
+      {
+        name: 'options.handle',
+        type: 'string',
+        description:
+          "A CSS selector for the grab area inside `el`, such as a dialog's header: only a press there drags. Give that area `touch-action: none`. Default: all of `el`.",
       },
       {
         name: 'options.axis',
