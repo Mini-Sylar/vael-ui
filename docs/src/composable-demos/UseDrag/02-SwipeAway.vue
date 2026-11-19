@@ -11,7 +11,7 @@
       ref="notice"
       v-animate="{
         animate: { opacity: () => mapRange(Math.abs(drag.x.value), [0, width()], [1, 0.2]) },
-        exit: () => ({ x: gone * width() * 1.2, opacity: 0 }),
+        exit: () => ({ x: { value: gone * width() * 1.2, spring: 'smooth' }, opacity: 0 }),
       }"
       class="notice"
     >

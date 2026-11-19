@@ -479,6 +479,7 @@ function onSave() {
   },
 
   mapRange: {
+    hasLiveDemo: true,
     description:
       'Maps a number from one range onto another. `mapRange(x, [0, 300], [0, 1])` gives 0 at 0, 0.5 at 150 and 1 at 300. Past either end it holds the end value. Add points to bend the line: `mapRange(x, [-300, 0, 300], [-20, 0, 20])`. Use it with a live value in `v-animate`.',
     installNames: ['mapRange'],
@@ -520,6 +521,7 @@ mapRange(450, [0, 300, 600], [1, 1, 0]) // 0.5: solid until 300, then fades
     ],
   },
   springEasing: {
+    hasLiveDemo: true,
     description:
       'Turns a spring into a CSS `linear()` curve and the time it takes to settle, in ms. It\'s the curve vael-ui uses for `ConfigProvider`\'s `:motion="{ spring }"`. The result has the same shape as the options `element.animate()` takes, so your own animations can move on the same spring without a library. Damping below 1 overshoots.',
     exampleCode: `import { springEasing } from 'vael-ui/motion'
@@ -1856,6 +1858,7 @@ const shown = useTween(total, { duration: 600, easing: 'out' })`,
   },
 
   moveTreeNode: {
+    hasLiveDemo: true,
     description:
       "Moves a node in a tree you can reorder. `moveTreeNode` moves a node and its subtree to a new parent and index, changing your array in place, as `removeTreeNode` does. Its `to` argument is the `DropPosition` that `useSortable`'s `onCommit` receives, so the two connect directly. Tree commits its drag reordering through it, and Sortable uses it for flat lists. It runs `isDescendantOf` first, because dropping a folder into its own descendant would detach that branch and lose it. Nodes are read as `{ value, children }` by default, the shape `TreeNode` and `MenuItemData` already have. Pass accessors for any other shape.",
     installNames: ['moveTreeNode', 'isDescendantOf'],

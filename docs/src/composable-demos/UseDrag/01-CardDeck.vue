@@ -20,8 +20,8 @@
           },
           initial: () => (back ? { x: back * far(), rotate: back * 25, opacity: 0 } : {}),
           exit: () => ({
-            x: gone * far(),
-            rotate: gone * 25,
+            x: { value: gone * far(), spring: 'smooth' },
+            rotate: { value: gone * 25, spring: 'smooth' },
             opacity: { value: 0, duration: 450, easing: 'cubic-bezier(0.7, 0, 0.84, 0)' },
           }),
         }"

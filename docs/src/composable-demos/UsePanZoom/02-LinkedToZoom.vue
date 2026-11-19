@@ -2,8 +2,9 @@
   <section class="demo">
     <h3>Linked to the zoom</h3>
     <p class="note">
-      <code>scale</code> is live, so other things follow it. A slider calls <code>zoomTo</code>, and
-      the labels fade in with <code>mapRange</code> as you zoom.
+      <code>scale</code> is live, so other things follow it. A slider calls <code>zoomTo</code> with
+      <code>animate: false</code>, so the thumb and the map stay together as you drag, and the
+      labels fade in with <code>mapRange</code> as you zoom.
     </p>
     <div ref="box" class="canvas" tabindex="0" aria-label="Zoomable map" @keydown="pz.onKeydown">
       <div class="map">
@@ -28,7 +29,7 @@
         :min="1"
         :max="5"
         :step="0.1"
-        @update:model-value="(v) => pz.zoomTo(Number(v))"
+        @update:model-value="(v) => pz.zoomTo(Number(v), { animate: false })"
       />
     </Field>
   </section>
