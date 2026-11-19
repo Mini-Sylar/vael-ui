@@ -1057,7 +1057,7 @@ export function shake(el: Element) {
   },
   usePanZoom: {
     description:
-      'Pans, pinches and zooms content inside a box: an image, a map, a diagram. It moves the content with its own `translate` and `scale`, from its top left corner. One finger or the mouse pans, two fingers pinch, and a double tap zooms in and back out. Hold ctrl and scroll to zoom around the cursor. Content stays inside the box, gives a little at the edges, and keeps coasting after a flick. It sets `touch-action: none` on the box, so the page does not scroll there on touch.',
+      'Pans, pinches and zooms content inside a box: an image, a map, a diagram. It moves the content with its own `translate` and `scale`, from its top left corner. One finger or the mouse pans, two fingers pinch, and a double tap zooms in and back out. Hold ctrl and scroll to zoom around the cursor; in Safari, a trackpad pinch does the same. Content stays inside the box, gives a little at the edges, and keeps coasting after a flick. It sets `touch-action: none` on the box, so the page does not scroll there on touch.',
     installNames: ['usePanZoom'],
     hasLiveDemo: true,
     params: [
@@ -1150,7 +1150,7 @@ export function shake(el: Element) {
   },
   useDragSelect: {
     description:
-      "Drag across empty space in a box and everything the band touches is selected. The box's children are the items, by their position among them, so a `v-for` list needs no selectors or attributes. Shift adds to the selection, ctrl or cmd toggles, a click on empty space clears it, and Escape during a drag puts it back. Near an edge of whatever scrolls, it scrolls and the band grows with it. A mouse or a pen draws the band; a touch still scrolls the page. It is pointer only, so pair it with checkboxes or keys for everyone else.",
+      "Drag across empty space in a box and everything the band touches is selected. The box's children are the items, by their position among them, so a `v-for` list needs no selectors or attributes. Shift adds to the selection, ctrl or cmd toggles, a click on empty space clears it, and Escape during a drag puts it back. Near an edge of whatever scrolls, it scrolls and the band grows with it. A mouse or a pen draws the band at once. A touch has to press and hold first, then drag, so a swipe still scrolls. It is pointer only, so pair it with checkboxes or keys for everyone else.",
     installNames: ['useDragSelect'],
     hasLiveDemo: true,
     params: [

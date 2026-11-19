@@ -11,6 +11,10 @@ import { AUTO_SCROLL_EDGE, AUTO_SCROLL_MAX_SPEED, findScrollParent } from './sor
 
 // A drag-select band: drag across empty space in a box and everything it touches is selected. The
 // box's children are the items (the same convention as useWheel), by their position among them.
+// A mouse or pen draws it at once; a touch has to press and hold first, so a swipe still scrolls.
+
+/** How long a touch holds still before it starts a band, in ms. */
+const HOLD = 350
 
 export interface UseDragSelectOptions {
   /** The box you drag in. Its children are the items; one with `pointer-events: none` isn't. */
@@ -76,6 +80,9 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
   // Let go, the band is still catching up; and Escape froze what's selected.
   let settling = false
   let frozen = false
+  // A touch that is still waiting out its hold, and the timer for it.
+  let holding = false
+  let holdTimer = 0
   // The band's moving corner, one spring per axis: they share dynamics, so the corner stays put.
   const sx = createSpring(0, { epsilon: 0.5 }, place)
   const sy = createSpring(0, { epsilon: 0.5 }, place)
@@ -201,14 +208,14 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
   function onPointerdown(event: PointerEvent) {
     const box = el()
     if (!box || toValue(options.disabled) || pointerId !== null) return
-    // A touch scrolls the page; a band is for a mouse or a pen.
-    if (event.pointerType === 'touch' || event.button !== 0) return
+    if (event.button !== 0) return
     // On an item, a drag is that item's own.
     for (let node = event.target as Node | null; node && node !== box; node = node.parentNode)
       if (node.parentNode === box && isItem(node as Element)) return
     pointerId = event.pointerId
     committed = false
     origin = { x: event.clientX, y: event.clientY }
+    holding = event.pointerType === 'touch'
     last = { ...origin }
     from = inBox(box, event.clientX, event.clientY)
     settling = false
@@ -225,9 +232,42 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
     window.addEventListener('pointerup', onPointerup)
     window.addEventListener('pointercancel', onPointerup)
     window.addEventListener('keydown', onKeydown, true)
+    if (holding) {
+      // A swipe before the hold ends is a scroll. Once held, the band owns the touch.
+      window.addEventListener('touchmove', holdTouch, { passive: false })
+      window.addEventListener('contextmenu', holdMenu, true)
+      box.style.setProperty('-webkit-touch-callout', 'none')
+      holdTimer = window.setTimeout(startBand, HOLD)
+    }
+  }
+  // Starts the band under a finger that has held still.
+  function startBand() {
+    if (pointerId === null || !holding) return
+    holding = false
+    committed = true
+    isDragging.value = true
+    before = 0
+    getSelection()?.removeAllRanges()
+    navigator.vibrate?.(8)
+    frame = requestAnimationFrame(tick)
+    update()
+  }
+  // Held: the page doesn't scroll under the band.
+  function holdTouch(event: TouchEvent) {
+    if (committed && event.cancelable) event.preventDefault()
+  }
+
+  // A long press opens the context menu on some phones: not while it is starting a band.
+  function holdMenu(event: Event) {
+    event.preventDefault()
   }
 
   function stop() {
+    window.clearTimeout(holdTimer)
+    holding = false
+    window.removeEventListener('touchmove', holdTouch)
+    window.removeEventListener('contextmenu', holdMenu, true)
+    el()?.style.removeProperty('-webkit-touch-callout')
     window.removeEventListener('pointermove', onPointermove)
     window.removeEventListener('pointerup', onPointerup)
     window.removeEventListener('pointercancel', onPointerup)
@@ -248,6 +288,11 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
   function onPointermove(event: PointerEvent) {
     if (event.pointerId !== pointerId) return
     last = { x: event.clientX, y: event.clientY }
+    if (holding) {
+      // It moved before the hold ended: a scroll, not a band.
+      if (Math.hypot(last.x - origin.x, last.y - origin.y) >= DRAG_THRESHOLD) stop()
+      return
+    }
     if (!committed) {
       if (Math.hypot(last.x - origin.x, last.y - origin.y) < DRAG_THRESHOLD) return
       committed = true

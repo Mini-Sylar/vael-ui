@@ -130,3 +130,54 @@ test('stretch is how far the corner is behind the pointer: zero for an exact ban
   expect(sprung.select.stretch.value.y).toBeGreaterThan(0)
   sprung.fire('pointerup', window, sprung.at(100, 50))
 })
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+test('a touch that holds still, then drags, draws a band', async () => {
+  const { select, box, at, fire } = setup()
+  const touch = { pointerType: 'touch' }
+  fire('pointerdown', box, at(5, 5), touch)
+  // Nothing yet: it is still deciding whether this is a scroll.
+  expect(select.isDragging.value).toBe(false)
+  await wait(420)
+  expect(select.isDragging.value).toBe(true)
+  fire('pointermove', window, at(100, 50), touch)
+  expect(select.selected.value).toEqual([0, 1])
+  fire('pointerup', window, at(100, 50), touch)
+  expect(select.selected.value).toEqual([0, 1])
+})
+
+test('a touch that moves before the hold ends is a scroll: no band', async () => {
+  const { select, box, at, fire } = setup()
+  const touch = { pointerType: 'touch' }
+  fire('pointerdown', box, at(5, 5), touch)
+  fire('pointermove', window, at(5, 40), touch)
+  await wait(420)
+  fire('pointermove', window, at(100, 50), touch)
+  expect(select.isDragging.value).toBe(false)
+  expect(select.selected.value).toEqual([])
+})
+
+test('a quick tap on empty space clears, as a click does', async () => {
+  const { select, box, at, fire, drag } = setup()
+  drag([5, 5], [100, 50])
+  expect(select.selected.value).toEqual([0, 1])
+  const touch = { pointerType: 'touch' }
+  fire('pointerdown', box, at(5, 5), touch)
+  fire('pointerup', window, at(5, 5), touch)
+  expect(select.selected.value).toEqual([])
+})
+
+test('while a touch is held the page does not scroll under it', async () => {
+  const { box, at, fire } = setup()
+  const touch = { pointerType: 'touch' }
+  fire('pointerdown', box, at(5, 5), touch)
+  await wait(420)
+  const move = new TouchEvent('touchmove', { bubbles: true, cancelable: true })
+  window.dispatchEvent(move)
+  expect(move.defaultPrevented).toBe(true)
+  fire('pointerup', window, at(5, 5), touch)
+  const after = new TouchEvent('touchmove', { bubbles: true, cancelable: true })
+  window.dispatchEvent(after)
+  expect(after.defaultPrevented).toBe(false)
+})

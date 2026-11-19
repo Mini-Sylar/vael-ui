@@ -483,8 +483,47 @@ export function usePanZoom(options: UsePanZoomOptions): UsePanZoomReturn {
     event.stopPropagation()
   }
   const onDragstart = (event: Event) => event.preventDefault()
-  // Safari's own pinch would zoom the page.
-  const onGesture = (event: Event) => event.preventDefault()
+  // Safari sends a trackpad pinch as gesture events, not as ctrl and the wheel, and would zoom the
+  // page with them: the content is zoomed instead, around the point the pinch is over. A touch pinch
+  // that reaches us as two pointers is already handled above.
+  type PinchEvent = Event & { scale?: number; clientX?: number; clientY?: number }
+  let pinchOf: { s: number; tx: number; ty: number; at: Pt } | null = null
+  function onGesturestart(event: Event) {
+    event.preventDefault()
+    if (toValue(options.disabled) || pointers.size >= 2) return
+    measure()
+    sx.stop()
+    sy.stop()
+    ss.stop()
+    const e = event as PinchEvent
+    const at =
+      Number.isFinite(e.clientX) && Number.isFinite(e.clientY)
+        ? within({ clientX: e.clientX!, clientY: e.clientY! })
+        : centre()
+    pinchOf = { s: scale.value, tx: x.value, ty: y.value, at }
+  }
+  function onGesturechange(event: Event) {
+    event.preventDefault()
+    const from = pinchOf
+    if (!from || toValue(options.disabled)) return
+    const s = softScale(from.s * ((event as PinchEvent).scale ?? 1))
+    const t = translateFor(s, from.at, { x: from.tx, y: from.ty, s: from.s })
+    const r = range(s)
+    ss.jump(s)
+    sx.jump(soft(t.x, r.x))
+    sy.jump(soft(t.y, r.y))
+  }
+  function onGestureend(event: Event) {
+    event.preventDefault()
+    const from = pinchOf
+    pinchOf = null
+    if (!from) return
+    // Past the smallest or largest it gave: back inside, around the same point.
+    const s = clampScale(scale.value)
+    const t = translateFor(s, from.at)
+    const r = range(s)
+    go({ x: clamp(t.x, r.x), y: clamp(t.y, r.y), s })
+  }
 
   watch(
     () => toValue(options.el),
@@ -498,8 +537,9 @@ export function usePanZoom(options: UsePanZoomOptions): UsePanZoomReturn {
       el.addEventListener('wheel', onWheel, { passive: false })
       el.addEventListener('click', onClickCapture, true)
       el.addEventListener('dragstart', onDragstart)
-      el.addEventListener('gesturestart', onGesture)
-      el.addEventListener('gesturechange', onGesture)
+      el.addEventListener('gesturestart', onGesturestart)
+      el.addEventListener('gesturechange', onGesturechange)
+      el.addEventListener('gestureend', onGestureend)
       // A real resize keeps it inside the content: a spring still moving is retargeted, not cut.
       const observer =
         typeof ResizeObserver === 'undefined'
@@ -523,8 +563,9 @@ export function usePanZoom(options: UsePanZoomOptions): UsePanZoomReturn {
         el.removeEventListener('wheel', onWheel)
         el.removeEventListener('click', onClickCapture, true)
         el.removeEventListener('dragstart', onDragstart)
-        el.removeEventListener('gesturestart', onGesture)
-        el.removeEventListener('gesturechange', onGesture)
+        el.removeEventListener('gesturestart', onGesturestart)
+        el.removeEventListener('gesturechange', onGesturechange)
+        el.removeEventListener('gestureend', onGestureend)
         observer?.disconnect()
         if (content) {
           content.style.translate = ''

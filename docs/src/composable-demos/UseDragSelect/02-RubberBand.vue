@@ -62,7 +62,7 @@ const outline = computed(() => {
   gap: 0.5rem;
   max-height: 18rem;
   overflow: auto;
-  padding: 0.75rem;
+  padding: 1.75rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   background: var(--ui-surface);

@@ -241,3 +241,49 @@ test('an svg works as the content, panned inside its own size', () => {
   expect([pz.x.value, pz.y.value]).toEqual([-200, -100])
   expect(svg.style.scale).toBe('2')
 })
+
+// Safari's trackpad pinch arrives as gesture events (WebKit only), not as ctrl and the wheel.
+function gesture(el: Element, type: string, scale: number, at?: { x: number; y: number }) {
+  const event = new Event(type, { bubbles: true, cancelable: true }) as Event & {
+    scale: number
+    clientX?: number
+    clientY?: number
+  }
+  event.scale = scale
+  if (at) {
+    const r = el.getBoundingClientRect()
+    event.clientX = r.left + at.x
+    event.clientY = r.top + at.y
+  }
+  el.dispatchEvent(event)
+  return event
+}
+
+test("Safari's pinch zooms the content around the point it is over, and the page is not zoomed", () => {
+  const { el, pz } = setup({ maxScale: 4 })
+  expect(gesture(el, 'gesturestart', 1, { x: 150, y: 50 }).defaultPrevented).toBe(true)
+  const change = gesture(el, 'gesturechange', 2, { x: 150, y: 50 })
+  expect(change.defaultPrevented).toBe(true)
+  expect(pz.scale.value).toBeCloseTo(2, 5)
+  // The point under the pinch stays under it: 150 at scale 1 is 150 at scale 2 with x = -150.
+  expect(pz.x.value).toBeCloseTo(-150, 3)
+  gesture(el, 'gestureend', 2)
+  expect(pz.scale.value).toBeCloseTo(2, 3)
+})
+
+test("Safari's pinch past the largest scale gives, then settles back at the largest", async () => {
+  const { el, pz } = setup({ maxScale: 3 })
+  gesture(el, 'gesturestart', 1, { x: 100, y: 50 })
+  gesture(el, 'gesturechange', 6, { x: 100, y: 50 })
+  expect(pz.scale.value).toBeGreaterThan(3)
+  gesture(el, 'gestureend', 6)
+  await new Promise((resolve) => setTimeout(resolve, 900))
+  expect(pz.scale.value).toBeCloseTo(3, 1)
+})
+
+test('a disabled pan zoom ignores the pinch', () => {
+  const { el, pz } = setup({ disabled: true })
+  gesture(el, 'gesturestart', 1, { x: 100, y: 50 })
+  gesture(el, 'gesturechange', 3, { x: 100, y: 50 })
+  expect(pz.scale.value).toBe(1)
+})

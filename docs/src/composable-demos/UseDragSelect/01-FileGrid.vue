@@ -2,8 +2,9 @@
   <section class="demo">
     <h3>A file grid</h3>
     <p class="note">
-      Drag across the empty space to select what the band touches. Shift adds, ctrl or cmd toggles,
-      and a click on empty space clears. Near an edge it scrolls.
+      Drag across the empty space to select what the band touches. On a touch screen, press and hold
+      on empty space first. Shift adds, ctrl or cmd toggles, and a click on empty space clears. Near
+      an edge it scrolls.
       {{ dragSelect.selected.value.length }}
       selected.
     </p>
@@ -59,7 +60,7 @@ const dragSelect = useDragSelect({ el: box, spring: elastic })
   gap: 0.5rem;
   max-height: 18rem;
   overflow: auto;
-  padding: 0.75rem;
+  padding: 1.75rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   background: var(--ui-surface);
