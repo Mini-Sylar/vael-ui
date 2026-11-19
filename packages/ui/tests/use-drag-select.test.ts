@@ -114,3 +114,19 @@ test('an elastic band trails the pointer, selects only what it covers, then sett
   })
   expect(select.selected.value).toEqual([0, 1])
 })
+
+test('stretch is how far the corner is behind the pointer: zero for an exact band, positive for a sprung one', async () => {
+  const exact = setup()
+  exact.fire('pointerdown', exact.box, exact.at(5, 5))
+  exact.fire('pointermove', window, exact.at(100, 50))
+  expect(exact.select.stretch.value).toEqual({ x: 0, y: 0 })
+  exact.fire('pointerup', window, exact.at(100, 50))
+
+  const sprung = setup({ spring: 'bouncy' })
+  sprung.fire('pointerdown', sprung.box, sprung.at(5, 5))
+  sprung.fire('pointermove', window, sprung.at(100, 50))
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  expect(sprung.select.stretch.value.x).toBeGreaterThan(0)
+  expect(sprung.select.stretch.value.y).toBeGreaterThan(0)
+  sprung.fire('pointerup', window, sprung.at(100, 50))
+})

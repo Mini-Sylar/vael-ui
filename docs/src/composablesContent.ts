@@ -1164,6 +1164,12 @@ async function sent() {
           'The band, in px from the top left of the box, live. Draw it inside the box with `position: absolute` and `pointer-events: none`, and link its look to these with `v-animate` live values.',
       },
       {
+        name: 'stretch',
+        type: 'Ref<{ x: number; y: number }>',
+        description:
+          "How far the band's moving corner is behind the pointer along each axis, in px: its tension, negative when it overshoots. Bow the band's sides in by it, as a stretched rubber band pinches. Zero without a `spring`.",
+      },
+      {
         name: 'isDragging',
         type: 'Ref<boolean>',
         description:

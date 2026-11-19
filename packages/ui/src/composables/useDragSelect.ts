@@ -36,6 +36,12 @@ export interface UseDragSelectReturn {
   y: Ref<number>
   width: Ref<number>
   height: Ref<number>
+  /**
+   * How far the band's moving corner is behind the pointer along each axis, px, live: the band's
+   * tension. It's negative when the corner overshoots. Bow the band's sides in by it, as a stretched
+   * rubber band pinches. Zero without a `spring`.
+   */
+  stretch: Ref<{ x: number; y: number }>
   /** Whether a band is being drawn. */
   isDragging: Ref<boolean>
   /** The items the band holds, by position among the box's children. Set it to select from code. */
@@ -49,6 +55,7 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
   const y = shallowRef(0)
   const width = shallowRef(0)
   const height = shallowRef(0)
+  const stretch = shallowRef({ x: 0, y: 0 })
   const isDragging = shallowRef(false)
   const selected = shallowRef<number[]>([])
   const clickGuard = createClickGuard()
@@ -58,6 +65,8 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
   let origin = { x: 0, y: 0 }
   let from = { x: 0, y: 0 }
   let last = { x: 0, y: 0 }
+  // Where the corner is heading: the pointer, kept inside the box.
+  let aim = { x: 0, y: 0 }
   let base: number[] = []
   // Shift adds to what's selected, ctrl or cmd toggles, plain replaces.
   let mode: 'replace' | 'add' | 'toggle' = 'replace'
@@ -89,6 +98,7 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
     const p = inBox(box, last.x, last.y)
     const px = Math.min(Math.max(p.x, 0), box.scrollWidth)
     const py = Math.min(Math.max(p.y, 0), box.scrollHeight)
+    aim = { x: px, y: py }
     const spring = springNow(box)
     if (!spring) {
       sx.jump(px)
@@ -116,6 +126,13 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
     y.value = top
     width.value = w
     height.value = h
+    // Behind the pointer along the way it's going: positive stretched, negative overshot.
+    const along = (corner: number, origin: number, aim: number) =>
+      (aim - corner) * (Math.sign(corner - origin) || Math.sign(aim - origin))
+    stretch.value = {
+      x: along(sx.value, from.x, aim.x),
+      y: along(sy.value, from.y, aim.y),
+    }
     if (!frozen) select(box, left, top, w, h)
     // Let go, and it has caught up: the band is done.
     if (settling && !sx.isAnimating && !sy.isAnimating) {
@@ -292,5 +309,5 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
       clickGuard.disarm()
     })
 
-  return { x, y, width, height, isDragging, selected, clear: () => (selected.value = []) }
+  return { x, y, width, height, stretch, isDragging, selected, clear: () => (selected.value = []) }
 }
