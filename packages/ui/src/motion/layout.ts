@@ -564,6 +564,11 @@ export function placeOnLeave(el: Element): LeavingPlace | undefined {
   const style = getComputedStyle(el)
   const look: Record<string, string> = {}
   for (const prop of HELD_LOOK) look[prop] = style.getPropertyValue(prop)
+  // What its live values had it at (a band's size): clearing them as it goes mustn't change its look.
+  Object.assign(
+    look,
+    (el as HTMLElement & { _uiLiveStyle?: () => Record<string, string> })._uiLiveStyle?.(),
+  )
   // Where it was painted: the render removing it may have moved it already (a sibling grew).
   let box = untransformed(el)
   const was = painted.get(el)

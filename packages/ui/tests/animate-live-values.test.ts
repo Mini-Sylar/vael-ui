@@ -177,3 +177,33 @@ test('an entrance that ends puts back the live values, not the style it saved be
   expect(Number(getComputedStyle(el).scale)).toBeCloseTo(0.7, 2)
   expect(getComputedStyle(el).opacity).toBe('0.6')
 })
+
+test('a leaving element with live size keeps that size as it fades', async () => {
+  const show = shallowRef(true)
+  const w = shallowRef(200)
+  const screen = await render(() =>
+    h('div', { style: 'position: relative; width: 400px; height: 300px' }, [
+      show.value
+        ? withDirectives(
+            h('div', { 'data-band': '', style: 'position: absolute; inset: 0 auto auto 0' }),
+            [
+              [
+                vAnimate,
+                { animate: { width: w, height: () => 80 }, exit: { opacity: 0 }, duration: 600 },
+              ],
+            ],
+          )
+        : null,
+    ]),
+  )
+  const el = screen.container.querySelector<HTMLElement>('[data-band]')!
+  w.value = 260
+  expect(el.style.width).toBe('260px')
+  show.value = false
+  await nextTick()
+  await frame()
+  // Still in the page and fading, at the size it had.
+  expect(el.isConnected).toBe(true)
+  expect(el.getBoundingClientRect().width).toBe(260)
+  expect(el.getBoundingClientRect().height).toBe(80)
+})
