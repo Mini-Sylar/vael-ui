@@ -253,11 +253,11 @@
     "featureVaporBody": "每个组件都从同一份源码经由 Vue 3.6 的 Vapor 模式编译。",
     "featureVaporTitle": "真正的 Vapor 构建，而非垫片",
     "headline": "直接编译为 Vapor 的组件，而不是围绕它。",
-    "featureSkillBody": "一个配套包，向 Claude Code、GitHub Copilot、Codex 等智能体提供每个组件的真实 API。它由 vael-ui 自身的类型生成，而非手写。",
+    "featureSkillBody": "配套技能，为 Claude Code、GitHub Copilot、Codex 等智能体提供每个组件的真实 API、能选对工具的动效指南，以及 vael-form。由库自身的类型生成，而非手写。",
     "featureSkillTitle": "AI 智能体技能",
     "themeLabel": "试试颜色：",
     "newTag": "新",
-    "newText": "0.5.0：全新的动效系统",
+    "newText": "0.5.5：手势与实时动效值",
     "showcaseLabel": "使用 vael-ui 构建的在线演示"
   },
   "i18nKeys": {
@@ -504,20 +504,27 @@
     "vaporTitle": "Vapor"
   },
   "skill": {
-    "claudeCodeIntro": "添加一次市场，然后安装技能：",
+    "claudeCodeIntro": "先添加一次市场，再安装你需要的。vael-ui 插件包含 vael-motion：",
     "claudeCodeTitle": "克劳德·科德",
-    "includedAnimation": "动效系统（motion prop、enter 和 leave 钩子、v-animate），附带 GSAP 和 motion 示例",
+    "includedAnimation": "动效系统：motion prop、enter 与 leave 钩子、v-animate、实时值和手势，附带 GSAP 和 motion 示例以及现成的配方",
     "includedComponents": "每个组件的 props、插槽、事件和暴露的 ref",
     "includedComposables": "每个独立组合式函数的参数、返回值和使用示例",
     "includedStyling": "级联层顺序和用于主题的全部 CSS 变量",
-    "intro": "一个配套包，教 AI 编码智能体如何使用 vael-ui。它适用于 Claude Code、GitHub Copilot、Codex、Cursor 等。内容涵盖每个组件的 props、插槽和事件，每个组合式函数，以及如何设置动效、主题和 VDOM 与 Vapor 构建。它由 vael-ui 自身的类型和文档生成，而非手写，因此会随着 vael-ui 的变化保持准确。它独立于 vael-ui 进行版本管理和发布。",
-    "otherAgentsIntro": "任何支持通用 <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 规范的智能体都可以通过 <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> 安装它。其中包括 GitHub Copilot、Codex、Cursor 以及其他 70 多个智能体：",
+    "intro": "配套技能，教 AI 编程智能体使用 vael-ui 和 vael-form。适用于 Claude Code、GitHub Copilot、Codex、Cursor 等。组件和组合式函数的参考由这些库自身的类型和文档生成，因此会随库的变化保持准确。它们与 vael-ui 分开版本管理和发布。",
+    "otherAgentsIntro": "任何支持共享 <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 规范的智能体都可以通过 <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> 安装，包括 GitHub Copilot、Codex、Cursor 以及其他 70 多个。",
     "otherAgentsTitle": "其他代理",
-    "sourceIntro": "该技能的源码位于 {link}，其中还附有在 vael-ui 发布周期之外更新它的说明。",
+    "sourceIntro": "这些技能的源码位于 {link}，其中也说明了如何在 vael-ui 的发布周期之外更新它们。",
     "sourceTitle": "来源",
     "title": "AI 智能体技能",
     "whatsIncludedIntro": "一份简洁的顶层指南和一份完整参考，由与本文档站点相同的数据生成：",
-    "whatsIncludedTitle": "包含内容"
+    "whatsIncludedTitle": "包含内容",
+    "skillsTitle": "这些技能",
+    "skillsIntro": "安装你用到的即可。每个只做一件事：",
+    "uiBody": "安装配置（VDOM 与 Vapor 构建、自动导入、Nuxt、SSR）、每个组件准确的 props、插槽和事件、主题，以及命令式组合式函数。",
+    "motionBody": "一切会动的东西。它先判断某物是否该动画，再选择工具：组件的 motion prop、v-animate、实时值、useDrag 和 useWheel 等手势，或你自己的动画库。请与 vael-ui 一起安装。",
+    "formBody": "使用 vael-form 的表单：模式、绑定输入、错误、列表与步骤、服务端错误、翻译消息和测试。",
+    "otherAgentsPick": "从列表中选择，或按名称安装其中一个：",
+    "includedForms": "完整的 vael-form API，以及列表、步骤、服务端错误和从 vee-validate 迁移的指南"
   },
   "theme": {
     "label": "主题色",

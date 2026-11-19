@@ -253,11 +253,11 @@
     "featureVaporBody": "Ogni componente viene compilato tramite la modalità Vapor di Vue 3.6 dalla stessa sorgente.",
     "featureVaporTitle": "Una vera build Vapor, non uno shim",
     "headline": "Componenti che si compilano direttamente su Vapor, non attorno ad esso.",
-    "featureSkillBody": "Un pacchetto complementare che fornisce a Claude Code, GitHub Copilot, Codex e altri agenti l'API reale di ogni componente. È generato dai tipi di vael-ui stesso, non scritto a mano.",
+    "featureSkillBody": "Skill complementari che danno a Claude Code, GitHub Copilot, Codex e altri agenti l’API reale di ogni componente, una guida al movimento che sceglie lo strumento giusto e vael-form. Generate dai tipi delle librerie, non scritte a mano.",
     "featureSkillTitle": "Skill per agenti IA",
     "themeLabel": "Prova un colore:",
     "newTag": "Novità",
-    "newText": "0.5.0: un nuovo sistema di movimento",
+    "newText": "0.5.5: gesti e valori di movimento live",
     "showcaseLabel": "Demo dal vivo realizzata con vael-ui"
   },
   "i18nKeys": {
@@ -504,20 +504,27 @@
     "vaporTitle": "Vapor"
   },
   "skill": {
-    "claudeCodeIntro": "Aggiungi il marketplace una volta, quindi installa la skill:",
+    "claudeCodeIntro": "Aggiungi il marketplace una volta, poi installa ciò che ti serve. Il plugin vael-ui include vael-motion:",
     "claudeCodeTitle": "Codice Claudio",
-    "includedAnimation": "Il sistema di movimento (la prop motion, gli hook enter e leave, v-animate), con esempi GSAP e motion",
+    "includedAnimation": "Il sistema di movimento: la prop motion, gli hook enter e leave, v-animate, valori live e gesti, con esempi GSAP e motion e ricette pronte",
     "includedComponents": "Props, slot, eventi e ref esposti di ogni componente",
     "includedComposables": "Parametri, valori restituiti ed esempi d'uso di ogni composable autonomo",
     "includedStyling": "Ordine dei cascade layer e ogni variabile CSS per i temi",
-    "intro": "Un pacchetto complementare che insegna agli agenti di programmazione IA a usare vael-ui. Funziona con Claude Code, GitHub Copilot, Codex, Cursor e altri. Copre props, slot ed eventi di ogni componente, ogni composable e come configurare movimento, temi e le build VDOM e Vapor. È generato dai tipi e dalla documentazione di vael-ui stesso, non scritto a mano, quindi resta accurato man mano che vael-ui cambia. Ha versioni e rilasci separati da vael-ui.",
-    "otherAgentsIntro": "Qualsiasi agente che supporta la specifica condivisa <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> può installarla con <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a>. Tra questi GitHub Copilot, Codex, Cursor e oltre 70 altri:",
+    "intro": "Skill complementari che insegnano agli agenti di programmazione IA a usare vael-ui e vael-form. Funzionano con Claude Code, GitHub Copilot, Codex, Cursor e altri. I riferimenti a componenti e composable sono generati dai tipi e dalla documentazione delle librerie stesse, quindi restano accurati quando cambiano. Hanno versioni e rilasci separati da vael-ui.",
+    "otherAgentsIntro": "Qualsiasi agente che supporti la specifica condivisa <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> può installarle con <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a>. Include GitHub Copilot, Codex, Cursor e più di 70 altri.",
     "otherAgentsTitle": "Altri agenti",
-    "sourceIntro": "Il sorgente della skill si trova su {link}, insieme alle istruzioni per aggiornarla al di fuori del ciclo di rilascio di vael-ui.",
+    "sourceIntro": "Il codice sorgente delle skill si trova su {link}, insieme alle istruzioni per aggiornarle fuori dal ciclo di rilascio di vael-ui.",
     "sourceTitle": "Fonte",
     "title": "Skill per agenti IA",
     "whatsIncludedIntro": "Una guida generale compatta e un riferimento completo, generati dagli stessi dati di questo sito di documentazione:",
-    "whatsIncludedTitle": "Cosa è incluso"
+    "whatsIncludedTitle": "Cosa è incluso",
+    "skillsTitle": "Le skill",
+    "skillsIntro": "Installa quelle che usi. Ognuna fa un solo lavoro:",
+    "uiBody": "Configurazione (build VDOM e Vapor, auto-import, Nuxt, SSR), le props, gli slot e gli eventi esatti di ogni componente, i temi e i composable imperativi.",
+    "motionBody": "Tutto ciò che si muove. Decide se qualcosa deve animarsi, poi sceglie lo strumento: la prop motion di un componente, v-animate, valori live, gesti come useDrag e useWheel, o la tua libreria di animazione. Installala accanto a vael-ui.",
+    "formBody": "Form con vael-form: schemi, collegamento agli input, errori, liste e passaggi, errori del server, messaggi tradotti e test.",
+    "otherAgentsPick": "Scegli dall’elenco, oppure installane una per nome:",
+    "includedForms": "L’API completa di vael-form, con guide su liste, passaggi, errori del server e migrazione da vee-validate"
   },
   "theme": {
     "label": "Colore del tema",
