@@ -9,6 +9,11 @@
        transition, which the browser doesn't promote, so every finger move repainted the
        sheet and everything in it. Never toggled, so the contents aren't re-rasterised. */
     will-change: transform;
+    /* A flick that overshoots the top lifts the panel's bottom edge off the screen: the first
+       shadow is the surface again, a little way below, so nothing opens up under it. */
+    box-shadow:
+      0 4rem 0 0 var(--ui-surface),
+      var(--ui-panel-shadow);
   }
   .ui-dialog-panel.ui-bottom-sheet-panel--sm {
     max-inline-size: min(22rem, 100%);

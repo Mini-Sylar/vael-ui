@@ -140,8 +140,14 @@
     inline-size: var(--ui-menu-list-icon-size, 1em);
     block-size: var(--ui-menu-list-icon-size, 1em);
   }
+  /* A badge or other trailing content in `#label` sits at the row's far end. */
   .ui-menu-list-item-label {
+    display: flex;
     flex: 1;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+    min-inline-size: 0;
   }
   .ui-menu-list-item-shortcut {
     margin-inline-start: 1.5rem;

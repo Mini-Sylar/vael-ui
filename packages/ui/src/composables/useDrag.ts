@@ -39,6 +39,11 @@ export interface DragRelease {
 export interface UseDragOptions {
   /** The element you drag. It moves by its own `translate`, so nothing else is restyled. */
   el: ElRef<HTMLElement | null>
+  /**
+   * A CSS selector for the grab area inside `el`, such as a dialog's header: only a press there
+   * drags. Give that area `touch-action: none`. Default: all of `el`.
+   */
+  handle?: string
   /** `'x'` or `'y'` to move along one axis only. Default both. */
   axis?: MaybeRefOrGetter<'x' | 'y' | 'both'>
   /** Ignores the pointer: for a drag that only applies some of the time. */
@@ -146,6 +151,7 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
   function onPointerdown(event: PointerEvent) {
     if (toValue(options.disabled) || pointerId !== null) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
+    if (options.handle && !(event.target as Element | null)?.closest(options.handle)) return
     pointerId = event.pointerId
     committed = false
     start = { x: event.clientX, y: event.clientY }
@@ -258,8 +264,10 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
       sx.jump(0)
       sy.jump(0)
       const previous = el.style.touchAction
-      // Along a free axis the drag owns the touch; across a single axis the page still scrolls.
-      el.style.touchAction = axis() === 'x' ? 'pan-y' : axis() === 'y' ? 'pan-x' : 'none'
+      // Along a free axis the drag owns the touch; across a single axis the page still scrolls. A
+      // handle's own CSS decides for its area.
+      if (!options.handle)
+        el.style.touchAction = axis() === 'x' ? 'pan-y' : axis() === 'y' ? 'pan-x' : 'none'
       el.addEventListener('pointerdown', onPointerdown)
       el.addEventListener('click', onClickCapture, true)
       el.addEventListener('dragstart', onDragstart)

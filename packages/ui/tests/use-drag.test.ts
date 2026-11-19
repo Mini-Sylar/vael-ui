@@ -157,3 +157,37 @@ test('the click a drag ends with is swallowed; a plain click is not', () => {
   el.click()
   expect(clicks).toBe(1)
 })
+
+test('with a handle, only a press there drags; the rest of the element does not', async () => {
+  const { el, drag } = setup({ handle: '.grip' })
+  const grip = document.createElement('span')
+  grip.className = 'grip'
+  const body = document.createElement('p')
+  el.append(grip, body)
+  const press = (target: Element, x: number) =>
+    target.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        pointerId: 1,
+        clientX: x,
+        clientY: 0,
+        button: 0,
+      }),
+    )
+  const move = (x: number) =>
+    window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: x, clientY: 0 }))
+  const release = (x: number) =>
+    window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX: x, clientY: 0 }))
+  // A press on the body is ignored.
+  press(body, 10)
+  move(100)
+  expect(drag.isDragging.value).toBe(false)
+  release(100)
+  // A press on the handle drags.
+  press(grip, 10)
+  move(100)
+  expect(drag.isDragging.value).toBe(true)
+  release(100)
+  // The handle's own CSS decides touch-action, so the element's is left alone.
+  expect(el.style.touchAction).toBe('')
+})
