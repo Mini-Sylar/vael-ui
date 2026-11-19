@@ -59,6 +59,7 @@ const MOTION_COMPOSABLES = [
   'useDrag',
   'useWheel',
   'usePanZoom',
+  'useDragSelect',
 ]
 const MOTION_UTILITIES = ['springEasing', 'mapRange', 'settled']
 

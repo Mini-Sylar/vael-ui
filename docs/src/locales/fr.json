@@ -458,6 +458,7 @@
     "useFileDrop": "Transforme n'importe quel élément en zone de dépôt de fichiers, avec un état de survol qui reste stable au-dessus des éléments enfants et ignore le texte ou les liens glissés. Utilisez-le pour créer votre propre zone de dépôt.",
     "useWheel": "Une position que l'on fait glisser, lance, fait défiler ou avance au clavier le long d'une rangée d'éléments, et qui s'arrête sur l'un d'eux : un sélecteur à roue, un carrousel, une pagination. Chaque élément lit sa distance en variables CSS.",
     "usePanZoom": "Déplace, pince et zoome un contenu dans une boîte : une image, une carte, un schéma. Glissez au doigt ou à la souris, pincez à deux doigts, touchez deux fois pour zoomer.",
+    "useDragSelect": "Glissez sur l'espace vide d'une boîte pour sélectionner ce que la bande touche. Maj ajoute, ctrl ou cmd inverse, et la bande peut s'étirer sur un ressort.",
     "useDrag": "Un glissement qui décide au relâchement : l'élément suit le pointeur, puis va où vous l'indiquez sur un ressort qui garde la vitesse du lancer. Pour les piles de cartes et le balayage pour fermer.",
     "useScrollLength": "La distance de défilement possible de la page ou d'un conteneur, en px, sous forme de ref. Elle suit le contenu qui grandit ou rétrécit."
   },

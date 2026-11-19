@@ -477,6 +477,7 @@
     "useFileDrop": "Macht jedes Element zum Ablageziel für Dateien, mit einem Drag-over-Zustand, der über Kindelementen stabil bleibt und gezogenen Text oder Links ignoriert. Nutzen Sie es, um Ihre eigene Drop-Zone zu bauen.",
     "useWheel": "Eine Position entlang einer Reihe von Elementen, die man zieht, wirft, scrollt oder per Taste weiterschaltet und die auf einem Element einrastet: eine Auswahlwalze, ein Karussell, ein Pager. Die Elemente lesen ihren Abstand als CSS-Variablen.",
     "usePanZoom": "Verschiebt, pinch-zoomt und vergrößert Inhalt in einem Feld: ein Bild, eine Karte, ein Diagramm. Ziehen mit Finger oder Maus, Pinch mit zwei Fingern, Doppeltippen zum Zoomen.",
+    "useDragSelect": "Ziehen Sie über leere Fläche in einem Feld, um auszuwählen, was das Band berührt. Umschalt fügt hinzu, Strg oder Cmd schaltet um, und das Band kann sich auf einer Feder dehnen.",
     "useDrag": "Ein Ziehen, das beim Loslassen entscheidet: Das Element folgt dem Zeiger und landet dann dort, wo du es hinschickst, auf einer Feder, die das Tempo des Wurfs behält. Für Kartenstapel und Wischen zum Schließen.",
     "useScrollLength": "Wie weit die Seite oder ein Container scrollen kann, in px, als Ref. Der Wert folgt dem Inhalt, wenn er wächst oder schrumpft."
   },

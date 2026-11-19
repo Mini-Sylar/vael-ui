@@ -458,6 +458,7 @@
     "useFileDrop": "Transforma qualquer elemento em uma área para soltar arquivos, com um estado de arraste que se mantém estável sobre os elementos filhos e ignora texto ou links arrastados. Use-o para criar sua própria área de soltar.",
     "useWheel": "Uma posição que você arrasta, lança, rola ou avança com as teclas ao longo de uma fila de itens, e que para em um deles: um seletor de roda, um carrossel, um paginador. Cada item lê sua distância como variáveis CSS.",
     "usePanZoom": "Move, faz pinça e amplia o conteúdo de uma caixa: uma imagem, um mapa, um diagrama. Arraste com o dedo ou o mouse, faça pinça com dois dedos, toque duas vezes para ampliar.",
+    "useDragSelect": "Arraste pelo espaço vazio de uma caixa para selecionar o que a banda toca. Shift acrescenta, ctrl ou cmd alterna, e a banda pode esticar numa mola.",
     "useDrag": "Um arraste que decide ao soltar: o elemento segue o ponteiro e depois vai para onde você indicar, com uma mola que mantém a velocidade do lançamento. Para pilhas de cartões e deslizar para dispensar.",
     "useScrollLength": "Quanto a página ou um contêiner pode rolar, em px, como ref. Acompanha o conteúdo quando ele cresce ou diminui."
   },

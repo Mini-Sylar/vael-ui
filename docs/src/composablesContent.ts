@@ -1132,6 +1132,56 @@ async function sent() {
       },
     ],
   },
+  useDragSelect: {
+    description:
+      "Drag across empty space in a box and everything the band touches is selected. The box's children are the items, by their position among them, so a `v-for` list needs no selectors or attributes. Shift adds to the selection, ctrl or cmd toggles, a click on empty space clears it, and Escape during a drag puts it back. Near an edge of whatever scrolls, it scrolls and the band grows with it. A mouse or a pen draws the band; a touch still scrolls the page. It is pointer only, so pair it with checkboxes or keys for everyone else.",
+    installNames: ['useDragSelect'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'options.el',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description:
+          "The box you drag in. Its children are the items; a child with `pointer-events: none`, such as the band, isn't one.",
+      },
+      {
+        name: 'options.disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Ignores the pointer.',
+      },
+      {
+        name: 'options.spring',
+        type: 'MaybeRefOrGetter<boolean | Spring | SpringName>',
+        description:
+          "`true` lets the band's moving corner trail the pointer on a spring, so it stretches and catches up: the ConfigProvider's `spring`, else the default every component uses. A name or `{ damping, response }` sets your own, and a bouncy one overshoots a little. What is selected follows the band you see. Default: the corner stays under the pointer. Reduced motion and `motion: false` keep it there.",
+      },
+    ],
+    returns: [
+      {
+        name: 'x, y, width, height',
+        type: 'Ref<number>',
+        description:
+          'The band, in px from the top left of the box, live. Draw it inside the box with `position: absolute` and `pointer-events: none`, and link its look to these with `v-animate` live values.',
+      },
+      {
+        name: 'isDragging',
+        type: 'Ref<boolean>',
+        description:
+          'Whether a band is showing: from the first move until it has caught up after you let go.',
+      },
+      {
+        name: 'selected',
+        type: 'Ref<number[]>',
+        description:
+          "The items the band holds, by position among the box's children. Set it to select from code.",
+      },
+      {
+        name: 'clear()',
+        type: '() => void',
+        description: 'Selects nothing.',
+      },
+    ],
+  },
   useDrag: {
     description:
       'Drags an element and decides where it goes when you let go. It follows the pointer with its own `translate`. `onRelease` receives its offset, its speed and where the throw would land. It returns where the element goes, or nothing to send it home. The element moves on a spring that keeps the throw speed, and Escape puts it back. A drag has no keyboard form, so add a button that calls `throwTo`.',
