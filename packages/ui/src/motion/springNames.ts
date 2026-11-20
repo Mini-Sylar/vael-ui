@@ -4,6 +4,9 @@ import type { Spring as IndicatorSpring } from './types'
 /** A spring by name: `snappy` and `smooth` settle without overshoot, `bouncy` overshoots, `gentle` is slow with a little give. */
 export type SpringName = 'snappy' | 'smooth' | 'bouncy' | 'gentle'
 
+/** The spring everything uses when nothing names one: components, entrances, sortable, gestures. */
+export const DEFAULT_SPRING: IndicatorSpring = { damping: 1, response: 0.32 }
+
 /** The named springs' numbers. */
 export const SPRINGS: Record<SpringName, IndicatorSpring> = {
   snappy: { damping: 1, response: 0.25 },

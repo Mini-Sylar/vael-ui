@@ -14,7 +14,7 @@
       <Tabs v-model:active="bgActive" :items="items">
         <template #default="{ items: list, itemProps, indicatorProps }">
           <div v-bind="indicatorProps()" />
-          <button v-for="item in list" :key="item" v-bind="itemProps(item)">
+          <button v-for="item in list" :key="item" type="button" v-bind="itemProps(item)">
             <span class="tab-label">{{ item }}</span>
           </button>
         </template>
@@ -23,7 +23,7 @@
       <Tabs v-model:active="underlineActive" :items="items">
         <template #default="{ items: list, itemProps, indicatorProps }">
           <div v-bind="indicatorProps('underline')" />
-          <button v-for="item in list" :key="item" v-bind="itemProps(item)">
+          <button v-for="item in list" :key="item" type="button" v-bind="itemProps(item)">
             <span class="tab-label">{{ item }}</span>
           </button>
         </template>

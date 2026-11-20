@@ -400,11 +400,22 @@ function pointerOn(el: Element, wanted: Set<string>, pointer: Pointer): () => vo
     cleanups.push(stay)
   }
   if (wanted.has('active')) {
+    // The window hears the release only while pressed: idle elements add nothing to it.
+    const unlisten = () => {
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+    }
+    const up = () => {
+      release()
+      unlisten()
+    }
     on(el, 'pointerdown', (e) => {
-      if ((e as PointerEvent).button === 0) pointer.active = true
+      if ((e as PointerEvent).button !== 0) return
+      pointer.active = true
+      window.addEventListener('pointerup', up)
+      window.addEventListener('pointercancel', up)
     })
-    on(window, 'pointerup', release)
-    on(window, 'pointercancel', release)
+    cleanups.push(unlisten)
     on(el, 'keydown', (e) => {
       const { key, repeat } = e as KeyboardEvent
       if ((key === ' ' || key === 'Enter') && !repeat) pointer.active = true

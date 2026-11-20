@@ -5,10 +5,6 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import DrawerFixture from './fixtures/DrawerFixture.vue'
 
-function activeTestId() {
-  return document.activeElement?.getAttribute('data-testid') ?? document.activeElement?.className
-}
-
 test('position="right" renders a full-height panel anchored to the right edge, modal by default', async () => {
   const screen = await render(DrawerFixture, { props: { position: 'right' } })
   await screen.getByTestId('trigger-modal').click()
@@ -31,14 +27,17 @@ test('position="left" renders a full-height panel anchored to the left edge', as
   expect(rect.left).toBeCloseTo(0, 0)
 })
 
-test('modal=false renders no overlay, does not lock scroll, does not steal focus, and leaves the page clickable', async () => {
+test('modal=false renders no overlay, does not lock scroll, takes focus on open, and leaves the page clickable', async () => {
   const screen = await render(DrawerFixture)
   await screen.getByTestId('trigger-pinned').click()
   await expect.element(screen.getByTestId('pinned-state')).toHaveTextContent('open')
 
   expect(document.querySelector('.ui-dialog-overlay')).toBeNull()
   expect(document.body.style.overflow).toBe('')
-  expect(activeTestId()).toBe('trigger-pinned')
+  // Focus moves in, as for any dialog; only the trap and the inert page are modal-only.
+  await vi.waitFor(() =>
+    expect(document.querySelector('.ui-dialog-panel')!.contains(document.activeElement)).toBe(true),
+  )
 
   await screen.getByTestId('outside').click()
   await expect.element(screen.getByTestId('outside-clicks')).toHaveTextContent('1')

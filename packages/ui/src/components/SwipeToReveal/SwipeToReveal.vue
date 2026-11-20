@@ -10,7 +10,6 @@
     :aria-disabled="disabled || undefined"
     v-bind="attrs"
     @focusout="onFocusout"
-    @keydown="onKeydown"
   >
     <div
       v-if="hasLeading"
@@ -30,8 +29,8 @@
     <div
       ref="contentEl"
       :class="contentPart.class"
-      :style="[{ transform: `translateX(${shown}px)` }, contentPart.style]"
-      @pointerdown="onContentPointerdown"
+      :style="[{ transform: `translateX(${rtl ? -shown : shown}px)` }, contentPart.style]"
+      @pointerdown="onPointerdown"
       @click.capture="onContentClick"
     >
       <slot :open="open" :open-side="openSide" :reveal="reveal" :close="close" />
@@ -61,7 +60,7 @@ import './SwipeToReveal.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useSwipeReveal } from '../../composables/useSwipeReveal'
@@ -72,9 +71,9 @@ import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
 import { useMotionStyle } from '../../motion/context'
 import { useSpringValue } from '../../motion/useSpringValue'
-import { prefersReducedMotion } from '../../composables/dom'
+import { isRtl, prefersReducedMotion } from '../../composables/dom'
 import type { Spring, SwipeToRevealMotion } from '../../motion/types'
-import { springOf } from '../../motion/springNames'
+import { DEFAULT_SPRING, springOf } from '../../motion/springNames'
 
 defineOptions({ inheritAttrs: false })
 
@@ -113,7 +112,6 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { motion: true })
-const DEFAULT_SPRING = { damping: 1, response: 0.32 }
 
 const emit = defineEmits<{
   /** Fires once per settled interaction, with `open` and the open edge (or `null`). */
@@ -143,16 +141,22 @@ const contentEl = useTemplateRef<HTMLElement>('contentEl')
 const leadingActionsEl = useTemplateRef<HTMLElement>('leadingActionsEl')
 const trailingActionsEl = useTemplateRef<HTMLElement>('trailingActionsEl')
 
-// Read fresh each time: a ResizeObserver's first report is async, and a drag committed before it
-// would measure zero and close regardless of how far it traveled.
+// The actions' widths, kept by an observer so an open row follows a panel that resizes.
+const leadingWidth = shallowRef<number>()
+const trailingWidth = shallowRef<number>()
+useResizeObserver(leadingActionsEl, ([entry]) => (leadingWidth.value = widthOf(entry!)))
+useResizeObserver(trailingActionsEl, ([entry]) => (trailingWidth.value = widthOf(entry!)))
+const widthOf = (entry: ResizeObserverEntry) =>
+  entry.borderBoxSize?.[0]?.inlineSize ?? (entry.target as HTMLElement).offsetWidth
 const haptic = useComponentHaptic()
 const tick = () => haptic.impact('light')
 const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reveal, close } =
   useSwipeReveal(open, {
     leading: () => hasLeading.value,
     trailing: () => hasTrailing.value,
-    leadingWidth: () => leadingActionsEl.value?.offsetWidth ?? 0,
-    trailingWidth: () => trailingActionsEl.value?.offsetWidth ?? 0,
+    // Measured directly until the observer's first (async) report.
+    leadingWidth: () => leadingWidth.value ?? leadingActionsEl.value?.offsetWidth ?? 0,
+    trailingWidth: () => trailingWidth.value ?? trailingActionsEl.value?.offsetWidth ?? 0,
     disabled: () => props.disabled,
     onCommit: (side) => {
       tick()
@@ -187,13 +191,31 @@ function onFocusout(event: FocusEvent) {
   openedByFocus = false
   close()
 }
-// Escape closes an open row, and only the row: a dialog around it stays open.
+// Escape in an open row closes only the row: on the window, before a Dialog's layer stack sees it.
 function onKeydown(event: KeyboardEvent) {
-  if (event.key !== 'Escape' || openSide.value === null || event.defaultPrevented) return
+  if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return
+  if (!root.value?.contains(event.target as Node | null)) return
   event.preventDefault()
   event.stopPropagation()
   openedByFocus = false
   close()
+}
+watch(
+  openSide,
+  (side, _, onCleanup) => {
+    if (side === null || typeof window === 'undefined') return
+    window.addEventListener('keydown', onKeydown, true)
+    onCleanup(() => window.removeEventListener('keydown', onKeydown, true))
+  },
+  { immediate: true },
+)
+
+// Right to left, the logical offset runs the other way on screen.
+const rtl = shallowRef(false)
+onMounted(() => (rtl.value = isRtl(root.value)))
+function onPointerdown(event: PointerEvent) {
+  rtl.value = isRtl(root.value)
+  onContentPointerdown(event)
 }
 
 // Where the row is on screen: with the finger while dragging, then on a spring to where it
@@ -218,18 +240,11 @@ watch(
 // 0 → 1: how far each edge is revealed on screen. Exposed for consumer-driven effects; also
 // drives the opt-in `revealScale` grow-in.
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
-// The actions' widths, kept by an observer: read on every frame of a swipe, each was a layout.
-const leadingWidth = shallowRef(0)
-const trailingWidth = shallowRef(0)
-useResizeObserver(leadingActionsEl, ([entry]) => (leadingWidth.value = widthOf(entry!)))
-useResizeObserver(trailingActionsEl, ([entry]) => (trailingWidth.value = widthOf(entry!)))
-const widthOf = (entry: ResizeObserverEntry) =>
-  entry.borderBoxSize?.[0]?.inlineSize ?? (entry.target as HTMLElement).offsetWidth
 const leadingProgress = computed(() =>
-  leadingWidth.value > 0 ? clamp01(shown.value / leadingWidth.value) : 0,
+  leadingWidth.value ? clamp01(shown.value / leadingWidth.value) : 0,
 )
 const trailingProgress = computed(() =>
-  trailingWidth.value > 0 ? clamp01(-shown.value / trailingWidth.value) : 0,
+  trailingWidth.value ? clamp01(-shown.value / trailingWidth.value) : 0,
 )
 
 const revealScaleOn = computed(() => props.revealScale !== false)

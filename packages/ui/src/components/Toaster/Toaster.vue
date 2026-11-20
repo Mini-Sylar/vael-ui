@@ -120,7 +120,6 @@ import {
   onMounted,
   onScopeDispose,
   reactive,
-  ref,
   shallowRef,
   useAttrs,
   useId,
@@ -255,7 +254,7 @@ function onActionClick(entry: ToastEntry) {
 }
 const themeScope = inject(themeScopeKey, undefined)
 const visibility = useDocumentVisibility()
-const toasterEl = ref<HTMLElement | null>(null)
+const toasterEl = shallowRef<HTMLElement | null>(null)
 const groupKey = useId()
 const registerToaster = transitionGroupRef(toasterEl, groupKey)
 
@@ -443,10 +442,10 @@ function offsetOf(id: ToastId) {
 }
 
 // Hover and focus open the stack and pause timers; `expand` only keeps it open.
-const interacting = ref(false)
+const interacting = shallowRef(false)
 const expanded = computed(() => props.expand || interacting.value)
-const hovered = ref(false)
-const focusWithin = ref(false)
+const hovered = shallowRef(false)
+const focusWithin = shallowRef(false)
 function openStack() {
   if (interacting.value) return
   interacting.value = true
@@ -539,7 +538,7 @@ interface SwipeState {
 const swipeState = reactive(new Map<ToastId, SwipeState>())
 const pointerStart = new Map<ToastId, { x: number; y: number; time: number }>()
 const swipeAxis = new Map<ToastId, 'x' | 'y' | null>()
-const activeSwipeId = ref<ToastId | null>(null)
+const activeSwipeId = shallowRef<ToastId | null>(null)
 
 // The move and release maths (toastSwipe.ts) arrive as the Toaster mounts, long before a swipe.
 let swipe: ReturnType<typeof import('../../composables/toastSwipe').createToastSwipe> | undefined

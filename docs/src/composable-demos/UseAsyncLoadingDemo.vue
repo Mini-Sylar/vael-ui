@@ -3,9 +3,7 @@
     <Button variant="primary" :disabled="loading" @click="onClick">
       {{ loading ? 'Saving…' : 'Save' }}
     </Button>
-    <p class="demo-status">
-      In-flight requests: <strong>{{ inFlight }}</strong>
-    </p>
+    <p class="demo-status">In-flight requests: <strong>{{ inFlight }}</strong></p>
   </section>
 </template>
 

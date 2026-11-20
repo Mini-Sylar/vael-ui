@@ -18,8 +18,10 @@
     v-model:open="open"
     role="dialog"
     tabindex="-1"
-    :aria-modal="modal ? 'true' : undefined"
-    :aria-label="step?.title || stepOfLabel"
+    :aria-modal="modal && !targetReachable ? 'true' : undefined"
+    :aria-labelledby="labelledBy"
+    :aria-describedby="!$slots.default && step?.description ? descriptionId : undefined"
+    :aria-label="labelledBy ? undefined : step?.title || stepOfLabel"
     :trigger-el="targetEl"
     :side="step?.side"
     :align="step?.align"
@@ -62,9 +64,11 @@
                   .replace('{total}', String(total))
               }}
             </p>
-            <h2 v-if="step?.title" class="ui-tour-title">{{ step.title }}</h2>
+            <h2 v-if="step?.title" :id="titleId" class="ui-tour-title">{{ step.title }}</h2>
           </div>
-          <p v-if="step?.description" class="ui-tour-description">{{ step.description }}</p>
+          <p v-if="step?.description" :id="descriptionId" class="ui-tour-description">
+            {{ step.description }}
+          </p>
           <div class="ui-tour-actions">
             <button
               v-if="!isFirst"
@@ -162,7 +166,16 @@ import type { BeforeClose, TourMotion } from '../../motion/types'
 import './Tour.css'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, nextTick, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onScopeDispose,
+  shallowRef,
+  useId,
+  useSlots,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
 import type { PopoverExposed } from '../Popover/Popover.vue'
@@ -171,6 +184,7 @@ import { glideOf, timingOf } from '../../composables/tourGlide'
 import { useMotionStyle } from '../../motion/context'
 import { useTour } from '../../composables/useTour'
 import {
+  focusTargetIn,
   getFocusable,
   inlineKey,
   opener,
@@ -315,14 +329,30 @@ const stepOfLabel = computed(() =>
     .replace('{total}', String(total.value)),
 )
 
-const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(', ')
+// The visible title names the callout and the description describes it; a custom slot keeps the aria-label.
+const slots = useSlots()
+const titleId = useId()
+const descriptionId = useId()
+const labelledBy = computed(() => (!slots.default && step.value?.title ? titleId : undefined))
+
+// Modal with a live target: the target is part of the dialog, so no aria-modal (inert isolates the rest).
+const targetReachable = computed(() => !!targetEl.value && !step.value?.disableInteraction)
+function targetStops(): HTMLElement[] {
+  const el = targetEl.value
+  if (!el || !targetReachable.value) return []
+  const own = focusTargetIn(el) === el && el.tabIndex >= 0 ? [el] : []
+  return [...own, ...getFocusable(el)]
+}
+
+// [autofocus], else Next (Skip comes first, and Enter there would end the tour), else the first control.
+function initialFocusIn(panel: HTMLElement): HTMLElement {
+  return (
+    panel.querySelector<HTMLElement>('[autofocus]') ??
+    panel.querySelector<HTMLElement>('.ui-tour-next:not([disabled])') ??
+    getFocusable(panel)[0] ??
+    panel
+  )
+}
 
 // Moves focus into the panel on open and on every step change. Gated on positionerStyle's
 // own visibility (not a tick/frame): the panel mounts hidden until floating-ui's async
@@ -346,8 +376,7 @@ watch(
         const panel = popoverPanelEl.value
         if (!panel || !open.value) return
         focusedForIndex = index
-        const target = panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? panel
-        target.focus({ preventScroll: true })
+        initialFocusIn(panel).focus({ preventScroll: true })
       },
       { flush: 'post' },
     )
@@ -527,7 +556,7 @@ watch(open, (value) => {
   })
 })
 
-// Modal: Tab cycles inside the callout, as in a Dialog. Capture, so Popover's own Tab-out never runs.
+// Modal: Tab cycles through the callout, then an interactive target, as in a Dialog. Capture, so Popover's own Tab-out never runs.
 useEventListener(
   () => (open.value && props.modal ? ssrDocument() : undefined),
   'keydown',
@@ -537,7 +566,7 @@ useEventListener(
     const panel = popoverPanelEl.value
     if (!panel) return
     event.preventDefault()
-    const focusables = getFocusable(panel)
+    const focusables = [...getFocusable(panel), ...targetStops()]
     const current = document.activeElement as HTMLElement | null
     const index = current ? focusables.indexOf(current) : -1
     const step = event.shiftKey ? -1 : 1

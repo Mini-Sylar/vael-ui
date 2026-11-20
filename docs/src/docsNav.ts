@@ -55,8 +55,13 @@ const MOTION_COMPOSABLES = [
   'useScrollLength',
   'useHoverIndicator',
   'useTabIndicator',
+  // Gestures that ride the same springs and pair with v-animate; filed under Drag & Drop too.
+  'useDrag',
+  'useWheel',
+  'usePanZoom',
+  'useDragSelect',
 ]
-const MOTION_UTILITIES = ['springEasing', 'settled']
+const MOTION_UTILITIES = ['springEasing', 'mapRange', 'settled']
 
 // The directives that move things, listed in Motion's sidebar too.
 const MOTION_DIRECTIVES = ['vAnimate', 'vHoverIndicator', 'vDraggable']

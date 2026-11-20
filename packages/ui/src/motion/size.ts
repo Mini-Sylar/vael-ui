@@ -245,7 +245,15 @@ export function followSize(
           r.type === 'attributes' &&
           r.attributeName === 'style' &&
           pins.has(r.target as Element)
-        ) && !(r.type === 'attributes' && quietAttribute(r.attributeName)),
+        ) &&
+        !(r.type === 'attributes' && quietAttribute(r.attributeName)) &&
+        // A style deeper than a child: that child's size, observed below, says if it mattered.
+        !(
+          r.type === 'attributes' &&
+          r.attributeName === 'style' &&
+          r.target !== el &&
+          (r.target as Node).parentNode !== el
+        ),
     )
     if (!records.length) return
     // Children to watch only change with the list of them.

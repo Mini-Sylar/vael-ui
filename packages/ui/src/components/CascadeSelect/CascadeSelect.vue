@@ -246,6 +246,12 @@
         />
       </template>
     </template>
+    <RequiredInput
+      v-if="nativeRequired(attrs)"
+      :filled="Array.isArray(model) ? model.length > 0 : model != null && model !== ''"
+      :control="focusTarget"
+      :disabled="isDisabled"
+    />
   </div>
 </template>
 
@@ -298,12 +304,14 @@ import type { ComponentExposed } from 'vue-component-type-helpers'
 import Menu from '../Menu/Menu.vue'
 import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
+import RequiredInput from '../internal/RequiredInput.vue'
 import Input from '../Input/Input.vue'
 import { normalizeText } from '../../composables/normalizeText'
 import { useEasedHeight } from '../../composables/useEasedHeight'
 import type { MenuAlign, MenuItemData, MenuSide } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
-import { useFieldControl } from '../../composables/useFieldControl'
+import { nativeRequired, useFieldControl } from '../../composables/useFieldControl'
+import { isComposing } from '../../composables/useLayerStack'
 import { useFormReset } from '../../composables/useFormReset'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { useMessages, cascadeSelectMessages } from '../../messages'
@@ -747,6 +755,8 @@ function focusSearch() {
 
 // Arrow Down moves into the results; Enter picks the first one, as in Select.
 function onFilterKeydown(event: KeyboardEvent) {
+  // Keys that pick or end an IME composition belong to the input method.
+  if (isComposing(event)) return
   if (event.key === 'ArrowDown') {
     event.preventDefault()
     rows()[0]?.focus()
@@ -853,6 +863,7 @@ const controlEl = useTemplateRef<HTMLElement>('controlEl')
 function focusControl() {
   controlEl.value?.focus()
 }
+const focusTarget = () => controlEl.value
 provide(chipFocusFallbackKey, () => controlEl.value)
 const menuRef = useTemplateRef<ComponentExposed<typeof Menu>>('menuRef')
 
@@ -861,7 +872,16 @@ const forward = useForwardedListener(attrs)
 // Your `aria-label` names it through a hidden copy (below): on the button it would replace the value.
 const restAttrs = computed(() =>
   fieldControl.own(
-    omitAttrs(attrs, ['class', 'style', 'onClick', 'onKeydown', 'onFocus', 'onBlur', 'aria-label']),
+    omitAttrs(attrs, [
+      'class',
+      'style',
+      'onClick',
+      'onKeydown',
+      'onFocus',
+      'onBlur',
+      'aria-label',
+      'required',
+    ]),
   ),
 )
 // Inside a Field its label points at the Field's id, so that one wins.

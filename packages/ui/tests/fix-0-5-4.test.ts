@@ -113,8 +113,9 @@ test('Sortable axis x lines items up at the top', async () => {
   const screen = await render(() =>
     h(Sortable as never, { items: [{ value: 'a', label: 'A' }], axis: 'x' }),
   )
-  expect(getComputedStyle(screen.container.querySelector('.ui-sortable')!).alignItems).toBe(
-    'flex-start',
+  // Newer Chromium reports `flex-start` as `flow-start`.
+  expect(['flex-start', 'flow-start']).toContain(
+    getComputedStyle(screen.container.querySelector('.ui-sortable')!).alignItems,
   )
 })
 

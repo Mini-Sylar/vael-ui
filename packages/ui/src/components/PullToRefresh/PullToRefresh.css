@@ -1,5 +1,5 @@
 @layer ui-components {
-  /* Pull to refresh: usePullToRefresh owns pullDistance and zone block-size. */
+  /* Pull to refresh: usePullToRefresh owns pullDistance; the zone and content follow by transform. */
   .ui-pull-to-refresh-root {
     position: relative;
     /* A wrapper: as a grid or flex item it shrinks like the content it wraps, not to its widest row. */
@@ -36,11 +36,24 @@
     border: 0;
   }
   .ui-pull-to-refresh-zone {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    overflow: hidden;
+    /* Hidden at rest, once the settle has played. */
+    transition:
+      transform var(--ui-duration-enter) var(--ui-ease-drawer),
+      visibility var(--ui-duration-enter);
+  }
+  .ui-pull-to-refresh-center {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    transition: block-size var(--ui-duration-enter) var(--ui-ease-drawer);
+    block-size: 100%;
+    transition: transform var(--ui-duration-enter) var(--ui-ease-drawer);
+  }
+  .ui-pull-to-refresh-track {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-drawer);
   }
   .ui-pull-to-refresh-indicator {
     display: flex;
@@ -77,6 +90,8 @@
   @media (prefers-reduced-motion: reduce) {
     /* The live drag itself is already transition:none (direct manipulation, never gated) — this only snaps the settle-back-to-idle and lock-during-loading moments, which are programmatic. */
     .ui-pull-to-refresh-zone,
+    .ui-pull-to-refresh-center,
+    .ui-pull-to-refresh-track,
     .ui-pull-to-refresh-bubble,
     .ui-pull-to-refresh-arrow {
       transition: none;

@@ -42,9 +42,9 @@ export interface UseDialogOptions {
   onOpenChange?: (value: boolean, details: DialogOpenChangeDetails) => void
   /** Getter so the underlying prop stays reactive without being invoked by `toValue`. */
   beforeClose?: () => BeforeClose<DialogCloseReason> | undefined
-  /** Overrides which element receives focus on open. Return null/undefined to fall back to the first focusable element (or the panel itself). */
+  /** Overrides which element receives focus on open. Return null/undefined to fall back to `[autofocus]`, the content's first control, the first focusable element, then the panel. */
   initialFocus?: () => HTMLElement | null | undefined
-  /** Gates scroll-lock, the Tab focus-trap, and the initial-focus steal. Escape-close and layer stacking stay active either way. Default true. */
+  /** Gates scroll-lock, inert and the Tab focus-trap. Escape-close, layer stacking and focus on open and close stay active either way. Default true. */
   modal?: MaybeRefOrGetter<boolean>
   /** Pushes a history entry on open so the mobile hardware/gesture back action closes this dialog instead of navigating the underlying page away, popping that entry again on any other close path. Default false — opt in per instance, since it alters the browser's history stack. */
   closeOnHistoryBack?: MaybeRefOrGetter<boolean>
@@ -318,20 +318,31 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     layer.push()
     isOpen.value = true
     pushHistoryEntry()
+    // What opened it, even in Safari (a clicked button isn't focused there): focus goes back to it.
+    previouslyFocused = opener()
     if (modalActive) {
-      // What opened it, even in Safari (a clicked button isn't focused there): focus goes back to it.
-      previouslyFocused = opener()
       scrollLocked.value = true
       // inert blurs whatever is focused inside it, so this must happen before the focus steal.
       inerted.value = true
-      // Focus immediately (don't wait for animation).
-      nextTick(() => {
-        const panel = panelEl.value
-        if (!panel || !open.value) return
-        const target = options.initialFocus?.() ?? getFocusable(panel)[0] ?? panel
-        target.focus({ preventScroll: true })
-      })
     }
+    // Focus immediately (don't wait for animation).
+    nextTick(() => {
+      const panel = panelEl.value
+      if (!panel || !open.value) return
+      initialFocusIn(panel).focus({ preventScroll: true })
+    })
+  }
+
+  // Content before chrome: [autofocus], then the body and footer, then the header's buttons.
+  function initialFocusIn(panel: HTMLElement): HTMLElement {
+    const content = [...panel.querySelectorAll<HTMLElement>('[data-ui-focus-first]')]
+    return (
+      options.initialFocus?.() ??
+      panel.querySelector<HTMLElement>('[autofocus]') ??
+      content.map((el) => getFocusable(el)[0]).find(Boolean) ??
+      getFocusable(panel)[0] ??
+      panel
+    )
   }
 
   function deactivate() {
@@ -348,9 +359,13 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
         scrollLocked.value = false
       else exitFallback = setTimeout(releaseScroll, EXIT_FALLBACK_MS)
       inerted.value = false
-      // the opener may have unmounted while we were open.
-      if (previouslyFocused?.isConnected) previouslyFocused.focus({ preventScroll: true })
     }
+    // Modal always returns focus; non-modal only if it was inside, not if the user moved on.
+    const activeEl = document.activeElement
+    const focusInside = !activeEl || activeEl === document.body || !!exitEl?.contains(activeEl)
+    // the opener may have unmounted while we were open.
+    if ((modalActive || focusInside) && previouslyFocused?.isConnected)
+      previouslyFocused.focus({ preventScroll: true })
     previouslyFocused = null
     exitEl = null
     // Clear pending close on raw model writes mid-close.

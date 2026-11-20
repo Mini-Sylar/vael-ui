@@ -11,20 +11,20 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# The jobs run side by side: the unit tests in three shards, the build with what runs on it (the
+# The jobs run side by side: the unit tests in four shards, the build with what runs on it (the
 # Vapor and interop tests, the changeset check), and the typecheck.
 jobs:
   test:
-    name: test (${{ matrix.shard }}/3)
+    name: test (${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     # Playwright's image has Chromium and every library it needs, so nothing is downloaded or
     # apt-installed per run. Keep its tag at the lockfile's Playwright version (checked below).
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -38,17 +38,17 @@ jobs:
       - name: Playwright image matches the lockfile
         run: |
           installed=$(node -p "require('./packages/ui/node_modules/playwright/package.json').version")
-          if [ "$installed" != "1.64.1" ]; then
+          if [ "$installed" != "1.65.1" ]; then
             echo "playwright is $installed: change the image tag in this workflow to v$installed-noble"
             exit 1
           fi
 
-      - run: pnpm --filter vael-ui test --shard=${{ matrix.shard }}/3
+      - run: pnpm --filter vael-ui test --shard=${{ matrix.shard }}/4
 
   build:
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
     steps:
       - uses: actions/checkout@v7
         with:
@@ -64,6 +64,8 @@ jobs:
       - run: pnpm install
 
       - run: pnpm build
+      # What an app ships per component: fails when one grows more than 1% over its baseline.
+      - run: pnpm size:app
       - run: pnpm test:vapor:only
       - run: pnpm test:vapor-interop:only
       - name: Check for missing changeset
@@ -84,3 +86,5 @@ jobs:
 
       - run: pnpm build
       - run: pnpm typecheck:only
+      # Every entry's types resolve under node16 and bundler module resolution.
+      - run: pnpm --filter vael-ui check:exports

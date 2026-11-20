@@ -10,9 +10,7 @@
         <Input v-model="iban" v-bind="attrs.iban" />
       </Field>
       <Button type="submit">Pay</Button>
-      <p v-if="sent" class="done" role="status">
-        Submitted: <code>{{ sent }}</code>
-      </p>
+      <p v-if="sent" class="done" role="status">Submitted: <code>{{ sent }}</code></p>
     </form>
   </section>
 </template>

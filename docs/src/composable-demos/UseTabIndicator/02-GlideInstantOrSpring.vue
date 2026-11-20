@@ -46,6 +46,7 @@ const { style } = useTabIndicator(page, {
   orientation: 'vertical',
   selector: '[aria-current="page"]',
   matchCross: true,
+  position: 'translate',
   indicator: computed(() =>
     mode.value === 'spring'
       ? { damping: 0.55, response: 0.4 }

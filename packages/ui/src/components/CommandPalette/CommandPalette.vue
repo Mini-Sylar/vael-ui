@@ -531,6 +531,8 @@ function onInput(event: Event) {
 }
 
 function onInputKeydown(event: KeyboardEvent, close: () => void) {
+  // Keys during IME composition belong to the input method (Enter commits the text).
+  if (event.isComposing || event.keyCode === 229) return
   switch (event.key) {
     case 'ArrowDown':
       event.preventDefault()

@@ -5,7 +5,9 @@ import { onBeforeUpdate } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
 import { cssSize, quietAttribute, sizeTimingOf } from './size'
+import { springEasing } from './springEasing'
 import { resolveTiming, track } from './timing'
+import { speedOf } from './velocity'
 import type { ElementHookContext, MotionResult, MotionTiming, MotionValues } from './types'
 import { LAYOUT_ID } from './ids'
 import { runHook } from './hook'
@@ -13,13 +15,15 @@ import { isTimed } from './playable'
 import { motionOffAt } from './styleHolder'
 import { groupValues, reducePresence, toKeyframe } from './values'
 import { markNamed, markSliding } from './presence'
+import { fly, flightBox, needsFlight, turnOf } from './flight'
+import type { Turn } from './flight'
 
 // Just now: the same flush, however long that render takes, or soon after it (a late tick, an
 // async part). Timed from the flush's end: a slow render used to run the clock out mid-swap.
 const FRESH = 34
 // Every box that just left under an id, with where it sat (its parent), so each newcomer can take
 // the one nearest it: two copies of a tab row on a page each keep their own underline.
-type Left = { box: DOMRect; at: number; near: Element | null }
+type Left = { box: DOMRect; at: number; near: Element | null; el: Element; turn?: Turn }
 const boxes = new Map<string, Left[]>()
 const fresh = (left: { at: number }) => performance.now() - left.at <= FRESH
 // How deep the nearest element holding both sits: deeper is closer.
@@ -36,6 +40,9 @@ function closeness(near: Element | null, el: Element): number {
 // Where it shows: a row being dragged waits hidden in its place while a copy floats under the
 // pointer, so a trip starting from it starts from the copy (Sortable and v-draggable mark both).
 function shownBox(el: Element): DOMRect {
+  // On a flight, where its copy is: a trip back starts from there.
+  const flying = flightBox(el)
+  if (flying) return flying
   const copy = el.hasAttribute('data-sortable-source')
     ? document.querySelector('[data-sortable-preview]')
     : null
@@ -107,7 +114,7 @@ export function rememberLayout(el: Element, id: string): void {
   }
   if (!box.width && !box.height) return
   // Still in its flush until the microtasks after it.
-  const left: Left = { box, at: Infinity, near: el.parentElement }
+  const left: Left = { box, at: Infinity, near: el.parentElement, el, turn: turnOf(el) }
   boxes.set(id, [...(boxes.get(id) ?? []), left])
   queueMicrotask(() => (left.at = performance.now()))
   // Not taken by then, it's let go, with the parent it left from.
@@ -143,17 +150,47 @@ export function arriveLayout(
     if (rest.length) boxes.set(id, rest)
     else boxes.delete(id)
     if (!before) return otherwise()
+    // Its twin is flying in from where it was: a node a Transition still holds (a closing dialog's
+    // panel) would show a second copy under it, so it goes at once.
+    if (before.el.isConnected && before.el instanceof HTMLElement)
+      before.el.style.visibility = 'hidden'
     if (prefersReducedMotion() || pageHidden() || motionOffAt(el)) return moved?.()
     const now = el.getBoundingClientRect()
-    const run = slide(el, before.box, now, timing)
+    // Clipped on its way by an ancestor: a copy flies in the top layer, to wherever it ends up.
+    const turned = !!before.turn || !!turnOf(el)
+    const run = needsFlight(el, before.box, now, turned)
+      ? flyOf(el, before.box, now, timing, before.turn)
+      : slide(el, before.box, now, timing)
     if (!run) return moved?.()
-    raiseWhile(el, run)
+    if (!flightBox(el)) raiseWhile(el, run)
     const done = run.finished.then(moved, () => {})
     if (name) {
       markNamed(el, name)
       markSliding(name, Number(run.effect?.getComputedTiming().endTime ?? 0), done)
     }
   })
+}
+
+function flyOf(el: HTMLElement, from: DOMRect, to: DOMRect, timing: MotionTiming, turn?: Turn) {
+  const far = Math.max(
+    Math.abs(from.left - to.left),
+    Math.abs(from.top - to.top),
+    Math.abs(from.width - to.width),
+  )
+  const { duration, easing } = resolveTiming(el, timing, undefined, far)
+  const run = fly(
+    el,
+    from,
+    {
+      duration,
+      easing,
+      delay: ((timing as { delay?: number }).delay ?? 0) * 1000,
+      resize: (timing as { layout?: unknown }).layout !== 'position',
+    },
+    turn,
+  )
+  if (run) void track(run.finished.catch(() => {}))
+  return run
 }
 
 // On its way it passes over what's around it (cards with their own stacking, later in the page),
@@ -293,8 +330,10 @@ function placeIn(el: Element, parent: Element): Place | undefined {
   if (el instanceof HTMLElement && parent instanceof HTMLElement) {
     const via = el.offsetParent
     if (via === parent) return { x: el.offsetLeft, y: el.offsetTop, via }
+    // Both read against the same box, so the gap between them is the same whichever box that is: an
+    // ancestor mid-entrance holds it for a while, then lets go, and that isn't a change of box.
     if (via === parent.offsetParent)
-      return { x: el.offsetLeft - parent.offsetLeft, y: el.offsetTop - parent.offsetTop, via }
+      return { x: el.offsetLeft - parent.offsetLeft, y: el.offsetTop - parent.offsetTop, via: null }
   }
   const box = el.getBoundingClientRect()
   const at = parent.getBoundingClientRect()
@@ -439,9 +478,23 @@ export function followLayout(
   let group = groups.get(parent)
   if (!group) {
     const members = new Set<Element>()
+    // A style changing inside a member (something in a row animating) is left to the resize
+    // observer below: reading every place on each of its frames was a layout per frame.
+    const within = (node: Node) => {
+      for (let at = node.parentElement; at && at !== parent; at = at.parentElement)
+        if (members.has(at)) return true
+      return false
+    }
     const observer = new MutationObserver((records) => {
       // Assistive-tech state and the motion system's own marks don't move anything.
-      if (records.every((r) => r.type === 'attributes' && quietAttribute(r.attributeName))) return
+      if (
+        records.every(
+          (r) =>
+            r.type === 'attributes' &&
+            (quietAttribute(r.attributeName) || (r.attributeName === 'style' && within(r.target))),
+        )
+      )
+        return
       relayout(parent, members)
     })
     observer.observe(parent, {
@@ -450,8 +503,15 @@ export function followLayout(
       attributes: true,
       characterData: true,
     })
-    // Resized from outside (the window, a pane): places noted again, nothing slides.
-    const resize = new ResizeObserver(() => {
+    // Resized from outside (the window, a pane: its width changed): places noted again, nothing
+    // slides. A member resizing moves its siblings.
+    let width = -1
+    const resize = new ResizeObserver((entries) => {
+      const own = entries.find((entry) => entry.target === parent)
+      const outside = !!own && own.contentRect.width !== width
+      if (own) width = own.contentRect.width
+      if (!outside && entries.some((entry) => entry.target !== parent))
+        return relayout(parent, members)
       for (const each of members)
         if (each.isConnected) {
           placeOf.set(each, placeIn(each, parent))
@@ -463,9 +523,11 @@ export function followLayout(
     groups.set(parent, group)
   }
   group.members.add(el)
+  group.resize.observe(el)
   const own = group
   return () => {
     own.members.delete(el)
+    own.resize.unobserve(el)
     if (own.members.size) return
     own.observer.disconnect()
     own.resize.disconnect()
@@ -487,6 +549,8 @@ export interface LeavingPlace {
   floats?: boolean
   /** In a box that follows its size, what came after it in the flow, and where each was. */
   after?: { el: HTMLElement; was: DOMRect }[]
+  /** How fast it was moving as it started leaving (a throw, a live value), per second, by key. */
+  speed?: Partial<Record<string, number>>
 }
 
 // An element that can be lifted out and placed: HTML, or an icon's outermost <svg>.
@@ -500,6 +564,11 @@ export function placeOnLeave(el: Element): LeavingPlace | undefined {
   const style = getComputedStyle(el)
   const look: Record<string, string> = {}
   for (const prop of HELD_LOOK) look[prop] = style.getPropertyValue(prop)
+  // What its live values had it at (a band's size): clearing them as it goes mustn't change its look.
+  Object.assign(
+    look,
+    (el as HTMLElement & { _uiLiveStyle?: () => Record<string, string> })._uiLiveStyle?.(),
+  )
   // Where it was painted: the render removing it may have moved it already (a sibling grew).
   let box = untransformed(el)
   const was = painted.get(el)
@@ -509,7 +578,8 @@ export function placeOnLeave(el: Element): LeavingPlace | undefined {
   }
   const floats = /^(absolute|fixed)$/.test(style.position)
   const after = floats ? undefined : followersIn(el)
-  return { parent: el.parentNode, next: el.nextSibling, box, at, look, floats, after }
+  const speed = speedOf(el)
+  return { parent: el.parentNode, next: el.nextSibling, box, at, look, floats, after, speed }
 }
 
 /** Inside a box that follows its size, the siblings after it in the flow that close its gap. */
@@ -740,7 +810,10 @@ export function leaveInPlace(
       )
       if (moves) translateTaken = true
       if (!Object.keys(frame).length) return undefined
-      const { duration, easing } = resolveTiming(el, group.timing ?? timing)
+      const resolved = resolveTiming(el, group.timing ?? timing)
+      // A spring carries on at the speed it was moving: a thrown card keeps going, it doesn't stop.
+      const carried = resolved.spring ? carry(group.values, place) : 0
+      const { duration, easing } = carried ? springEasing(resolved.spring!, carried) : resolved
       return el.animate([{ ...frame, offset: 1 }], {
         duration,
         easing,
@@ -750,4 +823,25 @@ export function leaveInPlace(
     })
     void track(Promise.all(runs).then(gone, gone))
   }
+}
+
+// The speed an exit's spring starts at, relative to how far it goes (per second): for the one
+// moving value in `values` that was moving as it left, from where it was to where it's going.
+function carry(values: MotionValues, place: LeavingPlace): number {
+  const look = place.look ?? {}
+  const now: Record<string, number> = {}
+  const [tx = '0', ty = '0'] = (look.translate ?? '').split(' ')
+  now.x = parseFloat(tx) || 0
+  now.y = parseFloat(ty) || 0
+  now.rotate = parseFloat(look.rotate ?? '') || 0
+  now.scale = parseFloat(look.scale ?? '') || 1
+  const keys = (['x', 'y', 'rotate', 'scale'] as const).filter(
+    (key) => key in values && place.speed?.[key],
+  )
+  if (keys.length !== 1) return 0
+  const key = keys[0]!
+  const to = Number((values as Record<string, unknown>)[key])
+  const distance = to - now[key]!
+  if (!Number.isFinite(to) || Math.abs(distance) < 0.5) return 0
+  return place.speed![key]! / distance
 }

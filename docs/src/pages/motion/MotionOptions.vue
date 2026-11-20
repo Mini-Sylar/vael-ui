@@ -2,13 +2,22 @@
   <GuideLayout :links="tocLinks">
     <h1>{{ t('motionDocs.options.title') }}</h1>
     <p class="lede">{{ t('motionDocs.options.intro') }}</p>
-    <Input
-      v-model="query"
+    <!-- Typing narrows the list below; picking a suggestion narrows it to that option. -->
+    <Combobox
+      v-model="picked"
+      v-model:query="query"
       class="mo-filter"
+      :items="suggestions"
       clearable
       :placeholder="t('motionDocs.options.filter')"
       :aria-label="t('motionDocs.options.filter')"
-    />
+    >
+      <template #start><PhMagnifyingGlass :size="16" aria-hidden="true" /></template>
+      <template #item="{ item }">
+        <code class="mo-suggest">{{ item.label }}</code>
+        <span class="mo-count">{{ t('motionDocs.options.places', item.places) }}</span>
+      </template>
+    </Combobox>
     <template v-if="shown.length">
       <section v-for="group in shown" :key="group.id" class="mo-group">
         <h2 :id="`group-${group.id}`">{{ t(`motionDocs.options.groups.${group.id}`) }}</h2>
@@ -48,7 +57,8 @@
 import { computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useHead } from '@unhead/vue'
-import { Input } from 'vael-ui'
+import { Combobox } from 'vael-ui'
+import { PhMagnifyingGlass } from '@phosphor-icons/vue'
 import GuideLayout from '../../components/GuideLayout.vue'
 import {
   API_REFERENCE,
@@ -106,6 +116,13 @@ const groups = computed(() => {
 })
 
 const query = shallowRef('')
+const picked = shallowRef<string | null>(null)
+// Every option, with how many sections teach it.
+const suggestions = computed(() =>
+  groups.value
+    .flatMap((group) => group.options)
+    .map((option) => ({ label: option.name, value: option.name, places: option.places.length })),
+)
 const shown = computed(() => {
   const q = query.value.trim().toLowerCase()
   return groups.value
@@ -127,6 +144,14 @@ const tocLinks = computed(() =>
 </script>
 
 <style scoped>
+.mo-suggest {
+  font-size: 0.8125rem;
+}
+.mo-count {
+  margin-inline-start: auto;
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+}
 .mo-filter {
   max-inline-size: 20rem;
   margin-block: 1rem 0.5rem;

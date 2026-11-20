@@ -1,12 +1,19 @@
 import { watchEffect } from 'vue'
-import type { Directive, DirectiveBinding } from 'vue'
+import type { Component, Directive, DirectiveBinding } from 'vue'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../composables/useFloatingPosition'
 import type { TooltipCloseReason } from '../composables/useTooltip'
 import type { BeforeClose } from '../motion/types'
+import type { UiPartValue } from '../classes'
 
 export interface TooltipDirectiveOptions {
-  content: string
+  /** The text, or a component for markup (a status dot, dates, a progress bar), given `props`. */
+  content: string | Component
+  /** Props for a `content` component. */
+  props?: Record<string, unknown>
+  /** While open, the tooltip tracks a mouse or pen along the target's edge, clamped to it: for
+   * a wide target, such as a timeline bar. Touch keeps the long press. */
+  follow?: boolean
   /** A shortcut's keys, shown after the text as `Kbd`s: `['⌘', 'K']`. */
   keys?: string[]
   side?: Side
@@ -20,6 +27,8 @@ export interface TooltipDirectiveOptions {
   beforeClose?: BeforeClose<TooltipCloseReason>
   /** Per-target override for TooltipHost's `forceMount` prop. */
   forceMount?: boolean
+  /** Class and style for this target's tooltip, in place of TooltipHost's `ui` for a part you name: `{ panel: { style: { '--ui-tooltip-bg': 'crimson' } } }`. */
+  ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 
 export type TooltipDirectiveValue = string | TooltipDirectiveOptions | null | undefined
@@ -78,6 +87,35 @@ function resolveTarget(el: HTMLElement): HTMLElement {
   return target
 }
 
+// Targets whose aria-label this directive set, so only those are updated or removed.
+const ownedLabels = new WeakSet<HTMLElement>()
+// Controls that can take a name from aria-label; form fields usually have a <label>.
+const NAMEABLE =
+  'button, a[href], summary, [tabindex], [role]:not([role="none"], [role="presentation"], [role="generic"])'
+
+function unnamed(el: HTMLElement): boolean {
+  if (el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby') || el.title) return false
+  if (el.textContent?.trim()) return false
+  return !el.querySelector('img[alt]:not([alt=""]), [aria-label]')
+}
+
+// A text tooltip names a control that has no name of its own, such as an icon-only button.
+function syncLabel(target: HTMLElement, content: TooltipDirectiveOptions['content']) {
+  const text = typeof content === 'string' ? content.trim() : ''
+  if (ownedLabels.has(target)) {
+    if (text) target.setAttribute('aria-label', text)
+    else dropLabel(target)
+  } else if (text && target.matches(NAMEABLE) && unnamed(target)) {
+    target.setAttribute('aria-label', text)
+    ownedLabels.add(target)
+  }
+}
+
+function dropLabel(target: HTMLElement) {
+  if (!ownedLabels.delete(target)) return
+  target.removeAttribute('aria-label')
+}
+
 // mounted's resolution reused verbatim on update/unmount — re-resolving there
 // could pick a different node if styles changed in between.
 const resolvedTargets = new WeakMap<HTMLElement, HTMLElement>()
@@ -96,13 +134,16 @@ function apply(
     resolvedTargets.set(el, target)
     target.setAttribute(TOOLTIP_ATTR, '')
   }
-  tooltipTargets.set(target, normalize(value, modifiers))
+  const options = normalize(value, modifiers)
+  tooltipTargets.set(target, options)
+  syncLabel(target, options.content)
   notify(target)
 }
 
 function teardown(el: HTMLElement) {
   const target = resolvedTargets.get(el) ?? el
   target.removeAttribute(TOOLTIP_ATTR)
+  dropLabel(target)
   tooltipTargets.delete(target)
   resolvedTargets.delete(el)
   notify(target)

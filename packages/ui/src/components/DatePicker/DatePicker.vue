@@ -1,7 +1,9 @@
 <template>
+  <!-- autocomplete before attrs so yours wins (autocomplete="bday"). -->
   <Input
     ref="inputRef"
-    v-bind="attrs"
+    autocomplete="off"
+    v-bind="inputAttrs"
     :model-value="inputText"
     :placeholder="placeholder"
     :size="props.size"
@@ -12,7 +14,7 @@
     aria-haspopup="dialog"
     :aria-expanded="open"
     :aria-controls="panelId"
-    autocomplete="off"
+    :aria-required="fieldControl.required() || undefined"
     :ui="innerUi"
     @update:model-value="onType"
     @blur="commitDraft"
@@ -177,6 +179,12 @@
     </template>
     <input v-else type="hidden" :name="name" :value="model ? isoDate(model) : ''" />
   </template>
+  <RequiredInput
+    v-if="nativeRequired(attrs)"
+    :filled="isRangeModel(model) ? !!(model.start && model.end) : !!model"
+    :control="() => inputEl"
+    :disabled="isDisabled"
+  />
 </template>
 
 <script lang="ts">
@@ -217,7 +225,8 @@ import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
 import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
-import { useFieldControl } from '../../composables/useFieldControl'
+import { nativeRequired, useFieldControl } from '../../composables/useFieldControl'
+import RequiredInput from '../internal/RequiredInput.vue'
 import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -243,8 +252,15 @@ const attrs = useAttrs()
 const isTriggerAttr = (key: string) =>
   key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
 const panelOwnAttrs = computed(() =>
-  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+  Object.fromEntries(
+    Object.entries(attrs).filter(([key]) => !isTriggerAttr(key) && key !== 'required'),
+  ),
 )
+// Your `required` is checked on the date (below), not on the typed text.
+const inputAttrs = computed(() => {
+  const { required: _required, ...rest } = attrs
+  return rest
+})
 const panelAttrs = useAttrListeners(
   () => panelEl.value,
   () => panelOwnAttrs.value,
@@ -303,7 +319,9 @@ const rawProps = withDefaults(
     closeOnSelect?: boolean
     /** `Intl.DateTimeFormat` options for the input text. Unset, the format follows `view`, `showTime` and `timeOnly`. */
     formatOptions?: Intl.DateTimeFormatOptions
-    /** Renders a hidden `<input>` that mirrors the selection as `YYYY-MM-DD` for form posts. */
+    /** Renders a hidden `<input>` that mirrors the selection for form posts: `YYYY-MM-DD`, or
+     * `YYYY-MM-DDTHH:mm` with `showTime`, `HH:mm` with `timeOnly`, `YYYY-MM` or `YYYY` for a
+     * month or year `view`. */
     name?: string
     /** Which side of the trigger the panel opens on. @default 'bottom' */
     side?: DatePickerSide
@@ -490,8 +508,16 @@ function clearClick() {
 function pad2(n: number): string {
   return String(n).padStart(2, '0')
 }
+// Posts at the shown precision, as native month, time and datetime-local inputs do; local fields.
 function isoDate(date: Date): string {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
+  const time = `${pad2(date.getHours())}:${pad2(date.getMinutes())}`
+  if (timeOnlyEffective.value) return time
+  const year = String(date.getFullYear()).padStart(4, '0')
+  if (props.view === 'year') return year
+  const month = `${year}-${pad2(date.getMonth() + 1)}`
+  if (props.view === 'month') return month
+  const day = `${month}-${pad2(date.getDate())}`
+  return props.showTime && props.selectionMode !== 'range' ? `${day}T${time}` : day
 }
 
 // `timeOnly` has no meaning in range mode (time isn't supported there at all) — without this,

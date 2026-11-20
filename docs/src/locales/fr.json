@@ -17,7 +17,7 @@
     "composables": "Composables",
     "autoImportGuide": "Importation automatique",
     "nuxtGuide": "Nuxt",
-    "skillGuide": "Compétence d'agent IA",
+    "skillGuide": "Skills pour agents IA",
     "directives": "Directives",
     "previous": "Précédent",
     "next": "Suivant",
@@ -110,11 +110,11 @@
     "featureVaporBody": "Chaque composant est compilé via le mode Vapor de Vue 3.6 à partir de la même source.",
     "featureVaporTitle": "Un vrai build Vapor, pas une cale",
     "headline": "Des composants qui se compilent directement dans Vapor, pas autour de lui.",
-    "featureSkillBody": "Un package compagnon qui donne à Claude Code, GitHub Copilot, Codex et à d'autres agents la véritable API de chaque composant. Il est généré à partir des propres types de vael-ui, et non écrit à la main.",
-    "featureSkillTitle": "Compétence d'agent IA",
+    "featureSkillBody": "Des skills complémentaires qui donnent à Claude Code, GitHub Copilot, Codex et aux autres agents l’API réelle de chaque composant, un guide du mouvement qui choisit le bon outil, et vael-form. Générés à partir des types des bibliothèques, pas écrits à la main.",
+    "featureSkillTitle": "Skills pour agents IA",
     "themeLabel": "Essayez une couleur :",
     "newTag": "Nouveau",
-    "newText": "0.5.0 : un nouveau système de mouvement",
+    "newText": "0.5.5 : gestes et valeurs de mouvement en direct",
     "showcaseLabel": "Démo en direct réalisée avec vael-ui"
   },
   "gettingStarted": {
@@ -423,7 +423,8 @@
     "noParameters": "Ne prend aucun argument.",
     "noReturns": "Rien à documenter.",
     "parameters": "Paramètres",
-    "returns": "Retours"
+    "returns": "Retours",
+    "which": "Lequel choisir ?"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Superpositions et confirmation",
@@ -442,6 +443,7 @@
     "useNumberFormat": "Formate et analyse des nombres pour une langue avec les mêmes options, pour que le texte saisi et son affichage formaté correspondent toujours. Utilisez-le pour vos propres champs numériques, ou pour donner le même format à AnimatedNumber.",
     "useColorScheme": "Bascule entre les modes clair, sombre et système, et peut propager le nouveau thème en cercle depuis un clic. Utilisez-le pour une bascule de thème, et passez vos propres fonctions de stockage pour mémoriser le choix.",
     "useHaptic": "Joue un retour haptique sur les téléphones qui le prennent en charge : un léger tic, un choc, un court motif de succès, d'avertissement ou d'erreur, ou le vôtre. Utilisez-le pour les moments qui valident quelque chose.",
+    "mapRange": "Transforme un nombre en un autre en faisant correspondre deux plages : le décalage d'un glissement en inclinaison, un défilement en opacité. À associer à une valeur vivante dans v-animate.",
     "springEasing": "Transforme un ressort en courbe CSS linear() avec son temps de stabilisation. Utilisez-le pour donner à element.animate() ou à une transition CSS le même ressort que vael-ui.",
     "preventFocusZoom": "Empêche iOS de zoomer quand un champ de formulaire prend le focus, pour que les champs gardent la taille du reste du texte. Appelez-le une fois côté client, par exemple dans main.ts.",
     "useFloatingPosition": "Le moteur de positionnement derrière Popover, Menu et Tooltip, basé sur Floating UI. Utilisez-le pour créer vos propres panneaux ancrés.",
@@ -455,6 +457,10 @@
     "useScrollLock": "Bloque le défilement de la page ou de n'importe quel élément sans décalage de mise en page, comme le font les dialogues ouverts. Utilisez-le pour vos propres superpositions et panneaux plein écran.",
     "moveTreeNode": "Déplace un nœud et son sous-arbre vers un nouveau parent et un nouvel index, sur place. Un déplacement impossible, comme un dossier dans lui-même, ne change rien. Utilisez-le pour appliquer un glisser-déposer à vos données d'arbre.",
     "useFileDrop": "Transforme n'importe quel élément en zone de dépôt de fichiers, avec un état de survol qui reste stable au-dessus des éléments enfants et ignore le texte ou les liens glissés. Utilisez-le pour créer votre propre zone de dépôt.",
+    "useWheel": "Une position que l'on fait glisser, lance, fait défiler ou avance au clavier le long d'une rangée d'éléments, et qui s'arrête sur l'un d'eux : un sélecteur à roue, un carrousel, une pagination. Chaque élément lit sa distance en variables CSS.",
+    "usePanZoom": "Déplace, pince et zoome un contenu dans une boîte : une image, une carte, un schéma. Glissez au doigt ou à la souris, pincez à deux doigts, touchez deux fois pour zoomer.",
+    "useDragSelect": "Glissez sur l'espace vide d'une boîte pour sélectionner ce que la bande touche. Maj ajoute, ctrl ou cmd inverse, et la bande peut s'étirer sur un ressort.",
+    "useDrag": "Un glissement qui décide au relâchement : l'élément suit le pointeur, puis va où vous l'indiquez sur un ressort qui garde la vitesse du lancer. Pour les piles de cartes et le balayage pour fermer.",
     "useScrollLength": "La distance de défilement possible de la page ou d'un conteneur, en px, sous forme de ref. Elle suit le contenu qui grandit ou rétrécit."
   },
   "autoImport": {
@@ -498,20 +504,27 @@
     "vaporTitle": "Vapor"
   },
   "skill": {
-    "claudeCodeIntro": "Ajoutez la place de marché une fois, puis installez la compétence :",
+    "claudeCodeIntro": "Ajoutez le marketplace une fois, puis installez ce dont vous avez besoin. Le plugin vael-ui inclut vael-motion :",
     "claudeCodeTitle": "Claude Code",
-    "includedAnimation": "Le système de mouvement (la prop motion, les hooks enter et leave, v-animate), avec des exemples GSAP et motion",
+    "includedAnimation": "Le système de mouvement : la prop motion, les hooks enter et leave, v-animate, les valeurs en direct et les gestes, avec des exemples GSAP et motion et des recettes prêtes à l’emploi",
     "includedComponents": "Les props, slots, événements et refs exposées de chaque composant",
     "includedComposables": "Paramètres, valeurs de retour et exemples d'utilisation de chaque composable autonome",
     "includedStyling": "L'ordre des couches de cascade et chaque variable CSS pour les thèmes",
-    "intro": "Un package compagnon qui apprend aux agents de codage IA à utiliser vael-ui. Il fonctionne avec Claude Code, GitHub Copilot, Codex, Cursor et d'autres. Il couvre les props, slots et événements de chaque composant, chaque composable, et la configuration du mouvement, des thèmes et des versions VDOM et Vapor. Il est généré à partir des propres types et de la documentation de vael-ui, et non écrit à la main, il reste donc exact au fil des évolutions de vael-ui. Il est versionné et publié séparément de vael-ui.",
-    "otherAgentsIntro": "Tout agent qui prend en charge la spécification commune <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> peut l'installer avec <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a>. Cela inclut GitHub Copilot, Codex, Cursor et plus de 70 autres :",
+    "intro": "Des skills complémentaires qui apprennent aux agents de programmation IA à utiliser vael-ui et vael-form. Ils fonctionnent avec Claude Code, GitHub Copilot, Codex, Cursor et d’autres. Les références des composants et des composables sont générées à partir des types et de la documentation des bibliothèques elles-mêmes, et restent donc exactes quand elles évoluent. Ils sont versionnés et publiés séparément de vael-ui.",
+    "otherAgentsIntro": "Tout agent qui prend en charge la spécification commune <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> peut les installer avec <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a>. Cela inclut GitHub Copilot, Codex, Cursor et plus de 70 autres.",
     "otherAgentsTitle": "Autres agents",
-    "sourceIntro": "La source de la compétence se trouve sur {link}, avec les instructions pour la mettre à jour en dehors du cycle de publication de vael-ui.",
+    "sourceIntro": "Le code source des skills se trouve sur {link}, avec les instructions pour les mettre à jour en dehors du cycle de publication de vael-ui.",
     "sourceTitle": "Source",
-    "title": "Compétence d'agent IA",
+    "title": "Skills pour agents IA",
     "whatsIncludedIntro": "Un guide compact de haut niveau et une référence complète, générés à partir des mêmes données que ce site de documentation :",
-    "whatsIncludedTitle": "Ce qui est inclus"
+    "whatsIncludedTitle": "Ce qui est inclus",
+    "skillsTitle": "Les skills",
+    "skillsIntro": "Installez ceux que vous utilisez. Chacun fait une seule chose :",
+    "uiBody": "La configuration (builds VDOM et Vapor, auto-import, Nuxt, SSR), les props, slots et événements exacts de chaque composant, le thème et les composables impératifs.",
+    "motionBody": "Tout ce qui bouge. Il décide si quelque chose doit s’animer, puis choisit l’outil : la prop motion d’un composant, v-animate, des valeurs en direct, des gestes comme useDrag et useWheel, ou votre propre bibliothèque d’animation. Installez-le à côté de vael-ui.",
+    "formBody": "Les formulaires avec vael-form : schémas, liaison aux champs, erreurs, listes et étapes, erreurs serveur, messages traduits et tests.",
+    "otherAgentsPick": "Choisissez dans la liste, ou installez-en un par son nom :",
+    "includedForms": "L’API complète de vael-form, avec des guides sur les listes, les étapes, les erreurs serveur et la migration depuis vee-validate"
   },
   "theme": {
     "label": "Couleur du thème",
@@ -603,6 +616,7 @@
     "yoursIntro": "<code>v-animate</code> donne le même mouvement à vos propres éléments : une entrée, une sortie, une taille qui s'ajuste en douceur à son contenu, ou un glissement vers une nouvelle place quand la mise en page change. Elle et les autres outils pour vos propres éléments s’importent depuis <code>vael-ui/motion</code> ; dans un composant Vapor, importez plutôt <code>vAnimateVapor</code> depuis ce même chemin.",
     "yoursComposables": "Pour vos propres mouvements, utilisez les composables qui se cachent derrière :",
     "composable": {
+      "mapRange": "Transforme un nombre en un autre en faisant correspondre deux plages.",
       "springEasing": "Transforme un ressort en easing CSS et en temps de stabilisation.",
       "useSpringValue": "Une valeur qui suit sa cible sur un ressort.",
       "useScrollProgress": "Progression du défilement de 0 à 1, pour un mouvement lié au défilement.",
@@ -856,7 +870,7 @@
         },
         "drag": {
           "title": "Glisser",
-          "body": "Les composants qu'on fait glisser (BottomSheet, SwipeToReveal, Sortable, Slider) l'intègrent déjà. Pour réordonner ta propre liste ou déplacer des éléments entre listes, utilise <code>v-draggable</code> avec <code>useSortableGroup</code> : le même moteur et le même mouvement que Sortable. Pour un élément déplacé librement (avec <code>useDraggable</code> de VueUse, par exemple), garde son décalage dans <code>animate</code> et remets-le à 0 au relâchement : <code>v-animate</code> le ramène sur un ressort."
+          "body": "<code>v-draggable</code> réordonne vos propres listes, et <code>useSortableGroup</code> déplace des éléments entre elles. Pour tout ce que vous lancez ou balayez, utilisez <code>useDrag</code> : l'élément suit votre doigt, et <code>onRelease</code> décide où il va. Liez un aspect au glissement avec un getter dans <code>animate</code> : <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. Le getter s'exécute à chaque image sans nouveau rendu. Une sortie sur ressort garde la vitesse du lancer."
         },
         "own": {
           "title": "Vos propres composants",
@@ -1167,7 +1181,39 @@
         "app": "Le mouvement de ton app",
         "other": "Autres"
       },
-      "reference": "Référence"
+      "reference": "Référence",
+      "places": "{n} endroit | {n} endroits"
+    },
+    "anatomy": {
+      "label": "Anatomie de v-animate",
+      "forms": {
+        "alone": "Seul",
+        "group": "Dans un groupe",
+        "component": "Dans un composant"
+      },
+      "roles": {
+        "directive": "Directive",
+        "name": "Nom",
+        "modifier": "Modificateur",
+        "value": "Valeur",
+        "none": "Sans nom"
+      },
+      "tips": {
+        "directive": "La directive",
+        "name": "Le nom",
+        "modifier": "Un modificateur (facultatif)",
+        "value": "La valeur (facultative)",
+        "none": "Pas besoin de nom"
+      },
+      "directive": "joue un mouvement quand l'élément apparaît, part ou change.",
+      "modifier": "un style intégré (.fade, .rise, .drop, .pop, .blur), un ressort (.snappy, .smooth, .bouncy, .gentle) ou .stagger. Cumulez-en autant que vous voulez.",
+      "value": "des options comme stagger, delay ou exit. Un modificateur seul suffit, omettez-la tant que vous n'en avez pas besoin.",
+      "name": {
+        "group": "les éléments qui portent le même nom forment un groupe : stagger les joue l'un après l'autre et after: 'rows' laisse un autre élément les attendre.",
+        "component": "c'est ainsi que le Dialog retrouve les éléments : son motion.targets.rows règle leur mouvement, et ils arrivent et partent avec le dialogue."
+      },
+      "none": "cet élément est seul, il n'a donc pas besoin de nom.",
+      "rule": "Ne donnez un nom que si autre chose doit désigner l'élément : un groupe stagger, after ou le motion.targets d'un composant. Sinon, laissez-le sans nom."
     }
   },
   "recipes": {
@@ -1542,7 +1588,7 @@
         "setValue": "<code>setValue(path, value)</code>, comme une modification de l'utilisateur.",
         "setValues": "<code>setValues(values)</code>, sans rien marquer comme modifié.",
         "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>, comme celles d'un serveur. Chacune disparaît quand son champ change.",
-        "clearErrors": "<code>clearErrors(path?)</code> : efface les erreurs définies avec <code>setErrors</code>.",
+        "clearErrors": "<code>clearErrors()</code> : efface les erreurs définies avec <code>setErrors</code>.",
         "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code> : s'exécute sur les modifications de l'utilisateur et <code>setValue</code>, pas sur les réinitialisations ni les valeurs par défaut chargées.",
         "fieldFn": "<code>field(path)</code> : un champ, avec tout ce qui suit.",
         "f_value": "La valeur, modifiable.",

@@ -373,3 +373,35 @@ export function restingRect(el: Element): DOMRect {
   for (const [animation, time] of moved) animation.currentTime = time
   return rect
 }
+
+const warnedRefs = new WeakSet<object>()
+
+/**
+ * The element behind a template ref: an element, a component that exposes `el` (every vael-ui
+ * component with a root element, or your own with `defineExpose({ el })`), or a VDOM component's
+ * `$el`. A Vapor component's ref holds only what it exposes, so without `el` there's no element.
+ * Pass `use` to warn once, in development, when a component ref gives no way to its element.
+ */
+export function elementOf(ref: unknown, use?: string): HTMLElement | null {
+  if (!ref) return null
+  if (ref instanceof HTMLElement) return ref
+  if (typeof ref !== 'object') return null
+  if ('el' in ref) return elementOf((ref as { el: unknown }).el)
+  // A VDOM component: its root, or the first element after a fragment's anchor.
+  const root = (ref as { $el?: unknown }).$el
+  if (root instanceof HTMLElement) return root
+  if (root instanceof Node) {
+    let node = root.nextSibling
+    while (node && !(node instanceof HTMLElement)) node = node.nextSibling
+    return node
+  }
+  if (use && process.env.NODE_ENV !== 'production' && !('$el' in ref) && !warnedRefs.has(ref)) {
+    warnedRefs.add(ref)
+    // eslint-disable-next-line no-console -- dev-only, stripped in production
+    console.warn(
+      `[vael-ui] ${use}: this component's ref has no element. A Vapor component's ref holds only ` +
+        'what it exposes: pass a ref to an element, or add `defineExpose({ el })` to the component.',
+    )
+  }
+  return null
+}

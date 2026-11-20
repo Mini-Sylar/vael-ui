@@ -13,6 +13,7 @@ import { collectEntries } from './presence'
 import { exitOf, targetsOf } from './targets'
 import { holdUnseen } from './ids'
 import type { TargetGroup } from './targets'
+import { DEFAULT_SPRING } from './springNames'
 import type { MotionTiming, MotionValues, Spring } from './types'
 import { isTimed } from './values'
 import { dev } from './warn'
@@ -31,7 +32,6 @@ const PROPS = [
 ] as const
 type Prop = (typeof PROPS)[number]
 const MOVES = new Set<Prop>(['translate', 'scale', 'rotate', 'clip-path'])
-const DEFAULT_SPRING: Spring = { damping: 1, response: 0.32 }
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
 const FADE_CAP = 250
 const SAFETY_CAP = 3000
@@ -231,17 +231,22 @@ const put = (el: HTMLElement, prop: string, value: string | undefined) => {
 const hold = (el: HTMLElement, values: Staged['values']) => {
   for (const [prop, value] of Object.entries(values)) put(el, prop, value)
 }
-// Back to its own values: with transitions on, each property transitions there.
+// What `v-animate`'s live values (live.ts) make now, by property: theirs, not the saved style.
+const liveStyle = (el: HTMLElement) =>
+  (el as HTMLElement & { _uiLiveStyle?: () => Record<string, string> })._uiLiveStyle?.()
+// Back to its own values, with transitions on: each property transitions there.
 const release = (el: HTMLElement) => {
   const own = before.get(el)
-  for (const prop of PROPS) put(el, prop, own?.[prop])
+  const live = liveStyle(el)
+  for (const prop of PROPS) put(el, prop, live?.[prop] ?? own?.[prop])
 }
 const clear = (el: HTMLElement) => {
   const own = before.get(el)
   el.removeAttribute('data-ui-m')
   // Already put back (two runs settling on one element): its own styles are there, leave them.
   if (!own) return
-  for (const prop of STYLED) put(el, prop, own[prop])
+  const live = liveStyle(el)
+  for (const prop of STYLED) put(el, prop, live?.[prop] ?? own[prop])
   before.delete(el)
   written.delete(el)
 }

@@ -1,8 +1,10 @@
 import '../src/style.css'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, ref } from 'vue'
 import Progress from '../src/components/Progress/Progress.vue'
+import TooltipHost from '../src/components/TooltipHost/TooltipHost.vue'
+import { tooltipTargets } from '../src/directives/vTooltip'
 
 const root = (container: HTMLElement) => container.querySelector<HTMLElement>('.ui-progress')!
 const bar = (container: HTMLElement) =>
@@ -238,4 +240,76 @@ test('fillEl is the ring path, so animation libraries drive the same custom prop
   await render({ render: () => h(Progress, { ref: progress, type: 'circle', value: 10 }) })
   expect(progress.value!.fillEl).toBeInstanceOf(SVGPathElement)
   expect(progress.value!.fillEl!.style.getPropertyValue('--ui-progress-scale')).toBe('0.1')
+})
+
+test('a segment takes a tooltip, a class and a style on its own fill', async () => {
+  const screen = await render(Progress, {
+    props: {
+      value: [
+        { value: 30, tooltip: 'At the depot for 3 h', class: 'stop', style: { blockSize: '3px' } },
+        { value: 20 },
+      ],
+    },
+  })
+  const [first, second] = fills(screen.container)
+  expect(tooltipTargets.get(first!)?.content).toBe('At the depot for 3 h')
+  expect(first).toHaveClass('stop')
+  expect(first!.style.blockSize).toBe('3px')
+  expect(tooltipTargets.has(second!)).toBe(false)
+  expect(second).not.toHaveClass('stop')
+})
+
+test('stacked segments shrink to fit a gap instead of running past the track', async () => {
+  const screen = await render(Progress, {
+    props: {
+      value: [{ value: 50 }, { value: 30 }, { value: 20 }],
+      ui: { track: { style: { gap: '8px' } } },
+    },
+    attrs: { style: 'inline-size: 400px' },
+  })
+  const track = bar(screen.container).getBoundingClientRect()
+  const last = fills(screen.container).at(-1)!.getBoundingClientRect()
+  expect(last.right).toBeLessThanOrEqual(track.right + 0.5)
+  expect(last.width).toBeGreaterThan(60)
+})
+
+test('a segment minimum width holds and the others give up the room', async () => {
+  const screen = await render(Progress, {
+    props: {
+      value: [{ value: 60 }, { value: 39.9 }, { value: 0.1, style: { minInlineSize: '6px' } }],
+    },
+    attrs: { style: 'inline-size: 400px' },
+  })
+  const [a, b, tiny] = fills(screen.container).map((el) => el.getBoundingClientRect())
+  const track = bar(screen.container).getBoundingClientRect()
+  expect(tiny!.width).toBeCloseTo(6, 0)
+  expect(tiny!.right).toBeLessThanOrEqual(track.right + 0.5)
+  expect(a!.width + b!.width + tiny!.width).toBeCloseTo(400, 0)
+  expect(a!.width).toBeLessThan(240)
+})
+
+test('a ring segment tooltip follows the pointer along the ring', async () => {
+  await render(() =>
+    h('div', { style: 'padding: 120px' }, [
+      h(TooltipHost),
+      h(Progress, { type: 'circle', value: [{ value: 25, tooltip: 'quarter' }, { value: 25 }] }),
+    ]),
+  )
+  const ring = document.querySelector('.ui-progress-ring')!.getBoundingClientRect()
+  for (const [fx, fy] of [
+    [0.62, 0.07],
+    [0.818, 0.182],
+  ] as const) {
+    const x = ring.left + ring.width * fx
+    const y = ring.top + ring.height * fy
+    const hit = document.elementFromPoint(x, y)!
+    expect(hit).toHaveClass('ui-progress-fill')
+    const event = { bubbles: true, pointerType: 'mouse', clientX: x, clientY: y }
+    for (const type of ['pointerover', 'pointermove', 'mouseover', 'mousemove'])
+      hit.dispatchEvent(new PointerEvent(type, event))
+    await vi.waitFor(() => {
+      const tip = document.querySelector('[role="tooltip"]')!.getBoundingClientRect()
+      expect(Math.abs(tip.left + tip.width / 2 - x)).toBeLessThan(2)
+    })
+  }
 })

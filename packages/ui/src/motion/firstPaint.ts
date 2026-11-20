@@ -1,10 +1,10 @@
 // v-animate on the server: an element's first appearance as CSS, so it plays with the first paint
 // and no script (plan 008 §15). The same on server and client: no measuring, no randomness.
 import { springEasing } from './springEasing'
+import { DEFAULT_SPRING } from './springNames'
 import type { Spring, TargetMotion } from './types'
 import { cssDuration, cssEasing } from './ease'
 
-const DEFAULT_SPRING: Spring = { damping: 1, response: 0.32 }
 const px = (v: unknown) => (typeof v === 'number' ? `${v}px` : String(v))
 const plain = (raw: unknown): unknown =>
   raw && typeof raw === 'object' && 'value' in raw ? (raw as { value: unknown }).value : raw

@@ -3,16 +3,18 @@
     <h3>Two months side by side</h3>
     <p class="note">
       <code>:months="2"</code> shows two months side by side, so a range that crosses into the next
-      month stays in view. The arrows move both months together, and on a narrow screen they stack.
+      month stays in view. The arrows move both months together, and on a narrow screen they wrap
+      onto rows.
     </p>
-    <DatePicker
-      style="max-inline-size: 20rem"
-      v-model="rangeValue"
-      :locale="currentLocale"
-      selection-mode="range"
-      :months="2"
-      placeholder="Pick a date range"
-    />
+    <div class="field">
+      <DatePicker
+        v-model="rangeValue"
+        :locale="currentLocale"
+        selection-mode="range"
+        :months="2"
+        placeholder="Pick a date range"
+      />
+    </div>
   </section>
 </template>
 
@@ -27,3 +29,9 @@ const currentLocale = computed(() => locale.value)
 
 const rangeValue = shallowRef<CalendarRange | null>(null)
 </script>
+
+<style scoped>
+.field {
+  max-inline-size: 20rem;
+}
+</style>

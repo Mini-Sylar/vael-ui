@@ -50,6 +50,12 @@ export interface ComponentMotionOptions {
   defaults: () => Record<string, MotionValues>
   /** Where each part leaves to by default (mirrors `defaults` for a symmetric exit). */
   exitDefaults?: () => Record<string, MotionValues>
+  /**
+   * Whether the style's `role` values (`overlay: { initial }`) apply now. An edge panel keeps its
+   * slide: a look written for a centred overlay would replace it. The `key` style and your own
+   * `motion` still do. Default `true`.
+   */
+  roleApplies?: () => boolean
   /** The built-in look's timing, used when nothing else sets one. */
   timing?: () => MotionTiming
   /** The engine plays the built-in look too, not the component's CSS (false while you drive it). */
@@ -115,6 +121,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       instance: options.motion() as Record<string, unknown> | boolean | undefined,
       style: style?.value,
       providerOff: providerDefaults?.value.motion === false,
+      roleApplies: options.roleApplies?.() ?? true,
     }),
   )
 

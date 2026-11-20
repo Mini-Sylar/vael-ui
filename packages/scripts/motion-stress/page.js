@@ -67,6 +67,9 @@
         : (document.querySelectorAll('section.demo')[demoIndex] ?? null)
     const ranges = new Map()
     const touched = new Set()
+    // Every frame of each element that moved, to find what no total shows: a jump in the middle of
+    // a glide, or something that faded out and came back.
+    const series = new Map()
     const observer = new MutationObserver((records) => {
       for (const r of records)
         if (r.target instanceof Element && inScope(r.target)) {
@@ -80,7 +83,7 @@
       subtree: true,
       childList: true,
     })
-    rec = { ranges, touched, observer, lastMutation: performance.now(), stop: false }
+    rec = { ranges, touched, series, observer, lastMutation: performance.now(), stop: false }
     const sample = () => {
       if (!rec || rec.stop) return
       const moving = new Set(touched)
@@ -124,6 +127,9 @@
         at.h = [Math.min(at.h[0], r.height), Math.max(at.h[1], r.height)]
         at.o = [Math.min(at.o[0], o), Math.max(at.o[1], o)]
         ranges.set(key, at)
+        const frames = series.get(el) ?? { key, label: at.label, list: [] }
+        frames.list.push([r.left, r.top, o])
+        series.set(el, frames)
       }
       touched.clear()
       requestAnimationFrame(sample)
@@ -135,6 +141,7 @@
     rec.stop = true
     rec.observer.disconnect()
     const out = {}
+    const flags = midMotion(rec.series)
     for (const [key, r] of rec.ranges) {
       const travel = Math.max(r.x[1] - r.x[0], r.y[1] - r.y[0], r.w[1] - r.w[0], r.h[1] - r.h[0])
       const fade = r.o[1] - r.o[0]
@@ -146,8 +153,55 @@
           label: r.label,
         }
     }
+    // What went wrong mid-motion, with the element's own label.
+    for (const f of flags) {
+      const at = out[f.key] ?? (out[f.key] = { travel: 0, fade: 0, frames: 0, label: f.label })
+      ;(at.flags ??= []).push(f.detail)
+    }
     rec = null
     return out
+  }
+
+  // ─── Mid-motion ───────────────────────────────────────────────────────────
+  // Per element, frame by frame:
+  //   ghost  it faded out to nothing, then was drawn again at full strength (a swiped toast
+  //          showing again where the finger let go; a card flashing before it flies in)
+  //   jump   it was gliding, then moved far further in one frame than it ever had (a spring cut
+  //          short and restarted; a style put back under a running motion), and could be seen
+  function midMotion(series) {
+    const flags = []
+    for (const { key, label, list } of series.values()) {
+      let gone = -1
+      for (let i = 0; i < list.length; i++) {
+        const o = list[i][2]
+        if (gone < 0 && i > 0 && o <= 0.03 && Math.max(...list.slice(0, i).map((f) => f[2])) > 0.5)
+          gone = i
+        else if (gone >= 0 && o >= 0.5) {
+          flags.push({
+            key,
+            label,
+            detail: `${label} faded out, then showed again at ${o.toFixed(2)}`,
+          })
+          break
+        }
+      }
+      const steps = list.slice(1).map((f, i) => Math.hypot(f[0] - list[i][0], f[1] - list[i][1]))
+      for (let i = 3; i < steps.length; i++) {
+        const before = Math.max(...steps.slice(Math.max(0, i - 3), i))
+        // It had been gliding (a few real steps), and this one is far beyond them all.
+        // Unseen at either end (a looping card wrapping round behind the others) is no jump.
+        const seen = Math.max(list[i][2], list[i + 1][2]) > 0.1
+        if (seen && before > 2 && steps[i] > 60 && steps[i] > before * 5 + 40) {
+          flags.push({
+            key,
+            label,
+            detail: `${label} glided ${before.toFixed(0)}px a frame, then jumped ${steps[i].toFixed(0)}px`,
+          })
+          break
+        }
+      }
+    }
+    return flags
   }
 
   // ─── Rest ─────────────────────────────────────────────────────────────────
@@ -201,6 +255,8 @@
         if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue
         // Hit-testing sees through it (a floating label), so it can't tell.
         if (getComputedStyle(el).pointerEvents === 'none') continue
+        // A face with a hidden back is turned away half the time, and hit-testing can't tell which.
+        if (getComputedStyle(el).backfaceVisibility === 'hidden') continue
         const r = el.getBoundingClientRect()
         if (r.width < 4 || r.height < 4) continue
         const x = r.left + r.width / 2

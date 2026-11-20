@@ -157,6 +157,12 @@ onMounted(initRoving)
           description:
             'Fires on ArrowLeft. Pass it only when this list is a submenu, to close it and return focus to the parent row. Without it, ArrowLeft does nothing.',
         },
+        {
+          name: 'roving',
+          type: 'boolean',
+          description:
+            'Keeps one Tab stop for the whole list, as a `role="menu"` needs. `false` leaves every item a Tab stop, as `<MenuList>` does for a nav of links. Defaults to `true`.',
+        },
       ],
       returns: [
         {
@@ -173,7 +179,7 @@ onMounted(initRoving)
         },
         {
           name: 'focusItem',
-          type: '(el: HTMLElement | undefined) => void',
+          type: '(el: HTMLElement | undefined, focusOptions?: FocusOptions) => void',
           description:
             "Makes `el` the Tab stop and focuses it, such as a submenu's parent row after the submenu closes.",
         },
@@ -181,7 +187,7 @@ onMounted(initRoving)
           name: 'initRoving',
           type: '() => void',
           description:
-            'Gives the first enabled item `tabindex="0"` without focusing it. Call it once on mount for a list that is always on screen, such as `<MenuList>`.',
+            'Gives the first enabled item `tabindex="0"` without focusing it. Call it once on mount for a menu that is always on screen.',
         },
       ],
     },
@@ -540,7 +546,7 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
           name: 'interactive',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Keeps the tooltip open while you hover it, so its content can be selected or clicked. Default `true`.',
+            'Keeps the tooltip open while you hover it, so its text can be selected. Keyboard users can’t reach it, so put links and buttons in a Popover. Default `true`.',
         },
         {
           name: 'closeOnEsc',
@@ -909,13 +915,13 @@ const { close, requestClose } = useDialog(open, { panelEl, wrapperEl })
           name: 'initialFocus',
           type: '() => HTMLElement | null | undefined',
           description:
-            "The element to focus on open. Return nothing to fall back to the panel's first focusable element, then the panel.",
+            "The element to focus on open. Return nothing to fall back to an `[autofocus]` element, then the panel's first focusable element (Dialog tries its body and footer before its header buttons), then the panel.",
         },
         {
           name: 'modal',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Locks scroll, traps Tab and moves focus. `false` skips all three; Escape and layer stacking still work. Default `true`. Read once per open.',
+            'Locks scroll, makes the page inert and traps Tab. `false` skips all three; Escape, layer stacking, focus on open and focus return still work. Default `true`. Read once per open.',
         },
         {
           name: 'closeOnHistoryBack',
@@ -1186,7 +1192,7 @@ const { rootStyle, onTrackPointerdown, onThumbPointerdown, onThumbKeydown } = us
         {
           name: 'isDragging',
           type: 'Ref<boolean>',
-          description: '`true` from pointer down until release.',
+          description: '`true` from pointer down until release. A move counts from its first 4 px.',
         },
         {
           name: 'activeThumb',
@@ -1419,7 +1425,7 @@ const { rootStyle, onDialPointerdown, onDialKeydown } = useDial(zoom, {
       name: 'useResizable',
       installNames: ['useResizable'],
       description:
-        "The headless drag and keyboard engine behind `<Resizable>`. It turns a handle's pointer drag into a size in px on your ref. Mid drag, the size stretches past `min` and `max` with rubber-band resistance, then settles back within them on release. Arrow keys resize by 16 px, and Home and End jump to `min` and `max`. `<Resizable>` adds the panel, the separator role and its ARIA values. Use the composable when the handle and the panel live apart in your own layout.",
+        "The headless drag and keyboard engine behind `<Resizable>`. It turns a handle's pointer drag into a size in px on your ref, written once a frame. Mid drag, the size stretches past `min` and `max` with rubber-band resistance, then settles back within them on release. Escape puts it back where the drag started. Arrow keys resize by 16 px, and Home and End jump to `min` and `max`. `<Resizable>` adds the panel, the separator role and its ARIA values. Use the composable when the handle and the panel live apart in your own layout.",
       exampleCode: `<script setup lang="ts">
 import { ref } from 'vue'
 import { useResizable } from 'vael-ui'
@@ -1484,6 +1490,41 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
           description: 'Ignores pointer and key input while `true`. Default `false`.',
         },
         {
+          name: 'step',
+          type: 'MaybeRefOrGetter<number | undefined>',
+          description:
+            "Snaps to a multiple of `step` on release, a day on a timeline say, while the drag itself stays smooth. An arrow key moves one step. Unset, a drag doesn't snap and an arrow key moves 16 px.",
+        },
+        {
+          name: 'offset',
+          type: 'Ref<number>',
+          description:
+            "Where it starts, for a span such as a timeline bar. An `edge: 'start'` handle then moves the start and the size together, so the far end stays put, and `onMovePointerdown` moves the whole span. One instance makes a bar: each end's handle names its edge, `onHandlePointerdown(event, 'start')` and `onHandlePointerdown(event, 'end')`. A handle pulled past `min` flips the span over its other end.",
+        },
+        {
+          name: 'centered',
+          type: 'MaybeRefOrGetter<boolean>',
+          description:
+            'Resizes from the middle: the edge you pull follows the pointer and the opposite edge moves the same distance the other way, so the size changes twice as far and the centre stays put. With `offset`, the start moves to keep it there. Default `false`.',
+        },
+        {
+          name: 'flip',
+          type: 'MaybeRefOrGetter<boolean>',
+          description:
+            'With `offset`: a handle pulled past `min` flips the span over its other end, so one press can pull a span out either way. Default `true`. Set `false` to stop at `min` instead, as a panel does.',
+        },
+        {
+          name: 'bounds',
+          type: 'MaybeRefOrGetter<[number, number]>',
+          description: 'With `offset`: the span stays between these, start and end.',
+        },
+        {
+          name: 'scrollEl',
+          type: 'MaybeRefOrGetter<HTMLElement | null>',
+          description:
+            'A scrolling container. Near its edges it scrolls under the pointer during a drag, faster the closer the pointer gets, and the drag follows. Set its `scroll-padding` to what covers it, such as a sticky column, and the edge is measured from there.',
+        },
+        {
           name: 'onCommit',
           type: '() => void',
           description:
@@ -1492,21 +1533,32 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
       ],
       returns: [
         {
-          name: 'onHandlePointerdown',
+          name: 'onMovePointerdown',
           type: '(event: PointerEvent) => void',
           description:
-            'Bind it on the handle. Give the handle `touch-action: none`, so a touch drag resizes instead of scrolling.',
+            "With `offset`: bind it on the span to move it whole. It starts after 4 px of travel, so a still press stays a click, and the click after a move, or after Escape, doesn't fire.",
+        },
+        {
+          name: 'onMoveKeydown',
+          type: '(event: KeyboardEvent) => void',
+          description: 'With `offset`: the arrow keys move the whole span a step.',
+        },
+        {
+          name: 'onHandlePointerdown',
+          type: "(event: PointerEvent, edge?: 'start' | 'end') => void",
+          description:
+            "Bind it on the handle. Give the handle `touch-action: none`, so a touch drag resizes instead of scrolling. A span has two handles: name the one you pressed. Left out, it's the `edge` option.",
         },
         {
           name: 'onHandleKeydown',
-          type: '(event: KeyboardEvent) => void',
+          type: "(event: KeyboardEvent, edge?: 'start' | 'end') => void",
           description:
-            'Bind it on the handle, and give the handle `tabindex="0"` so it can take focus.',
+            'Bind it on the handle, and give the handle `tabindex="0"` so it can take focus. Name its edge as `onHandlePointerdown` does.',
         },
         {
           name: 'isDragging',
           type: 'Ref<boolean>',
-          description: '`true` from pointer down until release.',
+          description: '`true` from pointer down until release. A move counts from its first 4 px.',
         },
       ],
     },

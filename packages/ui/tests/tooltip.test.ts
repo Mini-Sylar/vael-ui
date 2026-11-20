@@ -256,8 +256,10 @@ test('Escape on a focus-opened tooltip inside a Dialog closes only the tooltip',
   await expect.element(inner).toBeVisible()
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
 
+  // The dialog opens on Save without a ring; Tab away and back for a keyboard focus.
+  await userEvent.keyboard('{Tab}')
   for (let i = 0; i < 8 && document.activeElement !== inner.element(); i++) {
-    await userEvent.keyboard('{Tab}')
+    await userEvent.keyboard('{Shift>}{Tab}{/Shift}')
   }
   expect(document.activeElement).toBe(inner.element())
   await expect.element(screen.getByTestId('tip-inner')).toBeVisible()

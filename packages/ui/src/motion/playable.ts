@@ -9,9 +9,9 @@ export function isTimed(raw: unknown): raw is TimedValue<unknown> {
 
 /** Values written as a function of where the element is (a swap's direction, its index). */
 export const valuesAt = (
-  values: MotionValues | ((where: MotionWhere) => MotionValues) | false | undefined,
+  values: MotionValues | ((where: MotionWhere) => MotionValues | false) | false | undefined,
   where: MotionWhere,
-): MotionValues | undefined => (typeof values === 'function' ? values(where) : values || undefined)
+): MotionValues | undefined => (typeof values === 'function' ? values(where) : values) || undefined
 
 /**
  * When the element at `index` of `count` starts, in seconds after the first. A word is spaced by
@@ -64,6 +64,10 @@ function shuffled(all: readonly Element[], count: number): number[] {
   return order
 }
 
+// The default step (a word, or `true`) reaches this many steps, about 0.3 s in all: a long list's
+// later rows come in with the last one, not seconds after. A number you give is yours, however far.
+const MAX_TOKEN_STEPS = 7
+
 export function staggerAt(
   stagger: TargetMotion['stagger'],
   index: number,
@@ -95,7 +99,7 @@ export function staggerAt(
             : stagger === 'edges'
               ? last / 2 - Math.abs(index - last / 2)
               : index
-  return steps * (Number.isFinite(each) ? each : 0.04)
+  return Math.min(steps, MAX_TOKEN_STEPS) * (Number.isFinite(each) ? each : 0.04)
 }
 
 // What a value may name for the CSS engine; anything else is the runtime's.

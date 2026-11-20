@@ -35,6 +35,7 @@ const tags = ['Design', 'Engineering', 'Product', 'Support', 'Finance', 'Legal',
 }
 .v-scroll-mask-row {
   display: flex;
+  max-inline-size: 22rem;
   gap: 0.5rem;
   overflow-x: auto;
   padding: 0.5rem 0.25rem;

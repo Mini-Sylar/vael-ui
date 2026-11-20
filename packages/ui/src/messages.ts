@@ -96,6 +96,10 @@ export interface UiMessages {
   resizable: {
     /** The handle's name, when no `ariaLabel` prop is given. */
     label: string
+    /** The handle on the start edge's name, with `edge="both"`. */
+    start: string
+    /** The handle on the end edge's name, with `edge="both"`. */
+    end: string
   }
   chip: {
     remove: string
@@ -178,6 +182,11 @@ export interface UiMessages {
     loading: string
     /** Read after a keyboard column resize; `{label}` is the column, `{width}` its width in pixels. */
     columnWidth: string
+    /** Read after a header click sorts; `{label}` is the column. */
+    sortedAscending: string
+    sortedDescending: string
+    /** Read after a header click clears the sort; `{label}` is the column. */
+    sortCleared: string
   }
   /** Drag-to-reorder. These carry `{label}`, `{position}`, `{total}` and `{depth}` placeholders rather than being functions, so a consumer's own `t()` can return them as plain strings like every other entry here. */
   sortable: {
@@ -275,7 +284,11 @@ export const speedDialMessages: UiMessages['speedDial'] = { label: 'Actions' }
 export const toolbarMessages: UiMessages['toolbar'] = { more: 'More' }
 export const stepperMessages: UiMessages['stepper'] = { completed: 'Completed' }
 export const bottomSheetMessages: UiMessages['bottomSheet'] = { resize: 'Resize sheet' }
-export const resizableMessages: UiMessages['resizable'] = { label: 'Resize' }
+export const resizableMessages: UiMessages['resizable'] = {
+  label: 'Resize',
+  start: 'Resize start',
+  end: 'Resize end',
+}
 export const chipMessages: UiMessages['chip'] = { remove: 'Remove' }
 export const splitButtonMessages: UiMessages['splitButton'] = { more: 'More actions' }
 export const breadcrumbMessages: UiMessages['breadcrumb'] = { label: 'Breadcrumb' }
@@ -329,6 +342,9 @@ export const dataTableMessages: UiMessages['dataTable'] = {
   expandRow: 'Expand row',
   loading: 'Loading…',
   columnWidth: '{label}: {width} pixels',
+  sortedAscending: 'Sorted by {label}, ascending',
+  sortedDescending: 'Sorted by {label}, descending',
+  sortCleared: 'Sort cleared',
 }
 export const sortableMessages: UiMessages['sortable'] = {
   instructions:

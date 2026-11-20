@@ -22,6 +22,7 @@ import {
 } from 'vue'
 import Popover from '../Popover/Popover.vue'
 import { popoverRefKey } from '../../composables/usePopoverService'
+import { forgetIfRefused } from '../../composables/useDialogService'
 import type { DynamicPopoverEntry } from '../../composables/usePopoverService'
 
 const props = defineProps<{ entry: DynamicPopoverEntry }>()
@@ -70,7 +71,13 @@ provide(
 watch(
   () => props.entry.closeRequested,
   (requested) => {
-    if (requested) popoverInstance.value?.close()
+    if (!requested) return
+    popoverInstance.value?.close()
+    forgetIfRefused(
+      props.entry,
+      () => popoverInstance.value?.isClosing ?? false,
+      () => localOpen.value,
+    )
   },
 )
 

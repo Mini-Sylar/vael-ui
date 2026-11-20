@@ -1,4 +1,4 @@
-import { nextTick, shallowRef, toValue } from 'vue'
+import { nextTick, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { ElRef } from './dom'
@@ -69,6 +69,13 @@ export function useTabs<T>(active: Ref<T>, options: UseTabsOptions<T>): UseTabsR
     const item = itemForEl(target, toValue(options.items))
     if (item !== undefined) focused.value = item
   })
+  // Tabbing back into the list lands on the selected tab, as APG's manual tabs do.
+  useEventListener(options.listEl, 'focusout', (event: FocusEvent) => {
+    const next = event.relatedTarget
+    if (next instanceof Node && options.listEl.value?.contains(next)) return
+    focused.value = active.value
+  })
+  watch(active, (item) => (focused.value = item))
 
   function step(from: number, delta: number, items: readonly T[]): number {
     for (let i = 1; i <= items.length; i++) {

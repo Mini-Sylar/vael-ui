@@ -6,7 +6,7 @@
       inside it, and bind the style the composable returns. <code>selector</code> names the active
       element, and the indicator glides to it whenever <code>view</code> changes. The shared
       <code>ui-indicator ui-indicator--inline</code> classes give it the same transition the
-      built-in components use.
+      built-in components use, for <code>position: 'translate'</code>.
     </p>
     <div ref="list" class="segmented" role="radiogroup" aria-label="View">
       <div class="ui-indicator ui-indicator--inline segmented-indicator" :style="style" />
@@ -34,7 +34,11 @@ const options = ['Day', 'Week', 'Month', 'Year']
 const view = shallowRef('Week')
 
 const list = useTemplateRef<HTMLElement>('list')
-const { style } = useTabIndicator(view, { listEl: list, selector: '[data-active]' })
+const { style } = useTabIndicator(view, {
+  listEl: list,
+  selector: '[data-active]',
+  position: 'translate',
+})
 </script>
 
 <style scoped>

@@ -7,9 +7,7 @@
     v-bind="attrs"
     @keydown="onKeydown"
   >
-    <span :class="labelPart.class" :style="labelPart.style"
-      ><slot>{{ label }}</slot></span
-    >
+    <span :class="labelPart.class" :style="labelPart.style"><slot>{{ label }}</slot></span>
     <button
       v-if="removable"
       type="button"

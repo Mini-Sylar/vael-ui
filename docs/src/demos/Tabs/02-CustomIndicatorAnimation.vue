@@ -12,7 +12,7 @@
       <div class="row">
         <Tabs v-model:active="springActive" :items="items">
           <template #default="{ active: current, items: list, itemProps }">
-            <button v-for="item in list" :key="item" v-bind="itemProps(item)">
+            <button v-for="item in list" :key="item" type="button" v-bind="itemProps(item)">
               <motion.span
                 v-if="current === item"
                 layout-id="tab-indicator"

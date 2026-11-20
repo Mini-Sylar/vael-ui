@@ -19,7 +19,7 @@ test('Space before the engine arrives stops the page scrolling and grabs once it
   row.dispatchEvent(space)
   expect(space.defaultPrevented).toBe(true)
   await vi.waitFor(() =>
-    expect(screen.container.querySelector('[aria-live="assertive"]')?.textContent).toContain(
+    expect(screen.container.querySelector('[aria-live="polite"]')?.textContent).toContain(
       'Grabbed a',
     ),
   )

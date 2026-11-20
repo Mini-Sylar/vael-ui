@@ -4,9 +4,7 @@
     <Button ref="tagTrigger" variant="outline" :loading="false" @click="onRemoveTagPopover">
       urgent ×
     </Button>
-    <p class="demo-status">
-      Last result: <strong>{{ lastResult }}</strong>
-    </p>
+    <p class="demo-status">Last result: <strong>{{ lastResult }}</strong></p>
   </section>
 </template>
 

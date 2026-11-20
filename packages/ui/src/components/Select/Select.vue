@@ -253,6 +253,12 @@
       />
     </template>
   </template>
+  <RequiredInput
+    v-if="nativeRequired(attrs)"
+    :filled="Array.isArray(model) ? model.length > 0 : model != null && model !== ''"
+    :control="() => controlEl"
+    :disabled="isDisabled"
+  />
 </template>
 
 <script lang="ts">
@@ -305,7 +311,8 @@ import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
-import { useFieldControl } from '../../composables/useFieldControl'
+import { nativeRequired, useFieldControl } from '../../composables/useFieldControl'
+import { isComposing } from '../../composables/useLayerStack'
 import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -317,6 +324,7 @@ import { flattenOptions, groupSections, isGroup } from '../../composables/select
 import Input from '../Input/Input.vue'
 import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
+import RequiredInput from '../internal/RequiredInput.vue'
 import { useRememberedSelection } from '../../composables/useRememberedSelection'
 
 defineOptions({ inheritAttrs: false })
@@ -330,7 +338,7 @@ const isTriggerAttr = (key: string) =>
 const panelOwnAttrs = computed(() =>
   Object.fromEntries(
     Object.entries(attrs).filter(
-      ([key]) => !isTriggerAttr(key) && key !== 'onFocus' && key !== 'onBlur',
+      ([key]) => !isTriggerAttr(key) && !['onFocus', 'onBlur', 'required'].includes(key),
     ),
   ),
 )
@@ -747,6 +755,8 @@ function onTriggerKeydown(event: KeyboardEvent) {
 // Filter input owns focus while typing — Space must type a literal space, so only
 // forward the navigation/commit keys onto the same listbox logic the trigger uses.
 function onFilterKeydown(event: KeyboardEvent) {
+  // Keys that pick or end an IME composition belong to the input method.
+  if (isComposing(event)) return
   switch (event.key) {
     case 'ArrowDown':
     case 'ArrowUp':
@@ -853,6 +863,8 @@ function scrollToIndex(index: number, align?: ScrollAlign) {
 }
 
 defineExpose({
+  /** Root element: the trigger frame. */
+  el: triggerEl,
   /** Trigger element: the frame around the combobox and its clear button. Focusing it focuses the combobox. */
   triggerEl,
   /** Panel element (null while closed). */

@@ -16,10 +16,14 @@
             :key="card.id"
             :data-value="card.id"
             class="board-card"
+            :class="{
+              'board-card--held':
+                boardEngines[col.id].draggedValues.value.has(card.id) ||
+                boardEngines[col.id].isGrabbedValue(card.id),
+            }"
             tabindex="0"
             role="button"
             aria-roledescription="sortable item"
-            :data-grabbed="isBoardGrabbed(col.id, card.id) || undefined"
             @pointerdown="boardEngines[col.id].onHandlePointerdown($event, card.id)"
             @keydown="boardEngines[col.id].onHandleKeydown($event, card.id)"
           >
@@ -92,10 +96,6 @@ const boardEngines = Object.fromEntries(
     }),
   ]),
 ) as Record<BoardColumnId, UseSortableReturn>
-
-function isBoardGrabbed(columnId: BoardColumnId, cardId: string): boolean {
-  return boardEngines[columnId]!.isGrabbedValue(cardId)
-}
 </script>
 
 <style scoped>
@@ -133,10 +133,10 @@ function isBoardGrabbed(columnId: BoardColumnId, cardId: string): boolean {
   cursor: grab;
   touch-action: none;
 }
-.board-card[data-dragging] {
-  opacity: 0;
-}
-.board-card[data-grabbed] {
+/* The card you hold, and its copy while it floats between columns. */
+.board-card--held {
   border-color: var(--ui-primary);
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
+  cursor: grabbing;
 }
 </style>

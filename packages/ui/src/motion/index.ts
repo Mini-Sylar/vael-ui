@@ -14,6 +14,7 @@ export { useMotion } from './useMotion'
 export { useScrollLength, useScrollProgress } from './useScrollProgress'
 export type { ScrollProgressOptions } from './useScrollProgress'
 export { settled } from './settled'
+export { mapRange } from './mapRange'
 export { springEasing } from './springEasing'
 export type { MotionOptions } from './springEasing'
 export { useSpringValue, createSpring, stepSpring } from './useSpringValue'
@@ -27,6 +28,8 @@ export type {
 export { parseMotionStyle } from './parse'
 export type {
   AnimateDirectiveValue,
+  AnimateValues,
+  LiveValue,
   AnimateModifier,
   AnimateStates,
   BuiltinPreset,

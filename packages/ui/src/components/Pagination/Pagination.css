@@ -73,6 +73,16 @@
       --ui-button-bg: transparent;
     }
   }
+  /* Forced colors drop backgrounds, so the current page is drawn in Highlight instead. */
+  @media (forced-colors: active) {
+    .ui-pagination-indicator {
+      border: 2px solid Highlight;
+    }
+    .ui-pagination:not([data-indicator-placed]) .ui-pagination-page-button--active {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
   .ui-pagination--no-motion .ui-pagination-indicator,
   .ui-pagination--no-motion .ui-pagination-indicator-labels {
     transition: none;

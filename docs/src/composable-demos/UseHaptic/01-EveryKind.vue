@@ -12,7 +12,7 @@
       Last: <strong>{{ last }}</strong>
     </p>
     <div class="row">
-      <Button size="sm" variant="secondary" @click="play('selection')">selection()</Button>
+      <Button size="sm" variant="secondary" @click="play('selection()')">selection()</Button>
       <Button
         v-for="weight in weights"
         :key="weight"

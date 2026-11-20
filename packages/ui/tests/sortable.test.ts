@@ -15,7 +15,7 @@ function order(screen: RenderResult<unknown>): string {
   return screen.container.querySelector('[data-testid="order"]')!.textContent!
 }
 function liveRegion(screen: RenderResult<unknown>): HTMLElement {
-  return screen.container.querySelector<HTMLElement>('[aria-live="assertive"]')!
+  return screen.container.querySelector<HTMLElement>('[aria-live="polite"]')!
 }
 
 test('renders one row per item, each with a real button handle in the tab order', async () => {
@@ -336,7 +336,8 @@ test('a pointer drag released over its own slot springs home instead of snapping
   // Still on its way: a snap would have cleared it on release.
   const mid = parseFloat(item.style.translate.split(' ')[1] ?? '0')
   expect(mid).toBeGreaterThan(0)
-  expect(mid).toBeLessThan(22)
+  // It carries the speed it was dragged at a little past where it was let go, then comes home.
+  expect(mid).toBeLessThan(44)
   await vi.waitFor(() => expect(item.style.translate).toBe(''))
   expect(order(screen)).toBe('a,b,c')
 })

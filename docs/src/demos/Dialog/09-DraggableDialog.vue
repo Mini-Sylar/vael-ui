@@ -2,27 +2,14 @@
   <section class="demo">
     <h3>Draggable dialog</h3>
     <p class="note">
-      Drag the header to move the dialog. Pointer capture keeps the drag going when the pointer
-      leaves the header. With the grip button focused, the arrow keys move it 10 px, or 50 px with
-      Shift. The dialog stays inside the window and opens centered again.
+      <code>useDrag</code> with a <code>handle</code> moves the panel by its header. A throw carries
+      on at the speed you let go and settles on a spring, inside the window. With the grip focused,
+      the arrow keys move it 10 px, or 50 px with Shift. It reopens centered.
     </p>
     <Button @click="open = true">Open dialog</Button>
-    <Dialog
-      ref="dialog"
-      v-model:open="open"
-      :aria-labelledby="titleId"
-      :ui="{
-        panel: { style: { position: 'relative', left: `${offset.x}px`, top: `${offset.y}px` } },
-      }"
-    >
+    <Dialog ref="dialog" v-model:open="open" :aria-labelledby="titleId">
       <template #header>
-        <div
-          class="drag-header"
-          @pointerdown="startDrag"
-          @pointermove="drag"
-          @pointerup="endDrag"
-          @pointercancel="endDrag"
-        >
+        <div class="drag-header">
           <button
             type="button"
             class="grip"
@@ -45,40 +32,33 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, shallowRef, useId, useTemplateRef, watch } from 'vue'
-import { Button, Dialog } from 'vael-ui'
+import { computed, shallowRef, useId, useTemplateRef } from 'vue'
+import { Button, Dialog, useDrag } from 'vael-ui'
+import type { DragPoint } from 'vael-ui'
 import { PhDotsSixVertical } from '@phosphor-icons/vue'
 
 const open = shallowRef(false)
 const titleId = useId()
 const dialog = useTemplateRef('dialog')
-const offset = reactive({ x: 0, y: 0 })
-// A new open starts in the center.
-watch(open, (isOpen) => isOpen && Object.assign(offset, { x: 0, y: 0 }))
+const panel = computed(() => dialog.value?.panelEl ?? null)
 
-// Moves the panel to an offset, kept inside the window.
-function moveTo(x: number, y: number) {
-  const panel = dialog.value?.panelEl
-  if (!panel) return
-  const rect = panel.getBoundingClientRect()
+// Where a move to `to` (px from home) would put the panel, kept inside the window.
+function inWindow(to: DragPoint): DragPoint {
+  const rect = panel.value?.getBoundingClientRect()
+  if (!rect) return to
   const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
-  offset.x = clamp(x, offset.x - rect.left, offset.x + window.innerWidth - rect.right)
-  offset.y = clamp(y, offset.y - rect.top, offset.y + window.innerHeight - rect.bottom)
+  return {
+    x: clamp(to.x, drag.x.value - rect.left, drag.x.value + innerWidth - rect.right),
+    y: clamp(to.y, drag.y.value - rect.top, drag.y.value + innerHeight - rect.bottom),
+  }
 }
 
-let start: { pointerX: number; pointerY: number; x: number; y: number } | null = null
-function startDrag(event: PointerEvent) {
-  if (event.button !== 0) return
-  start = { pointerX: event.clientX, pointerY: event.clientY, x: offset.x, y: offset.y }
-  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
-}
-function drag(event: PointerEvent) {
-  if (!start) return
-  moveTo(start.x + event.clientX - start.pointerX, start.y + event.clientY - start.pointerY)
-}
-function endDrag() {
-  start = null
-}
+// Let go: it coasts where the throw was heading, and stops at the window's edge.
+const drag = useDrag({
+  el: panel,
+  handle: '.drag-header',
+  onRelease: ({ projected }) => inWindow(projected),
+})
 
 const KEYS: Record<string, [number, number]> = {
   ArrowLeft: [-1, 0],
@@ -91,7 +71,12 @@ function nudge(event: KeyboardEvent) {
   if (!direction) return
   event.preventDefault()
   const step = event.shiftKey ? 50 : 10
-  moveTo(offset.x + direction[0] * step, offset.y + direction[1] * step)
+  drag.throwTo(
+    inWindow({
+      x: drag.x.value + direction[0] * step,
+      y: drag.y.value + direction[1] * step,
+    }),
+  )
 }
 </script>
 

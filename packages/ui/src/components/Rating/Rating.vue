@@ -48,6 +48,12 @@
       </span>
     </span>
     <input v-if="name" type="hidden" :name="name" :value="modelValue" />
+    <RequiredInput
+      v-if="nativeRequired(attrs)"
+      :filled="modelValue > 0"
+      :control="() => root"
+      :disabled="isDisabled"
+    />
   </div>
 </template>
 
@@ -59,7 +65,8 @@ import '../shared/tokens.css'
 import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { inlineKey, isRtl } from '../../composables/dom'
-import { useFieldControl } from '../../composables/useFieldControl'
+import { nativeRequired, useFieldControl } from '../../composables/useFieldControl'
+import RequiredInput from '../internal/RequiredInput.vue'
 import {
   clearFocusVisible,
   markFocusVisible,
@@ -93,6 +100,7 @@ const restAttrs = computed(() =>
       'onKeydown',
       'onFocus',
       'onBlur',
+      'required',
     ]),
   ),
 )

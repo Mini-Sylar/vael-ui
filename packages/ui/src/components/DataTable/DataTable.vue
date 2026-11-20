@@ -370,11 +370,24 @@ function toggleSort(field: keyof T) {
   } else {
     sort.value = { field: null, dir: null }
   }
+  announceSort(field)
 }
-function sortAriaValue(col: RegisteredColumn<T>): 'ascending' | 'descending' | 'none' {
-  if (sort.value.field !== col.field || !sort.value.dir) return 'none'
+// A header click changes no focus, so the new order is read through the status region.
+function announceSort(field: keyof T) {
+  const { dir } = sort.value
+  const col = columns.value.find((c) => c.field === field)
+  const label = col ? columnLabel(col) : String(field)
+  const text = messages.value.dataTable
+  announcement.value = (
+    dir === 'asc' ? text.sortedAscending : dir === 'desc' ? text.sortedDescending : text.sortCleared
+  ).replace('{label}', label)
+}
+// Only the sorted column carries aria-sort, as APG's sortable table does.
+function sortAriaValue(col: RegisteredColumn<T>): 'ascending' | 'descending' | undefined {
+  if (sort.value.field !== col.field || !sort.value.dir) return undefined
   return sort.value.dir === 'asc' ? 'ascending' : 'descending'
 }
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 function compareValues(a: unknown, b: unknown): number {
   if (a === b) return 0
   if (a == null) return 1
@@ -382,7 +395,7 @@ function compareValues(a: unknown, b: unknown): number {
   if (typeof a === 'number' && typeof b === 'number') return a - b
   if (typeof a === 'boolean' && typeof b === 'boolean') return a === b ? 0 : a ? 1 : -1
   if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime()
-  return String(a).localeCompare(String(b))
+  return collator.compare(String(a), String(b))
 }
 const sortedData = computed(() => {
   if (props.manualSort) return props.data

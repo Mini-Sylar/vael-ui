@@ -522,6 +522,15 @@ export type {
 
 export { default as SwipeToReveal } from './components/SwipeToReveal/SwipeToReveal.vue'
 export { useSwipeReveal, resolveSwipeCommit } from './composables/useSwipeReveal'
+
+export { useWheel } from './composables/useWheel'
+export type { UseWheelOptions, UseWheelReturn } from './composables/useWheel'
+export { usePanZoom } from './composables/usePanZoom'
+export type { UsePanZoomOptions, UsePanZoomReturn } from './composables/usePanZoom'
+export { useDragSelect } from './composables/useDragSelect'
+export type { UseDragSelectOptions, UseDragSelectReturn } from './composables/useDragSelect'
+export { useDrag } from './composables/useDrag'
+export type { DragPoint, DragRelease, UseDragOptions, UseDragReturn } from './composables/useDrag'
 export type {
   SwipeRevealSide,
   SwipeCommitInput,

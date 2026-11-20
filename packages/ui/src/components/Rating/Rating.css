@@ -4,7 +4,8 @@
     display: inline-flex;
     align-items: center;
     cursor: pointer;
-    touch-action: none;
+    /* A vertical swipe over the stars still scrolls the page. */
+    touch-action: pan-y;
     border-radius: 4px;
     /* Don't stretch inside Field, so the focus ring hugs the stars. */
     align-self: flex-start;

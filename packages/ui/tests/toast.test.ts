@@ -223,3 +223,15 @@ test('updating a toast by id with a new toaster moves it to that queue', () => {
   expect(side.toasts.find((t) => t.id === 'move')!.title).toBe('Saved')
   toast.dismiss()
 })
+
+test('toasts with an action stay by default; errors time out; an explicit duration still wins', () => {
+  const { toasts, dismiss } = useToastQueue()
+  const duration = (id: string | number) => toasts.find((t) => t.id === id)!.duration
+  expect(duration(toast.error('Failed'))).toBe(4000)
+  expect(duration(toast('Deleted', { action: { label: 'Undo', onClick: () => {} } }))).toBe(
+    Infinity,
+  )
+  expect(duration(toast.error('Failed', { duration: Infinity }))).toBe(Infinity)
+  expect(duration(toast.success('Saved'))).toBe(4000)
+  dismiss()
+})

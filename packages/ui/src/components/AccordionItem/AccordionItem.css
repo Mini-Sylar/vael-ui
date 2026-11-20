@@ -28,6 +28,9 @@
     outline: 2px solid var(--ui-primary);
     outline-offset: -2px;
   }
+  .ui-accordion-trigger[aria-disabled='true'] {
+    cursor: default;
+  }
   .ui-accordion-trigger:disabled {
     opacity: 0.5;
     cursor: not-allowed;

@@ -111,7 +111,7 @@ test('a non-sortable column renders plain text with no sort button or aria-sort'
 test('clicking a sortable header cycles none -> asc -> desc -> none and reorders rows', async () => {
   const screen = await renderTable({ rowCount: 4, showStatusColumn: false })
   const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
-  expect(nameHeader.getAttribute('aria-sort')).toBe('none')
+  expect(nameHeader.getAttribute('aria-sort')).toBeNull()
 
   const sortButton = nameHeader.querySelector<HTMLElement>('.ui-datatable-sort-button')!
   await userEvent.click(sortButton)
@@ -129,7 +129,7 @@ test('clicking a sortable header cycles none -> asc -> desc -> none and reorders
   expect(rows[3]!.textContent).toContain('Alice')
 
   await userEvent.click(sortButton)
-  await vi.waitFor(() => expect(nameHeader.getAttribute('aria-sort')).toBe('none'))
+  await vi.waitFor(() => expect(nameHeader.getAttribute('aria-sort')).toBeNull())
   rows = bodyRows(screen.container)
   expect(rows[0]!.textContent).toContain('Alice')
 })
@@ -204,7 +204,7 @@ test('sorting by Age (a different column) resets Name back to unsorted', async (
 
   await userEvent.click(ageHeader!.querySelector('.ui-datatable-sort-button')!)
   await vi.waitFor(() => expect(ageHeader!.getAttribute('aria-sort')).toBe('ascending'))
-  expect(nameHeader!.getAttribute('aria-sort')).toBe('none')
+  expect(nameHeader!.getAttribute('aria-sort')).toBeNull()
 })
 
 test('Enter on a focused sort button toggles sort the same as a click', async () => {

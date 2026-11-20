@@ -39,14 +39,18 @@ import type {
 import { motionWarn } from './warn'
 import { holdAround, motionOffAt, motionSpringAt, motionStyleAt } from './styleHolder'
 import { motionStyleKey } from './context'
+import { prefersReducedMotion } from '../composables/dom'
 import { preparePath, toKeyframe } from './values'
+import { followLive, splitLive } from './live'
 import { SPRINGS } from './springNames'
 import type { SpringName } from './springNames'
 import { BUILTIN_PRESETS } from './presets'
 import { armEnter, entered, left, onceEntered } from './finish'
 import { loading, motionSettingsKey } from './styleKey'
-// `animate`'s player, loaded on first use.
-const loadAnimateTarget = () => loading(import('./animateTarget'))
+// `animate`'s player, loaded on first use, then kept so later elements start on it at once.
+let animateTarget: typeof import('./animateTarget') | undefined
+const loadAnimateTarget = () =>
+  loading(import('./animateTarget')).then((module) => (animateTarget = module))
 
 type Marked = HTMLElement & {
   _uiAnimateLeave?: () => void
@@ -104,7 +108,9 @@ function followStates(el: Marked, value: AnimateDirectiveValue | undefined) {
 
 /** `animate`: the look it holds, moving to each new one as it changes (from the states player). */
 function followTarget(el: Marked, value: AnimateDirectiveValue | undefined, gone = false) {
-  const animate = typeof value === 'object' ? value.animate : undefined
+  // Live values (a getter, a ref) are followed on their own; the rest is held or scrubbed.
+  const { live, fixed: animate } = splitLive(typeof value === 'object' ? value.animate : undefined)
+  followLive(el, live, Object.keys(animate ?? {}), () => motionOffAt(el) || prefersReducedMotion())
   el._uiProgressStop?.()
   el._uiProgressStop = undefined
   if (!animate) {
@@ -135,6 +141,11 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined, gone
       )
     }
     if (el._uiTarget) return follow(rebuild)
+    // Loaded already: a new element shows its scrubbed look on its first frame, not its own.
+    if (animateTarget) {
+      el._uiTarget = animateTarget.holdTarget(el)
+      return follow(true)
+    }
     void loadAnimateTarget().then((module) => {
       if (el._uiTargetKey !== key) return
       el._uiTarget ??= module.holdTarget(el)
@@ -259,7 +270,13 @@ function appearAlone(
 // A stroke drawn in any of its looks (`pathLength`) measures the path as 1 long.
 const drawn = (el: Element, value: AnimateDirectiveValue | undefined) =>
   typeof value === 'object' &&
-  preparePath(el, value.initial, value.exit, value.animate, ...Object.values(value.states ?? {}))
+  preparePath(
+    el,
+    value.initial,
+    value.exit,
+    splitLive(value.animate).fixed,
+    ...Object.values(value.states ?? {}),
+  )
 
 // One of your callbacks, as it is when it runs: a value written inline is a new object each render.
 // Inside a component, it runs there, merged with its `targets` entry.
@@ -355,7 +372,9 @@ function leaving(value: AnimateDirectiveValue | undefined) {
   if (value.leave) return { values: {}, timing: EXIT, hook: value.leave }
   if (value.exit === false) return undefined
   const where = { direction: 0 as const, index: 0, count: 1 }
-  const exit = valuesAt(value.exit, where)
+  // A function may decide, as it leaves, to leave at once.
+  const exit = typeof value.exit === 'function' ? value.exit(where) : valuesAt(value.exit, where)
+  if (exit === false) return undefined
   if (exit) return { values: exit, timing: timedBy(value) ? (value as MotionTiming) : EXIT }
   const initial = valuesAt(value.initial, where)
   return initial ? { values: exitFrom(initial), timing: EXIT } : undefined

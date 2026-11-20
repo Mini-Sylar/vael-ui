@@ -1,13 +1,14 @@
 <template>
-  <!-- enterkeyhint before attrs so yours wins. Without one, Android's key reads
-       "Next" and moves focus on instead of sending Enter to pick the match. -->
+  <!-- enterkeyhint and autocomplete before attrs so yours win. Without enterkeyhint, Android's key
+       reads "Next" and moves focus on instead of sending Enter to pick the match. -->
   <Input
     ref="inputRef"
     enterkeyhint="enter"
     autocapitalize="off"
     autocorrect="off"
     spellcheck="false"
-    v-bind="attrs"
+    autocomplete="off"
+    v-bind="inputAttrs"
     v-model="query"
     :placeholder="placeholder"
     :size="props.size"
@@ -20,7 +21,7 @@
     :aria-controls="listboxId"
     :aria-activedescendant="open ? activeId : undefined"
     aria-autocomplete="list"
-    autocomplete="off"
+    :aria-required="fieldControl.required() || undefined"
     :data-open="open || undefined"
     :ui="innerUi"
     @input="onQueryInput"
@@ -243,6 +244,12 @@
       />
     </template>
   </template>
+  <RequiredInput
+    v-if="nativeRequired(attrs)"
+    :filled="Array.isArray(model) ? model.length > 0 : model != null && model !== ''"
+    :control="() => inputEl"
+    :disabled="isDisabled"
+  />
 </template>
 
 <script lang="ts">
@@ -317,7 +324,8 @@ import { useChipTransition } from '../../composables/useChipTransition'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
-import { useFieldControl } from '../../composables/useFieldControl'
+import { nativeRequired, useFieldControl } from '../../composables/useFieldControl'
+import { isComposing } from '../../composables/useLayerStack'
 import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -326,6 +334,7 @@ import { inputPickedKey } from '../../composables/inputPicked'
 import { useMessages, comboboxMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
+import RequiredInput from '../internal/RequiredInput.vue'
 import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
 import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
 
@@ -337,8 +346,15 @@ const attrs = useAttrs()
 const isTriggerAttr = (key: string) =>
   key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
 const panelOwnAttrs = computed(() =>
-  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+  Object.fromEntries(
+    Object.entries(attrs).filter(([key]) => !isTriggerAttr(key) && key !== 'required'),
+  ),
 )
+// Your `required` is checked on the selection (below), not on the typed text.
+const inputAttrs = computed(() => {
+  const { required: _required, ...rest } = attrs
+  return rest
+})
 const panelAttrs = useAttrListeners(
   () => panelEl.value,
   () => panelOwnAttrs.value,
@@ -406,7 +422,8 @@ const rawProps = withDefaults(
      */
     revertOnBlur?: boolean
     /** What Tab commits before focus moves on. `'select'`: the highlighted row, once you type or move
-     * the highlight with the keyboard. `'create'` (`allowCustom` only): the typed text, or the item it names. */
+     * the highlight with the keyboard. `'create'` (`allowCustom` only): the typed text, or the item it names.
+     * Tab always moves focus on; with `multiple`, Enter commits and keeps it, for the next tag. */
     tabBehavior?: ComboboxTabBehavior
     /** Opens the panel on focus, before you type. Unset means on; set `false` to require typing first. */
     openOnFocus?: boolean
@@ -870,7 +887,8 @@ function onInputBlur(event?: FocusEvent) {
 }
 
 function onInputKeydown(event: KeyboardEvent) {
-  if (isDisabled.value) return
+  // Keys that pick or end an IME composition belong to the input method.
+  if (isDisabled.value || isComposing(event)) return
   // usePopover's capture-phase listener has already closed the panel by now, so this can't sit behind the `open` check below.
   if (event.key === 'Escape') {
     if (props.closeOnEsc && queryDirty.value) revertQuery()

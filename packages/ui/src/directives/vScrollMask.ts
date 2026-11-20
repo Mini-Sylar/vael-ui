@@ -26,7 +26,12 @@ const FADE_PROPERTIES = [
 ]
 
 function supportsScrollTimeline() {
-  return typeof CSS !== 'undefined' && CSS.supports('animation-timeline: scroll()')
+  // Scroll timelines without percentage ranges would leave the end fade stuck: go manual.
+  return (
+    typeof CSS !== 'undefined' &&
+    CSS.supports('animation-timeline: scroll()') &&
+    CSS.supports('animation-range: 0% 100%')
+  )
 }
 
 function clamp01(value: number) {

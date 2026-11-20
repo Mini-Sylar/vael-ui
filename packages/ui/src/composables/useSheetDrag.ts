@@ -3,6 +3,7 @@ import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 import { prefersReducedMotion } from './dom'
+import { createVelocityTracker, dampen, DRAG_THRESHOLD } from './gesture'
 import { flingTiming } from '../motion/fling'
 
 export interface SheetSnapPoint {
@@ -58,16 +59,10 @@ const SHORT_DRAG_FRACTION = 0.4 // of viewport height — Vaul's step-one-snap-p
 // Of the lowest snap point's height: a slow drag must go this far below it to close (Vaul's value).
 const CLOSE_THRESHOLD = 0.25
 const NESTED_DISPLACEMENT = 16 // px — Vaul's own recede distance for stacked sheets
-const AXIS_LOCK_THRESHOLD = 8 // px — movement before a content drag commits to an axis; matches useSwipeReveal
 // Only the end of a drag counts, so a slow drag that ends in a flick reads as a flick.
 const VELOCITY_WINDOW = 80 // ms
 // Shifted-log curve (Vaul); viewport-scale range.
 const RUBBER_BAND_DAMPEN = 60
-
-// Shifted-log dampen.
-function dampen(overshoot: number): number {
-  return RUBBER_BAND_DAMPEN * Math.log(1 + overshoot / RUBBER_BAND_DAMPEN)
-}
 
 function reducedMotion(): boolean {
   return prefersReducedMotion()
@@ -245,25 +240,10 @@ export function useSheetDrag(
   let dragStartOffset = 0
   let dragStartTime = 0
   let dragStartScrollTop = 0
-  let samples: { t: number; y: number }[] = []
-
-  // Keep one sample older than the window, so a release right after a pause still has two points.
-  function addSample(clientY: number) {
-    const now = performance.now()
-    samples.push({ t: now, y: clientY })
-    const firstInWindow = samples.findIndex((sample) => now - sample.t <= VELOCITY_WINDOW)
-    if (firstInWindow > 1) samples = samples.slice(firstInWindow - 1)
-  }
-
-  function releaseVelocity(): number {
-    const last = samples.at(-1)
-    if (!last) return 0
-    const anchor =
-      samples.find((sample) => last.t - sample.t <= VELOCITY_WINDOW && sample !== last) ??
-      samples.at(-2)
-    if (!anchor || last.t === anchor.t) return 0
-    return (last.y - anchor.y) / (last.t - anchor.t)
-  }
+  // Release speed over the end of the drag only, so a slow drag that ends in a flick reads as one.
+  const tracker = createVelocityTracker(VELOCITY_WINDOW)
+  const addSample = (clientY: number) => tracker.add(clientY)
+  const releaseVelocity = () => tracker.velocity()
 
   function beginDrag(clientY: number) {
     const point = currentPoint()
@@ -271,7 +251,7 @@ export function useSheetDrag(
     dragStartY = clientY
     dragStartOffset = lastAppliedOffset
     dragStartTime = performance.now()
-    samples = [{ t: dragStartTime, y: clientY }]
+    tracker.reset(clientY, dragStartTime)
     isDragging.value = true
     moveTo(dragStartOffset, false, true)
     // Room for the highest snap point up front, so no drag frame resizes the body.
@@ -338,7 +318,7 @@ export function useSheetDrag(
     if (dragSource === 'content') {
       const dx = event.clientX - dragStartX
       const dy = event.clientY - dragStartY
-      if (Math.abs(dx) < AXIS_LOCK_THRESHOLD && Math.abs(dy) < AXIS_LOCK_THRESHOLD) return
+      if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return
       // Horizontally-dominant → belongs to something nested (a swipe-to-reveal row), not a dismiss.
       if (Math.abs(dx) >= Math.abs(dy)) {
         dragSource = null
@@ -350,6 +330,12 @@ export function useSheetDrag(
       if (!(atTop && draggingDown)) return
       dragSource = 'handle'
       beginDrag(event.clientY)
+      // Now the sheet's drag: a release over the backdrop must still reach the panel.
+      try {
+        ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+      } catch {
+        // Capture can fail for synthetic/non-standard pointer ids; not fatal.
+      }
       return
     }
     const list = offsets()
@@ -362,7 +348,7 @@ export function useSheetDrag(
     const topBoundary = Math.min(...list)
     const nextOffset =
       rawOffset < topBoundary
-        ? Math.max(0, topBoundary - dampen(topBoundary - rawOffset))
+        ? Math.max(0, topBoundary - dampen(topBoundary - rawOffset, RUBBER_BAND_DAMPEN))
         : rawOffset
     moveTo(nextOffset, false, true)
   }
@@ -380,15 +366,13 @@ export function useSheetDrag(
     const currentOffset = dragStartOffset + (event.clientY - dragStartY)
     const draggedDistance = dragStartY - event.clientY // positive = dragged up (toward open)
     const hasDraggedUp = draggedDistance > 0
-    const elapsed = Math.max(1, performance.now() - dragStartTime)
-    const velocity = Math.abs(draggedDistance) / elapsed
     const dismissible = toValue(options.dismissible) ?? true
     const currentIndex = list.findIndex((point) => point.id === activeSnap.value)
 
     // Speed and direction come from the end of the gesture, so a slow drag that ends in a flick
-    // reads as a flick; the whole-drag average covers a release with no recent movement.
+    // reads as a flick, and a quick one that stops and holds before release doesn't.
     const endVelocity = releaseVelocity() // px/ms, positive = down
-    const speed = Math.max(velocity, Math.abs(endVelocity))
+    const speed = Math.abs(endVelocity)
     const movingDown = endVelocity !== 0 ? endVelocity > 0 : !hasDraggedUp
     const last = list.length - 1
     // Closing takes a sheet let go below where it rests at its lowest. A raised sheet pulled back
@@ -466,6 +450,8 @@ export function useSheetDrag(
   useEventListener(options.panelEl, 'pointermove', onPointerMove)
   useEventListener(options.panelEl, 'pointerup', onPointerUp)
   useEventListener(options.panelEl, 'pointercancel', onPointerCancel)
+  // Capture lost mid-drag (the panel left, or the browser took it): settle as a cancel.
+  useEventListener(options.panelEl, 'lostpointercapture', onPointerCancel)
   // The area changed size: a phone's toolbars hid or showed (Samsung Internet and Chrome collapse
   // them on scroll), the keyboard opened, or the container resized. Refit the panel and glide back
   // to the same snap point, so the sheet doesn't drift off it or leave a toolbar-tall strip with
@@ -477,12 +463,19 @@ export function useSheetDrag(
     const point = currentPoint()
     if (point) moveTo(offsetFor(point), true)
   }
+  // Only while open: a closed sheet costs nothing.
   useEventListener(
-    () => (typeof window === 'undefined' ? undefined : (window.visualViewport ?? window)),
+    () =>
+      typeof window === 'undefined' || !active.value
+        ? undefined
+        : (window.visualViewport ?? window),
     'resize',
     onAreaResize,
   )
-  useResizeObserver(() => toValue(options.bounds) ?? undefined, onAreaResize)
+  useResizeObserver(
+    () => (active.value ? (toValue(options.bounds) ?? undefined) : undefined),
+    onAreaResize,
+  )
 
   /** Back to where it rests (a refused dismiss springs back from where it was let go). */
   function settle() {

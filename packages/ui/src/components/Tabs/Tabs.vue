@@ -202,7 +202,8 @@ function panelProps(item: T) {
     id: panelId(item),
     role: 'tabpanel' as const,
     'aria-labelledby': tabId(item),
-    tabindex: 0 as const,
+    // Only the shown panel is a tab stop; a hidden one would add a stray stop if left visible.
+    tabindex: active.value === item ? (0 as const) : undefined,
   }
 }
 
@@ -232,6 +233,8 @@ function indicatorProps(variant: 'background' | 'underline' = 'background') {
 }
 
 defineExpose({
+  /** Root element: the tab list. */
+  el: listEl,
   /** Tab list (root) element. */
   listEl,
   /** The hover and keyboard highlight, sliding between tabs. Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */

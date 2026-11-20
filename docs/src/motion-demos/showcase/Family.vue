@@ -148,6 +148,7 @@ const swap = {
 :global(.wallet-body) {
   position: relative;
   padding: 0;
+  overflow: hidden;
 }
 :global(.wallet-close) {
   z-index: 1;

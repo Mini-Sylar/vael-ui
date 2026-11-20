@@ -15,6 +15,7 @@
         :style="triggerPart.style"
         :aria-expanded="isOpenValue"
         :aria-controls="panelId"
+        :aria-disabled="isLockedValue || undefined"
         :disabled="disabled"
         data-accordion-trigger
         @click="onToggle"
@@ -113,6 +114,8 @@ if (!injectedCtx) {
 const ctx = injectedCtx
 
 const isOpenValue = computed(() => ctx.isOpen(props.value))
+// APG: an open panel that can't collapse marks its trigger aria-disabled, still focusable.
+const isLockedValue = computed(() => !props.disabled && ctx.isLocked(props.value))
 function onToggle() {
   if (props.disabled) return
   ctx.toggle(props.value)
@@ -181,6 +184,8 @@ const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-accordio
 const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-accordion-chevron'))
 
 defineExpose({
+  /** Root element. */
+  el: item,
   /** Panel element, always mounted. */
   panelEl: panel,
   /** The built-in chevron, for your own engine to turn. Null when the `#trigger` slot replaces it. */

@@ -141,6 +141,9 @@ export function toKeyframes(
     .filter(Array.isArray)
     .map((list) => list.length)
   if (!lengths.length) return undefined
+  // Lists of different lengths each spread over the whole run, as in Motion: `rotate: [-25, 0, 25]`
+  // next to five opacity keyframes still turns through 0 halfway.
+  if (lengths.some((n) => n !== lengths[0])) return spreadKeyframes(values, rtl, sequence)
   const count = Math.max(...lengths)
   const times = sequence.times?.length === count ? sequence.times : undefined
   return Array.from({ length: count }, (_, i) => {
@@ -156,6 +159,43 @@ export function toKeyframes(
     if (times) frame.offset = Math.min(1, Math.max(0, times[i]!))
     return frame
   })
+}
+
+// Lists of different lengths: each CSS property gets its own evenly spaced keyframes on one run,
+// and a keyframe names only the properties with one at its offset. Values that share a property
+// (x and y, the turns) keep the longest list's spacing; numbers between their own keyframes are
+// interpolated, anything else takes the nearest.
+function spreadKeyframes(values: Record<string, unknown>, rtl: boolean, sequence: Sequence) {
+  const out = (key: string) =>
+    key === 'x' || key === 'y' ? 'translate' : TURNS.includes(key) ? 'transform' : key
+  const counts: Record<string, number> = {}
+  for (const [key, raw] of Object.entries(values))
+    if (Array.isArray(raw)) counts[out(key)] = Math.max(counts[out(key)] ?? 0, raw.length)
+  const offsets = new Set<number>()
+  for (const n of Object.values(counts))
+    for (let i = 0; i < n; i++) offsets.add(+(i / (n - 1 || 1)).toFixed(6))
+  const easing = typeof sequence.easing === 'string' ? sequence.easing : 'ease-in-out'
+  return [...offsets]
+    .sort((a, b) => a - b)
+    .map((offset) => {
+      const step: Record<string, unknown> = {}
+      for (const [key, raw] of Object.entries(values)) {
+        const n = counts[out(key)]
+        if (!n) step[key] = raw
+        else if (Math.abs(offset * (n - 1) - Math.round(offset * (n - 1))) < 1e-4) {
+          const list = raw as unknown[]
+          const at = offset * (list.length - 1)
+          const a = list[Math.floor(at)]
+          const b = list[Math.ceil(at)]
+          step[key] = !Array.isArray(raw)
+            ? raw
+            : typeof a === 'number' && typeof b === 'number'
+              ? a + (b - a) * (at - Math.floor(at))
+              : list[Math.round(at)]
+        }
+      }
+      return { ...toKeyframe(step as MotionValues, rtl), offset, easing }
+    })
 }
 
 /** How many times keyframes play, and which way: WAAPI's `iterations` and `direction`. */

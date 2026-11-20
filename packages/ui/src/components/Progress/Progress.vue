@@ -26,8 +26,9 @@
             v-for="(segment, index) in segments"
             :key="index"
             ref="fills"
-            :class="[fillPart.class, segment.variantClass]"
-            :style="[segment.style, fillPart.style]"
+            :class="[fillPart.class, segment.variantClass, segment.source.class]"
+            :style="[segment.style, fillPart.style, segment.source.style]"
+            v-tooltip="ringTip(segment.source.tooltip)"
             :d="ring.d"
             :stroke-width="ring.stroke"
             pathLength="100"
@@ -43,8 +44,9 @@
           v-for="(segment, index) in segments"
           :key="index"
           ref="fills"
-          :class="[fillPart.class, segment.variantClass]"
-          :style="[segment.style, fillPart.style]"
+          :class="[fillPart.class, segment.variantClass, segment.source.class]"
+          :style="[segment.style, fillPart.style, segment.source.style]"
+          v-tooltip="segment.source.tooltip"
         />
       </template>
     </div>
@@ -66,6 +68,8 @@
 </template>
 
 <script lang="ts">
+import type { StyleValue } from 'vue'
+
 export type ProgressVariant = 'primary' | 'success' | 'warning' | 'danger' | 'info'
 
 export interface ProgressSegment {
@@ -77,6 +81,12 @@ export interface ProgressSegment {
   variant?: ProgressVariant
   /** Any CSS color, for a palette of your own. */
   color?: string
+  /** Text shown when the pointer is over this segment, through `TooltipHost`. */
+  tooltip?: string
+  /** Class for this segment's fill. */
+  class?: string | string[] | Record<string, boolean>
+  /** Style for this segment's fill, such as `{ blockSize: '3px', alignSelf: 'center' }` for a thinner one. A `min-inline-size` keeps a tiny segment visible; the others give up the room. */
+  style?: StyleValue
 }
 </script>
 
@@ -92,6 +102,7 @@ import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { ProgressMotion } from '../../motion/types'
 import { omitAttrs } from '../../composables/forwardedListeners'
+import { vTooltip } from '../../directives/vTooltip'
 
 defineOptions({ inheritAttrs: false })
 
@@ -103,7 +114,8 @@ const rootAttrs = computed(() =>
 const rawProps = withDefaults(
   defineProps<{
     /**
-     * One value, or segments that stack into one bar (a storage breakdown, a budget).
+     * One value, or segments that stack into one bar (a storage breakdown, a budget): each is
+     * `{ value, label?, variant?, color?, tooltip?, class?, style? }`.
      * `null`/`undefined` renders the indeterminate (looping) state.
      */
     value?: number | ProgressSegment[] | null
@@ -221,6 +233,9 @@ const segments = computed<ResolvedSegment[]>(() => {
     }
   })
 })
+
+// A ring's fill spans the whole circle's box, so its tooltip follows the pointer along it, not the middle.
+const ringTip = (tooltip?: string) => (tooltip ? { content: tooltip, follow: true } : undefined)
 
 const total = computed(() => segments.value.reduce((sum, segment) => sum + segment.amount, 0))
 const totalPercent = computed(() => (range.value > 0 ? (total.value / range.value) * 100 : 0))

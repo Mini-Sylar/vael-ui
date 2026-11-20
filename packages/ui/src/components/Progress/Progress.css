@@ -34,7 +34,7 @@
     block-size: 0.5rem;
   }
   /* One value scales a full-width fill, so a change costs no layout. Stacked segments are flex
-     boxes instead, so a gap between them and pill ends are a plain `ui` override. Segments without
+     boxes instead, so a gap between them and pill ends are a plain `ui` override; they shrink to fit it. Segments without
      a color step down from the bar's. */
   /* --ui-progress-paint, so a segment's own `color` (set inline) reaches a bar's background and a
      ring's stroke alike. */
@@ -66,7 +66,9 @@
   }
   .ui-progress--stacked .ui-progress-fill {
     position: static;
-    flex: none;
+    /* Shrinks in proportion when the gaps and minimums (a segment's `min-inline-size`) don't fit. */
+    flex: 0 1 auto;
+    min-inline-size: 0;
     inline-size: calc(var(--ui-progress-scale, 0) * 100%);
     scale: none;
     border-radius: 0;

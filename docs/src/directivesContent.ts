@@ -56,15 +56,15 @@ export const directivesContent: Record<string, DirectiveContent> = {
       },
       {
         name: 'exit',
-        type: 'MotionValues | ((where) => MotionValues) | false',
+        type: 'MotionValues | ((where) => MotionValues | false) | false',
         description:
-          'Where it leaves to, inside a `v-if` or `v-for`. Unset, it leaves back the way it came, quicker. `false` leaves at once.',
+          'Where it leaves to, inside a `v-if` or `v-for`. Unset, it leaves back the way it came, quicker. `false` leaves at once, and a function can return `false` to leave at once that time. On a spring, it carries on at the speed the element was moving: a card thrown with `useDrag` keeps going.',
       },
       {
         name: 'animate',
-        type: 'MotionValues',
+        type: 'AnimateValues',
         description:
-          'A look it holds while bound, moving to each new one from wherever it is on screen: `{ rotate: open ? 180 : 0 }`. Keyframe arrays play once per change, or loop with `repeat`.',
+          'A look it holds while bound, moving to each new one from wherever it is on screen: `{ rotate: open ? 180 : 0 }`. Keyframe arrays play once per change, or loop with `repeat`. A getter or ref is followed every frame without re-rendering: `{ rotate: () => mapRange(drag.x.value, [-300, 300], [-20, 20]) }`. `{ value: getter, spring }` follows it on a spring instead, and `spring: true` uses the spring of the app.',
       },
       {
         name: 'spring / duration / easing',
@@ -133,7 +133,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
       },
       {
         name: 'progress',
-        type: 'number',
+        type: 'number | (() => number)',
         description:
           'With keyframe arrays in `animate`: holds them at this point, from 0 to 1, so a swipe or a scroll scrubs them.',
       },
@@ -172,7 +172,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
   vTooltip: {
     label: 'v-tooltip',
     description:
-      'Shows a tooltip on hover and keyboard focus. Every `v-tooltip` in the app shares one `<TooltipHost />`, which you mount near your app root (see the Global Setup guide). The Vapor build exports its own version under the same name from `vael-ui/vapor`.',
+      'Shows a tooltip on hover and keyboard focus. Every `v-tooltip` in the app shares one `<TooltipHost />`, which you mount near your app root (see the Global Setup guide). Style every tooltip through the `ui` prop of `TooltipHost`, or one through its `ui` option; `--ui-tooltip-bg` and `--ui-tooltip-color` set the colours. The Vapor build exports its own version under the same name from `vael-ui/vapor`.',
     installNames: ['vTooltip'],
     value: [
       {
@@ -180,7 +180,24 @@ export const directivesContent: Record<string, DirectiveContent> = {
         type: 'string',
         description: 'The tooltip text, shorthand for `{ content }`.',
       },
-      { name: 'content', type: 'string', description: 'The tooltip text. Required in both forms.' },
+      {
+        name: 'content',
+        type: 'string | Component',
+        description:
+          'The tooltip text, or a component for markup such as a status dot or a progress bar. Required in both forms. A component is drawn in the same shared tooltip, so it still opens at once and glides between targets.',
+      },
+      {
+        name: 'props',
+        type: 'Record<string, unknown>',
+        description:
+          'The props for a `content` component: `{ content: ProjectTip, props: { project } }`.',
+      },
+      {
+        name: 'follow',
+        type: 'boolean',
+        description:
+          'While open, the tooltip follows a mouse or pen along the target, and stops at its ends: for a wide target, such as a timeline bar. Opened from the keyboard, it stays centred. Touch keeps its long press.',
+      },
       {
         name: 'side',
         type: "'top' | 'bottom' | 'left' | 'right'",
@@ -214,6 +231,12 @@ export const directivesContent: Record<string, DirectiveContent> = {
         name: 'forceMount',
         type: 'boolean',
         description: "Overrides TooltipHost's `forceMount` prop for this target.",
+      },
+      {
+        name: 'ui',
+        type: 'Partial<{ positioner: UiPartValue; panel: UiPartValue }>',
+        description:
+          "Class and style for this target's tooltip, in place of TooltipHost's `ui` for each part you name. Set `--ui-tooltip-bg` and `--ui-tooltip-color` on `panel` to recolour it.",
       },
     ],
     modifiers: [
@@ -322,7 +345,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
   vDraggable: {
     label: 'v-draggable',
     description:
-      "Lets you reorder a container's children by dragging them: tabs, files or any plain array, without the full `<Sortable>` component. It runs the same engine as `<Sortable>` and `Tree`, so the motion and drag preview match. Rows are tracked by position, so there's no keyboard support and no screen reader announcements; use `<Sortable>` when you need those. While you drag, the grabbed element floats as a preview and the original hides in place, with no styling from you.",
+      "Lets you reorder a container's children by dragging them: tabs, files or any plain array, without the full `<Sortable>` component. It runs the same engine as `<Sortable>` and `Tree`, so the motion and drag preview match. Rows are tracked by position, so there's no keyboard support and no screen reader announcements; use `<Sortable>` when you need those. It only reorders: to move one element freely and decide where it lands when you let go (a card, a toast, a dialog), use `useDrag`. While you drag, the grabbed element floats as a preview and the original hides in place, with no styling from you.",
     installNames: ['vDraggable'],
     value: [
       { name: 'T[]', type: 'T[]', description: 'The array itself, reordered in place on drop.' },

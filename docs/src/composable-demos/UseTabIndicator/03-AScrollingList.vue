@@ -67,6 +67,7 @@ const { style } = useTabIndicator(active, {
   orientation: 'vertical',
   selector: '[data-active]',
   scroller: true,
+  position: 'translate',
   matchCross: true,
   maxGlide: 3,
 })

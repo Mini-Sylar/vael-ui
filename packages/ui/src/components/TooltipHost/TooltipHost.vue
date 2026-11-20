@@ -24,8 +24,12 @@
         >
           <span class="ui-tooltip-content">
             <slot :content="content" :side="resolvedSide" :keys="keys"
-              >{{ content
-              }}<span v-if="keys.length" class="ui-tooltip-keys"
+              ><component
+                :is="content"
+                v-if="typeof content !== 'string'"
+                v-bind="contentProps"
+              /><template v-else>{{ content }}</template
+              ><span v-if="keys.length" class="ui-tooltip-keys"
                 ><Kbd v-for="key in keys" :key="key">{{ key }}</Kbd></span
               ></slot
             >
@@ -60,7 +64,7 @@ export interface TooltipHostProps {
    * object moves them your way. Warm opens stay instant either way.
    */
   motion?: TooltipMotion
-  /** Class and style overrides for each part. */
+  /** Class and style overrides for each part. Set `--ui-tooltip-bg` and `--ui-tooltip-color` on `panel` to recolour it. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -83,9 +87,10 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
+import type { Component } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrDocument } from '../../ssr'
-import { setDescribedBy, useTooltipCore } from '../../composables/useTooltip'
+import { repeatsName, setDescribedBy, useTooltipCore } from '../../composables/useTooltip'
 import { TOOLTIP_ATTR, tooltipTargetListeners, tooltipTargets } from '../../directives/vTooltip'
 import Kbd from '../Kbd/Kbd.vue'
 import type { TooltipDirectiveOptions } from '../../directives/vTooltip'
@@ -98,7 +103,7 @@ const props = withDefaults(defineProps<TooltipHostProps>(), { motion: undefined 
 
 defineSlots<{
   /** Custom tooltip body; defaults to the text `content`, then the `keys` as `Kbd`s. */
-  default(props: { content: string; side: Side; keys: string[] }): unknown
+  default(props: { content: string | Component; side: Side; keys: string[] }): unknown
 }>()
 
 const currentEl = shallowRef<HTMLElement | null>(null)
@@ -121,6 +126,7 @@ const core = useTooltipCore(open, {
   openDelay: () => config.value?.openDelay ?? props.openDelay ?? 400,
   closeDelay: () => config.value?.closeDelay ?? props.closeDelay ?? 100,
   beforeClose: () => config.value?.beforeClose ?? props.beforeClose,
+  follow: () => config.value?.follow ?? false,
 })
 const {
   positionerStyle,
@@ -134,6 +140,7 @@ const {
 } = core
 
 const content = computed(() => config.value?.content ?? '')
+const contentProps = computed(() => config.value?.props ?? {})
 const keys = computed(() => config.value?.keys ?? [])
 // Per-target override with host default (like side/openDelay/closeDelay).
 const forceMount = computed(() => config.value?.forceMount ?? props.forceMount ?? false)
@@ -182,7 +189,7 @@ useEventListener(ssrDocument, 'pointerout', (event: PointerEvent) => {
   if (!target || target !== currentEl.value) return
   const next = event.relatedTarget
   if (next instanceof Node && (target.contains(next) || positionerEl.value?.contains(next))) return
-  core.pointerLeave()
+  core.pointerLeave(event)
 })
 
 useEventListener(ssrDocument, 'focusin', (event: FocusEvent) => {
@@ -209,21 +216,27 @@ useEventListener(
 
 const tooltipId = useId()
 
+// A hint that only repeats the target's name isn't added as its description.
 watch(
-  [open, currentEl] as const,
+  [open, currentEl, content] as const,
   ([isOpen, el], previous) => {
     const previousEl = previous?.[1]
     if (previousEl && previousEl !== el) setDescribedBy(previousEl, tooltipId, false)
-    if (el) setDescribedBy(el, tooltipId, isOpen)
+    if (el) setDescribedBy(el, tooltipId, isOpen && !repeatsName(el, panelEl.value))
   },
   { flush: 'post' },
 )
 
 const cx = useClassMerge()
-const themedUi = useThemedUi(
+const hostUi = useThemedUi(
   (theme) => theme.tooltip,
   () => props.ui,
 )
+// The target's own `ui` replaces the host's for each part it names, as a local `ui` replaces a theme's.
+const themedUi = () => {
+  const own = config.value?.ui
+  return own ? { ...hostUi(), ...own } : hostUi()
+}
 const themeScope = inject(themeScopeKey, undefined)
 
 const positionerPart = computed(() =>

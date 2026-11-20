@@ -48,7 +48,7 @@ for (const [name, template] of Object.entries(controls)) {
     // the id the label points at belongs to the control (not a dangling or a duplicate id)
     expect(document.querySelectorAll(`[id="${CSS.escape(label.htmlFor)}"]`).length).toBe(1)
     const described = (named!.getAttribute('aria-describedby') ?? '').split(' ')
-    const errorId = field.querySelector('[role=alert]')!.id
+    const errorId = field.querySelector('.ui-field-error')!.id
     expect(described, 'the Field error describes the control').toContain(errorId)
   })
 }

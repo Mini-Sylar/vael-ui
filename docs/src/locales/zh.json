@@ -253,11 +253,11 @@
     "featureVaporBody": "每个组件都从同一份源码经由 Vue 3.6 的 Vapor 模式编译。",
     "featureVaporTitle": "真正的 Vapor 构建，而非垫片",
     "headline": "直接编译为 Vapor 的组件，而不是围绕它。",
-    "featureSkillBody": "一个配套包，向 Claude Code、GitHub Copilot、Codex 等智能体提供每个组件的真实 API。它由 vael-ui 自身的类型生成，而非手写。",
+    "featureSkillBody": "配套技能，为 Claude Code、GitHub Copilot、Codex 等智能体提供每个组件的真实 API、能选对工具的动效指南，以及 vael-form。由库自身的类型生成，而非手写。",
     "featureSkillTitle": "AI 智能体技能",
     "themeLabel": "试试颜色：",
     "newTag": "新",
-    "newText": "0.5.0：全新的动效系统",
+    "newText": "0.5.5：手势与实时动效值",
     "showcaseLabel": "使用 vael-ui 构建的在线演示"
   },
   "i18nKeys": {
@@ -423,7 +423,8 @@
     "noParameters": "不接受任何争论。",
     "noReturns": "没有什么可记录的。",
     "parameters": "参数",
-    "returns": "退货"
+    "returns": "退货",
+    "which": "该用哪个？"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "浮层与确认",
@@ -442,6 +443,7 @@
     "useNumberFormat": "用相同的选项按语言环境格式化和解析数字，使输入文本与格式化后的显示始终一致。用于你自己的数字字段，或让 AnimatedNumber 使用相同的格式。",
     "useColorScheme": "在浅色、深色和跟随系统模式之间切换，还可以让新配色从点击处呈圆形扩散。用于主题切换，传入你自己的存储函数即可记住选择。",
     "useHaptic": "在支持的手机上播放触感反馈：轻点、轻撞、短促的成功、警告或错误模式，或你自定义的模式。用于确认某个操作的时刻。",
+    "mapRange": "通过对齐两个范围，把一个数字换算成另一个：把拖动的偏移变成倾斜，把滚动变成不透明度。配合 v-animate 中的实时值使用。",
     "springEasing": "把弹簧转换成 CSS linear() 曲线及其稳定时间。用它让 element.animate() 或 CSS 过渡使用与 vael-ui 相同的弹簧。",
     "preventFocusZoom": "阻止 iOS 在表单字段获得焦点时放大页面，让字段与其余文字大小一致。在客户端调用一次，例如在 main.ts 中。",
     "useFloatingPosition": "Popover、Menu 和 Tooltip 背后的定位引擎，基于 Floating UI 构建。用它构建你自己的锚定浮层。",
@@ -455,6 +457,10 @@
     "useScrollLock": "像对话框打开时那样，锁定页面或任意元素的滚动，且不会造成布局偏移。用于你自己的浮层和全屏面板。",
     "moveTreeNode": "将节点及其子树原地移动到新的父节点和索引。不可能的移动（例如把文件夹放进它自己里面）不会改变任何内容。用它把拖放移动应用到你的树数据上。",
     "useFileDrop": "把任意元素变成文件放置区，拖拽经过子元素时悬停状态保持稳定，并忽略拖入的文本或链接。用它构建你自己的放置区。",
+    "useWheel": "沿一排项目拖动、甩动、滚动或用按键移动的位置，并停在某一项上：滚轮选择器、轮播、分页器。每一项以 CSS 变量读取它与停靠点的距离。",
+    "usePanZoom": "在框内平移、捏合和缩放内容：图片、地图、图表。用手指或鼠标拖动，双指捏合，双击缩放。",
+    "useDragSelect": "在框内空白处拖动，选中选框碰到的内容。Shift 追加，Ctrl 或 Cmd 切换，选框还可以像弹簧一样伸展。",
+    "useDrag": "松手时决定去向的拖动：元素跟随指针，松手后按你返回的位置移动，弹簧保留甩出的速度。适用于卡片堆叠和滑动关闭。",
     "useScrollLength": "页面或容器可滚动的距离（px），以 ref 形式提供。会随内容增减而更新。"
   },
   "autoImport": {
@@ -498,20 +504,27 @@
     "vaporTitle": "Vapor"
   },
   "skill": {
-    "claudeCodeIntro": "添加一次市场，然后安装技能：",
+    "claudeCodeIntro": "先添加一次市场，再安装你需要的。vael-ui 插件包含 vael-motion：",
     "claudeCodeTitle": "克劳德·科德",
-    "includedAnimation": "动效系统（motion prop、enter 和 leave 钩子、v-animate），附带 GSAP 和 motion 示例",
+    "includedAnimation": "动效系统：motion prop、enter 与 leave 钩子、v-animate、实时值和手势，附带 GSAP 和 motion 示例以及现成的配方",
     "includedComponents": "每个组件的 props、插槽、事件和暴露的 ref",
     "includedComposables": "每个独立组合式函数的参数、返回值和使用示例",
     "includedStyling": "级联层顺序和用于主题的全部 CSS 变量",
-    "intro": "一个配套包，教 AI 编码智能体如何使用 vael-ui。它适用于 Claude Code、GitHub Copilot、Codex、Cursor 等。内容涵盖每个组件的 props、插槽和事件，每个组合式函数，以及如何设置动效、主题和 VDOM 与 Vapor 构建。它由 vael-ui 自身的类型和文档生成，而非手写，因此会随着 vael-ui 的变化保持准确。它独立于 vael-ui 进行版本管理和发布。",
-    "otherAgentsIntro": "任何支持通用 <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 规范的智能体都可以通过 <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> 安装它。其中包括 GitHub Copilot、Codex、Cursor 以及其他 70 多个智能体：",
+    "intro": "配套技能，教 AI 编程智能体使用 vael-ui 和 vael-form。适用于 Claude Code、GitHub Copilot、Codex、Cursor 等。组件和组合式函数的参考由这些库自身的类型和文档生成，因此会随库的变化保持准确。它们与 vael-ui 分开版本管理和发布。",
+    "otherAgentsIntro": "任何支持共享 <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 规范的智能体都可以通过 <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> 安装，包括 GitHub Copilot、Codex、Cursor 以及其他 70 多个。",
     "otherAgentsTitle": "其他代理",
-    "sourceIntro": "该技能的源码位于 {link}，其中还附有在 vael-ui 发布周期之外更新它的说明。",
+    "sourceIntro": "这些技能的源码位于 {link}，其中也说明了如何在 vael-ui 的发布周期之外更新它们。",
     "sourceTitle": "来源",
     "title": "AI 智能体技能",
     "whatsIncludedIntro": "一份简洁的顶层指南和一份完整参考，由与本文档站点相同的数据生成：",
-    "whatsIncludedTitle": "包含内容"
+    "whatsIncludedTitle": "包含内容",
+    "skillsTitle": "这些技能",
+    "skillsIntro": "安装你用到的即可。每个只做一件事：",
+    "uiBody": "安装配置（VDOM 与 Vapor 构建、自动导入、Nuxt、SSR）、每个组件准确的 props、插槽和事件、主题，以及命令式组合式函数。",
+    "motionBody": "一切会动的东西。它先判断某物是否该动画，再选择工具：组件的 motion prop、v-animate、实时值、useDrag 和 useWheel 等手势，或你自己的动画库。请与 vael-ui 一起安装。",
+    "formBody": "使用 vael-form 的表单：模式、绑定输入、错误、列表与步骤、服务端错误、翻译消息和测试。",
+    "otherAgentsPick": "从列表中选择，或按名称安装其中一个：",
+    "includedForms": "完整的 vael-form API，以及列表、步骤、服务端错误和从 vee-validate 迁移的指南"
   },
   "theme": {
     "label": "主题色",
@@ -603,6 +616,7 @@
     "yoursIntro": "<code>v-animate</code> 让你自己的元素拥有同样的动效：入场、离场、平滑适应内容的尺寸，或在布局变化时滑动到新位置。它和用于你自己元素的其他工具都从 <code>vael-ui/motion</code> 导入;在 Vapor 组件中,改为从那里导入 <code>vAnimateVapor</code>。",
     "yoursComposables": "要实现你自己的动效，可使用背后的这些组合式函数：",
     "composable": {
+      "mapRange": "通过对齐两个范围，把一个数字换算成另一个。",
       "springEasing": "把弹簧转换为 CSS 缓动和稳定所需的时间。",
       "useSpringValue": "一个沿弹簧追随目标的值。",
       "useScrollProgress": "0 到 1 的滚动进度，用于跟随滚动的动效。",
@@ -856,7 +870,7 @@
         },
         "drag": {
           "title": "拖动",
-          "body": "可拖动的组件（BottomSheet、SwipeToReveal、Sortable、Slider）已经内置了拖动。要让人重新排序你自己的列表，或在列表之间移动条目，请用 <code>v-draggable</code> 配合 <code>useSortableGroup</code>：与 Sortable 相同的引擎和动效。对自由拖动的元素（例如用 VueUse 的 <code>useDraggable</code>），把它的偏移放在 <code>animate</code> 里，松手时设回 0，<code>v-animate</code> 会用弹簧把它带回原位。"
+          "body": "<code>v-draggable</code> 为你自己的列表重新排序，<code>useSortableGroup</code> 在列表之间移动项目。对于要扔出去或滑动移除的东西，用 <code>useDrag</code>：元素跟随手指，<code>onRelease</code> 决定它去哪里。用 <code>animate</code> 中的 getter 把外观与拖动联系起来：<code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>。getter 每帧运行且不会重新渲染。弹簧式的 exit 会保持扔出的速度。"
         },
         "own": {
           "title": "你自己的组件",
@@ -1167,7 +1181,39 @@
         "app": "应用的整体动效",
         "other": "其他"
       },
-      "reference": "参考"
+      "reference": "参考",
+      "places": "{n} 处 | {n} 处"
+    },
+    "anatomy": {
+      "label": "v-animate 的结构",
+      "forms": {
+        "alone": "单独使用",
+        "group": "在一组中",
+        "component": "在组件中"
+      },
+      "roles": {
+        "directive": "指令",
+        "name": "名称",
+        "modifier": "修饰符",
+        "value": "值",
+        "none": "无名称"
+      },
+      "tips": {
+        "directive": "指令",
+        "name": "名称",
+        "modifier": "修饰符（可选）",
+        "value": "值（可选）",
+        "none": "无需名称"
+      },
+      "directive": "在元素挂载、离开或变化时播放动效。",
+      "modifier": "内置外观（.fade、.rise、.drop、.pop、.blur）、弹簧（.snappy、.smooth、.bouncy、.gentle）或 .stagger。可叠加任意多个。",
+      "value": "stagger、delay、exit 等选项。只用修饰符就够了，需要时再加。",
+      "name": {
+        "group": "同名元素属于同一组，所以 stagger 会依次播放它们，after: 'rows' 可让另一个元素等待它们。",
+        "component": "Dialog 就是靠它找到这些元素：它的 motion.targets.rows 决定它们如何运动，它们随对话框一起出现和消失。"
+      },
+      "none": "这个元素是独立的，不需要名称。",
+      "rule": "只有当别的东西需要指向某个元素时才加名称：stagger 分组、after，或组件的 motion.targets。否则不要加。"
     }
   },
   "recipes": {
@@ -1542,7 +1588,7 @@
         "setValue": "<code>setValue(path, value)</code>，视同用户编辑。",
         "setValues": "<code>setValues(values)</code>，不会标记任何内容为已修改。",
         "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>，例如来自服务器的错误。每个错误在其字段变化时清除。",
-        "clearErrors": "<code>clearErrors(path?)</code>：清除用 <code>setErrors</code> 设置的错误。",
+        "clearErrors": "<code>clearErrors()</code>：清除用 <code>setErrors</code> 设置的错误。",
         "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>：在用户编辑和 <code>setValue</code> 时运行，重置或加载默认值时不运行。",
         "fieldFn": "<code>field(path)</code>：单个字段，包含以下所有内容。",
         "f_value": "值，可写。",

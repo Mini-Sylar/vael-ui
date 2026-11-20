@@ -1,6 +1,8 @@
 @layer ui-components {
   .ui-context-menu-trigger {
     display: contents;
+    /* iOS shows its own callout on a long press over links and images. */
+    -webkit-touch-callout: none;
   }
   .ui-context-menu-anchor {
     position: fixed;

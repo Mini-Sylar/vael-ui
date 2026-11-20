@@ -253,11 +253,11 @@
     "featureVaporBody": "すべてのコンポーネントは、同じソースから Vue 3.6 の Vapor モードでコンパイルされます。",
     "featureVaporTitle": "シムではなく本物の Vapor ビルド",
     "headline": "Vapor を中心にコンパイルするのではなく、Vapor に直接コンパイルするコンポーネント。",
-    "featureSkillBody": "Claude Code、GitHub Copilot、Codex などのエージェントに、全コンポーネントの実際の API を教えるコンパニオンパッケージです。手書きではなく、vael-ui 自身の型から生成されています。",
-    "featureSkillTitle": "AI エージェントスキル",
+    "featureSkillBody": "Claude Code、GitHub Copilot、Codex などのエージェントに、全コンポーネントの実際の API、適切な道具を選ぶモーションガイド、vael-form を提供する付属スキルです。手書きではなく、ライブラリ自身の型から生成されます。",
+    "featureSkillTitle": "AIエージェント用スキル",
     "themeLabel": "カラーを試す:",
     "newTag": "新着",
-    "newText": "0.5.0: 新しいモーションシステム",
+    "newText": "0.5.5：ジェスチャーとライブなモーション値",
     "showcaseLabel": "vael-ui で作ったライブデモ"
   },
   "i18nKeys": {
@@ -293,7 +293,7 @@
     "composables": "コンポーザブル",
     "autoImportGuide": "自動インポート",
     "nuxtGuide": "ナクスト",
-    "skillGuide": "AIエージェントスキル",
+    "skillGuide": "AIエージェント用スキル",
     "directives": "ディレクティブ",
     "previous": "前へ",
     "next": "次へ",
@@ -423,7 +423,8 @@
     "noParameters": "引数は取りません。",
     "noReturns": "文書化するものは何もありません。",
     "parameters": "パラメータ",
-    "returns": "返品"
+    "returns": "返品",
+    "which": "どれを使うか"
   },
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "オーバーレイと確認",
@@ -442,6 +443,7 @@
     "useNumberFormat": "同じオプションでロケールに応じて数値を書式化・解析するので、入力テキストと書式化された表示が常に一致します。独自の数値フィールドや、AnimatedNumber に同じ書式を与えるのに使います。",
     "useColorScheme": "ライト、ダーク、システムのモードを切り替えます。クリックした位置から新しい配色を円状に広げることもできます。テーマの切り替えに使い、選択を記憶するには独自のストレージ関数を渡します。",
     "useHaptic": "対応するスマートフォンで触覚フィードバックを鳴らします。軽いティック、バンプ、短い成功・警告・エラーのパターン、または独自のパターンです。何かを確定する瞬間に使います。",
+    "mapRange": "2 つの範囲を対応させて、ある数値を別の数値に変換します。ドラッグの移動量を傾きに、スクロール量を不透明度に。v-animate のライブ値と組み合わせて使います。",
     "springEasing": "スプリングを CSS の linear() カーブと収束時間に変換します。element.animate() や CSS トランジションに vael-ui と同じスプリングを与えるのに使います。",
     "preventFocusZoom": "フォーム欄にフォーカスしたときに iOS がズームしないようにし、欄の文字サイズを他のテキストと揃えられるようにします。main.ts などで、クライアント上で一度だけ呼び出してください。",
     "useFloatingPosition": "Popover、Menu、Tooltip の背後にある、Floating UI ベースの位置決めエンジン。独自の固定表示パネルを作るのに使います。",
@@ -455,6 +457,10 @@
     "useScrollLock": "ダイアログが開いている間と同じように、ページや任意の要素のスクロールをレイアウトのずれなしでロックします。独自のオーバーレイや全画面パネルに使います。",
     "moveTreeNode": "ノードとそのサブツリーを、新しい親とインデックスへその場で移動します。フォルダーを自分自身の中へ移すなど、不可能な移動では何も変わりません。ドラッグ＆ドロップの移動をツリーデータに反映するのに使います。",
     "useFileDrop": "任意の要素をファイルのドロップ先にします。ドラッグ中の状態は子要素の上でも安定して保たれ、ドラッグされたテキストやリンクは無視します。独自のドロップゾーンを作るのに使います。",
+    "useWheel": "項目の並びに沿った位置を、ドラッグ・フリック・ホイール・キーで動かし、いずれかの項目で止めます。ピッカーのドラム、カルーセル、ページャーに使えます。各項目は止まる位置からの距離を CSS 変数で読み取ります。",
+    "usePanZoom": "ボックス内のコンテンツ（画像、地図、図）を、パン、ピンチ、ズームします。指やマウスでドラッグ、2 本指でピンチ、ダブルタップで拡大します。",
+    "useDragSelect": "ボックス内の空いた場所をドラッグして、バンドが触れたものを選択します。Shift で追加、Ctrl または Cmd で切り替え、バンドはバネで伸びることもできます。",
+    "useDrag": "離したときに行き先を決めるドラッグです。要素はポインターに追従し、離すと指定した位置へ、投げた速さを保つスプリングで移動します。カードの山やスワイプで閉じる操作に。",
     "useScrollLength": "ページまたはコンテナがスクロールできる距離 (px) を ref として返します。コンテンツの増減に追従します。"
   },
   "autoImport": {
@@ -498,20 +504,27 @@
     "vaporTitle": "Vapor"
   },
   "skill": {
-    "claudeCodeIntro": "マーケットプレイスを一度追加してから、スキルをインストールします。",
+    "claudeCodeIntro": "マーケットプレイスを一度追加し、必要なものをインストールします。vael-ui プラグインには vael-motion が含まれます:",
     "claudeCodeTitle": "クロード・コード",
-    "includedAnimation": "モーションシステム（motion prop、enter と leave のフック、v-animate）と、GSAP と motion の実例",
+    "includedAnimation": "モーションシステム。motion prop、enter と leave フック、v-animate、ライブ値、ジェスチャー、GSAP と motion の例、すぐ使えるレシピ",
     "includedComponents": "すべてのコンポーネントの props、スロット、イベント、公開された ref",
     "includedComposables": "すべてのスタンドアロンのコンポーザブルの引数、戻り値、使用例",
     "includedStyling": "カスケードレイヤーの順序と、テーマ設定用のすべての CSS 変数",
-    "intro": "AI コーディングエージェントに vael-ui の使い方を教えるコンパニオンパッケージです。Claude Code、GitHub Copilot、Codex、Cursor などで動作します。すべてのコンポーネントの props、スロット、イベント、すべてのコンポーザブル、そしてモーション、テーマ、VDOM と Vapor ビルドの設定方法をカバーしています。手書きではなく、vael-ui 自身の型とドキュメントから生成されるため、vael-ui の変更に合わせて正確さが保たれます。vael-ui とは別にバージョン管理・リリースされています。",
-    "otherAgentsIntro": "共通の <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 仕様に対応したエージェントであれば、<a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> でインストールできます。GitHub Copilot、Codex、Cursor をはじめ、70 以上のエージェントが対応しています:",
+    "intro": "AIコーディングエージェントに vael-ui と vael-form の使い方を教える付属スキルです。Claude Code、GitHub Copilot、Codex、Cursor などで使えます。コンポーネントとコンポーザブルのリファレンスは各ライブラリ自身の型とドキュメントから生成されるため、ライブラリの変更に合わせて正確なままです。vael-ui とは別にバージョン管理され、リリースされます。",
+    "otherAgentsIntro": "共通の <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 仕様に対応する任意のエージェントは、<a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> でインストールできます。GitHub Copilot、Codex、Cursor など 70 以上が対象です。",
     "otherAgentsTitle": "その他のエージェント",
-    "sourceIntro": "スキルのソースは {link} にあります。vael-ui のリリースサイクルとは別に更新する手順も掲載しています。",
+    "sourceIntro": "スキルのソースは {link} にあり、vael-ui のリリースサイクルとは別に更新する手順もあります。",
     "sourceTitle": "ソース",
-    "title": "AI エージェントスキル",
+    "title": "AIエージェント用スキル",
     "whatsIncludedIntro": "コンパクトなトップレベルガイドと完全なリファレンス。このドキュメントサイトと同じデータから生成されています。",
-    "whatsIncludedTitle": "含まれるもの"
+    "whatsIncludedTitle": "含まれるもの",
+    "skillsTitle": "スキル一覧",
+    "skillsIntro": "使うものをインストールしてください。それぞれ 1 つの役割を担います。",
+    "uiBody": "セットアップ（VDOM と Vapor のビルド、自動インポート、Nuxt、SSR）、全コンポーネントの props、スロット、イベント、テーマ設定、命令的なコンポーザブル。",
+    "motionBody": "動くもののすべて。アニメーションさせるべきかを判断し、道具を選びます。コンポーネントの motion prop、v-animate、ライブ値、useDrag や useWheel などのジェスチャー、または独自のアニメーションライブラリです。vael-ui と一緒にインストールしてください。",
+    "formBody": "vael-form によるフォーム。スキーマ、入力へのバインド、エラー、リストとステップ、サーバーエラー、翻訳済みメッセージ、テスト。",
+    "otherAgentsPick": "一覧から選ぶか、名前を指定して 1 つインストールします:",
+    "includedForms": "vael-form の完全な API と、リスト、ステップ、サーバーエラー、vee-validate からの移行のガイド"
   },
   "theme": {
     "label": "テーマカラー",
@@ -603,6 +616,7 @@
     "yoursIntro": "<code>v-animate</code> は自分の要素にも同じモーションを与えます。登場、退場、内容に合わせてなめらかに変わるサイズ、レイアウトの変化に合わせた新しい位置へのスライドなどです。これと自分の要素向けのほかのツールは <code>vael-ui/motion</code>。Vapor コンポーネントでは代わりにそこから <code>vAnimateVapor</code> をインポートしますからインポートします。",
     "yoursComposables": "独自のモーションには、その裏にあるコンポーザブルを使います:",
     "composable": {
+      "mapRange": "2 つの範囲を対応させて、ある数値を別の数値に変換します。",
       "springEasing": "スプリングを CSS のイージングと収束時間に変換します。",
       "useSpringValue": "目標値にスプリングで追従する値。",
       "useScrollProgress": "スクロール連動のための 0〜1 の進み具合。",
@@ -856,7 +870,7 @@
         },
         "drag": {
           "title": "ドラッグ",
-          "body": "ドラッグできるコンポーネント（BottomSheet、SwipeToReveal、Sortable、Slider）には最初から組み込まれています。自分のリストを並べ替えたり、リスト間で項目を移動したりするには、<code>v-draggable</code> と <code>useSortableGroup</code> を使います。Sortable と同じエンジンと動きです。自由にドラッグする要素（VueUse の <code>useDraggable</code> など）は、そのずれを <code>animate</code> に持たせ、離したときに 0 に戻すと、<code>v-animate</code> がばねで元の位置へ戻します。"
+          "body": "<code>v-draggable</code> は自分のリストを並べ替え、<code>useSortableGroup</code> は項目をリスト間で移します。投げたりスワイプで消したりするものには <code>useDrag</code> を使います。要素は指に追従し、<code>onRelease</code> が行き先を決めます。見た目をドラッグに結びつけるには、<code>animate</code> にゲッターを渡します：<code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>。ゲッターは再レンダリングせず毎フレーム実行されます。スプリングの exit は投げた速さを保ちます。"
         },
         "own": {
           "title": "自作のコンポーネント",
@@ -1167,7 +1181,39 @@
         "app": "アプリ全体のモーション",
         "other": "その他"
       },
-      "reference": "リファレンス"
+      "reference": "リファレンス",
+      "places": "{n} か所 | {n} か所"
+    },
+    "anatomy": {
+      "label": "v-animate の構成",
+      "forms": {
+        "alone": "単独で",
+        "group": "グループで",
+        "component": "コンポーネント内で"
+      },
+      "roles": {
+        "directive": "ディレクティブ",
+        "name": "名前",
+        "modifier": "修飾子",
+        "value": "値",
+        "none": "名前なし"
+      },
+      "tips": {
+        "directive": "ディレクティブ",
+        "name": "名前",
+        "modifier": "修飾子（任意）",
+        "value": "値（任意）",
+        "none": "名前は不要"
+      },
+      "directive": "この要素がマウント、離脱、変化するときにモーションを再生します。",
+      "modifier": "組み込みの見た目（.fade、.rise、.drop、.pop、.blur）、スプリング（.snappy、.smooth、.bouncy、.gentle）、または .stagger。いくつでも重ねられます。",
+      "value": "stagger、delay、exit などのオプションです。修飾子だけで足りるので、必要になるまで省略できます。",
+      "name": {
+        "group": "同じ名前の要素は 1 つのグループになるため、stagger が順番に再生し、after: 'rows' で別の要素がその完了を待てます。",
+        "component": "Dialog はこの名前で要素を見つけます。motion.targets.rows が動き方を決め、要素はダイアログと一緒に出入りします。"
+      },
+      "none": "この要素は単独なので、名前は不要です。",
+      "rule": "名前を付けるのは、ほかの何かがその要素を指す必要があるときだけです。stagger のグループ、after、コンポーネントの motion.targets などです。それ以外は付けません。"
     }
   },
   "recipes": {
@@ -1542,7 +1588,7 @@
         "setValue": "<code>setValue(path, value)</code>。ユーザーの編集として扱います。",
         "setValues": "<code>setValues(values)</code>。何も dirty にしません。",
         "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>。サーバーからのエラーなどに使います。それぞれ、そのフィールドが変わると消えます。",
-        "clearErrors": "<code>clearErrors(path?)</code>：<code>setErrors</code> で設定したエラーを消します。",
+        "clearErrors": "<code>clearErrors()</code>：<code>setErrors</code> で設定したエラーを消します。",
         "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>：ユーザーの編集と <code>setValue</code> で実行され、リセットや読み込まれた初期値では実行されません。",
         "fieldFn": "<code>field(path)</code>：以下のすべてを持つ、ひとつのフィールド。",
         "f_value": "値。書き込み可能です。",

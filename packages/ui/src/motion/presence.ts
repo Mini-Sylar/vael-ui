@@ -163,13 +163,13 @@ export function findPresence(el: Element): Presence | undefined {
 }
 
 /**
- * The element behind a template ref: an element, a vael-ui component (`el`), a VDOM component
- * (`$el`), or a Vapor component (`block`). Null for a component whose root isn't one element.
+ * The element behind a template ref: an element, a component that exposes `el` (vael-ui's, or
+ * yours with `defineExpose({ el })`), or a VDOM component's `$el`.
  */
 export function refElement(raw: unknown): Element | null {
   if (!raw || typeof raw !== 'object') return null
   if (raw instanceof Element) return raw
-  for (const key of ['el', '$el', 'block'] as const) {
+  for (const key of ['el', '$el'] as const) {
     const value = (raw as Record<string, unknown>)[key]
     if (value instanceof Element) return value
   }

@@ -16,7 +16,7 @@
     "i18nKeysGuide": "Translating vael-ui",
     "autoImportGuide": "Auto import",
     "nuxtGuide": "Nuxt",
-    "skillGuide": "AI agent skill",
+    "skillGuide": "AI agent skills",
     "directives": "Directives",
     "menu": "Menu",
     "previous": "Previous",
@@ -65,7 +65,8 @@
     "parameters": "Parameters",
     "noParameters": "Takes no arguments.",
     "returns": "Returns",
-    "noReturns": "Nothing to document."
+    "noReturns": "Nothing to document.",
+    "which": "Which one?"
   },
   "component": {
     "vdom": "VDOM",
@@ -115,12 +116,12 @@
     "featurePrimitivesBody": "No compound components to assemble and no hidden context to wire up.",
     "featureSsrTitle": "Ready for server rendering",
     "featureSsrBody": "Every component checks for a browser before it touches window or document, so it renders in Nuxt, server-rendered apps and static site generators. This docs site is built with Vite SSG from the same components.",
-    "featureSkillTitle": "AI agent skill",
-    "featureSkillBody": "A companion package that gives Claude Code, GitHub Copilot, Codex and other agents every component’s real API. It’s generated from vael-ui’s own types, not written by hand.",
+    "featureSkillTitle": "AI agent skills",
+    "featureSkillBody": "Companion skills that give Claude Code, GitHub Copilot, Codex and other agents every component’s real API, a motion guide that picks the right tool, and vael-form. Generated from the libraries’ own types, not written by hand.",
     "browseComponents": "Browse components",
     "themeLabel": "Try a color:",
     "newTag": "New",
-    "newText": "0.5.0: a new motion system",
+    "newText": "0.5.5: gestures and live motion values",
     "showcaseLabel": "Live demo built with vael-ui"
   },
   "gettingStarted": {
@@ -472,20 +473,27 @@
     "resolverIntroLink": "Auto import"
   },
   "skill": {
-    "title": "AI agent skill",
-    "intro": "A companion package that teaches AI coding agents to use vael-ui. It works with Claude Code, GitHub Copilot, Codex, Cursor and others. It covers every component’s props, slots and events, every composable, and how to set up motion, theming and the VDOM and Vapor builds. It’s generated from vael-ui’s own types and docs, not written by hand, so it stays accurate as vael-ui changes. It’s versioned and released separately from vael-ui.",
+    "title": "AI agent skills",
+    "intro": "Companion skills that teach AI coding agents to use vael-ui and vael-form. They work with Claude Code, GitHub Copilot, Codex, Cursor and others. The component and composable references are generated from the libraries’ own types and docs, so they stay accurate as the libraries change. They’re versioned and released separately from vael-ui.",
     "claudeCodeTitle": "Claude Code",
-    "claudeCodeIntro": "Add the marketplace once, then install the skill:",
+    "claudeCodeIntro": "Add the marketplace once, then install what you need. The vael-ui plugin includes vael-motion:",
     "otherAgentsTitle": "Other agents",
-    "otherAgentsIntro": "Any agent that supports the shared <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> spec can install it with <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a>. That includes GitHub Copilot, Codex, Cursor and more than 70 others:",
+    "otherAgentsIntro": "Any agent that supports the shared <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> spec can install them with <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a>. That includes GitHub Copilot, Codex, Cursor and more than 70 others.",
     "whatsIncludedTitle": "What’s included",
     "whatsIncludedIntro": "A compact top-level guide and a full reference, generated from the same data as this docs site:",
     "includedComponents": "Every component’s props, slots, events and exposed refs",
     "includedComposables": "Every standalone composable’s parameters, return values and usage examples",
-    "includedAnimation": "The motion system (the motion prop, enter and leave hooks, v-animate), with GSAP and motion examples",
+    "includedAnimation": "The motion system: the motion prop, enter and leave hooks, v-animate, live values and gestures, with GSAP and motion examples and ready-made recipes",
     "includedStyling": "Cascade layer order and every CSS variable for theming",
     "sourceTitle": "Source",
-    "sourceIntro": "The skill’s source lives at {link}, along with instructions for updating it outside vael-ui’s release cycle."
+    "sourceIntro": "The skills’ source lives at {link}, along with instructions for updating them outside vael-ui’s release cycle.",
+    "skillsTitle": "The skills",
+    "skillsIntro": "Install the ones you use. Each does one job:",
+    "uiBody": "Setup (VDOM and Vapor builds, auto-import, Nuxt, SSR), the exact props, slots and events of every component, theming, and the imperative composables.",
+    "motionBody": "Everything that moves. It decides whether something should animate, then picks the tool: a component’s motion prop, v-animate, live values, gestures such as useDrag and useWheel, or your own animation library. Install it next to vael-ui.",
+    "formBody": "Forms with vael-form: schemas, binding to inputs, errors, lists and steps, server errors, translated messages and testing.",
+    "otherAgentsPick": "Pick from the list, or install one by name:",
+    "includedForms": "The full vael-form API, with guides for lists, steps, server errors and moving from vee-validate"
   },
   "notFound": {
     "title": "Page not found",
@@ -503,6 +511,7 @@
     "useNumberFormat": "Formats and parses numbers for a locale with the same options, so typed text and its formatted display always match. Use it for your own number fields, or to give AnimatedNumber the same format.",
     "useColorScheme": "Switches between light, dark and system modes, and can spread the new scheme in a circle from a click. Use it for a theme toggle, and pass your own storage functions to remember the choice.",
     "useHaptic": "Plays haptic feedback on phones that support it: a light tick, a bump, a short success, warning or error pattern, or your own. Use it for moments that commit something.",
+    "mapRange": "Turns one number into another by lining up two ranges: a drag's offset into a tilt, a scroll into an opacity. Pair it with a live value in v-animate.",
     "springEasing": "Turns a spring into a CSS linear() curve and its settle time. Use it to give element.animate() or a CSS transition the same spring as vael-ui.",
     "preventFocusZoom": "Stops iOS from zooming in when a form field gets focus, so fields can match the rest of your text size. Call it once on the client, such as in main.ts.",
     "useFloatingPosition": "The positioning engine behind Popover, Menu and Tooltip, built on Floating UI. Use it to build your own anchored panels.",
@@ -511,6 +520,10 @@
     "useHoverIndicator": "The sliding hover and keyboard highlight behind vael-ui’s lists. Use it to give your own lists the same highlight.",
     "useSpringValue": "Interruptible spring physics in three forms: a reactive value, an imperative spring that writes each frame without re-rendering, and the pure step function behind both. Use it for motion that can change target partway.",
     "useScrollProgress": "Scroll progress as a ref from 0 to 1: the page's, or an element's way through the screen. Pass it to v-animate's progress as a getter.",
+    "useWheel": "A position you drag, throw, scroll or step along a line of items, resting on one: a picker drum, a carousel, a pager. Items read their distance from the resting spot as CSS variables.",
+    "usePanZoom": "Pans, pinches and zooms content in a box: an image, a map, a diagram. Pan with a finger or the mouse, pinch with two fingers, double tap to zoom.",
+    "useDragSelect": "Drag across empty space in a box to select what the band touches. Shift adds, ctrl or cmd toggles, and the band can stretch on a spring.",
+    "useDrag": "A drag that decides on release: the element follows the pointer, then goes where you return on a spring that keeps the throw's speed. For card decks and swipe to dismiss.",
     "useScrollLength": "How far the page or a container can scroll, in px, as a ref. It follows the content growing or shrinking.",
     "settled": "Resolves once nothing vael-ui started is still animating, everywhere or on one element. For tests.",
     "useTabIndicator": "The sliding selection indicator behind Tabs, SelectButton, MenuList and Pagination. Use it for your own segmented controls and lists.",
@@ -603,6 +616,7 @@
     "yoursIntro": "<code>v-animate</code> gives your own elements the same motion: an entrance, an exit, a size that eases to fit its content, or a slide to a new place when the layout changes. It and the rest of the tools for your own elements import from <code>vael-ui/motion</code>; a Vapor component imports <code>vAnimateVapor</code> from there in place of <code>vAnimate</code>.",
     "yoursComposables": "For motion of your own, use the composables behind it:",
     "composable": {
+      "mapRange": "Turns one number into another by lining up two ranges.",
       "springEasing": "Turns a spring into a CSS easing and its settle time.",
       "useSpringValue": "A value that follows its target on a spring.",
       "useScrollProgress": "Scroll progress from 0 to 1, for scroll-linked motion.",
@@ -857,7 +871,7 @@
         },
         "drag": {
           "title": "Dragging",
-          "body": "The components that drag (BottomSheet, SwipeToReveal, Sortable, Slider) have it built in. To let people reorder your own list, or move items between lists, use <code>v-draggable</code> with <code>useSortableGroup</code>: the same engine and motion as Sortable. For an element dragged freely (with VueUse's <code>useDraggable</code>, say), hold its offset in <code>animate</code> and set it back to 0 on release: <code>v-animate</code> springs it home."
+          "body": "<code>v-draggable</code> reorders your own lists, and <code>useSortableGroup</code> moves items between them. For anything you throw or swipe away, use <code>useDrag</code>: the element follows your finger, and <code>onRelease</code> decides where it goes. Link a look to the drag with a getter in <code>animate</code>: <code>rotate: () =&gt; mapRange(drag.x.value, [-200, 200], [-12, 12])</code>. The getter runs every frame without re-rendering. An exit on a spring keeps the speed of the throw."
         },
         "own": {
           "title": "Your own components",
@@ -1168,7 +1182,39 @@
         "app": "Your app's motion",
         "other": "Other"
       },
-      "reference": "Reference"
+      "reference": "Reference",
+      "places": "{n} place | {n} places"
+    },
+    "anatomy": {
+      "label": "Anatomy of v-animate",
+      "forms": {
+        "alone": "On its own",
+        "group": "In a group",
+        "component": "In a component"
+      },
+      "roles": {
+        "directive": "Directive",
+        "name": "Name",
+        "modifier": "Modifier",
+        "value": "Value",
+        "none": "No name"
+      },
+      "tips": {
+        "directive": "The directive",
+        "name": "The name",
+        "modifier": "A modifier (optional)",
+        "value": "The value (optional)",
+        "none": "No name needed"
+      },
+      "directive": "plays motion when this element mounts, leaves or changes.",
+      "modifier": "a built-in look (.fade, .rise, .drop, .pop, .blur), a spring (.snappy, .smooth, .bouncy, .gentle) or .stagger. Stack as many as you like.",
+      "value": "options such as stagger, delay or exit. A modifier on its own is enough, so leave it out until you need one.",
+      "name": {
+        "group": "elements with the same name are one group, so stagger plays them one after another and after: 'rows' lets another element wait for them.",
+        "component": "this is how the Dialog finds the elements: its motion.targets.rows sets how they move, and they come and go with the dialog."
+      },
+      "none": "this element stands alone, so it needs no name.",
+      "rule": "Add a name only when something else has to point at the element: a stagger group, after, or a component's motion.targets. Otherwise leave it off."
     }
   },
   "recipes": {
@@ -1543,7 +1589,7 @@
         "setValue": "<code>setValue(path, value)</code>, as a user edit.",
         "setValues": "<code>setValues(values)</code>, without marking anything dirty.",
         "setErrors": "<code>setErrors({'{'} path: message {'}'})</code>, such as a server’s. Each clears when its field changes.",
-        "clearErrors": "<code>clearErrors(path?)</code>: clears errors set with <code>setErrors</code>.",
+        "clearErrors": "<code>clearErrors()</code>: clears errors set with <code>setErrors</code>.",
         "watch": "<code>watch(path, fn, {'{'} debounce, immediate {'}'})</code>: runs on user edits and <code>setValue</code>, not on resets or loaded defaults.",
         "fieldFn": "<code>field(path)</code>: one field, with everything below.",
         "f_value": "The value, writable.",

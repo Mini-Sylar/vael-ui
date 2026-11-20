@@ -35,9 +35,7 @@
         </SwipeToReveal>
       </li>
     </ul>
-    <p class="swipe-status">
-      Last change: <strong>{{ lastChange ?? 'none yet' }}</strong>
-    </p>
+    <p class="swipe-status">Last change: <strong>{{ lastChange ?? 'none yet' }}</strong></p>
   </section>
 </template>
 

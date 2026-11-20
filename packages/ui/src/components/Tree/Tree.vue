@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="treeRoot"
     class="ui-tree-root"
     v-bind="rootAttrs"
     :data-motion="props.motion ? undefined : 'off'"
@@ -174,7 +175,7 @@
     </div>
     <!-- Always mounted: a live region created on demand isn't reliably read out.
          Outside role="tree", which may only hold tree items. -->
-    <span v-if="reorderable" class="ui-tree-status" role="status" aria-live="assertive">{{
+    <span v-if="reorderable" class="ui-tree-status" role="status" aria-live="polite">{{
       reorderAnnouncement
     }}</span>
   </div>
@@ -293,7 +294,6 @@ import {
   onMounted,
   provide,
   reactive,
-  ref,
   shallowRef,
   unref,
   useAttrs,
@@ -611,7 +611,8 @@ function activateNode(node: TreeNode) {
   else selectSingle(node)
 }
 
-const expandedKeys = ref(new Set<string | number>())
+// Replaced whole on every change, never mutated in place.
+const expandedKeys = shallowRef(new Set<string | number>())
 const normalizedQuery = computed(() => normalizeText(query.value.trim()))
 const isFiltering = computed(() => normalizedQuery.value.length > 0)
 // A search opens and closes many folders at once, so their rows swap instead of animating (the
@@ -705,6 +706,7 @@ function isVisible(node: TreeNode): boolean {
 const visibleRootNodes = computed(() => props.items.filter(isVisible))
 
 // Roving tabindex + keyboard nav (own copy due to tree semantics).
+const treeRoot = useTemplateRef<HTMLElement>('treeRoot')
 const listEl = useTemplateRef<HTMLElement>('listEl')
 // Single selection: the new row's highlight slides in from where the last one was, or fades in
 // when that's more than a few rows away. CSS owns the motion; this only measures the distance.
@@ -1491,6 +1493,8 @@ provide<TreeRowContext>(
 )
 
 defineExpose({
+  /** Root element. */
+  el: treeRoot,
   /** The `role="tree"` list element. */
   listEl,
   /** The hover and keyboard highlight, sliding between rows. With `motion: false` it moves at once, for your own animation. */

@@ -15,9 +15,12 @@ export default defineConfig({
     // Shared with the Vapor build but not public: their own files, not exported.
     ...collectBarrelEntries('./src/internal.ts', process.cwd()),
   },
+  format: 'esm',
   platform: 'neutral',
   plugins: [Vue({ isProduction: true, template: { compilerOptions: { comments: false } } })],
-  dts: { vue: true },
+  dts: { tsc: { vue: true } },
+  // The one dependency the type build inlines on purpose; the hint stays quiet, a new one still errors.
+  deps: { onlyBundle: ['vue-component-type-helpers'] },
   css: { minify: true, splitting: true, inject: true },
   minify: true,
 })

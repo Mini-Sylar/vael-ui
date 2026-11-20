@@ -6,7 +6,29 @@
   .ui-resizable--vertical {
     transition-property: block-size;
   }
-  .ui-resizable[data-resizing] {
+  /* A span sits where its start says, inside a positioned container. */
+  .ui-resizable--span {
+    position: absolute;
+    transition:
+      inset-inline-start var(--ui-duration-enter) var(--ui-ease-in-out),
+      inline-size var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-resizable--span.ui-resizable--vertical {
+    transition-property: inset-block-start, block-size;
+  }
+  /* Two handles, no offset: the pinned edge is put back by script, so nothing eases. */
+  .ui-resizable--pinned {
+    transition: none;
+  }
+  .ui-resizable--movable {
+    cursor: grab;
+    touch-action: none;
+  }
+  .ui-resizable--movable[data-resizing] {
+    cursor: grabbing;
+  }
+  .ui-resizable[data-resizing],
+  .ui-resizable[data-motion='off'] {
     transition: none;
   }
   .ui-resizable--disabled .ui-resizable-handle {

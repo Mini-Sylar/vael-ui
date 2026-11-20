@@ -55,6 +55,9 @@ export interface TooltipProps {
   sideOffset?: number
   /** Shifts the tooltip along the alignment axis, in pixels. @default 0 */
   alignOffset?: number
+  /** While open, the tooltip tracks a mouse or pen along the trigger's edge, clamped to it, in
+   * place of `align` and `alignOffset`: for a wide trigger, such as a timeline bar. @default false */
+  follow?: boolean
   /**
    * Delay before a cold open, in milliseconds. Warm-group opens (another tooltip visible or recently hidden) are instant.
    * @default 400
@@ -62,7 +65,7 @@ export interface TooltipProps {
   openDelay?: number
   /** Grace period after the pointer leaves, in milliseconds, so it can move onto the tooltip. @default 100 */
   closeDelay?: number
-  /** Hovering the tooltip itself keeps it open, so its content stays selectable and clickable. @default true */
+  /** Hovering the tooltip itself keeps it open, so its text can be selected. Keyboard users can't reach it, so put links and buttons in a Popover. @default true */
   interactive?: boolean
   /** Escape key closes the tooltip. @default true */
   closeOnEsc?: boolean
@@ -78,7 +81,7 @@ export interface TooltipProps {
   motion?: TooltipMotion
   /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
-  /** Class and style overrides for each part. */
+  /** Class and style overrides for each part. Set `--ui-tooltip-bg` and `--ui-tooltip-color` on `panel` to recolour it. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -92,7 +95,8 @@ import '../../motion/timing.css'
 import { computed, inject, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance } from 'vue'
-import { setDescribedBy, useTooltip } from '../../composables/useTooltip'
+import { elementOf } from '../../composables/dom'
+import { repeatsName, setDescribedBy, useTooltip } from '../../composables/useTooltip'
 import { useTooltipMotion } from '../../composables/useTooltipMotion'
 import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -132,12 +136,7 @@ defineSlots<{
   }): unknown
 }>()
 
-function unwrapEl(el: unknown): HTMLElement | null {
-  if (!el) return null
-  if (el instanceof HTMLElement) return el
-  if (typeof el === 'object' && 'el' in el) return (el as { el: HTMLElement | null }).el ?? null
-  return null
-}
+const unwrapEl = elementOf
 
 const slotTriggerEl = shallowRef<Element | ComponentPublicInstance<any> | null>(null)
 function setTriggerEl(el: Element | ComponentPublicInstance<any> | null) {
@@ -145,7 +144,9 @@ function setTriggerEl(el: Element | ComponentPublicInstance<any> | null) {
 }
 
 const triggerElRef = computed<HTMLElement | null>(() =>
-  props.triggerEl !== undefined ? unwrapEl(props.triggerEl) : unwrapEl(slotTriggerEl.value),
+  props.triggerEl !== undefined
+    ? unwrapEl(props.triggerEl, 'Tooltip triggerEl')
+    : unwrapEl(slotTriggerEl.value, 'Tooltip setTriggerEl'),
 )
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
@@ -181,6 +182,7 @@ const {
   align: () => props.align,
   sideOffset: () => props.sideOffset,
   alignOffset: () => props.alignOffset,
+  follow: () => props.follow,
   openDelay: () => props.openDelay,
   closeDelay: () => props.closeDelay,
   interactive: () => props.interactive,
@@ -204,13 +206,13 @@ const tooltipTransition = useTooltipMotion({
 
 // A content resize while open morphs the box from the old size, inside useTooltip.
 
-// Set aria-describedby only while visible (pointing to unmounted content is worse than none).
+// Set aria-describedby only while visible, and not when the hint only repeats the trigger's name.
 watch(
   [open, triggerElRef] as const,
   ([isOpen, el], previous) => {
     const previousEl = previous?.[1]
     if (previousEl && previousEl !== el) setDescribedBy(previousEl, tooltipId, false)
-    if (el) setDescribedBy(el, tooltipId, isOpen)
+    if (el) setDescribedBy(el, tooltipId, isOpen && !repeatsName(el, panelEl.value))
   },
   { flush: 'post' },
 )

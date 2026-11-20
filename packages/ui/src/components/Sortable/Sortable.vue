@@ -42,6 +42,7 @@
           :aria-label="labelOf(item)"
           aria-roledescription="sortable item"
           :aria-describedby="instructionsId"
+          :aria-pressed="isGrabbedItem(item)"
           :disabled="disabled"
           @pointerdown="onHandlePointerdown($event, keyOf(item))"
           @keydown="onHandleKeydown($event, keyOf(item))"
@@ -70,7 +71,7 @@
     <span :id="instructionsId" class="ui-sortable-status">{{
       messages.sortable.instructions
     }}</span>
-    <span class="ui-sortable-status" role="status" aria-live="assertive" aria-atomic="true">{{
+    <span class="ui-sortable-status" role="status" aria-live="polite" aria-atomic="true">{{
       announcement
     }}</span>
   </div>

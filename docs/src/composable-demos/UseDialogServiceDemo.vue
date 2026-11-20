@@ -5,8 +5,7 @@
       <Button variant="outline" :loading="false" @click="onEditName">Open custom dialog</Button>
     </div>
     <p class="demo-status">
-      Last result: <strong>{{ lastResult }}</strong
-      ><br />
+      Last result: <strong>{{ lastResult }}</strong><br />
       Live queue (<code>useDialogQueue()</code>): <strong>{{ queue.length }}</strong> open
       <span v-if="queue.length > 0">— try clicking the other button while this one is open</span>
     </p>

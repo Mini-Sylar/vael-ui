@@ -14,43 +14,45 @@
       :data-state="state"
       aria-hidden="true"
     >
-      <div :class="indicatorPart.class" :style="indicatorPart.style">
-        <slot name="indicator" :state="state" :progress="progress" :pull-distance="pullDistance">
-          <div :class="bubblePart.class" :style="[bubbleStyle, bubblePart.style]">
-            <svg
-              v-if="state === 'idle' || state === 'pulling' || state === 'ready'"
-              :class="arrowPart.class"
-              :style="[arrowStyle, arrowPart.style]"
-              viewBox="0 0 16 16"
-              width="16"
-              height="16"
-              aria-hidden="true"
-              fill="none"
-            >
-              <path
-                d="M8 2v10M3.5 8L8 12.5L12.5 8"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <LoaderMark v-else-if="state === 'loading'" />
-            <svg v-else viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none">
-              <path
-                d="M3 8.5l3.5 3.5L13 5"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </div>
-          <span :class="labelPart.class" :style="labelPart.style">{{ labelText }}</span>
-        </slot>
+      <div class="ui-pull-to-refresh-center" :style="centerStyle">
+        <div :class="indicatorPart.class" :style="indicatorPart.style">
+          <slot name="indicator" :state="state" :progress="progress" :pull-distance="pullDistance">
+            <div :class="bubblePart.class" :style="[bubbleStyle, bubblePart.style]">
+              <svg
+                v-if="state === 'idle' || state === 'pulling' || state === 'ready'"
+                :class="arrowPart.class"
+                :style="[arrowStyle, arrowPart.style]"
+                viewBox="0 0 16 16"
+                width="16"
+                height="16"
+                aria-hidden="true"
+                fill="none"
+              >
+                <path
+                  d="M8 2v10M3.5 8L8 12.5L12.5 8"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <LoaderMark v-else-if="state === 'loading'" />
+              <svg v-else viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none">
+                <path
+                  d="M3 8.5l3.5 3.5L13 5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <span :class="labelPart.class" :style="labelPart.style">{{ labelText }}</span>
+          </slot>
+        </div>
       </div>
     </div>
-    <slot />
+    <div class="ui-pull-to-refresh-track" :style="trackStyle"><slot /></div>
     <!-- Always mounted: a live region created on demand isn't reliably read out. -->
     <span class="ui-pull-to-refresh-status" role="status" aria-live="polite">{{ statusText }}</span>
   </div>
@@ -89,9 +91,9 @@ export interface PullToRefreshProps {
 }
 </script>
 
-<!-- Custom #indicator animations go inside slot content, not zone (which owns block-size state) -->
+<!-- Custom #indicator animations go inside slot content, not zone (which owns its transform) -->
 <script setup lang="ts">
-import { prefersReducedMotion } from '../../composables/dom'
+import { elementOf, prefersReducedMotion } from '../../composables/dom'
 import { withProviderDefaults } from '../../config'
 import './PullToRefresh.css'
 import '../shared/tokens.css'
@@ -122,12 +124,7 @@ defineSlots<{
   indicator(props: { state: PullToRefreshState; progress: number; pullDistance: number }): unknown
 }>()
 
-function unwrapEl(el: unknown): HTMLElement | null {
-  if (!el) return null
-  if (el instanceof HTMLElement) return el
-  if (typeof el === 'object' && 'el' in el) return (el as { el: HTMLElement | null }).el ?? null
-  return null
-}
+const unwrapEl = elementOf
 
 // No CSS transitions when turned off, or when the user prefers reduced motion.
 function noMotion(): boolean {
@@ -140,7 +137,9 @@ const zoneEl = useTemplateRef<HTMLElement>('zoneEl')
 // into an already-scrollable layout shouldn't force that layout to restructure around our root.
 const ownsScroll = computed(() => props.scrollEl === undefined)
 useFocusableScroller(root, ownsScroll)
-const scrollEl = computed(() => (ownsScroll.value ? root.value : unwrapEl(props.scrollEl)))
+const scrollEl = computed(() =>
+  ownsScroll.value ? root.value : unwrapEl(props.scrollEl, 'PullToRefresh scrollEl'),
+)
 
 const messages = useMessages({ pullToRefresh: pullToRefreshMessages })
 
@@ -183,9 +182,23 @@ const bubblePart = computed(() =>
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-pull-to-refresh-label'))
 const arrowPart = computed(() => resolveUiPart(cx, themedUi()?.arrow, 'ui-pull-to-refresh-arrow'))
 
+// The pull moves by transform alone: the content slides down, the zone (a fixed height, clipped
+// at the content's edge) slides with it, and the indicator stays centred in the gap.
+const zoneSize = computed(() => (props.maxPull ?? 80) + 200)
+const still = computed(() => (live.value || noMotion() ? 'none' : undefined))
 const zoneStyle = computed(() => ({
-  blockSize: `${pullDistance.value}px`,
-  transition: live.value || noMotion() ? 'none' : undefined,
+  blockSize: `${zoneSize.value}px`,
+  transform: `translateY(${pullDistance.value - zoneSize.value}px)`,
+  visibility: pullDistance.value ? undefined : ('hidden' as const),
+  transition: still.value,
+}))
+const centerStyle = computed(() => ({
+  transform: `translateY(${(zoneSize.value - pullDistance.value) / 2}px)`,
+  transition: still.value,
+}))
+const trackStyle = computed(() => ({
+  transform: pullDistance.value ? `translateY(${pullDistance.value}px)` : undefined,
+  transition: still.value,
 }))
 
 const bubbleStyle = computed(() => {
@@ -230,7 +243,7 @@ const statusText = computed(() =>
 defineExpose({
   /** Root element. */
   el: root,
-  /** The pull zone above the content; its height follows the pull. */
+  /** The pull zone above the content; it slides down with the pull. */
   zoneEl,
   /** Current phase: `'idle'`, `'pulling'`, `'ready'`, `'loading'` or `'done'`. */
   state,

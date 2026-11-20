@@ -11,6 +11,8 @@ export interface UseMenuOptions {
   onExpand?: (itemEl: HTMLElement) => void
   /** Fires on ArrowLeft (ArrowRight right to left), unconditionally — only meaningful when this list IS a submenu; `Menu.vue` always wires it to close this level and return focus to the parent row. A bare top-level useMenu with no listener makes ArrowLeft a no-op, same as native menus ignore it there. */
   onCollapse?: () => void
+  /** Keeps one Tab stop for the whole list (roving tabindex), as a `role="menu"` needs. `false` leaves every item's tabindex alone, for a list of links that each stay a Tab stop. @default true */
+  roving?: boolean
 }
 
 export interface UseMenuReturn {
@@ -18,7 +20,7 @@ export interface UseMenuReturn {
   /** Roving-tabindex the first enabled item and focus it — call once, when the menu opens. */
   focusFirst: () => void
   /** Roving-tabindex a specific item and focus it — e.g. returning focus to a submenu's parent row after ArrowLeft collapses it. */
-  focusItem: (el: HTMLElement | undefined) => void
+  focusItem: (el: HTMLElement | undefined, focusOptions?: FocusOptions) => void
   /** Roving-tabindex the first enabled item WITHOUT focusing it. `focusFirst` assumes a just-opened popover, where stealing focus is exactly the point; an always-mounted list (MenuList) still needs exactly one `tabindex="0"` item from first render to be a valid Tab stop, but must NOT steal page focus the moment it mounts. Call once, on mount. */
   initRoving: () => void
 }
@@ -46,13 +48,14 @@ export function useMenu(options: UseMenuOptions): UseMenuReturn {
 
   // Roving tabindex: one Tab stop (0), rest at -1.
   function setRoving(target: HTMLElement | undefined) {
+    if (options.roving === false) return
     for (const el of items()) el.tabIndex = el === target ? 0 : -1
   }
 
-  function focusItem(el: HTMLElement | undefined) {
+  function focusItem(el: HTMLElement | undefined, focusOptions?: FocusOptions) {
     if (!el) return
     setRoving(el)
-    el.focus()
+    el.focus(focusOptions)
   }
 
   function focusFirst() {
@@ -142,7 +145,9 @@ export function useMenu(options: UseMenuOptions): UseMenuReturn {
         typeaheadBuffer = ''
       }, TYPEAHEAD_RESET_MS)
 
-      const startIndex = currentIndex === -1 ? 0 : currentIndex + 1
+      // A second letter refines the search, so the current item can still match.
+      const startIndex =
+        currentIndex === -1 ? 0 : typeaheadBuffer.length > 1 ? currentIndex : currentIndex + 1
       // An icon-only item has no text, so its aria-label stands in.
       const matches = (el: HTMLElement) =>
         (el.textContent?.trim() || el.getAttribute('aria-label') || '')

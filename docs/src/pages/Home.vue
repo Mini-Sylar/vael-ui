@@ -88,7 +88,7 @@
         <template #visual>
           <TerminalVisual
             command="npx skills add Mini-Sylar/vael-ui-skills"
-            :output="['vael-ui skill installed']"
+            :output="['skills installed']"
           />
         </template>
       </FeatureCard>

@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, provide, reactive, useTemplateRef, watch } from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
-import { dialogRefKey } from '../../composables/useDialogService'
+import { dialogRefKey, forgetIfRefused } from '../../composables/useDialogService'
 import type { DynamicDialogEntry } from '../../composables/useDialogService'
 
 const props = defineProps<{ entry: DynamicDialogEntry }>()
@@ -44,9 +44,13 @@ provide(
 watch(
   () => props.entry.closeRequested,
   (requested) => {
-    if (requested) dialogInstance.value?.close()
+    if (requested) requestClose()
   },
 )
+function requestClose() {
+  dialogInstance.value?.close()
+  forgetIfRefused(props.entry, () => dialogInstance.value?.isClosing ?? false)
+}
 // The entry goes once it has left: on `after-leave`, or at once when nothing is leaving (no
 // transition ran, as under a test renderer's stubs, or motion is off).
 watch(
@@ -60,6 +64,6 @@ watch(
 
 // close() called before this mounted: the watch above never saw it change.
 onMounted(() => {
-  if (props.entry.closeRequested) dialogInstance.value?.close()
+  if (props.entry.closeRequested) requestClose()
 })
 </script>

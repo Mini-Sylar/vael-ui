@@ -45,7 +45,8 @@ test('multiple mode allows several items open at once', async () => {
 
 test('collapsible=false keeps the last open item open', async () => {
   await render(AccordionFixture, { props: { initial: 'first', collapsible: false } })
-  await page.getByRole('button', { name: 'First section' }).click()
+  // aria-disabled, so Playwright's actionability check would refuse a plain click.
+  ;(page.getByRole('button', { name: 'First section' }).element() as HTMLElement).click()
   await expect
     .element(page.getByRole('button', { name: 'First section' }))
     .toHaveAttribute('aria-expanded', 'true')

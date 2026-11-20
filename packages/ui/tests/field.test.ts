@@ -37,12 +37,12 @@ test('describedby composes description+error ids and drops absent ones', async (
   expect(bothInput.getAttribute('aria-describedby')).toBe(`${bothDescId} ${bothErrorId}`)
 })
 
-test('error flips aria-invalid on the slotted Input and renders role="alert"', async () => {
+test('error flips aria-invalid on the slotted Input, without an alert per error', async () => {
   const screen = await render(FieldFixture, { props: { error: 'Required field' } })
   const input = screen.container.querySelector<HTMLInputElement>('.ui-input-el')!
   expect(input.getAttribute('aria-invalid')).toBe('true')
   const error = screen.container.querySelector('.ui-field-error')!
-  expect(error.getAttribute('role')).toBe('alert')
+  expect(error.hasAttribute('role')).toBe(false)
   expect(error.textContent).toBe('Required field')
   expect(screen.container.querySelector('.ui-field')!.hasAttribute('data-invalid')).toBe(true)
 })

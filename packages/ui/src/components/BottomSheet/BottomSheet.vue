@@ -34,7 +34,7 @@
     </div>
     <div v-if="title || $slots.header" :class="headerPart.class" :style="headerPart.style">
       <slot name="header" :close="requestDismiss">
-        <span :id="titleId" :class="titlePart.class" :style="titlePart.style">{{ title }}</span>
+        <h2 :id="titleId" :class="titlePart.class" :style="titlePart.style">{{ title }}</h2>
         <button
           type="button"
           :class="closePart.class"
@@ -283,10 +283,15 @@ function onHandleKeydown(event: KeyboardEvent) {
   const next = list[Math.min(list.length - 1, Math.max(0, index + step))]
   if (next) activeSnap.value = next.id
 }
-// Opening focuses the first control after the handle, so focus doesn't land on the resize grip.
+// Opening focuses [autofocus], else the content's first control, else the header's; never the resize grip.
 function initialFocus() {
   const panel = panelEl.value
-  return panel ? getFocusable(panel).find((el) => el !== handleButton.value) : undefined
+  if (!panel) return undefined
+  return (
+    panel.querySelector<HTMLElement>('[autofocus]') ??
+    (content.value && getFocusable(content.value)[0]) ??
+    getFocusable(panel).find((el) => el !== handleButton.value)
+  )
 }
 
 // Nesting auto-detected: instance tells ancestor when opening/closing.

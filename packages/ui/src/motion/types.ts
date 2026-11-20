@@ -1,5 +1,5 @@
 // The motion API contract (plans/008, plans/009 M0). Types only; the runtime implements them.
-import type { ComponentPublicInstance, CSSProperties, TransitionProps } from 'vue'
+import type { ComponentPublicInstance, CSSProperties, Ref, TransitionProps } from 'vue'
 import type { SpringName } from './springNames'
 import type { BuiltinPreset } from './presets'
 import type { SpringOptions } from './useSpringValue'
@@ -156,6 +156,25 @@ export type MotionValues = {
 /** Keyframes; `null` first plays from where it is now: `scale: [null, 1.2, 1]`. */
 type Keyframes<V> = (V | null)[]
 
+/**
+ * A value that changes on its own, such as a drag's offset: a getter or a ref. `v-animate` follows
+ * it every frame without re-rendering the component.
+ */
+export type LiveValue<V> = (() => V) | Readonly<Ref<V>>
+
+/**
+ * `v-animate`'s `animate`: any motion value, or a live one that it follows as it changes (`x:
+ * drag.x`, `rotate: () => mapRange(drag.x.value, [-300, 300], [-20, 20])`). `{ value: live,
+ * spring }` follows it on a spring instead of exactly (a stack settling after the cards above
+ * it); `spring: true` is the app's spring.
+ */
+export type AnimateValues = {
+  [K in keyof StyleProps]?:
+    | MotionValues[K]
+    | LiveValue<NonNullable<StyleProps[K]>>
+    | { value: LiveValue<NonNullable<StyleProps[K]>>; spring?: Spring | SpringName | true }
+}
+
 /** Where an element is: in a swap, `direction` (1 forward, -1 back, 0 neither); in a list, `index`. */
 export interface MotionWhere {
   /** In a swap: `1` forward, `-1` back, `0` neither. */
@@ -268,10 +287,12 @@ export type MotionStep<N extends string = string> = MotionTiming & {
 export type StaggerFrom = 'end' | 'center' | 'edges' | 'random'
 
 /**
- * Elements one after another: `true` spaces them by the stagger token (40 ms) in page order;
+ * Elements one after another: `true` spaces them by the stagger token (40 ms) in page order, for up to
+ * 7 steps (about 0.3 s): later elements come in with the last one;
  * `'end'`, `'center'` or `'edges'` start the wave there instead, and `'random'` shuffles the order (across a grid, `'center'` and
  * `'edges'` go by where each sits: from the middle cell, or from the corners). A number is the
- * seconds between them; a function gives each its own start: `(index, count) => seconds`.
+ * seconds between them, however far it goes; a function gives each its own start:
+ * `(index, count) => seconds`.
  */
 export type Stagger = boolean | StaggerFrom | number | ((index: number, count: number) => number)
 
@@ -279,10 +300,11 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
   /** Where it comes in from. A function receives `where`: a swap's direction, its index. */
   initial?: MotionValues | ((where: MotionWhere) => MotionValues)
   /**
-   * Where it leaves to. A function receives `where`, read as it leaves. Unset, it leaves back the
-   * way it came, quieter and quicker; `false` leaves at once.
+   * Where it leaves to. A function receives `where`, read as it leaves, and may return `false`
+   * to leave at once this time. Unset, it leaves back the way it came, quieter and quicker;
+   * `false` leaves at once.
    */
-  exit?: MotionValues | ((where: MotionWhere) => MotionValues) | false
+  exit?: MotionValues | ((where: MotionWhere) => MotionValues | false) | false
   /** The elements under this name one after another, in page order (see `Stagger`). */
   stagger?: Stagger
   /**
@@ -1336,9 +1358,10 @@ export type AnimateDirectiveValue =
       /**
        * A look it holds while bound, moving to each new one as it changes, from wherever it is on
        * screen: `animate: { rotate: open ? 180 : 0 }`. Keyframe arrays play once per change, or
-       * loop with `repeat`.
+       * loop with `repeat`. A getter or ref is followed every frame without re-rendering (see
+       * `AnimateValues`), and an exit or a new look starts at the speed it was moving.
        */
-      animate?: MotionValues
+      animate?: AnimateValues
       /**
        * `false`: no entrance when it mounts; `replay` and its exit still play. `'later'`: no
        * entrance for what's there when its component first renders (inside a vael-ui component,

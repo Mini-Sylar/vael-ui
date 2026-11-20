@@ -13,7 +13,7 @@
     </p>
     <Tabs ref="tabs" v-model:active="active" :items="items" id-base="report">
       <template #default="{ items: list, itemProps }">
-        <button v-for="item in list" :key="item" v-bind="itemProps(item)">
+        <button v-for="item in list" :key="item" type="button" v-bind="itemProps(item)">
           <span class="tab-label">{{ item }}</span>
         </button>
       </template>

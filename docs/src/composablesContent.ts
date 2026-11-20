@@ -1,5 +1,5 @@
 import type { MetaRow } from './types'
-import { appearanceHeadCode } from './appearanceHeadCode'
+import { appearanceHeadCode } from './appearanceHeadCode.ts'
 
 export interface ComposableContent {
   description: string
@@ -13,6 +13,8 @@ export interface ComposableContent {
    * custom child component, whose source is concatenated into the shown
    * code block too, so the code readers see actually matches what runs. */
   extraSourceFiles?: string[]
+  /** Short lines for choosing between this export and a neighbour, shown in a hint box under the description. */
+  hint?: string[]
   /** Shown when there's no live demo: a realistic, accurate usage snippet. */
   exampleCode?: string
   /** Optional script that must run in the HTML head before Vue loads. */
@@ -175,7 +177,7 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'toast(title, options?)',
         type: 'number | string',
         description:
-          "Shows a toast with the default variant and returns its id for `dismiss(id)`: a number, or your own `id`. Showing an `id` that's already on screen updates that toast instead of adding another. Options: `id`, `description`, `variant`, `action: { label, onClick }`, and `duration` in ms (default 4000; `Infinity` keeps it until someone closes it). `pinned` shows the toast in its own section, where newer toasts can't cover it. `toaster` sends it to the `<Toaster>` with that `name` instead of the unnamed one.",
+          "Shows a toast with the default variant and returns its id for `dismiss(id)`: a number, or your own `id`. Showing an `id` that's already on screen updates that toast instead of adding another. Options: `id`, `description`, `variant`, `action: { label, onClick }`, and `duration` in ms (default 4000, or `Infinity` for toasts with an action; `Infinity` keeps it until someone closes it). `pinned` shows the toast in its own section, where newer toasts can't cover it. `toaster` sends it to the `<Toaster>` with that `name` instead of the unnamed one.",
       },
       {
         name: 'toast.success / .error / .warning / .info / .loading',
@@ -478,7 +480,50 @@ function onSave() {
     ],
   },
 
+  mapRange: {
+    hasLiveDemo: true,
+    description:
+      'Maps a number from one range onto another. `mapRange(x, [0, 300], [0, 1])` gives 0 at 0, 0.5 at 150 and 1 at 300. Past either end it holds the end value. Add points to bend the line: `mapRange(x, [-300, 0, 300], [-20, 0, 20])`. Use it with a live value in `v-animate`.',
+    installNames: ['mapRange'],
+    exampleCode: `import { mapRange } from 'vael-ui/motion'
+
+mapRange(150, [0, 300], [0, 1]) // 0.5
+mapRange(-40, [0, 300], [0, 1]) // 0: held at the end
+mapRange(450, [0, 300, 600], [1, 1, 0]) // 0.5: solid until 300, then fades
+
+// The card tilts with the drag, every frame, with no render:
+// v-animate="{ animate: { rotate: () => mapRange(drag.x.value, [-300, 300], [-20, 20]) } }"`,
+    params: [
+      {
+        name: 'value',
+        type: 'number',
+        description:
+          'The number to turn into another: an offset, a scroll position, a slider value.',
+      },
+      {
+        name: 'from',
+        type: 'number[]',
+        description:
+          'Points along the range it comes from, in increasing order: `[0, 300]`, or more to bend the line.',
+      },
+      {
+        name: 'to',
+        type: 'number[]',
+        description:
+          'What each of those points becomes: `to[i]` for `from[i]`. Between two points it moves in a straight line.',
+      },
+    ],
+    returns: [
+      {
+        name: 'result',
+        type: 'number',
+        description:
+          'The number in the new range. Below the first point it’s `to[0]`, above the last it’s the last of `to`.',
+      },
+    ],
+  },
   springEasing: {
+    hasLiveDemo: true,
     description:
       'Turns a spring into a CSS `linear()` curve and the time it takes to settle, in ms. It\'s the curve vael-ui uses for `ConfigProvider`\'s `:motion="{ spring }"`. The result has the same shape as the options `element.animate()` takes, so your own animations can move on the same spring without a library. Damping below 1 overshoots.',
     exampleCode: `import { springEasing } from 'vael-ui/motion'
@@ -707,9 +752,14 @@ const { mode, resolvedMode, setMode } = useColorScheme({
 
   useAnimate: {
     description:
-      "Plays motion from your code, for something an event starts: a wrong code shaking, an item flying to the cart, a success card building in. `animate(target, values, options)` takes the same values and timing as `v-animate`, follows the app's spring, `motion: false` and reduced motion, and leaves the end as the element's own style. Give it a list of steps instead and it plays them one after another as one sequence. `useAnimate()` is the same `animate` scoped to a component: selectors match inside its element, and whatever it started stops when the component unmounts. For motion that plays when elements come in, use `v-animate` with `after` and `stagger` in the template instead.",
+      "Plays motion from your code, for something an event starts: a wrong code shaking, an item flying to the cart, a success card building in. `animate(target, values, options)` takes the same values and timing as `v-animate`, and follows the app's spring, `motion: false` and reduced motion. The end stays as the element's own style. Pass a list of steps and it plays them one after another as one sequence. To play motion as elements come in, use `v-animate` with `after` and `stagger` in the template.",
+    hint: [
+      '`useAnimate()`: use it in a component. Selectors match inside your element, and what it started stops when the component unmounts.',
+      '`animate`: use it only outside a component, such as a shared `shake(el)` helper that other code calls with an element, or a test.',
+    ],
     installNames: ['useAnimate', 'animate'],
-    exampleCode: `import { useTemplateRef } from 'vue'
+    exampleCode: `// In a component: useAnimate, scoped to it.
+import { useTemplateRef } from 'vue'
 import { useAnimate } from 'vael-ui/motion'
 
 const { animate } = useAnimate(useTemplateRef('card'))
@@ -726,6 +776,13 @@ async function sent() {
     ['.check path', { pathLength: [0, 1] }, { at: 'card:60%' }],
     ['.title', { opacity: [0, 1], y: [6, 0] }, { at: '-0.15' }],
   ])
+}
+
+// Outside a component, say in shake.ts: plain animate, given the element itself.
+import { animate } from 'vael-ui/motion'
+
+export function shake(el: Element) {
+  return animate(el, { x: [0, -8, 8, -4, 0] }, { duration: 300 })
 }`,
     params: [
       {
@@ -869,6 +926,360 @@ async function sent() {
       },
     ],
   },
+  useWheel: {
+    description:
+      'Moves a position along a list of items. You drag it, throw it, scroll it or step it with the keys, and it rests on one item. It draws nothing. Each item near the resting spot gets `--ui-wheel-offset` (in items) and `--ui-wheel-distance` (in px). Place items with those variables, and style them with `v-animate` and `progressOf`. Add `role="spinbutton"` for a picker, or `aria-roledescription="carousel"` and Previous and Next buttons for a carousel. For a plain list of cards, CSS scroll snap is simpler.',
+    installNames: ['useWheel'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'model',
+        type: 'Ref<number>',
+        description:
+          'The index of the item it rests on. It changes when an item is chosen, and setting it moves the wheel.',
+      },
+      {
+        name: 'options.el',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description:
+          'The element you drag, scroll and focus. Its children are the items, in order.',
+      },
+      { name: 'options.count', type: 'MaybeRefOrGetter<number>', description: 'How many items.' },
+      {
+        name: 'options.size',
+        type: "MaybeRefOrGetter<number | 'auto'>",
+        description:
+          "Item length along the axis, in px. Default `36`. `'auto'` matches the length of `el`.",
+      },
+      {
+        name: 'options.orientation',
+        type: "MaybeRefOrGetter<'vertical' | 'horizontal'>",
+        description: "`'vertical'` (default) or `'horizontal'`. Horizontal reverses right to left.",
+      },
+      {
+        name: 'options.loop',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Wraps from the last item to the first.',
+      },
+      {
+        name: 'options.disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Ignores the pointer, the mouse wheel and the keys.',
+      },
+      {
+        name: 'options.spring',
+        type: 'MaybeRefOrGetter<Spring | SpringName>',
+        description:
+          "The spring it settles on: a name or `{ damping, response }`. Default: the ConfigProvider's `spring`, else the default every component uses.",
+      },
+      {
+        name: 'options.onTick',
+        type: '(index: number) => void',
+        description:
+          'Runs for each item that passes the resting spot, and once for the item it lands on. Pass `useHaptic().selection` for a click per item.',
+      },
+      {
+        name: 'options.onSettle',
+        type: '(index: number) => void',
+        description: 'Runs when it comes to rest.',
+      },
+      {
+        name: 'options.sizes',
+        type: 'MaybeRefOrGetter<number[]>',
+        description: 'Item lengths by index, when they differ.',
+      },
+      {
+        name: 'options.gap',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'Space between items, in px. Default `0`.',
+      },
+      {
+        name: 'options.align',
+        type: "MaybeRefOrGetter<'start' | 'center' | 'end'>",
+        description: "Where an item rests in `el`: `'start'`, `'center'` (default) or `'end'`.",
+      },
+      {
+        name: 'options.dragFree',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Rests where a throw ends instead of on an item.',
+      },
+      {
+        name: 'options.slidesToScroll',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'Items per step. `2` moves two at a time. Default `1`.',
+      },
+      {
+        name: 'options.containScroll',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Stops with the last item flush against the end of `el`.',
+      },
+    ],
+    returns: [
+      {
+        name: 'position',
+        type: 'Ref<number>',
+        description: 'Where it is now, in items. 2.5 is halfway from item 2 to item 3.',
+      },
+      {
+        name: 'index',
+        type: 'ComputedRef<number>',
+        description: 'The item it rests on, or is heading for.',
+      },
+      {
+        name: 'isDragging',
+        type: 'Ref<boolean>',
+        description: 'Whether a pointer is dragging it.',
+      },
+      {
+        name: 'goTo(i, { animate? })',
+        type: '(i: number, options?: { animate?: boolean }) => void',
+        description: 'Moves to item `i`. A loop takes the short way. `animate: false` jumps.',
+      },
+      {
+        name: 'step(n)',
+        type: '(n: number) => void',
+        description:
+          'Moves `n` steps forward, or back when negative. Use it for Previous and Next buttons.',
+      },
+      {
+        name: 'progressOf(i, reach?)',
+        type: '(i: number, reach?: number) => number',
+        description:
+          'Place of item `i` among the `reach` items either side of the resting spot (default 3), from 0 to 1. Pass it to `v-animate` as `progress`.',
+      },
+      {
+        name: 'onKeydown',
+        type: '(event: KeyboardEvent) => void',
+        description:
+          'The arrow keys along the axis, Home, End, Page Up and Page Down. Bind it to `@keydown` on `el`.',
+      },
+    ],
+  },
+  usePanZoom: {
+    description:
+      'Pans, pinches and zooms content inside a box: an image, a map, a diagram. It moves the content with its own `translate` and `scale`, from its top left corner. One finger or the mouse pans, two fingers pinch, and a double tap zooms in and back out. Hold ctrl and scroll to zoom around the cursor; in Safari, a trackpad pinch does the same. Content stays inside the box, gives a little at the edges, and keeps coasting after a flick. It sets `touch-action: none` on the box, so the page does not scroll there on touch.',
+    installNames: ['usePanZoom'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'options.el',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description:
+          'The box you pan and zoom in. It receives the pointer, the wheel and the focus.',
+      },
+      {
+        name: 'options.content',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description: 'The element that moves. Default: the first child of `el`.',
+      },
+      {
+        name: 'options.minScale',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'The smallest scale. Default `1`, the content at its own size.',
+      },
+      {
+        name: 'options.maxScale',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'The largest scale. Default `4`.',
+      },
+      {
+        name: 'options.doubleTapScale',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'The scale a double tap zooms to. Default `2`.',
+      },
+      {
+        name: 'options.disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Ignores the pointer, the wheel and the keys.',
+      },
+      {
+        name: 'options.spring',
+        type: 'MaybeRefOrGetter<Spring | SpringName>',
+        description:
+          "The spring it settles on: a name or `{ damping, response }`. Default: the ConfigProvider's `spring`, else the default every component uses.",
+      },
+    ],
+    returns: [
+      {
+        name: 'x, y',
+        type: 'Ref<number>',
+        description: 'Where the top left of the content is, in px from where it sits at rest.',
+      },
+      {
+        name: 'scale',
+        type: 'Ref<number>',
+        description: 'How big the content is. `1` is its own size.',
+      },
+      {
+        name: 'isDragging',
+        type: 'Ref<boolean>',
+        description: 'Whether a pointer is panning or pinching.',
+      },
+      {
+        name: 'isZoomed',
+        type: 'ComputedRef<boolean>',
+        description: 'Whether it is zoomed in past `minScale`.',
+      },
+      {
+        name: 'zoomTo(scale, { at?, animate? })',
+        type: '(scale: number, options?) => void',
+        description:
+          'Zooms to `scale` around `at`, a point in px inside `el`. Default: its centre.',
+      },
+      {
+        name: 'zoomBy(factor, { at?, animate? })',
+        type: '(factor: number, options?) => void',
+        description: 'Zooms by a factor from where it is: `1.5` in, `1 / 1.5` out.',
+      },
+      {
+        name: 'panBy({ x, y }, { animate? })',
+        type: '(by: { x, y }, options?) => void',
+        description: 'Moves by `by` px, kept inside the content.',
+      },
+      {
+        name: 'reset({ animate? })',
+        type: '(options?) => void',
+        description: 'Back to `minScale`, centred.',
+      },
+      {
+        name: 'onKeydown',
+        type: '(event: KeyboardEvent) => void',
+        description: '`+`, `-`, `0` and the arrow keys. Bind it to `@keydown` on `el`.',
+      },
+    ],
+  },
+  useDragSelect: {
+    description:
+      "Drag across empty space in a box and everything the band touches is selected. The box's children are the items, by their position among them, so a `v-for` list needs no selectors or attributes. Shift adds to the selection, ctrl or cmd toggles, a click on empty space clears it, and Escape during a drag puts it back. Near an edge of whatever scrolls, it scrolls and the band grows with it. A mouse or a pen draws the band at once. A touch has to press and hold first, then drag, so a swipe still scrolls. It is pointer only, so pair it with checkboxes or keys for everyone else.",
+    installNames: ['useDragSelect'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'options.el',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description:
+          "The box you drag in. Its children are the items; a child with `pointer-events: none`, such as the band, isn't one.",
+      },
+      {
+        name: 'options.disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Ignores the pointer.',
+      },
+      {
+        name: 'options.spring',
+        type: 'MaybeRefOrGetter<boolean | Spring | SpringName>',
+        description:
+          "`true` lets the band's moving corner trail the pointer on a spring, so it stretches and catches up: the ConfigProvider's `spring`, else the default every component uses. A name or `{ damping, response }` sets your own, and a bouncy one overshoots a little. What is selected follows the band you see. Default: the corner stays under the pointer. Reduced motion and `motion: false` keep it there.",
+      },
+    ],
+    returns: [
+      {
+        name: 'x, y, width, height',
+        type: 'Ref<number>',
+        description:
+          'The band, in px from the top left of the box, live. Draw it inside the box with `position: absolute` and `pointer-events: none`, and link its look to these with `v-animate` live values.',
+      },
+      {
+        name: 'stretch',
+        type: 'Ref<{ x: number; y: number }>',
+        description:
+          "How far the band's moving corner is behind the pointer along each axis, in px: its tension, negative when it overshoots. Bow the band's sides in by it, as a stretched rubber band pinches. Zero without a `spring`.",
+      },
+      {
+        name: 'isDragging',
+        type: 'Ref<boolean>',
+        description:
+          'Whether a band is showing: from the first move until it has caught up after you let go.',
+      },
+      {
+        name: 'selected',
+        type: 'Ref<number[]>',
+        description:
+          "The items the band holds, by position among the box's children. Set it to select from code.",
+      },
+      {
+        name: 'clear()',
+        type: '() => void',
+        description: 'Selects nothing.',
+      },
+    ],
+  },
+  useDrag: {
+    description:
+      'Drags an element and decides where it goes when you let go. It follows the pointer with its own `translate`. `onRelease` receives its offset, its speed and where the throw would land. It returns where the element goes, or nothing to send it home. The element moves on a spring that keeps the throw speed, and Escape puts it back. A drag has no keyboard form, so add a button that calls `throwTo`.',
+    hint: [
+      '`useDrag`: use it to move one element freely and decide where it lands when you let go.',
+      '`v-draggable` or `useSortable`: use them to reorder the children of a container.',
+    ],
+    installNames: ['useDrag'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'options.el',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description:
+          'The element you drag. It moves by its own `translate`, so nothing else is restyled.',
+      },
+      {
+        name: 'options.handle',
+        type: 'string',
+        description:
+          "A CSS selector for the grab area inside `el`, such as a dialog's header: only a press there drags. Give that area `touch-action: none`. Default: all of `el`.",
+      },
+      {
+        name: 'options.axis',
+        type: "MaybeRefOrGetter<'x' | 'y' | 'both'>",
+        description:
+          "`'x'`, `'y'` or `'both'` (default). With one axis, a drag across it stays the page's.",
+      },
+      {
+        name: 'options.spring',
+        type: 'MaybeRefOrGetter<Spring | SpringName>',
+        description:
+          "The spring it settles on: a name or `{ damping, response }`. Default: the ConfigProvider's `spring`, else the default every component uses.",
+      },
+      {
+        name: 'options.disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Ignores the pointer, for a drag that applies only some of the time.',
+      },
+      {
+        name: 'options.onRelease',
+        type: '(release) => { x, y } | null',
+        description:
+          'Runs on release with `offset`, `velocity` (px/s) and `projected`, where the throw would land. Return where it goes in px, or `null` for home.',
+      },
+      {
+        name: 'options.onRest',
+        type: '(offset: { x, y }) => void',
+        description: 'Runs when it comes to rest. Remove a thrown card here.',
+      },
+    ],
+    returns: [
+      {
+        name: 'x, y',
+        type: 'Ref<number>',
+        description:
+          'Distance from home, in px. Read them in a `v-animate` getter to follow them without re-rendering.',
+      },
+      {
+        name: 'isDragging',
+        type: 'Ref<boolean>',
+        description: 'Whether a pointer is dragging it.',
+      },
+      {
+        name: 'throwTo(to, { velocity? })',
+        type: '(to: { x, y }, options?) => void',
+        description:
+          'Sends it to `to` on a spring, as if thrown. Use it for a button that does the swipe.',
+      },
+      {
+        name: 'reset({ animate? })',
+        type: '(options?: { animate?: boolean }) => void',
+        description: 'Sends it home. `animate: false` jumps.',
+      },
+    ],
+  },
   settled: {
     description:
       'Resolves once nothing vael-ui started is still animating, for tests: open something, `await settled()`, then assert. Pass an element to wait only for what animates on it and inside it, such as a field\'s invalid shake: `await settled(field.value?.el)`. With nothing playing (reduced motion, `motion="false"`, or no element) it resolves at once, and it never waits for an endless loop. In app code, put a callback on what animates instead, such as `onAfterEnter` or `onAfterLeave`.',
@@ -935,7 +1346,12 @@ const shown = useTween(total, { duration: 600, easing: 'out' })`,
   },
   useSpringValue: {
     description:
-      "vael-ui's spring engine: the physics behind Sortable, Tree and DataTable reordering, and behind every sliding indicator set to a spring. A spring has no duration. You give it a target, and it moves there from where it is now, at the speed it already has. So every animation can be interrupted: call `set()` mid-flight and the value turns toward the new target with no jump. `useSpringValue` returns a ref to bind in a template. `createSpring` calls `onFrame` with each frame instead, so a value that drives a style never re-renders a component. `stepSpring` is the pure step under both, for tests and plots. One shared `requestAnimationFrame` loop runs every moving spring, and it stops once they all rest.",
+      "vael-ui's spring engine: the physics behind Sortable, Tree and DataTable reordering, and every sliding indicator set to a spring. A spring has no duration. You give it a target, and it moves there from where it is, at the speed it already has. So every animation is interruptible: call `set()` mid-flight and the value turns toward the new target with no jump. One shared `requestAnimationFrame` loop runs every moving spring and stops once they all rest.",
+    hint: [
+      '`useSpringValue`: use it when the template reads the value. It returns a ref.',
+      '`createSpring`: use it when the value writes straight to an element, as in a gesture. It calls `onFrame` each frame, so nothing re-renders.',
+      '`stepSpring`: use it in tests and plots. It is the pure step under both.',
+    ],
     installNames: ['useSpringValue', 'createSpring', 'stepSpring'],
     hasLiveDemo: true,
     params: [
@@ -1397,8 +1813,7 @@ const shown = useTween(total, { duration: 600, easing: 'out' })`,
       {
         name: 'announcement',
         type: 'Ref<string>',
-        description:
-          'The text for screen readers. Render it in an `aria-live="assertive"` element.',
+        description: 'The text for screen readers. Render it in an `aria-live="polite"` element.',
       },
       {
         name: 'onHandlePointerdown / onHandleKeydown',
@@ -1466,6 +1881,7 @@ const shown = useTween(total, { duration: 600, easing: 'out' })`,
   },
 
   moveTreeNode: {
+    hasLiveDemo: true,
     description:
       "Moves a node in a tree you can reorder. `moveTreeNode` moves a node and its subtree to a new parent and index, changing your array in place, as `removeTreeNode` does. Its `to` argument is the `DropPosition` that `useSortable`'s `onCommit` receives, so the two connect directly. Tree commits its drag reordering through it, and Sortable uses it for flat lists. It runs `isDescendantOf` first, because dropping a folder into its own descendant would detach that branch and lose it. Nodes are read as `{ value, children }` by default, the shape `TreeNode` and `MenuItemData` already have. Pass accessors for any other shape.",
     installNames: ['moveTreeNode', 'isDescendantOf'],

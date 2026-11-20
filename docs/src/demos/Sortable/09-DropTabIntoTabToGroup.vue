@@ -49,7 +49,7 @@
     </ul>
     <!-- Outside the <ul>, which may only hold list items. -->
     <span :id="instructionsId" class="tab-strip-status">{{ messages.sortable.instructions }}</span>
-    <span class="tab-strip-status" role="status" aria-live="assertive" aria-atomic="true">{{
+    <span class="tab-strip-status" role="status" aria-live="polite" aria-atomic="true">{{
       announcement
     }}</span>
   </section>

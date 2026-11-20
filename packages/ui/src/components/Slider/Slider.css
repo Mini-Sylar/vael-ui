@@ -23,7 +23,8 @@
     inline-size: 100%;
     min-block-size: var(--ui-slider-thumb-size);
     padding-inline: calc(var(--ui-slider-thumb-size) / 2);
-    touch-action: none;
+    /* The page still scrolls across the track; the thumb keeps every gesture. */
+    touch-action: pan-y;
     /* A jump (a key, a press on the track, a value from outside) glides on the number tokens,
        which a ConfigProvider spring retunes; a drag follows the pointer at once. */
     transition:
@@ -40,6 +41,7 @@
     block-size: 12rem;
     padding-inline: 0;
     padding-block: calc(var(--ui-slider-thumb-size) / 2);
+    touch-action: pan-x;
   }
   .ui-slider-track {
     position: relative;

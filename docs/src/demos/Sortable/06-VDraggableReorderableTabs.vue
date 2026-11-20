@@ -16,6 +16,7 @@
     >
       <template #default="{ items: list, itemProps }">
         <button
+          type="button"
           v-for="item in list"
           :key="item"
           class="ui-tabs-item--static"

@@ -24,7 +24,7 @@ test('dialog: renders title/description and a Cancel/Confirm footer; Cancel clos
   const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-dialog-sync').click()
 
-  const dialog = page.getByRole('dialog')
+  const dialog = page.getByRole('alertdialog')
   await expect.element(dialog).toBeVisible()
   await expect.element(page.getByText('Discard changes?')).toBeVisible()
   await expect.element(page.getByText('You have unsaved edits.')).toBeVisible()
@@ -39,7 +39,7 @@ test('dialog: Confirm with no onConfirm closes immediately and resolves true', a
   await screen.getByTestId('open-dialog-sync').click()
 
   await page.getByRole('button', { name: 'Confirm' }).click()
-  await expect.element(page.getByRole('dialog')).not.toBeInTheDocument()
+  await expect.element(page.getByRole('alertdialog')).not.toBeInTheDocument()
   await expect.element(screen.getByTestId('result')).toHaveTextContent('true')
 })
 
@@ -47,7 +47,7 @@ test('dialog: an async onConfirm keeps it open (Button shows its own loading sta
   const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-dialog-resolve').click()
 
-  const dialog = page.getByRole('dialog')
+  const dialog = page.getByRole('alertdialog')
   await expect.element(dialog).toBeVisible()
 
   const confirmButton = page.getByRole('button', { name: 'Confirm' })
@@ -68,7 +68,7 @@ test('dialog: a rejecting onConfirm fires onError and leaves it open — nothing
   const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-dialog-reject').click()
 
-  const dialog = page.getByRole('dialog')
+  const dialog = page.getByRole('alertdialog')
   await expect.element(dialog).toBeVisible()
   await page.getByRole('button', { name: 'Confirm' }).click()
 
@@ -147,7 +147,10 @@ test('dialog and popover queues are independent — one open does not affect the
   await expect.poll(() => dialogQueue.length).toBe(1)
 
   // Closing the dialog leaves the popover's own queue entry untouched.
-  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click()
+  await page
+    .getByRole('alertdialog', { name: 'Discard changes?' })
+    .getByRole('button', { name: 'Cancel' })
+    .click()
   await expect.poll(() => dialogQueue.length).toBe(0)
   expect(popoverQueue.length).toBe(1)
 
@@ -166,7 +169,7 @@ test('dialog: while an async onConfirm is pending, Escape, overlay click and Can
   const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-dialog-resolve').click()
 
-  const dialog = page.getByRole('dialog')
+  const dialog = page.getByRole('alertdialog')
   await expect.element(dialog).toBeVisible()
   await page.getByRole('button', { name: 'Confirm' }).click()
   await expect.element(screen.getByTestId('confirm-calls')).toHaveTextContent('1')

@@ -1,5 +1,6 @@
 @layer ui-components {
-  .ui-bottom-sheet-panel {
+  /* Paired with .ui-dialog-panel so these win over Dialog.css whichever loads first. */
+  .ui-dialog-panel.ui-bottom-sheet-panel {
     inline-size: 100%;
     max-block-size: 100dvh;
     border-radius: 1.25rem 1.25rem 0 0;
@@ -8,23 +9,28 @@
        transition, which the browser doesn't promote, so every finger move repainted the
        sheet and everything in it. Never toggled, so the contents aren't re-rasterised. */
     will-change: transform;
+    /* A flick that overshoots the top lifts the panel's bottom edge off the screen: the first
+       shadow is the surface again, a little way below, so nothing opens up under it. */
+    box-shadow:
+      0 4rem 0 0 var(--ui-surface),
+      var(--ui-panel-shadow);
   }
-  .ui-bottom-sheet-panel--sm {
+  .ui-dialog-panel.ui-bottom-sheet-panel--sm {
     max-inline-size: min(22rem, 100%);
     margin-inline: auto;
   }
-  .ui-bottom-sheet-panel--md {
+  .ui-dialog-panel.ui-bottom-sheet-panel--md {
     max-inline-size: min(28rem, 100%);
     margin-inline: auto;
   }
-  .ui-bottom-sheet-panel--lg {
+  .ui-dialog-panel.ui-bottom-sheet-panel--lg {
     max-inline-size: min(38rem, 100%);
     margin-inline: auto;
   }
-  .ui-bottom-sheet-panel--full-screen {
+  .ui-dialog-panel.ui-bottom-sheet-panel--full-screen {
     border-radius: 0;
   }
-  .ui-bottom-sheet-body {
+  .ui-dialog-body.ui-bottom-sheet-body {
     display: flex;
     flex-direction: column;
     min-block-size: 0;
@@ -66,6 +72,7 @@
     padding: 0 1.25rem 0.75rem;
   }
   .ui-bottom-sheet-title {
+    margin: 0;
     font-size: var(--ui-font-size);
     font-weight: 600;
     letter-spacing: -0.01em;

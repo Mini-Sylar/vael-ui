@@ -17,6 +17,11 @@
             :key="card.id"
             :data-value="card.id"
             class="board-card"
+            :class="{
+              'board-card--held':
+                flatEngines[col.id].draggedValues.value.has(card.id) ||
+                flatEngines[col.id].isGrabbedValue(card.id),
+            }"
             tabindex="0"
             role="button"
             aria-roledescription="sortable item"
@@ -132,7 +137,10 @@ const flatEngines = Object.fromEntries(
   cursor: grab;
   touch-action: none;
 }
-.board-card[data-dragging] {
-  opacity: 0;
+/* The card you hold, and its copy while it floats between columns. */
+.board-card--held {
+  border-color: var(--ui-primary);
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
+  cursor: grabbing;
 }
 </style>

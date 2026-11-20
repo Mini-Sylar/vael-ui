@@ -138,6 +138,7 @@ export default defineConfig([
   {
     entry,
     outDir: '../ui/dist/vapor',
+    format: 'esm',
     platform: 'neutral',
     plugins: [
       useVdomFiles(join(UI_DIR, 'dist/vapor')),
@@ -159,6 +160,7 @@ export default defineConfig([
   {
     entry,
     outDir: '../ui/dist/vapor-server',
+    format: 'esm',
     platform: 'neutral',
     plugins: [
       objectDirectivesOnServer(),

@@ -11,9 +11,7 @@
         <template #start>$</template>
       </Input>
     </Field>
-    <p class="demo-status">
-      Parsed value: <strong>{{ value === null ? 'null' : value }}</strong>
-    </p>
+    <p class="demo-status">Parsed value: <strong>{{ value === null ? 'null' : value }}</strong></p>
   </section>
 </template>
 

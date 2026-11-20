@@ -139,6 +139,24 @@
     inline-size: 2px; /* fixed thickness; block-size stays the 1px scaleY() baseline */
   }
 
+  /* Forced colors drop backgrounds, so the selected look is drawn in Highlight instead. */
+  @media (forced-colors: active) {
+    .ui-tabs-indicator--background,
+    .ui-tabs:not([data-indicator-placed]):has(> .ui-tabs-indicator--background)
+      > [role='tab'][aria-selected='true']::after {
+      border: 2px solid Highlight;
+    }
+    .ui-tabs-indicator--underline,
+    .ui-tabs:not([data-indicator-placed]):has(> .ui-tabs-indicator--underline)
+      > [role='tab'][aria-selected='true']::after {
+      forced-color-adjust: none;
+      background: Highlight;
+    }
+    .ui-tabs-item--static[aria-selected='true'] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .ui-tabs-indicator {
       transition: none;
