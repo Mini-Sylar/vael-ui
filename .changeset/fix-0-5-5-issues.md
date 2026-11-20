@@ -4,6 +4,8 @@
 
 ## Highlights
 
+- **Vue:** `vael-ui/vapor` is built against Vue `3.6.0-rc.16`: pin that exact version with `--save-exact`. The regular build works with any Vue `^3.5.0`.
+
 - **v-tooltip:** `follow: true` keeps the tooltip over the pointer along a wide target, such as a timeline bar, and stops at its ends. Opened from the keyboard, it stays centred; touch keeps its long press. `Tooltip` takes the same prop.
 - **v-tooltip:** `content` can be a component with `props`, for markup such as a status dot or a progress bar: `v-tooltip="{ content: ProjectTip, props: { project } }"`. It draws in the shared tooltip, so it still opens at once and glides between targets, in both builds.
 - **useResizable:** it can drive a span, such as a timeline bar. `offset` is a second model for the start: a handle for the `'start'` edge moves the start and size together, and `onMovePointerdown` / `onMoveKeydown` move the whole span. One instance covers both ends: each handle names its edge, `onHandlePointerdown(event, 'start')`, and `edge` stays the default. `bounds` keeps it in range, and `flip: false` stops a handle at `min` instead of flipping the span over its other end. A handle pulled past `min` flips the span over its other end. The click a drag's release makes, or a release after Escape, doesn't reach the span.

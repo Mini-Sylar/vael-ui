@@ -23,7 +23,7 @@
     "vael-ui": "workspace:*",
     "vee-validate": "^4.15.1",
     "vite-ssg": "^28.3.0",
-    "vue": "3.6.0-rc.15",
+    "vue": "3.6.0-rc.16",
     "vue-i18n": "12.0.0-alpha.13",
     "vue-router": "^5.5.1",
     "zod": "^4.6.7"
