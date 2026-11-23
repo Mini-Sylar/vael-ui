@@ -151,12 +151,15 @@ export function useDock(
 
   const itemEls: (HTMLElement | null)[] = []
   function setItemEl(index: number) {
+    let mine: HTMLElement | null = null
     return (el: unknown) => {
       const resolved =
         el && typeof el === 'object' && '$el' in el
           ? ((el as { $el?: Element }).$el as HTMLElement | undefined)
           : (el as HTMLElement | null)
-      itemEls[index] = resolved ?? null
+      // A removed item's ref clears after the item that took its index has set it: only clear our own.
+      if (resolved) itemEls[index] = mine = resolved
+      else if (itemEls[index] === mine) itemEls[index] = null
     }
   }
 
@@ -323,6 +326,12 @@ export function useDock(
   function measure() {
     const root = rootEl.value
     if (!root || (grows() && magnified)) return
+    // A removed item leaves its slot behind (its ref is set to null, not dropped): no phantom item.
+    const count = toValue(itemCount)
+    if (itemEls.length > count) {
+      itemEls.length = count
+      syncArrayLengths()
+    }
     const rootRect = root.getBoundingClientRect()
     const vertical = orientation() === 'vertical'
     // From where the bar's edge rests, however far it has widened.

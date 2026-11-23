@@ -122,9 +122,13 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
       : thrown && to.x === 0 && to.y === 0
         ? all.home
         : all.settle
-    moving = true
+    // Both axes start before either can report rest: an axis already there settles inside `set`,
+    // and `onRest` would run with the other one's flight still to come.
+    moving = false
     sx.set(to.x, { ...spring, velocity: reduced ? 0 : velocity.x })
     sy.set(to.y, { ...spring, velocity: reduced ? 0 : velocity.y })
+    moving = true
+    frame()
   }
   function place(to: DragPoint) {
     moving = false
@@ -234,7 +238,8 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
     const offset = { x: x.value, y: y.value }
     const projected = { x: offset.x + velocity.x * coast, y: offset.y + velocity.y * coast }
     const to = options.onRelease?.({ offset, velocity, projected }) ?? { x: 0, y: 0 }
-    go(to, velocity, true)
+    // Let go where it should stay: an axis kept where it is doesn't coast past and come back.
+    go(to, { x: to.x === offset.x ? 0 : velocity.x, y: to.y === offset.y ? 0 : velocity.y }, true)
   }
 
   // Escape mid-drag puts it back and stops the drag, without closing a dialog around it.

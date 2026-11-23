@@ -656,3 +656,31 @@ test('a mouse click keeps the magnification; a finger lifting settles it', async
   root.dispatchEvent(new PointerEvent('pointerup', { pointerType: 'touch', bubbles: true }))
   await expect.poll(() => scaleOf(buttons[0])).toBeCloseTo(1, 1)
 })
+
+// Removing the first item used to leave its slot behind: the item that slid into its place was
+// measured twice and pushed sideways on hover, and itemEls() listed it twice.
+test('removing an item leaves no stale slot behind', async () => {
+  const { shallowRef } = await import('vue')
+  const items = shallowRef([{ label: 'Notes' }, { label: 'Preview' }])
+  const dock = shallowRef<InstanceType<typeof Dock> | null>(null)
+  const screen = await render({
+    setup: () => () =>
+      h(Dock, {
+        ref: (el: unknown) => (dock.value = el as InstanceType<typeof Dock>),
+        items: items.value,
+        motion: false,
+      }),
+  })
+  await vi.waitFor(() => expect(itemButtons(screen)).toHaveLength(2))
+  items.value = [{ label: 'Preview' }]
+  await vi.waitFor(() => expect(itemButtons(screen)).toHaveLength(1))
+  const left = itemButtons(screen)
+  expect(dock.value!.itemEls()).toEqual(left)
+
+  const rect = left[0]!.getBoundingClientRect()
+  await userEvent.hover(left[0]!)
+  await new Promise((resolve) => setTimeout(resolve, 400))
+  // The one item left scales in place, under the pointer.
+  const after = left[0]!.getBoundingClientRect()
+  expect(Math.abs(after.x + after.width / 2 - (rect.x + rect.width / 2))).toBeLessThan(1)
+})

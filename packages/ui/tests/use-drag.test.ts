@@ -191,3 +191,27 @@ test('with a handle, only a press there drags; the rest of the element does not'
   // The handle's own CSS decides touch-action, so the element's is left alone.
   expect(el.style.touchAction).toBe('')
 })
+
+// A throw that moves one axis only: the axis already in place must not report rest before the other has flown.
+test('rest comes once, after every axis has landed', async () => {
+  const { drag, rested, rests } = setup()
+  drag.throwTo({ x: 0, y: -260 })
+  expect(rests).toEqual([])
+  expect(await rested()).toEqual({ x: 0, y: -260 })
+  expect(rests).toHaveLength(1)
+})
+
+// Released where onRelease keeps it: it stays put instead of coasting past and coming back.
+test('a release kept where it is stays put', async () => {
+  const { drag, el, rests } = setup({ onRelease: ({ offset }) => offset })
+  press(el, 0, 0)
+  for (let x = 20; x <= 200; x += 20) {
+    move(x, 0)
+    await new Promise((resolve) => setTimeout(resolve, 8))
+  }
+  const released = drag.x.value
+  release(200, 0)
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  expect(drag.x.value).toBe(released)
+  expect(rests.at(-1)).toEqual({ x: released, y: 0 })
+})
