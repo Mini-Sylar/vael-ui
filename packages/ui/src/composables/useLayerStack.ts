@@ -94,6 +94,8 @@ export interface Layer {
   index: () => number
   /** Contents of the layers opened after this one, such as a popover opened from inside a dialog. */
   above: () => HTMLElement[]
+  /** Moves this layer to the top of the stack, as a window clicked among others comes to the front. */
+  raise: () => void
 }
 
 export interface UseLayerOptions {
@@ -163,5 +165,11 @@ export function useLayer(options: UseLayerOptions = {}): Layer {
     return contents
   }
 
-  return { push, pop, isTopmost, index, above }
+  const raise = () => {
+    const layers = stack.value
+    if (layers[layers.length - 1]?.id === id || !layers.some((e) => e.id === id)) return
+    stack.value = [...layers.filter((e) => e.id !== id), entry]
+  }
+
+  return { push, pop, isTopmost, index, above, raise }
 }

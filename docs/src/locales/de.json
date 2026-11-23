@@ -257,7 +257,7 @@
     "featureSkillTitle": "KI-Agent-Skills",
     "themeLabel": "Farbe ausprobieren:",
     "newTag": "Neu",
-    "newText": "0.5.5: Gesten und Live-Bewegungswerte",
+    "newText": "0.5.6: Fenster, ein Dock und Größenänderung in zwei Achsen",
     "showcaseLabel": "Live-Demo, gebaut mit vael-ui"
   },
   "metaTable": {
@@ -450,7 +450,8 @@
     "positioningAndData": "Positionierung & Daten",
     "utilities": "Dienstprogramme",
     "motion": "Bewegung",
-    "dragAndDrop": "Drag & Drop"
+    "dragAndDrop": "Drag & Drop",
+    "withComponents": "Mit einer Komponente genutzt"
   },
   "composableDescriptions": {
     "confirmAction": "Ein Bestätigungsschritt, als zentrierter Dialog oder als an einem Auslöser verankertes Popover, der auf Ihren asynchronen Handler wartet, bevor er sich schließt. Nutzen Sie ihn vor einer Aktion, die sich schwer rückgängig machen lässt.",
@@ -465,7 +466,7 @@
     "mapRange": "Macht aus einer Zahl eine andere, indem zwei Bereiche übereinandergelegt werden: aus dem Versatz beim Ziehen eine Neigung, aus dem Scrollen eine Deckkraft. Passt zu einem Live-Wert in v-animate.",
     "springEasing": "Macht aus einer Feder eine CSS-linear()-Kurve samt Einschwingzeit. Nutzen Sie es, um element.animate() oder einer CSS-Transition dieselbe Feder wie vael-ui zu geben.",
     "preventFocusZoom": "Verhindert, dass iOS hineinzoomt, wenn ein Formularfeld den Fokus erhält, damit Felder zur übrigen Schriftgröße passen können. Rufen Sie es einmal auf dem Client auf, etwa in main.ts.",
-    "useFloatingPosition": "Die Positionierungs-Engine hinter Popover, Menu und Tooltip, auf Basis von Floating UI. Nutzen Sie sie, um eigene verankerte Panels zu bauen.",
+    "useFloatingPosition": "Die Positionierungs-Engine hinter Popover, Menu und Tooltip. Nutzen Sie sie, um eigene verankerte Panels zu bauen.",
     "useVirtualizer": "Rendert nur die sichtbaren Zeilen einer langen Liste, damit das DOM klein bleibt. Nutzen Sie es für Ihre eigenen langen Listen.",
     "useFieldControl": "Verbindet ein eigenes Formularelement mit dem nächsten Field: id, ARIA-Attribute sowie Fokus- und Ausfüllstatus. Nutzen Sie es, wenn Ihr eigenes Steuerelement in einem Field liegt.",
     "useHoverIndicator": "Die gleitende Hover- und Tastatur-Hervorhebung hinter den Listen von vael-ui. Nutzen Sie sie, um Ihren eigenen Listen dieselbe Hervorhebung zu geben.",
@@ -1287,6 +1288,10 @@
       "DraggableDialog": {
         "title": "Verschiebbarer Dialog",
         "note": "Ziehen Sie die Kopfzeile, um den Dialog zu verschieben. Pointer Capture hält das Ziehen aufrecht, wenn der Zeiger die Kopfzeile verlässt. Hat der Griff-Button den Fokus, verschieben ihn die Pfeiltasten um 10 px, mit Umschalt um 50 px. Der Dialog bleibt im Fenster und öffnet sich wieder zentriert."
+      },
+      "WindowDock": {
+        "title": "Fenster und ein Dock",
+        "note": "Nicht modale Dialoge, die Sie verschieben, in der Größe ändern und maximieren können, während die Seite bedienbar bleibt. Ziehen Sie die Kopfzeile, oder fokussieren Sie den Griff und nutzen Sie die Pfeiltasten: 10 px, mit Umschalt 50 px. Die Größe ändern Sie an jeder Kante und Ecke, oder Sie fokussieren die Ecke unten rechts und nutzen die Pfeiltasten. Minimieren lässt ein Fenster in sein Symbol im Dock schrumpfen, und das Symbol holt es zurück oder nach vorn, wenn es schon offen ist."
       }
     }
   },

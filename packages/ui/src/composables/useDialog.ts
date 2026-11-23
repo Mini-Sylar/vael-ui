@@ -187,6 +187,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
       container,
       contained,
       layerIndex: () => 0,
+      raise: () => {},
     }
   }
 
@@ -404,6 +405,8 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     // stack slots instead of one, breaking isTopmost()/Escape-routing/scroll-lock ref-counting for
     // every dialog on the page.
     layerIndex: layer.index,
+    /** Brings this dialog to the front of the open ones. */
+    raise: layer.raise,
     releaseScroll,
   }
 }

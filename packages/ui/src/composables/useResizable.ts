@@ -1,4 +1,4 @@
-import { onScopeDispose, shallowRef, toValue, watch } from 'vue'
+import { computed, isRef, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { inlineKey, isRtl } from './dom'
 import { dampen } from './gesture'
@@ -65,6 +65,44 @@ export interface UseResizableReturn {
   onMoveKeydown: (event: KeyboardEvent) => void
 }
 
+/** The options for one axis of a pair: everything in `UseResizableOptions` except `direction`, `edge` and `onCommit`. */
+export type UseResizableAxisOptions = Omit<UseResizableOptions, 'direction' | 'edge' | 'onCommit'>
+
+/** One size per axis, in px. `horizontal` follows `clientX` and `vertical` follows `clientY`, as `direction` does. */
+export interface UseResizableModels {
+  horizontal: Ref<number>
+  vertical: Ref<number>
+}
+
+export interface UseResizableBothOptions {
+  /** Options for the horizontal size, such as `min`, `max`, `step`, `offset` and `bounds`. */
+  horizontal?: UseResizableAxisOptions
+  /** Options for the vertical size, the same as `horizontal`. */
+  vertical?: UseResizableAxisOptions
+  /** Ignores pointer and key input on both axes while `true`. An axis's own `disabled` wins. */
+  disabled?: MaybeRefOrGetter<boolean>
+  /** Snaps both axes to a multiple of `step` on release. An axis's own `step` wins. */
+  step?: MaybeRefOrGetter<number | undefined>
+  /** Fires once per settled interaction, even when a corner moves both axes. */
+  onCommit?: () => void
+}
+
+/** Where a handle sits on screen. A side pulls one axis and a corner pulls both. */
+export type ResizeHandle = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
+
+export interface UseResizableBothReturn {
+  /** True while either axis is being dragged. */
+  isDragging: Ref<boolean>
+  /** Press on a handle and name where it sits. A side pulls one axis, a corner both. */
+  onHandlePointerdown: (event: PointerEvent, handle: ResizeHandle) => void
+  /** The arrow keys, Home and End on a handle. On a corner each arrow resizes along its own axis. */
+  onHandleKeydown: (event: KeyboardEvent, handle: ResizeHandle) => void
+  /** With an `offset` on either axis: press on the whole span to move it. */
+  onMovePointerdown: (event: PointerEvent) => void
+  /** With an `offset` on either axis: the arrow keys move the whole span a step. */
+  onMoveKeydown: (event: KeyboardEvent) => void
+}
+
 const KEYBOARD_STEP = 16 // px per arrow press — one nominal rem at the default root font-size
 // Gentler than pull-to-refresh (wider range spans wider min/max)
 const RUBBER_BAND_DAMPEN = 60
@@ -76,10 +114,88 @@ const EDGE_SPEED = 18
 
 // Shifted-log curve (Vaul); springs back via CSS transition.
 
+/**
+ * One size along one axis, or a pair of them for a handle that drags both (a window's corner).
+ * Pass a ref for the one, `{ horizontal, vertical }` for the other.
+ */
 export function useResizable(
-  model: Ref<number>,
-  options: UseResizableOptions = {},
-): UseResizableReturn {
+  models: UseResizableModels,
+  options?: UseResizableBothOptions,
+): UseResizableBothReturn
+// Last, so `Parameters<typeof useResizable>` stays the one-size form.
+export function useResizable(model: Ref<number>, options?: UseResizableOptions): UseResizableReturn
+export function useResizable(
+  model: Ref<number> | UseResizableModels,
+  options: UseResizableOptions | UseResizableBothOptions = {},
+): UseResizableReturn | UseResizableBothReturn {
+  return isRef(model)
+    ? useAxis(model, options as UseResizableOptions)
+    : useBoth(model, options as UseResizableBothOptions)
+}
+
+// Two axes are two engines, one per size, pressed by the same pointer.
+function useBoth(
+  models: UseResizableModels,
+  options: UseResizableBothOptions,
+): UseResizableBothReturn {
+  // A corner settles both axes in one release: one commit.
+  let committing = false
+  const commit = () => {
+    if (committing || !options.onCommit) return
+    committing = true
+    queueMicrotask(() => {
+      committing = false
+      options.onCommit?.()
+    })
+  }
+  const shared = { disabled: options.disabled, step: options.step, onCommit: commit }
+  const horizontal = useAxis(models.horizontal, {
+    ...shared,
+    ...options.horizontal,
+    direction: 'horizontal',
+  })
+  const vertical = useAxis(models.vertical, {
+    ...shared,
+    ...options.vertical,
+    direction: 'vertical',
+  })
+  // The screen's east is the trailing edge left to right and the leading edge right to left.
+  const edgesOf = (handle: ResizeHandle, el: Element | null) => {
+    const rtl = isRtl(el)
+    const side = (west: boolean): ResizeEdge => (west === rtl ? 'end' : 'start')
+    return {
+      horizontal: handle.includes('e')
+        ? side(false)
+        : handle.includes('w')
+          ? side(true)
+          : undefined,
+      vertical: handle.includes('s') ? 'end' : handle.includes('n') ? 'start' : undefined,
+    } as { horizontal?: ResizeEdge; vertical?: ResizeEdge }
+  }
+  return {
+    isDragging: computed(() => horizontal.isDragging.value || vertical.isDragging.value),
+    onHandlePointerdown: (event, handle) => {
+      const edge = edgesOf(handle, event.currentTarget as Element | null)
+      if (edge.horizontal) horizontal.onHandlePointerdown(event, edge.horizontal)
+      if (edge.vertical) vertical.onHandlePointerdown(event, edge.vertical)
+    },
+    onHandleKeydown: (event, handle) => {
+      const edge = edgesOf(handle, event.currentTarget as Element | null)
+      if (edge.horizontal) horizontal.onHandleKeydown(event, edge.horizontal)
+      if (edge.vertical && !event.defaultPrevented) vertical.onHandleKeydown(event, edge.vertical)
+    },
+    onMovePointerdown: (event) => {
+      horizontal.onMovePointerdown(event)
+      vertical.onMovePointerdown(event)
+    },
+    onMoveKeydown: (event) => {
+      horizontal.onMoveKeydown(event)
+      if (!event.defaultPrevented) vertical.onMoveKeydown(event)
+    },
+  }
+}
+
+function useAxis(model: Ref<number>, options: UseResizableOptions = {}): UseResizableReturn {
   const isDragging = shallowRef(false)
   // A getter lets a component turn the span on and off as its props change.
   const spanStart = () => (typeof options.offset === 'function' ? options.offset() : options.offset)

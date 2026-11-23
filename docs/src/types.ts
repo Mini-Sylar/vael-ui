@@ -32,6 +32,8 @@ export interface DemoManifestExample {
   id: string
   title: string
   vaporEligible: boolean
+  /** Files the example imports, shown as tabs beside its own code. */
+  files?: string[]
 }
 
 export interface DemoManifestEntry {

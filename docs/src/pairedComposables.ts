@@ -1425,7 +1425,7 @@ const { rootStyle, onDialPointerdown, onDialKeydown } = useDial(zoom, {
       name: 'useResizable',
       installNames: ['useResizable'],
       description:
-        "The headless drag and keyboard engine behind `<Resizable>`. It turns a handle's pointer drag into a size in px on your ref, written once a frame. Mid drag, the size stretches past `min` and `max` with rubber-band resistance, then settles back within them on release. Escape puts it back where the drag started. Arrow keys resize by 16 px, and Home and End jump to `min` and `max`. `<Resizable>` adds the panel, the separator role and its ARIA values. Use the composable when the handle and the panel live apart in your own layout.",
+        "The headless drag and keyboard engine behind `<Resizable>`. It turns a handle's pointer drag into a size in px on your ref, written once a frame. Mid drag, the size stretches past `min` and `max` with rubber-band resistance, then settles back within them on release. Escape puts it back where the drag started. Arrow keys resize by 16 px, and Home and End jump to `min` and `max`. `<Resizable>` adds the panel, the separator role and its ARIA values. Use the composable when the handle and the panel live apart in your own layout. A window that pulls both ways takes a pair of sizes, `useResizable({ horizontal: width, vertical: height }, { horizontal: { min: 240 }, vertical: { min: 140 } })`, and each handle names where it sits: `onHandlePointerdown(event, 'se')`. A side pulls one axis and a corner pulls both, and `onCommit` fires once per release.",
       exampleCode: `<script setup lang="ts">
 import { ref } from 'vue'
 import { useResizable } from 'vael-ui'
@@ -1458,8 +1458,15 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
       params: [
         {
           name: 'model',
-          type: 'Ref<number>',
-          description: 'The size in px (first argument), written on every drag frame.',
+          type: 'Ref<number> | { horizontal: Ref<number>; vertical: Ref<number> }',
+          description:
+            'The size in px (first argument), written on every drag frame. A pair of sizes lets one handle pull both axes.',
+        },
+        {
+          name: 'horizontal, vertical',
+          type: 'UseResizableAxisOptions',
+          description:
+            'With a pair of sizes: each axis takes its own `min`, `max`, `step`, `offset`, `centered`, `flip`, `bounds` and `scrollEl`, as one size does. `disabled`, `step` and `onCommit` at the top level apply to both.',
         },
         {
           name: 'min',
@@ -1547,7 +1554,7 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
           name: 'onHandlePointerdown',
           type: "(event: PointerEvent, edge?: 'start' | 'end') => void",
           description:
-            "Bind it on the handle. Give the handle `touch-action: none`, so a touch drag resizes instead of scrolling. A span has two handles: name the one you pressed. Left out, it's the `edge` option.",
+            "Bind it on the handle. Give the handle `touch-action: none`, so a touch drag resizes instead of scrolling. A span has two handles: name the one you pressed. Left out, it's the `edge` option. With a pair of sizes, name where the handle sits instead: `'n'`, `'s'`, `'e'`, `'w'`, `'ne'`, `'nw'`, `'se'` or `'sw'`, as the screen shows it, also right to left.",
         },
         {
           name: 'onHandleKeydown',
@@ -1698,7 +1705,7 @@ const { setItemEl, onPointerDown, onPointerMove, onPointerLeave } = useDock(
       ],
     },
     {
-      name: 'dockFalloff, dockItemSize, dockItemSizes',
+      name: 'dockItemSizes',
       installNames: ['dockFalloff', 'dockItemSize', 'dockItemSizes'],
       description:
         'The pure, DOM-free size math `useDock` runs on every pointer move. Use them to drive your own magnification, or to preview the curve in a test or a chart. Distances are in px along the dock.',
@@ -1854,6 +1861,17 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
       installNames: ['resolveSwipeCommit'],
       description:
         'Decides whether a released row opens or closes, as `useSwipeReveal` does. A flick faster than 0.11 px/ms opens when it moved toward open and closes when it moved away. A slower drag opens when more than half the panel shows. Use it to give a gesture of your own the same feel.',
+      exampleCode: `import { resolveSwipeCommit } from 'vael-ui'
+
+// A panel of your own, released after a drag. \`speed\` is the release speed in px/ms, never negative.
+function shouldOpen(speed: number, towardOpen: boolean, shown: number, width: number): boolean {
+  return resolveSwipeCommit({ velocity: speed, towardOpen, openFraction: shown / width })
+}
+
+shouldOpen(0.3, true, 20, 100) // true: a quick flick toward open opens it
+shouldOpen(0.3, false, 80, 100) // false: a quick flick toward closed closes it
+shouldOpen(0.05, true, 40, 100) // false: a slow drag opens only past the halfway point
+shouldOpen(0.05, false, 60, 100) // true: a slow drag past halfway stays open`,
       params: [
         {
           name: 'velocity',
@@ -1888,7 +1906,57 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
       name: 'useSheetDrag',
       installNames: ['useSheetDrag'],
       description:
-        'The drag and snap engine behind `<BottomSheet>`, modeled on Vaul. The panel stays as tall as its area and only moves with `translateY`, so a drag never triggers a resize. A release settles on a snap point, steps one point for a quick short flick, or calls `onDismiss`. It decides from the speed over the last 80 ms, so a slow drag that ends in a flick reads as a flick. A drag on the content only moves the sheet when the content is scrolled to the top and the drag goes down. `<BottomSheet>` adds the overlay, focus trap, enter and exit, the close flow and nested sheet detection.',
+        'The drag and snap engine behind `<BottomSheet>`. The panel stays as tall as its area and moves only with `translateY`, so a drag never resizes it. A release settles on a snap point, steps one point after a short, quick flick, or calls `onDismiss`. It judges the speed over the last 80 ms, so a slow drag that ends in a flick counts as a flick. A drag on the content moves the sheet only when the content is scrolled to the top and the drag goes down. `<BottomSheet>` adds the overlay, the focus trap, enter and exit, the close flow and nested sheet detection.',
+      exampleCode: `<script setup lang="ts">
+import { shallowRef, useTemplateRef } from 'vue'
+import { useSheetDrag } from 'vael-ui'
+
+const open = shallowRef(true)
+const panel = useTemplateRef<HTMLElement>('panel')
+const handle = useTemplateRef<HTMLElement>('handle')
+const content = useTemplateRef<HTMLElement>('content')
+
+const { activeSnap, isDragging } = useSheetDrag(open, {
+  panelEl: panel,
+  handleEl: handle,
+  contentEl: content,
+  snapPoints: [
+    { id: 'peek', height: 0.35 },
+    { id: 'full', height: 0.9 },
+  ],
+  initialSnap: 'peek',
+  onDismiss: () => (open.value = false),
+})
+</script>
+
+<template>
+  <div
+    v-if="open"
+    ref="panel"
+    class="sheet"
+    :data-snap="activeSnap"
+    :data-dragging="isDragging || undefined"
+  >
+    <div ref="handle" class="handle" />
+    <div ref="content" class="content">Drag the handle, or flick down to dismiss.</div>
+  </div>
+</template>
+
+<style scoped>
+/* As tall as the largest snap point: the composable only moves it with translateY. */
+.sheet {
+  position: fixed;
+  inset: auto 0 0;
+  height: 90dvh;
+  border-radius: 16px 16px 0 0;
+  background: var(--ui-surface);
+}
+.handle {
+  height: 24px;
+  cursor: grab;
+  touch-action: none;
+}
+</style>`,
       params: [
         {
           name: 'active',

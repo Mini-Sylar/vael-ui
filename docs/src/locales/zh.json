@@ -257,7 +257,7 @@
     "featureSkillTitle": "AI 智能体技能",
     "themeLabel": "试试颜色：",
     "newTag": "新",
-    "newText": "0.5.5：手势与实时动效值",
+    "newText": "0.5.6：窗口、程序坞与双轴调整大小",
     "showcaseLabel": "使用 vael-ui 构建的在线演示"
   },
   "i18nKeys": {
@@ -431,7 +431,8 @@
     "positioningAndData": "定位与数据",
     "utilities": "实用工具",
     "motion": "动效",
-    "dragAndDrop": "拖放"
+    "dragAndDrop": "拖放",
+    "withComponents": "配合组件使用"
   },
   "composableDescriptions": {
     "confirmAction": "确认步骤，以居中对话框或锚定在触发元素上的弹出层形式显示，会等待你的异步处理函数完成后再关闭。在难以撤销的操作之前使用。",
@@ -446,7 +447,7 @@
     "mapRange": "通过对齐两个范围，把一个数字换算成另一个：把拖动的偏移变成倾斜，把滚动变成不透明度。配合 v-animate 中的实时值使用。",
     "springEasing": "把弹簧转换成 CSS linear() 曲线及其稳定时间。用它让 element.animate() 或 CSS 过渡使用与 vael-ui 相同的弹簧。",
     "preventFocusZoom": "阻止 iOS 在表单字段获得焦点时放大页面，让字段与其余文字大小一致。在客户端调用一次，例如在 main.ts 中。",
-    "useFloatingPosition": "Popover、Menu 和 Tooltip 背后的定位引擎，基于 Floating UI 构建。用它构建你自己的锚定浮层。",
+    "useFloatingPosition": "Popover、Menu 和 Tooltip 背后的定位引擎。用它构建你自己的锚定浮层。",
     "useVirtualizer": "只渲染长列表中可见的行，让 DOM 保持精简。用于你自己的长列表。",
     "useFieldControl": "将自定义表单控件接入最近的 Field：id、ARIA 属性以及聚焦和已填写状态。当你自己的控件位于 Field 内时使用。",
     "useHoverIndicator": "vael-ui 列表背后的滑动悬停和键盘高亮。用它让你自己的列表获得同样的高亮。",
@@ -1287,6 +1288,10 @@
       "DraggableDialog": {
         "title": "可拖动的对话框",
         "note": "拖动标题栏即可移动对话框。指针捕获让指针离开标题栏后拖动仍能继续。焦点在抓手按钮上时，方向键每次移动 10 px，按住 Shift 则移动 50 px。对话框会保持在窗口内，再次打开时回到中央。"
+      },
+      "WindowDock": {
+        "title": "窗口与程序坞",
+        "note": "可在页面保持可用时移动、调整大小和最大化的非模态对话框。拖动标题栏，或聚焦手柄后用方向键移动（10 px，按住 Shift 为 50 px）。可从任意边或角调整大小，也可聚焦右下角后用方向键调整。最小化会让窗口缩进程序坞中的图标，点击图标可恢复窗口；如果窗口已打开，则将其置于最前。"
       }
     }
   },

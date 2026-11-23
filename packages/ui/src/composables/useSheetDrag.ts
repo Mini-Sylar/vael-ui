@@ -44,7 +44,7 @@ export interface UseSheetDragReturn {
   isDragging: Ref<boolean>
   /** Re-applies the initial snap position — call after the panel becomes visible again. */
   reset: () => void
-  /** Vaul's nested-drawer recede: scales the panel down slightly and shifts it up while a child sheet is stacked on top, COMPOSED with the current snap offset — overwriting the transform outright would throw the panel to the viewport top. */
+  /** Recedes the panel while a child sheet is stacked on top: it scales down slightly and shifts up, on top of the current snap offset. Setting the transform outright would throw the panel to the top of the viewport. */
   setReceded: (receded: boolean) => void
   /** Back to where it rests: a refused dismiss springs back from where it was let go. */
   settle: () => void

@@ -47,6 +47,8 @@
           :class="panelPart.class"
           :style="[panelPart.style, panelStyle]"
           v-bind="panelAttrs"
+          @pointerdown.capture="raiseFloating"
+          @focusin="raiseFloating"
         >
           <button
             v-if="maximizable"
@@ -203,7 +205,7 @@ export interface DialogProps {
   /** Shows the built-in close button (×). Hide it when the footer carries the only sensible actions. @default true */
   showClose?: boolean
   /**
-   * `false` turns off the overlay, scroll lock, focus trap and the inert page behind it. Escape-close, layer stacking, focus on open and focus return still apply.
+   * `false` turns off the overlay, scroll lock, focus trap and the inert page behind it, and a dialog you press or focus comes to the front of the other open ones. Escape-close, layer stacking, focus on open and focus return still apply.
    * @default true
    */
   modal?: boolean
@@ -406,6 +408,7 @@ const {
   container,
   contained,
   layerIndex,
+  raise,
   releaseScroll,
 } = useDialog(open, {
   holdScrollUntilExit: true,
@@ -420,6 +423,11 @@ const {
   closeOnHistoryBack: () => props.closeOnHistoryBack,
   onOpenChange: (value, details) => emit('open-change', value, details),
 })
+
+// A non-modal dialog is a window: pressing or focusing it brings it in front of the others.
+function raiseFloating() {
+  if (!props.modal) raise()
+}
 
 // The overlay's mousedown is prevented (template) so a click on it never moves focus to <body>:
 // with closeOnOverlay off, focus must stay inside the still-open modal.
@@ -675,8 +683,24 @@ function settleResize() {
 }
 
 useEventListener(panelEl, 'transitionend', (event: TransitionEvent) => {
-  if (event.target !== panelEl.value || event.propertyName !== 'inline-size') return
+  // Chrome reports a logical property by its physical name.
+  if (event.target !== panelEl.value) return
+  if (event.propertyName !== 'inline-size' && event.propertyName !== 'width') return
   if (resizeToken) settleResize()
+})
+
+// Whoever flips `maximized` gets the ease: the button below, or a bound `v-model:maximized`.
+function easeResize() {
+  resizing.value = true
+  const myToken = Symbol('dialog-resize')
+  resizeToken = myToken
+  clearTimeout(resizeFallbackTimer)
+  resizeFallbackTimer = setTimeout(() => {
+    if (resizeToken === myToken) settleResize()
+  }, 200) // matches --ui-duration-enter; fallback only, transitionend above is primary
+}
+watch(maximized, () => {
+  if (!resizeToken) easeResize()
 })
 
 async function toggleMaximize() {
@@ -687,13 +711,7 @@ async function toggleMaximize() {
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   }
   maximized.value = goingToMaximize
-  resizing.value = true
-  const myToken = Symbol('dialog-resize')
-  resizeToken = myToken
-  clearTimeout(resizeFallbackTimer)
-  resizeFallbackTimer = setTimeout(() => {
-    if (resizeToken === myToken) settleResize()
-  }, 200) // matches --ui-duration-enter; fallback only, transitionend above is primary
+  easeResize()
 }
 
 const overlayPart = computed(() => resolveUiPart(cx, themedUi()?.overlay, 'ui-dialog-overlay'))

@@ -257,7 +257,7 @@
     "featureSkillTitle": "Skills para agentes de IA",
     "themeLabel": "Prueba un color:",
     "newTag": "Nuevo",
-    "newText": "0.5.5: gestos y valores de movimiento en vivo",
+    "newText": "0.5.6: ventanas, un dock y cambio de tamaño en dos ejes",
     "showcaseLabel": "Demo en vivo hecha con vael-ui"
   },
   "i18nKeys": {
@@ -431,7 +431,8 @@
     "positioningAndData": "Posicionamiento y datos",
     "utilities": "Utilidades",
     "motion": "Movimiento",
-    "dragAndDrop": "Arrastrar y soltar"
+    "dragAndDrop": "Arrastrar y soltar",
+    "withComponents": "Usados con un componente"
   },
   "composableDescriptions": {
     "confirmAction": "Un paso de confirmación, mostrado como un diálogo centrado o un popover anclado a un activador, que espera a tu controlador asíncrono antes de cerrarse. Úsalo antes de una acción difícil de deshacer.",
@@ -446,7 +447,7 @@
     "mapRange": "Convierte un número en otro alineando dos rangos: el desplazamiento de un arrastre en una inclinación, un desplazamiento de la página en una opacidad. Úsalo con un valor en vivo en v-animate.",
     "springEasing": "Convierte un resorte en una curva CSS linear() y su tiempo de asentamiento. Úsalo para dar a element.animate() o a una transición CSS el mismo resorte que vael-ui.",
     "preventFocusZoom": "Evita que iOS amplíe la página cuando un campo de formulario recibe el foco, para que los campos puedan coincidir con el resto de tu texto. Llámalo una vez en el cliente, por ejemplo en main.ts.",
-    "useFloatingPosition": "El motor de posicionamiento detrás de Popover, Menu y Tooltip, construido sobre Floating UI. Úsalo para crear tus propios paneles anclados.",
+    "useFloatingPosition": "El motor de posicionamiento detrás de Popover, Menu y Tooltip. Úsalo para crear tus propios paneles anclados.",
     "useVirtualizer": "Renderiza solo las filas visibles de una lista larga, para que el DOM siga siendo pequeño. Úsalo para tus propias listas largas.",
     "useFieldControl": "Conecta un control de formulario personalizado con el Field más cercano: su id, sus atributos ARIA y su estado de foco y relleno. Úsalo cuando tu propio control está dentro de un Field.",
     "useHoverIndicator": "El resaltado deslizante de hover y teclado detrás de las listas de vael-ui. Úsalo para dar el mismo resaltado a tus propias listas.",
@@ -1287,6 +1288,10 @@
       "DraggableDialog": {
         "title": "Diálogo arrastrable",
         "note": "Arrastra la cabecera para mover el diálogo. La captura del puntero mantiene el arrastre cuando el puntero sale de la cabecera. Con el foco en el botón de agarre, las flechas lo mueven 10 px, o 50 px con Mayús. El diálogo se queda dentro de la ventana y vuelve a abrirse centrado."
+      },
+      "WindowDock": {
+        "title": "Ventanas y un dock",
+        "note": "Diálogos no modales que puede mover, redimensionar y maximizar mientras la página sigue activa. Arrastre el encabezado, o enfoque el asa y use las teclas de flecha: 10 px, o 50 px con Mayús. Cambie el tamaño desde cualquier borde o esquina, o enfoque la esquina inferior derecha y use las flechas. Minimizar encoge una ventana hasta su icono en el dock, y el icono la devuelve, o la trae al frente si ya está abierta."
       }
     }
   },

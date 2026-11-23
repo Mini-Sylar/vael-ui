@@ -90,6 +90,8 @@ export interface DemoExample {
   vaporComponent: Component | null
   vdomCode: string
   vaporCode: string
+  /** Files the example imports, beside its own, as tabs in the code view. */
+  files?: { name: string; vdomCode: string; vaporCode: string }[]
   /** One of the page's showpieces, listed last. */
   highlight?: boolean
   /** A showpiece's library as first built (`GSAP`, `motion`); unset, vael-ui's built-in look. */

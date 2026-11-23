@@ -17,6 +17,13 @@ import { a11yContent } from './src/a11yContent.ts'
 import { writeLlms } from './scripts/llms.mjs'
 import { highlightPrerenderedCode } from './scripts/highlight-prerendered.ts'
 
+// The composables that drive a component have a page of their own, written up in pairedComposables.ts.
+const pairedContent = Object.fromEntries(
+  Object.values(pairedComposables)
+    .flat()
+    .map((paired) => [paired.name, paired]),
+)
+
 const uiPackageJson = JSON.parse(
   readFileSync(fileURLToPath(new URL('../packages/ui/package.json', import.meta.url)), 'utf-8'),
 )
@@ -86,7 +93,7 @@ export default defineConfig({
         origin: 'https://vael-ui.dev',
         categories,
         composableCategories,
-        composablesContent,
+        composablesContent: { ...pairedContent, ...composablesContent },
         pairedComposables,
         directives: DIRECTIVES,
         directivesContent,

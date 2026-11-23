@@ -137,7 +137,14 @@
         class="section related"
       >
         <p class="eyebrow">{{ t('component.headless') }}</p>
-        <h2>{{ paired.name }}</h2>
+        <h2>
+          <RouterLink
+            v-if="pairedComponentOf(paired.name)"
+            :to="{ name: 'composable', params: { name: paired.name } }"
+            >{{ paired.name }}</RouterLink
+          >
+          <template v-else>{{ paired.name }}</template>
+        </h2>
         <p class="description"><RichText :text="paired.description" /></p>
         <CodeBlock lang="typescript" :code="paired.installCode" />
         <CodeBlock
@@ -194,6 +201,7 @@ import TimelinePlayground from '../playground/TimelinePlayground.vue'
 import type { ComponentMetaEntry, DemoManifestEntry } from '../types'
 import { categoryOf } from '../taxonomy'
 import { pairedComposables } from '../pairedComposables'
+import { pairedComponentOf } from '../composablesTaxonomy'
 import { defaultVariant } from '../preferences'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import type { DemoExample } from '../components/DemoFrame.vue'
@@ -389,6 +397,21 @@ watchEffect(async (onCleanup) => {
       // twin on vael-ui's own motion.
       const highlight = isShowpiece(entry.title)
       const file = entry.id.split('/').pop()!
+      const folder = entry.id.split('/').slice(0, -1).join('/')
+      const files = await Promise.all(
+        (entry.files ?? []).map(async (name) => {
+          const path = `${folder ? `${folder}/` : ''}${name}.vue`
+          const vdom = vdomSources[`../generated/vdom-demos/${path}`]
+          const vapor = entry.vaporEligible
+            ? vaporSources[`../generated/vapor-demos/${path}`]
+            : undefined
+          return {
+            name: `${name}.vue`,
+            vdomCode: vdom ? stripDemoProse((await vdom()) as string) : '',
+            vaporCode: vapor ? stripDemoProse((await vapor()) as string) : '',
+          }
+        }),
+      )
       return {
         id: entry.id,
         title: highlight ? showpieceTitle(entry.title) : entry.title,
@@ -399,6 +422,7 @@ watchEffect(async (onCleanup) => {
         vaporComponent,
         vdomCode,
         vaporCode,
+        files,
       }
     }),
   )

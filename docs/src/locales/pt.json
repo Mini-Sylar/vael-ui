@@ -257,7 +257,7 @@
     "featureSkillTitle": "Skills para agentes de IA",
     "themeLabel": "Experimente uma cor:",
     "newTag": "Novo",
-    "newText": "0.5.5: gestos e valores de movimento ao vivo",
+    "newText": "0.5.6: janelas, um dock e redimensionamento em dois eixos",
     "showcaseLabel": "Demo ao vivo feita com vael-ui"
   },
   "i18nKeys": {
@@ -431,7 +431,8 @@
     "positioningAndData": "Posicionamento e dados",
     "utilities": "Utilitários",
     "motion": "Movimento",
-    "dragAndDrop": "Arrastar e soltar"
+    "dragAndDrop": "Arrastar e soltar",
+    "withComponents": "Usados com um componente"
   },
   "composableDescriptions": {
     "confirmAction": "Uma etapa de confirmação, exibida como um diálogo centralizado ou um popover ancorado a um gatilho, que aguarda seu handler assíncrono antes de fechar. Use-a antes de uma ação difícil de desfazer.",
@@ -446,7 +447,7 @@
     "mapRange": "Transforma um número em outro alinhando dois intervalos: o deslocamento de um arraste em uma inclinação, uma rolagem em uma opacidade. Use com um valor ao vivo no v-animate.",
     "springEasing": "Transforma uma mola numa curva CSS linear() e no seu tempo de acomodação. Use-o para dar a element.animate() ou a uma transição CSS a mesma mola do vael-ui.",
     "preventFocusZoom": "Impede o iOS de ampliar a tela quando um campo de formulário recebe foco, para que os campos possam acompanhar o tamanho do restante do texto. Chame-o uma vez no cliente, por exemplo em main.ts.",
-    "useFloatingPosition": "O motor de posicionamento por trás de Popover, Menu e Tooltip, construído sobre Floating UI. Use-o para criar seus próprios painéis ancorados.",
+    "useFloatingPosition": "O motor de posicionamento por trás de Popover, Menu e Tooltip. Use-o para criar seus próprios painéis ancorados.",
     "useVirtualizer": "Renderiza só as linhas visíveis de uma lista longa, para que o DOM continue pequeno. Use-o para suas próprias listas longas.",
     "useFieldControl": "Conecta um controle de formulário personalizado ao Field mais próximo: id, atributos ARIA e estado de foco e preenchimento. Use-o quando seu próprio controle fica dentro de um Field.",
     "useHoverIndicator": "O destaque deslizante de hover e de teclado por trás das listas do vael-ui. Use-o para dar o mesmo destaque às suas próprias listas.",
@@ -1287,6 +1288,10 @@
       "DraggableDialog": {
         "title": "Diálogo arrastável",
         "note": "Arraste o cabeçalho para mover o diálogo. A captura do ponteiro mantém o arraste quando o ponteiro sai do cabeçalho. Com o foco no botão de alça, as setas o movem 10 px, ou 50 px com Shift. O diálogo fica dentro da janela e abre centralizado de novo."
+      },
+      "WindowDock": {
+        "title": "Janelas e um dock",
+        "note": "Diálogos não modais que você pode mover, redimensionar e maximizar enquanto a página continua ativa. Arraste o cabeçalho, ou foque a alça e use as setas: 10 px, ou 50 px com Shift. Redimensione por qualquer borda ou canto, ou foque o canto inferior direito e use as setas. Minimizar encolhe a janela até o ícone dela no dock, e o ícone a traz de volta, ou para a frente se já estiver aberta."
       }
     }
   },

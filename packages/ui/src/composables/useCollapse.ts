@@ -123,7 +123,9 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
     () => options.el.value,
     'transitionend',
     (event: TransitionEvent) => {
-      if (event.target !== options.el.value || event.propertyName !== 'block-size') return
+      // Chrome reports a logical property by its physical name.
+      if (event.target !== options.el.value) return
+      if (event.propertyName !== 'block-size' && event.propertyName !== 'height') return
       if (token) settle(open.value)
     },
   )

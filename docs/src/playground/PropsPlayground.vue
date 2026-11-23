@@ -239,15 +239,18 @@
                 :key="resetKey"
                 v-bind="boundProps"
                 v-model:open="openModelValue"
+                class="pg-fit"
               >
                 <template #trigger>
-                  <Button variant="outline">{{ openModelValue ? 'Close' : 'Open' }}</Button>
+                  <Button variant="outline" class="pg-toggle">
+                    {{ openModelValue ? 'Close' : 'Open' }}
+                  </Button>
                 </template>
                 <p class="playground-placeholder-copy">Toggle to reveal this content.</p>
               </component>
             </template>
             <template v-else-if="isAccordion">
-              <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+              <component :is="activeComponent" :key="resetKey" v-bind="boundProps" class="pg-fit">
                 <component :is="accordionItemComponent" value="item-1" title="What is vael-ui?">
                   A Vue 3 component library with a full Vue Vapor build.
                 </component>
@@ -2147,6 +2150,14 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
 .playground-placeholder-copy {
   color: var(--ui-text-muted);
   font-size: 0.9rem;
+}
+
+/* Opening one must not widen the stage's content, or the trigger shifts under the pointer. */
+.pg-fit {
+  inline-size: min(100%, 22rem);
+}
+.pg-toggle {
+  min-inline-size: 5rem;
 }
 
 .toolbar-preview-resizable {

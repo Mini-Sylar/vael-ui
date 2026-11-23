@@ -1,6 +1,14 @@
 <template>
   <article v-if="content" class="composable-page">
-    <p v-if="category" class="eyebrow">{{ category }}</p>
+    <p v-if="category" class="eyebrow">
+      {{ category }}
+      <template v-if="component">
+        ·
+        <RouterLink :to="{ name: 'component', params: { name: component } }">{{
+          component
+        }}</RouterLink>
+      </template>
+    </p>
     <h1>{{ name }}</h1>
     <p v-if="description" class="description"><RichText :text="description" /></p>
     <p v-if="details" class="details"><RichText :text="details" /></p>
@@ -19,7 +27,7 @@
       <h2>{{ t('component.examples') }}</h2>
       <DemoFrame v-if="content.hasLiveDemo" :name="name" :examples="examples" />
       <template v-else>
-        <CodeBlock lang="typescript" :code="exampleCode" />
+        <CodeBlock :lang="exampleLang" :code="exampleCode" />
         <CodeBlock v-if="content.headCode" lang="html" :code="content.headCode" class="head-code" />
       </template>
     </section>
@@ -46,8 +54,10 @@ import { importCode } from '../importCode'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
-import { composableCategoryOf } from '../composablesTaxonomy'
+import { composableCategoryOf, pairedComponentOf } from '../composablesTaxonomy'
 import { composablesContent } from '../composablesContent'
+import type { ComposableContent } from '../composablesContent'
+import { pairedComposables } from '../pairedComposables'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import { Message } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
@@ -69,7 +79,16 @@ const { t, te } = useI18n()
 const route = useRoute()
 
 const name = computed(() => route.params.name as string)
-const content = computed(() => composablesContent[name.value])
+const component = computed(() => pairedComponentOf(name.value))
+// A paired composable is written up once, in pairedComposables.ts, and shown here and on its component's page.
+const content = computed<ComposableContent | undefined>(() => {
+  const own = composablesContent[name.value]
+  if (own) return own
+  const paired = component.value
+    ? pairedComposables[component.value]?.find((entry) => entry.name === name.value)
+    : undefined
+  return paired && { ...paired }
+})
 const category = computed(() => {
   const key = composableCategoryOf(name.value)
   return key ? t(`composablesTaxonomy.${key}`) : undefined
@@ -186,6 +205,9 @@ watchEffect(async () => {
 // Only reached when hasLiveDemo is false — a plain TS snippet instead of a
 // live .vue example, so Shiki needs the typescript grammar, not vue's.
 const exampleCode = computed(() => content.value?.exampleCode ?? '')
+const exampleLang = computed(() =>
+  exampleCode.value.trimStart().startsWith('<') ? ('vue' as const) : ('typescript' as const),
+)
 
 const installCode = computed(() => {
   const names = content.value?.installNames ?? [name.value]

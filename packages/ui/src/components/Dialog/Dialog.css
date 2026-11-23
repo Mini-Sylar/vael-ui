@@ -11,11 +11,6 @@
     overflow: hidden;
     border-radius: calc(var(--ui-radius-surface) + 4px);
     background: var(--ui-surface);
-    transition:
-      inline-size var(--ui-duration-enter) var(--ui-ease-in-out),
-      block-size var(--ui-duration-enter) var(--ui-ease-in-out),
-      max-block-size var(--ui-duration-enter) var(--ui-ease-in-out),
-      border-radius var(--ui-duration-enter) var(--ui-ease-in-out);
     color: var(--ui-text);
     box-shadow: var(--ui-panel-shadow);
     transform-origin: center;
@@ -36,7 +31,16 @@
   .ui-dialog-panel--maximized {
     border-radius: 0;
   }
+  /* Maximize and restore ease the size, and the place of a panel positioned by its own insets;
+     any other size (a window dragged to fit) follows its style. */
   .ui-dialog-panel--resizing {
+    transition:
+      inset-inline-start var(--ui-duration-enter) var(--ui-ease-in-out),
+      inset-block-start var(--ui-duration-enter) var(--ui-ease-in-out),
+      inline-size var(--ui-duration-enter) var(--ui-ease-in-out),
+      block-size var(--ui-duration-enter) var(--ui-ease-in-out),
+      max-block-size var(--ui-duration-enter) var(--ui-ease-in-out),
+      border-radius var(--ui-duration-enter) var(--ui-ease-in-out);
     animation: ui-dialog-resize-blur var(--ui-duration-enter) ease;
   }
   @keyframes ui-dialog-resize-blur {
