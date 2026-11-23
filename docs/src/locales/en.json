@@ -121,7 +121,7 @@
     "browseComponents": "Browse components",
     "themeLabel": "Try a color:",
     "newTag": "New",
-    "newText": "0.5.5: gestures and live motion values",
+    "newText": "0.5.6: windows, a dock and two-axis resizing",
     "showcaseLabel": "Live demo built with vael-ui"
   },
   "gettingStarted": {

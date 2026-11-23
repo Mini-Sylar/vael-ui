@@ -257,7 +257,7 @@
     "featureSkillTitle": "AIエージェント用スキル",
     "themeLabel": "カラーを試す:",
     "newTag": "新着",
-    "newText": "0.5.5：ジェスチャーとライブなモーション値",
+    "newText": "0.5.6：ウィンドウ、ドック、2 軸のサイズ変更",
     "showcaseLabel": "vael-ui で作ったライブデモ"
   },
   "i18nKeys": {
