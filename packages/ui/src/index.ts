@@ -267,6 +267,11 @@ export { useResizable } from './composables/useResizable'
 export type {
   ResizeDirection,
   ResizeEdge,
+  ResizeHandle,
+  UseResizableAxisOptions,
+  UseResizableBothOptions,
+  UseResizableBothReturn,
+  UseResizableModels,
   UseResizableOptions,
   UseResizableReturn,
 } from './composables/useResizable'
