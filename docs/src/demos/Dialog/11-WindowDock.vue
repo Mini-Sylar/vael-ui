@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, reactive, useTemplateRef } from 'vue'
+import { computed, markRaw, nextTick, reactive, useTemplateRef } from 'vue'
 import type { Component } from 'vue'
 import { Button, Dock, Input } from 'vael-ui'
 import { animate, vAnimate } from 'vael-ui/motion'
@@ -73,8 +73,8 @@ interface FrameExposed {
 }
 
 const APPS: Record<string, Pick<Win, 'title' | 'icon'>> = {
-  notes: { title: 'Notes', icon: PhNotePencil },
-  preview: { title: 'Preview', icon: PhImage },
+  notes: { title: 'Notes', icon: markRaw(PhNotePencil) },
+  preview: { title: 'Preview', icon: markRaw(PhImage) },
 }
 
 const wins = reactive<Win[]>([])

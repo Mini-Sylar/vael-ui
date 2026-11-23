@@ -18,10 +18,7 @@
         <!-- `target('hint')` is checked against `motion.targets`: a typo is a type error. -->
         <p :ref="target('hint')" class="hint">Your name shows on every workspace you're in.</p>
         <Input v-model="name" aria-label="Name" />
-        <label class="fail">
-          <input v-model="failNext" type="checkbox" />
-          Make the next save fail
-        </label>
+        <Checkbox v-model="failNext" class="fail" label="Make the next save fail" />
       </template>
 
       <template #footer>
@@ -55,7 +52,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, Dialog, Input, toast } from 'vael-ui'
+import { Button, Checkbox, Dialog, Input, toast } from 'vael-ui'
 import { vAnimate } from 'vael-ui/motion'
 import type { DialogMotion } from 'vael-ui'
 
@@ -90,11 +87,7 @@ function close() {
   color: var(--ui-text-muted);
 }
 .fail {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
   margin-top: 0.75rem;
-  font-size: 0.875rem;
 }
 /* No success variant: the saved look is the button's own variables. */
 .saved {

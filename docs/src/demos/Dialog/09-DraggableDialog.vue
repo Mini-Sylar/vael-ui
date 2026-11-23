@@ -10,15 +10,17 @@
     <Dialog ref="dialog" v-model:open="open" :aria-labelledby="titleId">
       <template #header>
         <div class="drag-header">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
+            icon
             class="grip"
             aria-label="Move dialog"
             :aria-describedby="`${titleId}-hint`"
             @keydown="nudge"
           >
             <PhDotsSixVertical :size="16" aria-hidden="true" />
-          </button>
+          </Button>
           <h2 :id="titleId" class="drag-title">Layer settings</h2>
           <span :id="`${titleId}-hint`" hidden>Use the arrow keys to move the dialog.</span>
         </div>
@@ -96,21 +98,8 @@ function nudge(event: KeyboardEvent) {
   cursor: grabbing;
 }
 .grip {
-  display: grid;
-  place-items: center;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
   margin-inline-start: -0.5rem;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: none;
-  color: var(--ui-text-muted);
   cursor: inherit;
-}
-.grip:focus-visible {
-  outline: 2px solid var(--ui-primary);
-  outline-offset: 1px;
 }
 .drag-title {
   margin: 0;

@@ -21,7 +21,8 @@
   font-size: 0.875rem;
 }
 
-.demo h3 {
+/* Demo headings, not a Card's own title. */
+.demo h3:not(.ui-card-title) {
   margin-block: 2rem 0.75rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--ui-border);
@@ -32,7 +33,7 @@
   color: var(--ui-text-muted);
 }
 
-.demo h3:first-of-type {
+.demo h3:not(.ui-card-title):first-of-type {
   margin-top: 0.5rem;
   padding-top: 0;
   border-top: none;
