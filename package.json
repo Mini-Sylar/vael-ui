@@ -19,6 +19,7 @@
     "play:vapor-interop": "pnpm --filter vapor-interop dev",
     "docs:dev": "pnpm --filter vael-ui --filter vapor-ui --filter docs --parallel dev",
     "docs:build": "pnpm build && pnpm --filter docs build",
+    "docs:preview": "pnpm build && pnpm --filter docs preview",
     "lint": "oxlint . && eslint .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
