@@ -431,7 +431,8 @@
     "positioningAndData": "Posizionamento e dati",
     "utilities": "Utilità",
     "motion": "Movimento",
-    "dragAndDrop": "Trascina e rilascia"
+    "dragAndDrop": "Trascina e rilascia",
+    "withComponents": "Usati con un componente"
   },
   "composableDescriptions": {
     "confirmAction": "Un passaggio di conferma, mostrato come dialogo centrato o popover ancorato a un trigger, che attende il tuo handler asincrono prima di chiudersi. Usalo prima di un'azione difficile da annullare.",
@@ -446,7 +447,7 @@
     "mapRange": "Trasforma un numero in un altro allineando due intervalli: lo spostamento di un trascinamento in un'inclinazione, uno scorrimento in un'opacità. Da usare con un valore live in v-animate.",
     "springEasing": "Trasforma una molla in una curva CSS linear() e nel suo tempo di assestamento. Usalo per dare a element.animate() o a una transizione CSS la stessa molla di vael-ui.",
     "preventFocusZoom": "Impedisce a iOS di ingrandire la pagina quando un campo del modulo riceve il focus, così i campi possono avere la stessa dimensione del resto del testo. Chiamalo una volta sul client, per esempio in main.ts.",
-    "useFloatingPosition": "Il motore di posizionamento dietro Popover, Menu e Tooltip, basato su Floating UI. Usalo per costruire i tuoi pannelli ancorati.",
+    "useFloatingPosition": "Il motore di posizionamento dietro Popover, Menu e Tooltip. Usalo per costruire i tuoi pannelli ancorati.",
     "useVirtualizer": "Renderizza solo le righe visibili di un elenco lungo, così il DOM resta piccolo. Usalo per i tuoi elenchi lunghi.",
     "useFieldControl": "Collega un controllo di modulo personalizzato al Field più vicino: id, attributi ARIA e stato di focus e compilazione. Usalo quando un tuo controllo si trova dentro un Field.",
     "useHoverIndicator": "L'evidenziazione scorrevole al passaggio e da tastiera dietro le liste di vael-ui. Usalo per dare alle tue liste la stessa evidenziazione.",
@@ -1287,6 +1288,10 @@
       "DraggableDialog": {
         "title": "Dialog trascinabile",
         "note": "Trascina l’intestazione per spostare il dialog. La cattura del puntatore mantiene il trascinamento quando il puntatore esce dall’intestazione. Con il focus sul pulsante di presa, le frecce lo spostano di 10 px, o di 50 px con Maiusc. Il dialog resta dentro la finestra e si riapre al centro."
+      },
+      "WindowDock": {
+        "title": "Finestre e un dock",
+        "note": "Dialoghi non modali che si possono spostare, ridimensionare e ingrandire mentre la pagina resta attiva. Trascini l'intestazione, oppure dia il focus alla maniglia e usi le frecce: 10 px, o 50 px con Maiusc. Si ridimensiona da qualsiasi bordo o angolo, oppure dando il focus all'angolo in basso a destra e usando le frecce. Riduci a icona rimpicciolisce una finestra fino alla sua icona nel dock, e l'icona la riporta, o la porta in primo piano se è già aperta."
       }
     }
   },

@@ -103,7 +103,7 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'panelEl',
         type: '{ readonly value: HTMLElement | null }',
         description:
-          'The surface panel, `null` until it mounts. Use it to animate the panel with GSAP or motion.',
+          'The surface panel, `null` until it mounts. Use it to animate the panel yourself.',
       },
     ],
   },
@@ -168,7 +168,7 @@ export const composablesContent: Record<string, ComposableContent> = {
 
   useToast: {
     description:
-      'Sonner-style toasts you show from code. Call `toast(title, options)` from anywhere, even outside a component. `toast.success`, `.error`, `.warning`, `.info` and `.loading` set the variant for you. `toast.promise(input, messages)` shows a loading toast at once, then swaps it for a success or error toast when the promise settles, with no `dismiss()` call. Toasts render in a `<Toaster/>`, which you mount once at the app root.',
+      'Toasts you show from code. Call `toast(title, options)` from anywhere, even outside a component. `toast.success`, `.error`, `.warning`, `.info` and `.loading` set the variant for you. `toast.promise(input, messages)` shows a loading toast at once, then swaps it for a success or error toast when the promise settles, with no `dismiss()` call. Toasts render in a `<Toaster/>`, which you mount once at the app root.',
     installNames: ['toast', 'useToastQueue'],
     hasLiveDemo: true,
     params: [],
@@ -614,7 +614,7 @@ const { mode, resolvedMode, setMode } = useColorScheme({
 
   useFloatingPosition: {
     description:
-      'The positioning engine behind `Popover`, `Menu` and `Tooltip`, built on Floating UI. It computes `positionerStyle` (absolute `top` and `left`, plus `visibility`) for a reference and a floating element. It flips and shifts to stay on screen, and tracks changes with `autoUpdate` while `active` is `true`. Use it to build an anchored surface that no overlay component fits.',
+      'The positioning engine behind `Popover`, `Menu` and `Tooltip`. It computes `positionerStyle` (absolute `top` and `left`, plus `visibility`) for a reference and a floating element. It flips and shifts to stay on screen, and tracks changes with `autoUpdate` while `active` is `true`. Use it to build an anchored surface that no overlay component fits.',
     hasLiveDemo: true,
     params: [
       {

@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { categories } from '../src/taxonomy'
 import { composableCategories } from '../src/composablesTaxonomy'
 import { composablesContent } from '../src/composablesContent'
+import { pairedComposables } from '../src/pairedComposables'
 import type { ComponentMetaEntry, MetaRow } from '../src/types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -59,8 +60,14 @@ function componentMarkdown(name: string): string {
   return lines.join('\n')
 }
 
+const pairedContent = Object.fromEntries(
+  Object.values(pairedComposables)
+    .flat()
+    .map((paired) => [paired.name, paired]),
+)
+
 function composableMarkdown(name: string): string {
-  const c = composablesContent[name]
+  const c = composablesContent[name] ?? pairedContent[name]
   const lines: string[] = [`# ${name}`, '']
   if (!c) return lines.concat('_No documented entry._').join('\n')
   lines.push(c.description, '')
@@ -92,7 +99,8 @@ const compsIndexLines: string[] = ['# Composable reference index', '']
 for (const cat of composableCategories) {
   compsIndexLines.push(`## ${cat.name}`, '')
   for (const name of cat.items) {
-    const desc = composablesContent[name]?.description?.split('. ')[0] ?? ''
+    const desc =
+      (composablesContent[name] ?? pairedContent[name])?.description?.split('. ')[0] ?? ''
     compsIndexLines.push(`- [${name}](./${name}.md)${desc ? `: ${desc}.` : ''}`)
     writeFileSync(join(compsDir, `${name}.md`), composableMarkdown(name) + '\n')
   }

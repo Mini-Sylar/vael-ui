@@ -12,6 +12,14 @@
       <div v-if="!next" class="demo-toolbar">
         <SelectButton v-model="view" size="sm" :items="viewItems" :allow-empty="false" />
         <SelectButton
+          v-if="fileItems.length > 1 && view === 'code'"
+          v-model="file"
+          size="sm"
+          :items="fileItems"
+          :allow-empty="false"
+          aria-label="File"
+        />
+        <SelectButton
           v-if="variantItems.length > 1"
           v-model="variant"
           size="sm"
@@ -43,7 +51,16 @@
         </template>
         <CodeBlock v-if="codeShown" :code="code">
           <template v-if="next" #toolbar>
-            <span class="demo-code-file">{{ fileName }}</span>
+            <SelectButton
+              v-if="fileItems.length > 1"
+              v-model="file"
+              size="sm"
+              :items="fileItems"
+              :allow-empty="false"
+              aria-label="File"
+              class="demo-code-file"
+            />
+            <span v-else class="demo-code-file">{{ fileName }}</span>
             <SelectButton
               v-if="variantItems.length > 1"
               v-model="variant"
@@ -124,9 +141,22 @@ const activeComponent = computed(() =>
     ? (props.example.vaporComponent ?? null)
     : (props.example.vdomComponent ?? null),
 )
-const code = computed(() =>
-  variant.value === 'vapor' ? (props.example.vaporCode ?? '') : (props.example.vdomCode ?? ''),
+// The example's own file first, then the ones it imports.
+const file = shallowRef('')
+const fileItems = computed(() => [
+  { label: fileName.value, value: '' },
+  ...(props.example.files ?? []).map(({ name }) => ({ label: name, value: name })),
+])
+watch(
+  () => props.example,
+  () => (file.value = ''),
 )
+const code = computed(() => {
+  const vapor = variant.value === 'vapor'
+  const part = props.example.files?.find(({ name }) => name === file.value)
+  if (part) return (vapor ? part.vaporCode : part.vdomCode) || part.vdomCode
+  return vapor ? (props.example.vaporCode ?? '') : (props.example.vdomCode ?? '')
+})
 </script>
 
 <style scoped>

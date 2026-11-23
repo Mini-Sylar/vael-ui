@@ -415,7 +415,8 @@
     "positioningAndData": "Positioning & data",
     "utilities": "Utilities",
     "motion": "Motion",
-    "dragAndDrop": "Drag & drop"
+    "dragAndDrop": "Drag & drop",
+    "withComponents": "Used with a component"
   },
   "metaTable": {
     "name": "Name",
@@ -514,7 +515,7 @@
     "mapRange": "Turns one number into another by lining up two ranges: a drag's offset into a tilt, a scroll into an opacity. Pair it with a live value in v-animate.",
     "springEasing": "Turns a spring into a CSS linear() curve and its settle time. Use it to give element.animate() or a CSS transition the same spring as vael-ui.",
     "preventFocusZoom": "Stops iOS from zooming in when a form field gets focus, so fields can match the rest of your text size. Call it once on the client, such as in main.ts.",
-    "useFloatingPosition": "The positioning engine behind Popover, Menu and Tooltip, built on Floating UI. Use it to build your own anchored panels.",
+    "useFloatingPosition": "The positioning engine behind Popover, Menu and Tooltip. Use it to build your own anchored panels.",
     "useVirtualizer": "Renders only the visible rows of a long list, so the DOM stays small. Use it for your own long lists.",
     "useFieldControl": "Connects a custom form control to the nearest Field: its id, ARIA attributes, and focus and filled state. Use it when your own control sits inside a Field.",
     "useHoverIndicator": "The sliding hover and keyboard highlight behind vael-ui’s lists. Use it to give your own lists the same highlight.",
@@ -1288,6 +1289,10 @@
       "DraggableDialog": {
         "title": "Draggable dialog",
         "note": "Drag the header to move the dialog. Pointer capture keeps the drag going when the pointer leaves the header. With the grip button focused, the arrow keys move it 10 px, or 50 px with Shift. The dialog stays inside the window and opens centered again."
+      },
+      "WindowDock": {
+        "title": "Windows and a dock",
+        "note": "Non-modal dialogs you can move, resize and maximize while the page stays live. Drag the header, or focus the grip and use the arrow keys: 10 px, or 50 px with Shift. Resize from any edge or corner, or focus the bottom-right corner and use the arrow keys. Minimize shrinks a window into its icon in the dock, and the icon brings it back, or to the front if it's already open."
       }
     }
   },

@@ -431,7 +431,8 @@
     "positioningAndData": "Positionnement et données",
     "utilities": "Utilitaires",
     "motion": "Mouvement",
-    "dragAndDrop": "Glisser-déposer"
+    "dragAndDrop": "Glisser-déposer",
+    "withComponents": "Utilisés avec un composant"
   },
   "composableDescriptions": {
     "confirmAction": "Une étape de confirmation, en boîte de dialogue centrée ou en popover ancré à un déclencheur, qui attend votre gestionnaire asynchrone avant de se fermer. Utilisez-la avant une action difficile à annuler.",
@@ -446,7 +447,7 @@
     "mapRange": "Transforme un nombre en un autre en faisant correspondre deux plages : le décalage d'un glissement en inclinaison, un défilement en opacité. À associer à une valeur vivante dans v-animate.",
     "springEasing": "Transforme un ressort en courbe CSS linear() avec son temps de stabilisation. Utilisez-le pour donner à element.animate() ou à une transition CSS le même ressort que vael-ui.",
     "preventFocusZoom": "Empêche iOS de zoomer quand un champ de formulaire prend le focus, pour que les champs gardent la taille du reste du texte. Appelez-le une fois côté client, par exemple dans main.ts.",
-    "useFloatingPosition": "Le moteur de positionnement derrière Popover, Menu et Tooltip, basé sur Floating UI. Utilisez-le pour créer vos propres panneaux ancrés.",
+    "useFloatingPosition": "Le moteur de positionnement derrière Popover, Menu et Tooltip. Utilisez-le pour créer vos propres panneaux ancrés.",
     "useVirtualizer": "N'affiche que les lignes visibles d'une longue liste, pour que le DOM reste léger. Utilisez-le pour vos propres longues listes.",
     "useFieldControl": "Connecte un contrôle de formulaire personnalisé au Field le plus proche : id, attributs ARIA, et états de focus et de remplissage. Utilisez-le quand votre propre contrôle se trouve dans un Field.",
     "useHoverIndicator": "Le surlignage glissant au survol et au clavier derrière les listes de vael-ui. Utilisez-le pour donner le même surlignage à vos propres listes.",
@@ -1287,6 +1288,10 @@
       "DraggableDialog": {
         "title": "Boîte de dialogue déplaçable",
         "note": "Faites glisser l’en-tête pour déplacer la boîte de dialogue. La capture du pointeur poursuit le glissement quand le pointeur quitte l’en-tête. Quand le bouton de prise a le focus, les flèches la déplacent de 10 px, ou de 50 px avec Maj. La boîte reste dans la fenêtre et se rouvre au centre."
+      },
+      "WindowDock": {
+        "title": "Fenêtres et un dock",
+        "note": "Des boîtes de dialogue non modales que l'on peut déplacer, redimensionner et agrandir pendant que la page reste utilisable. Faites glisser l'en-tête, ou donnez le focus à la poignée et utilisez les flèches : 10 px, ou 50 px avec Maj. On redimensionne depuis n'importe quel bord ou coin, ou en donnant le focus au coin inférieur droit et en utilisant les flèches. Réduire fait rétrécir la fenêtre jusqu'à son icône dans le dock, et l'icône la ramène, ou la met au premier plan si elle est déjà ouverte."
       }
     }
   },

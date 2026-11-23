@@ -24,6 +24,8 @@ import {
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { allComponents } from '../src/taxonomy.ts'
+import { PAIRED_COMPOSABLES, PAIRED_WITHOUT_PAGE } from '../src/composablesTaxonomy.ts'
+import { pairedComposables } from '../src/pairedComposables.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DEMOS_DIR = join(__dirname, '../src/demos')
@@ -221,7 +223,14 @@ function emitExample(id, allIds, sourceFor, vaporExportNames, state) {
     }
   })
 
-  return { id, title: extractTitle(sourceFor(id), id.split('/').at(-1)), vaporEligible: eligible }
+  // The files the example imports, for the code view's file tabs.
+  const files = allIds.slice(1).map((partId) => partId.split('/').at(-1))
+  return {
+    id,
+    title: extractTitle(sourceFor(id), id.split('/').at(-1)),
+    vaporEligible: eligible,
+    ...(files.length ? { files } : {}),
+  }
 }
 
 // A migrated component: docs/src/demos/{component}/*.vue, one file per
@@ -263,7 +272,38 @@ function processLegacy(demoName, vaporExportNames, state) {
   return emitExample(demoName, allIds, sourceFor, vaporExportNames, state)
 }
 
+// Every composable written up in pairedComposables.ts has a page, listed in composablesTaxonomy.ts, and
+// every page shows an example.
+function checkPairedComposables() {
+  const written = Object.fromEntries(
+    Object.entries(pairedComposables).flatMap(([component, list]) =>
+      list.map((paired) => [paired.name, component]),
+    ),
+  )
+  const drift = [
+    ...Object.keys(written).filter(
+      (name) => !PAIRED_WITHOUT_PAGE.includes(name) && PAIRED_COMPOSABLES[name] !== written[name],
+    ),
+    ...Object.keys(PAIRED_COMPOSABLES).filter((name) => !(name in written)),
+  ]
+  const bare = Object.values(pairedComposables)
+    .flat()
+    .filter((paired) => !PAIRED_WITHOUT_PAGE.includes(paired.name) && !paired.exampleCode?.trim())
+    .map((paired) => paired.name)
+  if (bare.length) {
+    console.error(`A composable with a page needs an example: ${bare.join(', ')}`)
+    process.exit(1)
+  }
+  if (drift.length) {
+    console.error(
+      `PAIRED_COMPOSABLES in composablesTaxonomy.ts is out of step with pairedComposables.ts: ${[...new Set(drift)].join(', ')}`,
+    )
+    process.exit(1)
+  }
+}
+
 function main() {
+  checkPairedComposables()
   const vaporExportNames = readVaporExportNames()
 
   mkdirSync(OUT_VDOM_DIR, { recursive: true })

@@ -31,7 +31,7 @@ import type { CommandPaletteItem } from 'vael-ui'
 import { importCode } from '../importCode'
 import type { SearchEntry } from './fuzzy'
 import { categories } from '../taxonomy'
-import { composableCategories } from '../composablesTaxonomy'
+import { composableCategories, pairedComponentOf } from '../composablesTaxonomy'
 import { DIRECTIVES } from '../directivesTaxonomy'
 import { directivesContent } from '../directivesContent'
 import {
@@ -472,18 +472,22 @@ export async function loadDeepEntries(t: Translate): Promise<PaletteEntry[]> {
     }
   }
 
-  // Headless engines documented on their component's page (pairedComposables.ts).
+  // Headless engines written up in pairedComposables.ts: each has its own composables page.
   for (const [component, list] of Object.entries(pairedComposables)) {
     for (const paired of list) {
+      const listed = pairedComponentOf(paired.name) !== undefined
       const id = `composable-${paired.name.replace(/[^\w]+/g, '-')}`
-      const page = { name: 'component', params: { name: component } }
+      const page = listed
+        ? { name: 'composable', params: { name: paired.name } }
+        : { name: 'component', params: { name: component } }
+      const anchor = (hash: string) => (listed ? hash : `#${id}${hash.replace('#', '-')}`)
       entries.push({
         id: `headless:${paired.name}`,
         kind: 'section',
         label: paired.name,
         parent: component,
         scope: paired.name,
-        to: { ...page, hash: `#${id}` },
+        to: listed ? page : { ...page, hash: `#${id}` },
         description: plain(paired.description),
         text: plain(paired.description),
         icon: PhFunction,
@@ -500,7 +504,7 @@ export async function loadDeepEntries(t: Translate): Promise<PaletteEntry[]> {
             label: row.name,
             parent: paired.name,
             scope: paired.name,
-            to: { ...page, hash: `#${id}-${kind}-${row.name.replace(/[^\w-]/g, '-')}` },
+            to: { ...page, hash: anchor(`#${kind}-${row.name.replace(/[^\w-]/g, '-')}`) },
             type: row.type,
             description: plain(row.description),
             text: plain(row.description),
