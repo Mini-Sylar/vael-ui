@@ -7,15 +7,15 @@
       so a <code>ConfigProvider</code> spring applies to it too. Reduced motion keeps a plain fade.
     </p>
     <div class="grid">
-      <button
+      <Card
         v-for="project in projects"
         :key="project.name"
-        class="card"
+        as="button"
+        type="button"
+        :title="project.name"
+        :description="project.team"
         @click="openProject(project)"
-      >
-        <strong>{{ project.name }}</strong>
-        <span>{{ project.team }}</span>
-      </button>
+      />
     </div>
     <Dialog
       v-model:open="open"
@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Dialog } from 'vael-ui'
+import { Card, Dialog } from 'vael-ui'
 
 interface Project {
   name: string
@@ -57,25 +57,5 @@ function openProject(project: Project) {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
   gap: 0.75rem;
-}
-.card {
-  display: grid;
-  gap: 0.25rem;
-  padding: 0.875rem;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
-  background: var(--ui-surface);
-  color: var(--ui-text);
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-}
-.card span {
-  color: var(--ui-text-muted);
-  font-size: 0.8125rem;
-}
-.card:focus-visible {
-  outline: 2px solid var(--ui-primary);
-  outline-offset: 2px;
 }
 </style>

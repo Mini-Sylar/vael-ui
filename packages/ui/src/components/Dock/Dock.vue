@@ -259,9 +259,12 @@ const tabStop = computed(() =>
 const itemButtons: (HTMLButtonElement | null)[] = []
 function bindItemRef(index: number) {
   const registerWithDock = setItemEl(index)
+  let mine: HTMLButtonElement | null = null
   return (el: unknown) => {
     registerWithDock(el)
-    itemButtons[index] = (el as HTMLButtonElement | null) ?? null
+    // Only clear our own slot: a removed item's ref clears after its successor has taken the index.
+    if (el) itemButtons[index] = mine = el as HTMLButtonElement
+    else if (itemButtons[index] === mine) itemButtons[index] = null
   }
 }
 
@@ -334,7 +337,8 @@ defineExpose({
   /** Root element. */
   el: rootEl,
   /** The item buttons, in order, to animate yourself (with `:magnify="false"` to turn the built-in magnification off). */
-  itemEls: () => itemButtons.filter((el): el is HTMLButtonElement => !!el),
+  itemEls: () =>
+    itemButtons.slice(0, props.items.length).filter((el): el is HTMLButtonElement => !!el),
   /** Re-measures item positions for magnification, after a layout change the dock can't detect. */
   remeasure,
   /** Its elements by part name, for your own animation; a repeated part is an array. */

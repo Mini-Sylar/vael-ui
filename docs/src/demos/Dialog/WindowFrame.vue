@@ -28,7 +28,7 @@
         </Button>
         <span :id="`${titleId}-move`" hidden>Use the arrow keys to move the window.</span>
         <h2 :id="titleId" class="bar-title">{{ title }}</h2>
-        <Button variant="ghost" size="sm" icon aria-label="Minimize" @click="open = false">
+        <Button variant="ghost" size="sm" icon aria-label="Minimize" @click="minimize">
           <PhMinus :size="14" aria-hidden="true" />
         </Button>
         <Button
@@ -104,10 +104,13 @@ const y = shallowRef(0)
 const width = shallowRef(420)
 const height = shallowRef(280)
 
-// Minimizing shrinks into the dock. Closing has nowhere to go, so it leaves in place on the
-// built-in look and the window is removed once it has gone.
+// Minimize shrinks into the dock and the icon brings it back. A first open or a close has no icon
+// to come from or go to, so it comes and goes in place.
+const docked = shallowRef(false)
 const motion = computed(() =>
-  props.closing ? undefined : { morph: { from: props.dock, hide: false }, resize: false },
+  props.closing || !docked.value
+    ? { resize: false }
+    : { morph: { from: props.dock, hide: false }, resize: false },
 )
 
 // The motion above has to be in place before the window starts to leave.
@@ -119,6 +122,12 @@ watch(
     open.value = false
   },
 )
+
+async function minimize(): Promise<void> {
+  docked.value = true
+  await nextTick()
+  open.value = false
+}
 
 function onAfterLeave(): void {
   if (props.closing) emit('closed')

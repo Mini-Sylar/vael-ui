@@ -41,6 +41,10 @@
   }
 
   .ui-card--interactive {
+    /* A button root drops the browser's button font, padding and centered text. */
+    padding: 0;
+    font: inherit;
+    text-align: start;
     cursor: pointer;
     text-decoration: none;
     color: inherit;
