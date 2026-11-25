@@ -87,7 +87,7 @@
     </span>
   </div>
 
-  <Teleport :to="teleportTo">
+  <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
@@ -116,8 +116,29 @@
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
             <slot name="header" />
           </div>
+          <!-- v-memo: placing the panel re-renders this component; the tree only with its own inputs. -->
           <Tree
             ref="treeRef"
+            v-memo="[
+              labelledBy,
+              attrs['aria-label'],
+              model,
+              query,
+              nodeModel,
+              items,
+              selectionMode,
+              selectableFolders,
+              filterable,
+              filterPlaceholder,
+              emptyText,
+              !!props.motion,
+              expandOnRowClick,
+              stickyScroll,
+              scrollFade,
+              treeUi,
+              $slots.node,
+              $slots.empty,
+            ]"
             :id="treeId"
             :aria-labelledby="labelledBy"
             :aria-label="labelledBy ? undefined : (attrs['aria-label'] as string | undefined)"
@@ -544,6 +565,9 @@ const {
 // Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
 const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
 
+// The panel's Teleport and Transition wait for the first open; closed, it skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
 const treeId = useId()
 
 const messages = useMessages({ treeSelect: treeSelectMessages })
