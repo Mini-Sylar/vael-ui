@@ -67,40 +67,44 @@ test('onBeforeEnter resolves and positions correctly regardless of which telepor
   // Each of these steps' target only exists once its own onBeforeEnter opens a DIFFERENT
   // teleported component (Dialog, then Drawer, then Popover, then BottomSheet, then
   // CommandPalette) — all five teleport to body independently of Tour's own
-  // Popover/TourSpotlight teleports. Checking that focus (via Tour's own focus-management)
-  // lands inside Tour's panel each time is the strictest available proof that useDOMTarget
-  // re-resolved AND floating-ui actually positioned against the new target — a stale/null
-  // reference would leave positionerStyle stuck at `visibility: hidden`, and a hidden
-  // element can never receive focus (see this file's git history for exactly that bug,
-  // caught by this same check).
+  // Popover/TourSpotlight teleports. A visible panel beside each new target proves useDOMTarget
+  // re-resolved AND floating-ui positioned against it: a stale/null reference leaves
+  // positionerStyle stuck at `visibility: hidden` (see this file's git history for that bug).
   const screen = await render(TourTeleportFixture)
   await screen.getByTestId('trigger').click()
 
-  const expectTourPanelFocused = (text: string) =>
+  // Placed beside its target, not focused: a dialog the step opens takes focus as it mounts (focus
+  // only stayed in the tour while the test's Transition stub kept an inert wrapper in body).
+  const expectTourPanelPlaced = (text: string, target: string) =>
     vi.waitFor(() => {
       const panels = document.querySelectorAll('.ui-popover-panel')
       const tourPanel = Array.from(panels).find((p) => p.textContent?.includes(text))
-      expect(tourPanel?.contains(document.activeElement)).toBe(true)
+      const positioner = tourPanel?.closest<HTMLElement>('.ui-popover-positioner')
+      expect(positioner?.style.visibility).toBe('visible')
+      const a = positioner!.getBoundingClientRect()
+      const b = document.querySelector(target)!.getBoundingClientRect()
+      const gap = Math.max(a.top - b.bottom, b.top - a.bottom, a.left - b.right, b.left - a.right)
+      expect(gap).toBeLessThan(24)
     })
 
   await expect.element(page.getByText('Behind a Dialog')).toBeVisible()
-  await expectTourPanelFocused('Behind a Dialog')
+  await expectTourPanelPlaced('Behind a Dialog', '#in-dialog')
 
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Behind a Drawer')).toBeVisible()
-  await expectTourPanelFocused('Behind a Drawer')
+  await expectTourPanelPlaced('Behind a Drawer', '#in-drawer')
 
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Behind a Popover')).toBeVisible()
-  await expectTourPanelFocused('Behind a Popover')
+  await expectTourPanelPlaced('Behind a Popover', '#in-popover')
 
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Behind a BottomSheet')).toBeVisible()
-  await expectTourPanelFocused('Behind a BottomSheet')
+  await expectTourPanelPlaced('Behind a BottomSheet', '#in-sheet')
 
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Behind a CommandPalette')).toBeVisible()
-  await expectTourPanelFocused('Behind a CommandPalette')
+  await expectTourPanelPlaced('Behind a CommandPalette', '#in-palette')
 })
 
 test('advancing past the last step finishes and closes; skip closes early', async () => {

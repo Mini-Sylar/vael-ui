@@ -1,5 +1,5 @@
 <template>
-  <Teleport :to="teleportTarget">
+  <Teleport v-if="panelMounted" :to="teleportTarget">
     <Transition
       name="ui-dialog"
       appear
@@ -49,6 +49,7 @@
           v-bind="panelAttrs"
           @pointerdown.capture="raiseFloating"
           @focusin="raiseFloating"
+          @transitionend="onPanelTransitionEnd"
         >
           <button
             v-if="maximizable"
@@ -301,7 +302,6 @@ import {
   watch,
 } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
-import { useEventListener } from '@vueuse/core'
 import { useDialog } from '../../composables/useDialog'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
 import type { DOMTarget } from '../../composables/dom'
@@ -442,6 +442,10 @@ function onOverlayClick(event: MouseEvent) {
 const teleportTarget = computed<string | HTMLElement>(
   () => props.teleportTo || container.value || 'body',
 )
+
+// The panel's Teleport and Transition wait for the first open; closed, it skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
 
 const titleId = useId()
 const descriptionId = useId()
@@ -682,12 +686,12 @@ function settleResize() {
   if (!maximized.value) naturalPanelSize.value = null // release the px lock once settled, back to responsive auto
 }
 
-useEventListener(panelEl, 'transitionend', (event: TransitionEvent) => {
+function onPanelTransitionEnd(event: TransitionEvent) {
   // Chrome reports a logical property by its physical name.
   if (event.target !== panelEl.value) return
   if (event.propertyName !== 'inline-size' && event.propertyName !== 'width') return
   if (resizeToken) settleResize()
-})
+}
 
 // Whoever flips `maximized` gets the ease: the button below, or a bound `v-model:maximized`.
 function easeResize() {
