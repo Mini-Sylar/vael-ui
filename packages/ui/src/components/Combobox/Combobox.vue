@@ -19,7 +19,6 @@
     aria-haspopup="listbox"
     :aria-expanded="open"
     :aria-controls="listboxId"
-    :aria-activedescendant="open ? activeId : undefined"
     aria-autocomplete="list"
     :aria-required="fieldControl.required() || undefined"
     :data-open="open || undefined"
@@ -146,7 +145,8 @@
             :items="listItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
-            :active-index="activeIndex"
+            :highlight="highlight"
+            :track-active="!!($slots.item || $slots.create)"
             :listbox-id="listboxId"
             :multiple="multiple"
             :loading="loading"
@@ -253,6 +253,7 @@
 </template>
 
 <script lang="ts">
+import { useActiveDescendant } from '../../composables/useActiveDescendant'
 import { useValueSwap } from '../../composables/valueSwap'
 import { panelWidthStyle } from '../../composables/panelWidth'
 import type { PanelWidth } from '../../composables/panelWidth'
@@ -829,6 +830,13 @@ const {
   onActiveChange: (index) => listBody.value?.scrollToIndex(index),
   listboxId,
 })
+
+// Held in a stable object, with the active id written to the element: a highlight move re-renders nothing here.
+const highlight = { current: activeIndex }
+useActiveDescendant(
+  () => inputEl.value,
+  () => (open.value ? activeId.value : undefined),
+)
 
 // Priority: a row whose label IS the typed text, then the current selection, then the first
 // enabled row. `multiple` has no single selection to re-focus, so it skips the middle step.

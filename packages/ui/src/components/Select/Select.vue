@@ -28,7 +28,6 @@
       aria-haspopup="listbox"
       :aria-expanded="open"
       :aria-controls="listboxId"
-      :aria-activedescendant="open && !filter ? activeId : undefined"
       :aria-describedby="fieldControl.describedBy()"
       :aria-labelledby="
         (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
@@ -170,7 +169,6 @@
                 aria-autocomplete="list"
                 :aria-expanded="open"
                 :aria-controls="listboxId"
-                :aria-activedescendant="open ? activeId : undefined"
                 @keydown="onFilterKeydown"
               >
                 <template #start>
@@ -202,7 +200,8 @@
             :items="filteredItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
-            :active-index="activeIndex"
+            :highlight="highlight"
+            :track-active="!!$slots.item"
             :listbox-id="listboxId"
             :multiple="multiple"
             :loading="loading"
@@ -304,6 +303,7 @@ import { useChipTransition } from '../../composables/useChipTransition'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
+import { useActiveDescendant } from '../../composables/useActiveDescendant'
 import { computed, inject, nextTick, provide, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners, useFocusEvents } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
@@ -713,6 +713,17 @@ const {
   onActiveChange: (index) => listBody.value?.scrollToIndex(index),
   listboxId,
 })
+
+// Held in a stable object, with the active id written to the element: a highlight move re-renders nothing here.
+const highlight = { current: activeIndex }
+useActiveDescendant(
+  () => controlEl.value,
+  () => (open.value && !props.filter ? activeId.value : undefined),
+)
+useActiveDescendant(
+  () => filterInputRef.value?.inputEl,
+  () => (open.value ? activeId.value : undefined),
+)
 
 function openSelect() {
   if (isDisabled.value) return

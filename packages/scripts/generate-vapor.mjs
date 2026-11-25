@@ -56,6 +56,7 @@ const PER_BUILD_MODULES = new Set([
   'composables/lazyParts',
   'composables/sortableSettle',
   'composables/sortableAutoScroll',
+  'composables/useActiveDescendant',
   'composables/loaderType',
   'composables/numberParts',
   'composables/useTextOverlay',

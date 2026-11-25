@@ -11,12 +11,7 @@
     :aria-busy="loading || undefined"
     v-scroll-mask="scrollFade"
   >
-    <div
-      ref="indicatorEl"
-      class="ui-indicator ui-select-indicator"
-      :style="indicatorStyle"
-      aria-hidden="true"
-    />
+    <div ref="indicatorEl" class="ui-indicator ui-select-indicator" aria-hidden="true" />
     <div v-if="items.length === 0 && !loading" :class="emptyPart.class" :style="emptyPart.style">
       <slot name="empty">{{ emptyText }}</slot>
     </div>
@@ -59,7 +54,6 @@
           :key="items[index]!.value ?? NULL_KEY"
           role="option"
           :class="optionPart.class"
-          :data-active="index === activeIndex || undefined"
           :data-selected="isSelected(items[index]) || undefined"
           :data-disabled="items[index]?.disabled || undefined"
           :aria-selected="isSelected(items[index])"
@@ -73,7 +67,7 @@
             name="item"
             :item="items[index]"
             :index="index"
-            :active="index === activeIndex"
+            :active="trackActive && index === props.highlight.current.value"
             :selected="isSelected(items[index])"
             :group="section.group"
           >
@@ -116,7 +110,6 @@
           role="option"
           :class="optionPart.class"
           :data-virtual-index="row.index"
-          :data-active="row.index === activeIndex || undefined"
           :data-selected="isSelected(items[row.index]) || undefined"
           :data-disabled="items[row.index]?.disabled || undefined"
           :aria-selected="isSelected(items[row.index])"
@@ -132,7 +125,7 @@
             name="item"
             :item="items[row.index]"
             :index="row.index"
-            :active="row.index === activeIndex"
+            :active="trackActive && row.index === props.highlight.current.value"
             :selected="isSelected(items[row.index])"
           >
             <span class="ui-select-option-label">{{ getLabel(items[row.index]) }}</span>
@@ -237,7 +230,8 @@ import '../shared/loader-spinner.css'
 import LoaderMark from './LoaderMark.vue'
 import { useMessages, selectMessages } from '../../messages'
 import '../shared/tick.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useTemplateRef, watchPostEffect } from 'vue'
+import type { Ref } from 'vue'
 import { useEasedHeight } from '../../composables/useEasedHeight'
 import { useVirtualizer } from '../../composables/useVirtualizer'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
@@ -255,7 +249,10 @@ const props = defineProps<{
   items: readonly T[]
   getLabel: (item: T) => string
   isSelected: (item: T) => boolean
-  activeIndex: number
+  /** The highlighted row, held in a stable object: a prop that changes with it would re-render the list. */
+  highlight: { current: Readonly<Ref<number>> }
+  /** Only a custom item slot reads `active`: following the highlight re-renders the list, so it's off otherwise. */
+  trackActive?: boolean
   listboxId: string
   multiple?: boolean
   loading?: boolean
@@ -314,17 +311,44 @@ const listEl = useTemplateRef<HTMLElement>('listEl')
 const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
 
 // The highlight slides between options, Tabs-style; a long jump (typeahead, a search) lands at once.
-const { style: indicatorStyle } = useTabIndicator(() => [props.activeIndex, props.items], {
-  listEl,
-  orientation: 'vertical',
-  selector: '[role="option"][data-active]',
-  scroller: true,
-  matchCross: true,
-  maxGlide: 3,
-  motion: () => props.motion,
-  indicatorEl,
-  position: 'translate',
+const { style: indicatorStyle } = useTabIndicator(
+  () => [props.highlight.current.value, props.items],
+  {
+    listEl,
+    orientation: 'vertical',
+    selector: '[role="option"][data-active]',
+    scroller: true,
+    matchCross: true,
+    maxGlide: 3,
+    motion: () => props.motion,
+    indicatorEl,
+    position: 'translate',
+  },
+)
+
+// The highlighted row is marked on its element, so moving the highlight re-renders nothing.
+watchPostEffect(() => {
+  const list = listEl.value
+  if (!list) return
+  void virtualRows.value
+  void props.sections
+  const id = `${props.listboxId}-opt-${props.highlight.current.value}`
+  for (const row of list.querySelectorAll('[role="option"][data-active]'))
+    if (row.id !== id) row.removeAttribute('data-active')
+  list.querySelector(`[id="${id}"]`)?.setAttribute('data-active', 'true')
 })
+
+// Written straight to the element: bound in the template, each move would re-render the list.
+let written: string[] = []
+watchPostEffect(() => {
+  const el = indicatorEl.value
+  if (!el) return
+  const next = indicatorStyle.value
+  for (const key of written) if (next[key] === undefined) el.style.removeProperty(kebab(key))
+  written = Object.keys(next).filter((key) => next[key] !== undefined)
+  for (const key of written) el.style.setProperty(kebab(key), next[key]!)
+})
+const kebab = (key: string) => key.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)
 
 // Eases to the new height when the options change (a search, more loaded), as CommandPalette does.
 useEasedHeight({
