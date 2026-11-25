@@ -836,7 +836,9 @@ watch(
     nextTick(() => {
       const initial = computeInitialActive()
       setActive(initial)
-      if (initial >= 0) listBody.value?.scrollToIndex(initial, 'center')
+      // A list mounted by this open starts at its top: the first option needs no scroll.
+      if (initial > 0 || (initial === 0 && props.forceMount))
+        listBody.value?.scrollToIndex(initial, 'center')
       if (props.filter) filterInputRef.value?.inputEl?.focus()
     })
   },

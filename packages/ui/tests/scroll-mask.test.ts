@@ -139,3 +139,25 @@ test("the scrollbar's strip stays out of the fade: its own width, none when hidd
     rtl.unmount()
   }
 })
+
+test('a sliding highlight moving inside the box re-measures nothing; content changing does', async () => {
+  const frames = () =>
+    new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  const screen = render(() =>
+    withDirectives(
+      h('div', { class: 'box', style: 'height: 100px; overflow: auto' }, [
+        h('div', { class: 'ui-indicator', 'aria-hidden': 'true', style: 'position: absolute' }),
+        h('div', { class: 'content', style: 'height: 50px' }),
+      ]),
+      [[vScrollMask]],
+    ),
+  )
+  const box = (await screen).container.querySelector<HTMLElement>('.box')!
+  await frames()
+  const toggle = vi.spyOn(box.classList, 'toggle')
+  box.querySelector<HTMLElement>('.ui-indicator')!.style.translate = '0 40px'
+  await frames()
+  expect(toggle).not.toHaveBeenCalled()
+  box.querySelector<HTMLElement>('.content')!.style.height = '400px'
+  await vi.waitFor(() => expect(box.classList.contains('scroll-fade')).toBe(true))
+})

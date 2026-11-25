@@ -76,6 +76,10 @@ function measureBars(el: HTMLElement) {
   el.style.setProperty('--ui-scroll-bar-x', `${hidden ? 0 : Math.max(x, 0)}px`)
 }
 
+// vael-ui's sliding highlights: hidden from readers, positioned, never content.
+const isDecoration = (el: Element) =>
+  el.classList?.contains('ui-indicator') && el.getAttribute('aria-hidden') === 'true'
+
 // A sliding highlight (a positioned, aria-hidden decoration) swinging past the end isn't content to
 // scroll to: it doesn't make the box scroll, or fade its edges mid-glide. Measured by the rest.
 function overflowsX(el: HTMLElement): boolean {
@@ -124,6 +128,8 @@ function start(el: HTMLElement, axis: ScrollMaskAxis) {
   const mutations = new MutationObserver((records) => {
     // New children are watched for size too.
     if (records.some((r) => r.type === 'childList' && r.target === el)) watchChildren()
+    // A decoration moving, such as a sliding highlight, changes nothing that scrolls.
+    if (records.every((r) => r.type === 'attributes' && isDecoration(r.target as Element))) return
     if (entry.frame) return
     entry.frame = requestAnimationFrame(() => {
       entry.frame = 0
