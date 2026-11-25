@@ -94,14 +94,14 @@
           :max="360"
           :step="1"
           :aria-label="messages.colorPicker.hue"
-          :value-text="(value) => `${Math.round(value)}°`"
-          :ui="{ root: 'ui-color-picker-hue' }"
+          :value-text="hueText"
+          :ui="hueUi"
         />
         <div class="ui-color-picker-row">
           <Input
             :model-value="modelValue"
             size="sm"
-            :ui="{ root: valuePart }"
+            :ui="valueUi"
             :aria-label="messages.colorPicker.hex"
             autocapitalize="off"
             autocorrect="off"
@@ -409,7 +409,12 @@ const rootPart = computed(() =>
 )
 const swatchPart = computed(() => resolveUiPart(cx, themedUi()?.swatch, 'ui-color-picker-swatch'))
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-color-picker-panel'))
-const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-color-picker-value'))
+// Stable props: placing the panel re-renders its content, and the slider and field skip it.
+const valueUi = computed(() => ({
+  root: resolveUiPart(cx, themedUi()?.value, 'ui-color-picker-value'),
+}))
+const hueText = (value: number) => `${Math.round(value)}°`
+const hueUi = { root: 'ui-color-picker-hue' }
 const presetsPart = computed(() =>
   resolveUiPart(cx, themedUi()?.presets, 'ui-color-picker-presets'),
 )
