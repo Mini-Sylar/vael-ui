@@ -360,22 +360,30 @@ function initialFocusIn(panel: HTMLElement): HTMLElement {
 // reposition tick and would otherwise refocus the same element repeatedly.
 let focusedForIndex = -1
 let stopPendingFocus: (() => void) | undefined
+// Focus already in the callout stays (Back pressed twice); from anywhere else, a step's overlay too, it moves in.
+function focusPanel(index: number) {
+  const panel = popoverPanelEl.value
+  if (!panel || !open.value || currentIndex.value !== index) return
+  focusedForIndex = index
+  if (!panel.contains(document.activeElement)) initialFocusIn(panel).focus({ preventScroll: true })
+}
 watch(
   [open, currentIndex],
   ([isOpen, index]) => {
     stopPendingFocus?.()
     stopPendingFocus = undefined
+    if (!isOpen) focusedForIndex = -1
     if (!isOpen || focusedForIndex === index) return
+    // A step change keeps the panel visible; wait out the flush, in which a step's overlay un-inerts the callout.
+    if (popover.value?.positionerStyle.visibility === 'visible')
+      return void nextTick(() => focusPanel(index))
     stopPendingFocus = watch(
       () => popover.value?.positionerStyle.visibility,
       (visibility) => {
         if (visibility !== 'visible') return
         stopPendingFocus?.()
         stopPendingFocus = undefined
-        const panel = popoverPanelEl.value
-        if (!panel || !open.value) return
-        focusedForIndex = index
-        initialFocusIn(panel).focus({ preventScroll: true })
+        focusPanel(index)
       },
       { flush: 'post' },
     )
@@ -538,14 +546,18 @@ watch(
 )
 watch(open, (value) => {
   if (value) return
-  const from = [positionerEl.value, targetEl.value]
+  const target = targetEl.value
+  const from = [positionerEl.value, target]
   const back = startedBy
   startedBy = null
-  // After Popover's own restore.
+  // After Popover's own restore. A step's overlay left open makes the starter inert: the last target then.
   nextTick(() => {
     const active = document.activeElement
     const lost = !active || active === document.body || from.some((el) => el?.contains(active))
-    if (lost && back?.isConnected && back !== active) back.focus({ preventScroll: true })
+    const to = [back, target && focusTargetIn(target)].find(
+      (el) => el?.isConnected && !el.closest('[inert]'),
+    )
+    if (lost && to && to !== active) to.focus({ preventScroll: true })
   })
 })
 

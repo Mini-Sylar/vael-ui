@@ -7,6 +7,7 @@ import { h, shallowRef } from 'vue'
 import Tour from '../src/components/Tour/Tour.vue'
 import type { TourStep, TourStepChangeDetails } from '../src/components/Tour/Tour.vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
+import Drawer from '../src/components/Drawer/Drawer.vue'
 import TourFixture from './fixtures/TourFixture.vue'
 import TourTeleportFixture from './fixtures/TourTeleportFixture.vue'
 import TourInteractiveFixture from './fixtures/TourInteractiveFixture.vue'
@@ -73,12 +74,13 @@ test('onBeforeEnter resolves and positions correctly regardless of which telepor
   const screen = await render(TourTeleportFixture)
   await screen.getByTestId('trigger').click()
 
-  // Placed beside its target, not focused: a dialog the step opens takes focus as it mounts (focus
-  // only stayed in the tour while the test's Transition stub kept an inert wrapper in body).
-  const expectTourPanelPlaced = (text: string, target: string) =>
+  // Placed beside its target, and focused: the callout is the top layer, so it keeps focus over the
+  // overlay its step opened (which focuses itself as it mounts).
+  const expectTourPanelReady = (text: string, target: string) =>
     vi.waitFor(() => {
       const panels = document.querySelectorAll('.ui-popover-panel')
       const tourPanel = Array.from(panels).find((p) => p.textContent?.includes(text))
+      expect(tourPanel?.contains(document.activeElement)).toBe(true)
       const positioner = tourPanel?.closest<HTMLElement>('.ui-popover-positioner')
       expect(positioner?.style.visibility).toBe('visible')
       const a = positioner!.getBoundingClientRect()
@@ -88,23 +90,23 @@ test('onBeforeEnter resolves and positions correctly regardless of which telepor
     })
 
   await expect.element(page.getByText('Behind a Dialog')).toBeVisible()
-  await expectTourPanelPlaced('Behind a Dialog', '#in-dialog')
+  await expectTourPanelReady('Behind a Dialog', '#in-dialog')
 
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Behind a Drawer')).toBeVisible()
-  await expectTourPanelPlaced('Behind a Drawer', '#in-drawer')
+  await expectTourPanelReady('Behind a Drawer', '#in-drawer')
 
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Behind a Popover')).toBeVisible()
-  await expectTourPanelPlaced('Behind a Popover', '#in-popover')
+  await expectTourPanelReady('Behind a Popover', '#in-popover')
 
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Behind a BottomSheet')).toBeVisible()
-  await expectTourPanelPlaced('Behind a BottomSheet', '#in-sheet')
+  await expectTourPanelReady('Behind a BottomSheet', '#in-sheet')
 
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Behind a CommandPalette')).toBeVisible()
-  await expectTourPanelPlaced('Behind a CommandPalette', '#in-palette')
+  await expectTourPanelReady('Behind a CommandPalette', '#in-palette')
 })
 
 test('advancing past the last step finishes and closes; skip closes early', async () => {
@@ -136,6 +138,24 @@ test('ArrowRight/ArrowLeft step forward and back', async () => {
   await expect.element(screen.getByTestId('step-index')).toHaveTextContent('1')
   await userEvent.keyboard('{ArrowLeft}')
   await expect.element(screen.getByTestId('step-index')).toHaveTextContent('0')
+})
+
+test('Back pressed from the keyboard keeps focus on Back, and Next takes it once Back is gone', async () => {
+  const screen = await render(TourFixture)
+  await screen.getByTestId('trigger').click()
+  await page.getByRole('button', { name: 'Next' }).click() // -> B
+  await page.getByRole('button', { name: 'Next' }).click() // -> C
+  await expect.element(page.getByText('Step C')).toBeVisible()
+  const back = page.getByRole('button', { name: 'Back' })
+  await userEvent.keyboard('{Shift>}{Tab}{Tab}{/Shift}')
+  await expect.element(back).toHaveFocus()
+
+  await userEvent.keyboard('{Enter}')
+  await expect.element(page.getByText('Step B')).toBeVisible()
+  await expect.element(back).toHaveFocus()
+  await userEvent.keyboard('{Enter}')
+  await expect.element(page.getByText('Step A')).toBeVisible()
+  await expect.element(page.getByRole('button', { name: 'Next' })).toHaveFocus()
 })
 
 test('progress text reflects total step count across groups', async () => {
@@ -361,6 +381,102 @@ test('Escape still skips the tour while a step’s own onBeforeEnter overlay is 
 
   await userEvent.keyboard('{Escape}')
   await vi.waitFor(() => expect(document.body.textContent).not.toContain('Behind a Dialog'))
+})
+
+// The callout is the top layer above a Drawer its step opened, so the keyboard stays with it (APG dialog).
+async function toDrawerStep() {
+  const screen = await render(TourTeleportFixture)
+  await screen.getByTestId('trigger').click()
+  await expect.element(page.getByText('Behind a Dialog')).toBeVisible()
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect.element(page.getByText('Behind a Drawer')).toBeVisible()
+  await expect.element(page.getByRole('button', { name: 'Next' })).toHaveFocus()
+  return screen
+}
+
+test('a step that opens a Drawer keeps focus in the callout, and Tab cycles its buttons and the target', async () => {
+  await toDrawerStep()
+  const next = page.getByRole('button', { name: 'Next' })
+  const back = page.getByRole('button', { name: 'Back' })
+  const target = page.getByTestId('in-drawer')
+  expect(next.element().closest('[inert]')).toBeNull()
+
+  await userEvent.keyboard('{Tab}')
+  await expect.element(target).toHaveFocus()
+  await userEvent.keyboard('{Tab}')
+  await expect.element(back).toHaveFocus()
+  await userEvent.keyboard('{Shift>}{Tab}{/Shift}')
+  await expect.element(target).toHaveFocus()
+  await userEvent.keyboard('{Shift>}{Tab}{/Shift}')
+  await expect.element(next).toHaveFocus()
+
+  await userEvent.keyboard('{Enter}')
+  await expect.element(page.getByText('Behind a Popover')).toBeVisible()
+  await expect.element(page.getByRole('button', { name: 'Next' })).toHaveFocus()
+})
+
+test('Escape at a Drawer step skips the tour first; focus lands on the target while the drawer stays open', async () => {
+  await toDrawerStep()
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(document.body.textContent).not.toContain('Behind a Drawer'))
+  await expect.element(page.getByTestId('in-drawer')).toHaveFocus()
+})
+
+test('a tour ended at a Drawer step that closes it returns focus to the button that started it', async () => {
+  const open = shallowRef(false)
+  const drawerOpen = shallowRef(false)
+  const steps: TourStep[] = [
+    { target: '#page-target', title: 'On the page' },
+    {
+      target: '#drawer-target',
+      title: 'In the drawer',
+      onBeforeEnter: () => void (drawerOpen.value = true),
+    },
+  ]
+  const end = () => (drawerOpen.value = false)
+  await render(() => [
+    h('button', { onClick: () => (open.value = true) }, 'Start'),
+    h('button', { id: 'page-target' }, 'Page'),
+    h(
+      Drawer,
+      {
+        open: drawerOpen.value,
+        'onUpdate:open': (v: boolean) => (drawerOpen.value = v),
+        'aria-label': 'Panel',
+      },
+      () => h('button', { id: 'drawer-target' }, 'Drawer target'),
+    ),
+    h(Tour as never, {
+      open: open.value,
+      'onUpdate:open': (v: boolean) => (open.value = v),
+      steps,
+      onSkip: end,
+      onFinish: end,
+    }),
+  ])
+  const start = page.getByRole('button', { name: 'Start' })
+
+  // Skipped on the first step and started again: focus goes in each time.
+  await start.click()
+  await expect.element(page.getByRole('button', { name: 'Next' })).toHaveFocus()
+  await userEvent.keyboard('{Escape}')
+  await expect.element(start).toHaveFocus()
+  await start.click()
+  await expect.element(page.getByRole('button', { name: 'Next' })).toHaveFocus()
+
+  await userEvent.keyboard('{Enter}')
+  await expect.element(page.getByText('In the drawer')).toBeVisible()
+  await expect.element(page.getByRole('button', { name: 'Done' })).toHaveFocus()
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(drawerOpen.value).toBe(false))
+  await expect.element(start).toHaveFocus()
+
+  await start.click()
+  await userEvent.keyboard('{Enter}')
+  await expect.element(page.getByRole('button', { name: 'Done' })).toHaveFocus()
+  await userEvent.keyboard('{Enter}')
+  await vi.waitFor(() => expect(open.value).toBe(false))
+  await expect.element(start).toHaveFocus()
 })
 
 test('restarting a tour lands the callout on the first step instead of gliding in from the corner', async () => {
