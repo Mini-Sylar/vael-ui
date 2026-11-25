@@ -78,7 +78,6 @@ import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useTextOverlay } from '../../composables/useTextOverlay'
 import { useSlotPresence } from '../../composables/dom'
-import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
@@ -239,21 +238,24 @@ function checkMultiline() {
 
 const supportsFieldSizing = typeof CSS !== 'undefined' && CSS.supports('field-sizing', 'content')
 
-// useEventListener/useResizeObserver track `textareaEl` reactively and clean up on scope
-// dispose; the callbacks below gate on the live `props.autoGrow` value instead of a snapshot
-// read at mount, so autoGrow flipping true after mount (not just at mount time) is honored too.
-useEventListener(textareaEl, 'input', () => {
-  if (props.autoGrow && !supportsFieldSizing) adjustHeightFallback()
-})
-useResizeObserver(textareaEl, () => {
-  if (props.autoGrow) checkMultiline()
-})
+// Only with autoGrow: one watcher sets up the resize observer and input listener, and drops them
+// when it's turned off. Turned on later, it sizes itself at once.
 watch(
-  () => props.autoGrow,
-  (autoGrow) => {
-    if (!autoGrow) return
-    if (!supportsFieldSizing) adjustHeightFallback()
-    checkMultiline()
+  () => props.autoGrow && textareaEl.value,
+  (el, before, onCleanup) => {
+    if (!el) return
+    if (before === false) {
+      if (!supportsFieldSizing) adjustHeightFallback()
+      checkMultiline()
+    }
+    const onInput = () => supportsFieldSizing || adjustHeightFallback()
+    const observer = new ResizeObserver(checkMultiline)
+    observer.observe(el)
+    el.addEventListener('input', onInput)
+    onCleanup(() => {
+      observer.disconnect()
+      el.removeEventListener('input', onInput)
+    })
   },
   { immediate: true },
 )

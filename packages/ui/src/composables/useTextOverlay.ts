@@ -1,5 +1,4 @@
 import { shallowRef, watch } from 'vue'
-import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { Ref } from 'vue'
 import type { ElRef } from './dom'
 
@@ -81,15 +80,28 @@ export function useTextOverlay(
     if (input) scroll.value = { x: input.scrollLeft, y: input.scrollTop }
   }
 
-  watch(active, (on) => on && measure(), { immediate: true })
-  const field = () => (active() ? inputEl.value : null)
-  useResizeObserver(field, measure)
   // The caret scrolls a long value; these cover typing, arrow keys and selection.
   const sync = () => {
     syncScroll()
     requestAnimationFrame(syncScroll)
   }
-  useEventListener(field, ['scroll', 'input', 'keyup', 'select', 'pointerup'], sync)
+  const events = ['scroll', 'input', 'keyup', 'select', 'pointerup']
+  // One watcher; the observer and listeners exist only while the overlay shows.
+  watch(
+    () => active() && inputEl.value,
+    (input, _, onCleanup) => {
+      if (!input) return
+      measure()
+      const observer = new ResizeObserver(measure)
+      observer.observe(input)
+      for (const type of events) input.addEventListener(type, sync)
+      onCleanup(() => {
+        observer.disconnect()
+        for (const type of events) input.removeEventListener(type, sync)
+      })
+    },
+    { immediate: true },
+  )
 
   return { style, scroll }
 }
