@@ -105,26 +105,25 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
       state.value = 'open'
       options.onFind?.()
     }
-    watch(
-      () => options.el.value,
-      (el, _, onCleanup) => {
-        setFindable(!!el && 'onbeforematch' in el)
-        if (!el) return
-        el.addEventListener('beforematch', onMatch)
-        onCleanup(() => el.removeEventListener('beforematch', onMatch))
-      },
-      { immediate: true, flush: 'post' },
-    )
-    // Closed: out of the page but findable. Opening, it's back before anything is measured.
+    // One watcher per panel: a new element gets the listener; closed, it's out of the page but
+    // findable, and opening, it's back before anything is measured.
+    let bound: HTMLElement | null | undefined
     watch(
       [() => options.el.value, state, findable],
-      ([el, now, on]) => {
+      ([el, now]) => {
+        if (el !== bound) {
+          bound?.removeEventListener('beforematch', onMatch)
+          el?.addEventListener('beforematch', onMatch)
+          bound = el
+          setFindable(!!el && 'onbeforematch' in el)
+        }
         if (!el) return
-        if (on && now === 'closed') el.setAttribute('hidden', 'until-found')
+        if (findable.value && now === 'closed') el.setAttribute('hidden', 'until-found')
         else if (el.getAttribute('hidden') === 'until-found') el.removeAttribute('hidden')
       },
       { immediate: true, flush: 'sync' },
     )
+    onScopeDispose(() => bound?.removeEventListener('beforematch', onMatch))
   }
 
   function onTransitionEnd(event: TransitionEvent) {
