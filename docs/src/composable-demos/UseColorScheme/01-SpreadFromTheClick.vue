@@ -5,7 +5,8 @@
       Pass the click as <code>{ from: event }</code> and the new scheme spreads in a circle from it.
       This switches the whole site, the same as the header toggle: every
       <code>useColorScheme()</code> call in the page shares one state. Browsers without View
-      Transitions, and reduced motion, switch at once.
+      Transitions, reduced motion and a ConfigProvider with <code>motion: false</code> switch at
+      once.
     </p>
     <div class="row">
       <Button
