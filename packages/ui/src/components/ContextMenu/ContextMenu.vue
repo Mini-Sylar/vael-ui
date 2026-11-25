@@ -15,7 +15,7 @@
     ref="menuInstance"
     v-model:open="open"
     :items="items"
-    :trigger-el="anchorEl"
+    :trigger-el="anchorRef"
     :side="side"
     :align="align"
     :side-offset="sideOffset"
@@ -173,6 +173,16 @@ defineSlots<{
 
 const wrapperEl = useTemplateRef<HTMLElement>('wrapper')
 const anchorEl = useTemplateRef<HTMLElement>('anchor')
+// One object for the menu to read the anchor through: the anchor landing re-renders neither.
+// On a server there's no anchor, as before (and no HTMLElement to check it against).
+const anchorRef =
+  typeof window === 'undefined'
+    ? null
+    : {
+        get el() {
+          return anchorEl.value
+        },
+      }
 const menuRef = useTemplateRef<ComponentExposed<typeof Menu>>('menuInstance')
 
 function setAnchorPosition(x: number, y: number) {
