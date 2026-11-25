@@ -219,6 +219,29 @@ test('a vertically-dominant downward drag on content at the top still promotes t
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
+test("a drag from the content follows the finger from where it went down, and a touch's capture moving to the panel doesn't cancel it", async () => {
+  const screen = await render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  content().scrollTop = 0
+  const before = visibleHeight()
+  const c = content()
+  const pointerId = 9
+  const fire = (type: string, y: number) =>
+    c.dispatchEvent(new PointerEvent(type, { clientX: 100, clientY: y, pointerId, bubbles: true }))
+  fire('pointerdown', 200)
+  fire('pointermove', 216)
+  // A touch's implicit capture on the content ends as the panel takes it; that bubbles to the panel.
+  c.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId, bubbles: true }))
+  fire('pointermove', 300)
+  expect(before - visibleHeight()).toBeCloseTo(100, -1)
+  fire('pointermove', 260)
+  expect(before - visibleHeight()).toBeCloseTo(60, -1)
+  await new Promise((r) => setTimeout(r, 300))
+  fire('pointerup', 260)
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(before, -1))
+})
+
 test('closing slides the sheet down while its backdrop fades, together', async () => {
   const screen = await render(BottomSheetFixture, { global: { stubs: { transition: false } } })
   await screen.getByTestId('trigger').click()

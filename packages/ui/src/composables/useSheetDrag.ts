@@ -234,10 +234,11 @@ export function useSheetDrag(
   const addSample = (clientY: number) => tracker.add(clientY)
   const releaseVelocity = () => tracker.velocity()
 
-  function beginDrag(clientY: number) {
+  // `from`: where the finger went down, so a drag past the threshold doesn't trail it.
+  function beginDrag(clientY: number, from = clientY) {
     const point = currentPoint()
     if (!point) return
-    dragStartY = clientY
+    dragStartY = from
     dragStartOffset = lastAppliedOffset
     dragStartTime = performance.now()
     tracker.reset(clientY, dragStartTime)
@@ -318,7 +319,7 @@ export function useSheetDrag(
       const atTop = dragStartScrollTop === 0
       if (!(atTop && draggingDown)) return
       dragSource = 'handle'
-      beginDrag(event.clientY)
+      beginDrag(event.clientY, dragStartY)
       // Now the sheet's drag: a release over the backdrop must still reach the panel.
       try {
         ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
@@ -466,7 +467,10 @@ export function useSheetDrag(
       useEventListener(options.panelEl, 'pointerup', onPointerUp)
       useEventListener(options.panelEl, 'pointercancel', onPointerCancel)
       // Capture lost mid-drag (the panel left, or the browser took it): settle as a cancel.
-      useEventListener(options.panelEl, 'lostpointercapture', onPointerCancel)
+      // Only the panel's own capture: a touch's implicit capture on the content bubbles here too.
+      useEventListener(options.panelEl, 'lostpointercapture', (event: PointerEvent) => {
+        if (event.target === event.currentTarget) onPointerCancel()
+      })
       // Only while open: a closed sheet costs nothing.
       useEventListener(
         () =>
