@@ -8,7 +8,7 @@
   >
     <slot name="trigger" :open="open" />
   </span>
-  <Teleport :to="teleportTo">
+  <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition
       name="ui-menu"
       appear
@@ -591,6 +591,10 @@ const motionHooks = computed(() => {
     onAfterLeave: () => (phase.value = 'left'),
   }
 })
+
+// The panel's Teleport and Transition wait for the first open; a closed menu skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
 
 // Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
 const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)

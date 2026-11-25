@@ -50,6 +50,51 @@ test('closed menus never read document.fonts.ready; the first open reads it once
   await vi.waitFor(() => expect(fontsReads).toBe(1))
 })
 
+// A Teleport leaves two empty text nodes in its target.
+const bodyAnchors = () =>
+  [...document.body.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE).length
+
+test('closed menus mount no Teleport; forceMount still does', async () => {
+  const before = bodyAnchors()
+  const screen = await render(many(10))
+  await nextTick()
+  expect(bodyAnchors()).toBe(before)
+  screen.unmount()
+  await render(many(1, { forceMount: true }))
+  expect(document.querySelector('.ui-menu-positioner')).not.toBeNull()
+})
+
+test('a closed menu sets up a fixed number of watchers', async () => {
+  const menu = shallowRef<{ $: { scope: { deps?: { nextDep?: unknown } } } }>()
+  await render(() => h(Menu as never, { ref: menu, items, motion: false }, { trigger }))
+  await nextTick()
+  let effects = 0
+  for (let link = menu.value!.$.scope.deps; link; link = link.nextDep as typeof link) effects++
+  // Was 46, when each popover document listener and highlight list listener had its own watcher.
+  expect(effects).toBeLessThanOrEqual(37)
+})
+
+test('the first open plays the enter, and every open after it too', async () => {
+  const open = shallowRef(false)
+  await render(
+    () =>
+      h(
+        Menu as never,
+        { open: open.value, items, 'onUpdate:open': (v: boolean) => (open.value = v) },
+        { trigger },
+      ),
+    { global: { stubs: { transition: false } } },
+  )
+  const moving = () =>
+    (document.querySelector('.ui-menu-panel')?.getAnimations({ subtree: true }).length ?? 0) > 0
+  for (let round = 0; round < 2; round++) {
+    open.value = true
+    await vi.waitFor(() => expect(moving()).toBe(true))
+    open.value = false
+    await vi.waitFor(() => expect(document.querySelector('.ui-menu-panel')).toBeNull())
+  }
+})
+
 test('document listeners come and go with the open menu, and with an unmount while open', async () => {
   const added: string[] = []
   const removed: string[] = []
