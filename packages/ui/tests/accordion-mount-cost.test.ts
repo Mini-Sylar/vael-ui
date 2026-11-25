@@ -1,4 +1,4 @@
-// What a closed Accordion costs per item once mounted: no re-render, no listener it doesn't need yet.
+// What a closed Accordion (or Collapsible) costs once mounted: no re-render, no listener it doesn't need yet.
 import '../src/style.css'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
@@ -7,6 +7,7 @@ import { renderToString } from 'vue/server-renderer'
 import type { ComponentPublicInstance } from 'vue'
 import Accordion from '../src/components/Accordion/Accordion.vue'
 import AccordionItem from '../src/components/AccordionItem/AccordionItem.vue'
+import Collapsible from '../src/components/Collapsible/Collapsible.vue'
 
 let updates: string[] = []
 const countUpdates = {
@@ -54,6 +55,21 @@ for (const motion of [undefined, false] as const) {
     }
   })
 }
+
+test("a closed Collapsible doesn't re-render once mounted, and its trigger names the panel", async () => {
+  render(
+    () => h(Collapsible, null, { trigger: () => h('button', 'More'), default: () => 'Details' }),
+    { global: { mixins: [countUpdates] } },
+  )
+  const panel = await vi.waitFor(() =>
+    document.querySelector<HTMLElement>('[hidden="until-found"]')!,
+  )
+  await settled()
+  expect(updates).toEqual([])
+  const trigger = document.querySelector('button')!
+  expect(panel.getAttribute('aria-labelledby')).toBe(trigger.id)
+  expect(trigger.getAttribute('aria-controls')).toBe(panel.id)
+})
 
 test('a closed panel listens for find only; transitionend waits for its first animated toggle', async () => {
   render(accordion())
