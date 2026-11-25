@@ -143,6 +143,7 @@ export function useTabIndicator(
       measuredOnce = true
       return
     }
+    remeasureAfterOwnAnimations(tab, list)
     const listRect = list.getBoundingClientRect()
     const tabRect = tab.getBoundingClientRect()
     // Undo any ancestor scale (e.g. a Dialog still animating in) so px values match layout size.
@@ -456,21 +457,32 @@ export function useTabIndicator(
   // An ancestor still animating in can make measure() run mid-transition, so re-measure when it ends.
   const awaited = new WeakSet<Animation>()
   function remeasureAfterAncestorTransitions(list: HTMLElement) {
-    if (typeof document.getAnimations !== 'function') return
-    for (const animation of document.getAnimations()) {
-      if (!(animation instanceof CSSTransition) || awaited.has(animation)) continue
-      const target = (animation.effect as KeyframeEffect | null)?.target
-      if (!target || target === list || !target.contains(list)) continue
-      awaited.add(animation)
-      animation.finished.then(
-        () => {
-          measuredOnce = false
-          measure()
-        },
-        // Cancelled before it finished: nothing to settle.
-        () => {},
-      )
-    }
+    if (typeof list.getAnimations !== 'function') return
+    // Only the list's ancestors: asking the whole document for its animations, once per list, grows with the page.
+    for (let node = list.parentElement; node; node = node.parentElement)
+      for (const animation of node.getAnimations()) {
+        if (!(animation instanceof CSSTransition) || awaited.has(animation)) continue
+        awaited.add(animation)
+        animation.finished.then(
+          () => {
+            measuredOnce = false
+            measure()
+          },
+          // Cancelled before it finished: nothing to settle.
+          () => {},
+        )
+      }
+  }
+
+  // A row measured mid-slide (a FLIP after a delete) is measured again where it comes to rest.
+  function remeasureAfterOwnAnimations(tab: HTMLElement, list: HTMLElement) {
+    if (typeof tab.getAnimations !== 'function') return
+    for (let el: Element | null = tab; el && el !== list; el = el.parentElement)
+      for (const animation of el.getAnimations()) {
+        if (awaited.has(animation) || animation.playState === 'finished') continue
+        awaited.add(animation)
+        animation.finished.then(update, () => {})
+      }
   }
 
   useResizeObserver(options.listEl, (entries) => {

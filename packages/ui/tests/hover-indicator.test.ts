@@ -135,7 +135,10 @@ test('a group label between rows keeps the highlight on the last row, to glide o
   await userEvent.hover(screen.getByText('Group'))
   for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
   expect(indicated()).toBe('First')
-  expect(getComputedStyle(document.querySelector('.grouped-indicator')!).opacity).toBe('1')
+  // Still showing (a fade-in may be finishing), and it never fades out.
+  await vi.waitFor(() =>
+    expect(getComputedStyle(document.querySelector('.grouped-indicator')!).opacity).toBe('1'),
+  )
   await userEvent.hover(screen.getByText('Second'))
   await vi.waitFor(() => expect(indicated()).toBe('Second'))
 })
@@ -191,4 +194,38 @@ test('lists in a group hand the highlight over: it glides into a neighbour, not 
       )
     screen.unmount()
   }
+})
+
+test('a hovered row that slides into place (a delete above it) is highlighted where it stops', async () => {
+  const rows = shallowRef(['One', 'Two', 'Three'])
+  const Sliding = defineComponent({
+    setup() {
+      const list = useTemplateRef<HTMLElement>('list')
+      const { style } = useHoverIndicator(list, { itemSelector: '.row', motion: false })
+      return () =>
+        h('div', { ref: 'list', style: 'position: relative; isolation: isolate; width: 200px' }, [
+          h('div', { class: 'ui-indicator', style: style.value, 'aria-hidden': 'true' }),
+          ...rows.value.map((label) =>
+            h(
+              'button',
+              { key: label, class: 'row', style: 'display: block; width: 100%; height: 40px' },
+              label,
+            ),
+          ),
+        ])
+    },
+  })
+  const screen = await render(Sliding)
+  await userEvent.hover(screen.getByText('Three'))
+  await vi.waitFor(() => expect(marked()).toBe('Three'))
+  // Delete the row above; the hovered row slides up 40 px over 200 ms, as a FLIP does.
+  rows.value = ['One', 'Three']
+  await nextTick()
+  const three = screen.getByText('Three').element() as HTMLElement
+  await three.animate([{ translate: '0 40px' }, { translate: '0 0' }], 200).finished
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  const indicator = document.querySelector<HTMLElement>('.ui-indicator')!
+  expect(
+    Math.abs(indicator.getBoundingClientRect().top - three.getBoundingClientRect().top),
+  ).toBeLessThan(1)
 })
