@@ -319,21 +319,34 @@ function ownShift(el: Element, shown: Point = shownOn(el)): Point | undefined {
   }
 }
 
+/** Its place from the offsets up to the box that holds it all: no transform, scale or scroll counts. */
+function laidOut(el: HTMLElement): Place {
+  let x = 0
+  let y = 0
+  let at = el
+  for (
+    let up = el.offsetParent as HTMLElement | null;
+    up;
+    up = up.offsetParent as HTMLElement | null
+  ) {
+    x += at.offsetLeft + up.clientLeft
+    y += at.offsetTop + up.clientTop
+    at = up
+  }
+  return { x: x + at.offsetLeft, y: y + at.offsetTop, via: at }
+}
+
 /**
- * Where layout puts it in its parent, its own transforms left out (a card's own scale or offset,
- * an entrance or a glide on its way, aren't moves), and scrolling or the parent moving as a whole
- * neither.
+ * Where layout puts it in its parent: transforms anywhere between (its own entrance, a row's
+ * entrance around it, a panel scaling open) and scrolling aren't moves.
  */
 function placeIn(el: Element, parent: Element): Place | undefined {
   // Not rendered (display: none around it): no place, so showing it isn't a move.
   if (el instanceof HTMLElement && !el.offsetParent && !el.getClientRects().length) return undefined
   if (el instanceof HTMLElement && parent instanceof HTMLElement) {
-    const via = el.offsetParent
-    if (via === parent) return { x: el.offsetLeft, y: el.offsetTop, via }
-    // Both read against the same box, so the gap between them is the same whichever box that is: an
-    // ancestor mid-entrance holds it for a while, then lets go, and that isn't a change of box.
-    if (via === parent.offsetParent)
-      return { x: el.offsetLeft - parent.offsetLeft, y: el.offsetTop - parent.offsetTop, via: null }
+    const own = laidOut(el)
+    const box = laidOut(parent)
+    if (own.via === box.via) return { x: own.x - box.x, y: own.y - box.y, via: own.via }
   }
   const box = el.getBoundingClientRect()
   const at = parent.getBoundingClientRect()
@@ -427,7 +440,7 @@ function relayout(parent: Element, members: Set<Element>) {
     const own = ownNow[i]
     placeOf.set(el, place)
     ownOf.set(el, own)
-    // Unmoved, or measured against another box: a glide on its way carries on undisturbed.
+    // Unmoved, measured against another box, or never painted: a glide on its way carries on.
     if (
       !last ||
       !place ||
