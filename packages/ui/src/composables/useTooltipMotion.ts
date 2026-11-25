@@ -45,7 +45,8 @@ export function useTooltipMotion(options: TooltipMotionOptions): ComputedRef<Tra
   })
   const { phase } = motion
   return computed(() =>
-    options.instant()
+    // A warm open snaps in, unless its own exit is still playing: then it turns back from there.
+    options.instant() && phase.value !== 'leaving'
       ? { css: false }
       : {
           ...motion.transition.value,
