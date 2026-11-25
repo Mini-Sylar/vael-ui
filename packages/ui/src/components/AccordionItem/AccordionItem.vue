@@ -6,9 +6,8 @@
     :data-motion="ctx.motion() ? undefined : 'off'"
     v-bind="attrs"
   >
-    <component :is="headingTag" ref="header" :class="headerPart.class" :style="headerPart.style">
+    <component :is="headingTag" :class="headerPart.class" :style="headerPart.style">
       <button
-        ref="trigger"
         :id="triggerId"
         type="button"
         :class="triggerPart.class"
@@ -54,7 +53,7 @@
       :aria-hidden="collapseState === 'closed' && !findable ? 'true' : undefined"
       :inert="collapseState === 'closed' && !findable"
     >
-      <div ref="body" :class="bodyPart.class" :style="bodyPart.style">
+      <div :class="bodyPart.class" :style="bodyPart.style">
         <slot :open="isOpenValue" :toggle="onToggle" />
       </div>
     </div>
@@ -143,24 +142,25 @@ const {
 })
 
 const item = useTemplateRef<HTMLElement>('item')
-const header = useTemplateRef<HTMLElement>('header')
-const trigger = useTemplateRef<HTMLElement>('trigger')
 const chevron = useTemplateRef<SVGSVGElement>('chevron')
-const body = useTemplateRef<HTMLElement>('body')
 useStateMotion({
   key: 'accordion',
   mainPart: 'trigger',
   motion: ctx.states,
   // Your timing reaches the whole item: the panel's height as well as the chevron.
   root: () => item.value,
-  parts: () => ({
-    item: item.value,
-    header: header.value,
-    trigger: trigger.value,
-    chevron: chevron.value,
-    panel: panel.value,
-    body: body.value,
-  }),
+  // Found from the item and the panel: fewer template refs to set on every mount.
+  parts: () => {
+    const header = item.value?.firstElementChild
+    return {
+      item: item.value,
+      header,
+      trigger: header?.firstElementChild,
+      chevron: chevron.value,
+      panel: panel.value,
+      body: panel.value?.firstElementChild,
+    }
+  },
   states: () => ({ open: isOpenValue.value, disabled: !!props.disabled }),
 })
 

@@ -2,7 +2,7 @@
 import '../src/style.css'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { createSSRApp, h } from 'vue'
+import { createSSRApp, h, shallowRef } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import type { ComponentPublicInstance } from 'vue'
 import Accordion from '../src/components/Accordion/Accordion.vue'
@@ -95,4 +95,39 @@ test('hydrated, it starts as the server rendered it, then turns findable', async
   warn.mockRestore()
   app.unmount()
   host.remove()
+})
+
+test('an item sets three template refs; its other parts are found when states need them', async () => {
+  const refs: string[][] = []
+  const countRefs = {
+    mounted(this: ComponentPublicInstance) {
+      if ((this.$options as { __name?: string }).__name === 'AccordionItem')
+        refs.push(Object.keys(this.$refs).sort())
+    },
+  }
+  const value = shallowRef<string | null>(null)
+  const motion = {
+    states: {
+      open: { header: { opacity: 0.9 }, trigger: { opacity: 0.8 }, body: { opacity: 0.7 } },
+    },
+  }
+  render(
+    () =>
+      h(
+        Accordion as never,
+        { value: value.value, 'onUpdate:value': (v: string) => (value.value = v), motion },
+        () => h(AccordionItem, { value: 'a', title: 'Billing' }, () => 'Invoices'),
+      ),
+    { global: { mixins: [countRefs] } },
+  )
+  await vi.waitFor(() => expect(refs).toEqual([['chevron', 'item', 'panel']]))
+  value.value = 'a'
+  for (const [selector, opacity] of [
+    ['.ui-accordion-header', '0.9'],
+    ['.ui-accordion-trigger', '0.8'],
+    ['.ui-accordion-body', '0.7'],
+  ] as const)
+    await vi.waitFor(() =>
+      expect(getComputedStyle(document.querySelector(selector)!).opacity).toBe(opacity),
+    )
 })
