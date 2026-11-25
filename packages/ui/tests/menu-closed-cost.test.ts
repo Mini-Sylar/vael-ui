@@ -2,7 +2,7 @@
 import '../src/style.css'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { defineComponent, h, nextTick } from 'vue'
+import { defineComponent, h, nextTick, shallowRef } from 'vue'
 import Menu from '../src/components/Menu/Menu.vue'
 
 beforeEach(() => {
@@ -48,4 +48,45 @@ test('closed menus never read document.fonts.ready; the first open reads it once
   await screen.container.querySelector<HTMLElement>('.open')!.click()
   await vi.waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
   await vi.waitFor(() => expect(fontsReads).toBe(1))
+})
+
+test('document listeners come and go with the open menu, and with an unmount while open', async () => {
+  const added: string[] = []
+  const removed: string[] = []
+  const add = vi.spyOn(document, 'addEventListener').mockImplementation(function (
+    this: Document,
+    ...args: Parameters<Document['addEventListener']>
+  ) {
+    added.push(args[0])
+    return EventTarget.prototype.addEventListener.apply(this, args)
+  })
+  const remove = vi.spyOn(document, 'removeEventListener').mockImplementation(function (
+    this: Document,
+    ...args: Parameters<Document['removeEventListener']>
+  ) {
+    removed.push(args[0])
+    return EventTarget.prototype.removeEventListener.apply(this, args)
+  })
+  try {
+    const open = shallowRef(false)
+    const screen = await render(() =>
+      h(Menu as never, { open: open.value, items, motion: false }, { trigger }),
+    )
+    await nextTick()
+    const types = ['keydown', 'pointerdown', 'pointerup', 'pointercancel', 'focusin']
+    const ours = (list: string[]) => list.filter((type) => types.includes(type)).length
+    expect(ours(added)).toBe(0)
+    open.value = true
+    // Its own six, and the shared layer stack's Escape listener.
+    await vi.waitFor(() => expect(ours(added)).toBe(7))
+    open.value = false
+    await vi.waitFor(() => expect(ours(removed)).toBe(7))
+    open.value = true
+    await vi.waitFor(() => expect(ours(added)).toBe(14))
+    screen.unmount()
+    expect(ours(removed)).toBe(14)
+  } finally {
+    add.mockRestore()
+    remove.mockRestore()
+  }
 })
