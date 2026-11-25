@@ -1,4 +1,4 @@
-import { onMounted, shallowRef, toValue, watch } from 'vue'
+import { effectScope, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
@@ -201,15 +201,6 @@ export function useSheetDrag(
     activeSnap.value = id
     ownWrite = false
   }
-  watch(
-    activeSnap,
-    (id) => {
-      if (ownWrite || isDragging.value) return
-      const point = points().find((candidate) => candidate.id === id)
-      if (point) moveTo(offsetFor(point), !reducedMotion())
-    },
-    { flush: 'sync' },
-  )
 
   /** `velocity` (px/ms, positive down): the release speed it carries on from. */
   function settleTo(point: SheetSnapPoint, velocity = 0) {
@@ -231,8 +222,6 @@ export function useSheetDrag(
   }
   // Closing leaves the panel where it is: the engine slides it out from there.
   watch(active, (value) => value && reset())
-  // Mounted already open: no change for the watch to see.
-  onMounted(() => toValue(active) && reset())
 
   let dragSource: 'handle' | 'content' | null = null
   let dragStartX = 0
@@ -442,16 +431,6 @@ export function useSheetDrag(
       : `translateY(${offset}px)`
   }
 
-  useEventListener(options.handleEl, 'pointerdown', onHandlePointerDown)
-  useEventListener(options.contentEl, 'pointerdown', onContentPointerDown)
-  useEventListener(options.contentEl, 'touchstart', onContentTouchStart, { passive: true })
-  // Not passive: it has to be able to cancel the browser's own scroll.
-  useEventListener(options.contentEl, 'touchmove', onContentTouchMove, { passive: false })
-  useEventListener(options.panelEl, 'pointermove', onPointerMove)
-  useEventListener(options.panelEl, 'pointerup', onPointerUp)
-  useEventListener(options.panelEl, 'pointercancel', onPointerCancel)
-  // Capture lost mid-drag (the panel left, or the browser took it): settle as a cancel.
-  useEventListener(options.panelEl, 'lostpointercapture', onPointerCancel)
   // The area changed size: a phone's toolbars hid or showed (Samsung Internet and Chrome collapse
   // them on scroll), the keyboard opened, or the container resized. Refit the panel and glide back
   // to the same snap point, so the sheet doesn't drift off it or leave a toolbar-tall strip with
@@ -463,18 +442,55 @@ export function useSheetDrag(
     const point = currentPoint()
     if (point) moveTo(offsetFor(point), true)
   }
-  // Only while open: a closed sheet costs nothing.
-  useEventListener(
-    () =>
-      typeof window === 'undefined' || !active.value
-        ? undefined
-        : (window.visualViewport ?? window),
-    'resize',
-    onAreaResize,
-  )
-  useResizeObserver(
-    () => (active.value ? (toValue(options.bounds) ?? undefined) : undefined),
-    onAreaResize,
+  // Its listeners and watchers start with the first panel: a sheet never opened sets up none.
+  const live = effectScope()
+  let started = false
+  function start() {
+    started = true
+    live.run(() => {
+      watch(
+        activeSnap,
+        (id) => {
+          if (ownWrite || isDragging.value) return
+          const point = points().find((candidate) => candidate.id === id)
+          if (point) moveTo(offsetFor(point), !reducedMotion())
+        },
+        { flush: 'sync' },
+      )
+      useEventListener(options.handleEl, 'pointerdown', onHandlePointerDown)
+      useEventListener(options.contentEl, 'pointerdown', onContentPointerDown)
+      useEventListener(options.contentEl, 'touchstart', onContentTouchStart, { passive: true })
+      // Not passive: it has to be able to cancel the browser's own scroll.
+      useEventListener(options.contentEl, 'touchmove', onContentTouchMove, { passive: false })
+      useEventListener(options.panelEl, 'pointermove', onPointerMove)
+      useEventListener(options.panelEl, 'pointerup', onPointerUp)
+      useEventListener(options.panelEl, 'pointercancel', onPointerCancel)
+      // Capture lost mid-drag (the panel left, or the browser took it): settle as a cancel.
+      useEventListener(options.panelEl, 'lostpointercapture', onPointerCancel)
+      // Only while open: a closed sheet costs nothing.
+      useEventListener(
+        () =>
+          typeof window === 'undefined' || !active.value
+            ? undefined
+            : (window.visualViewport ?? window),
+        'resize',
+        onAreaResize,
+      )
+      useResizeObserver(
+        () => (active.value ? (toValue(options.bounds) ?? undefined) : undefined),
+        onAreaResize,
+      )
+    })
+  }
+  // A panel that mounts as it opens (or is there at mount) rests at its snap point before it shows.
+  watch(
+    options.panelEl,
+    (panel) => {
+      if (!panel) return
+      if (!started) start()
+      if (toValue(active)) reset()
+    },
+    { flush: 'sync', immediate: true },
   )
 
   /** Back to where it rests (a refused dismiss springs back from where it was let go). */
