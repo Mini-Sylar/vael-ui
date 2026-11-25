@@ -1,6 +1,8 @@
 import { nextTick, onMounted, onScopeDispose, shallowRef } from 'vue'
 import type { ShallowRef } from 'vue'
 import { prefersReducedMotion } from './dom'
+import { injectDefaults } from '../config'
+import { motionOffAt } from '../motion/styleHolder'
 
 export type ColorSchemeMode = 'system' | 'light' | 'dark'
 
@@ -17,9 +19,9 @@ export interface UseColorSchemeOptions {
 export interface ColorSchemeRevealOptions {
   /** Where the new scheme spreads from: the click or tap, an element's centre, or a point. */
   from: Event | Element | { x: number; y: number }
-  /** @default 500 */
+  /** How long the circle takes to cover the page, in ms. Defaults to the `--ui-duration-drawer` token (500 ms). */
   duration?: number
-  /** @default 'cubic-bezier(0.32, 0.72, 0, 1)' */
+  /** The circle's CSS easing. Defaults to the `--ui-ease-drawer` token (`cubic-bezier(0.32, 0.72, 0, 1)`). */
   easing?: string
 }
 
@@ -28,10 +30,15 @@ export interface UseColorSchemeReturn {
   resolvedMode: ShallowRef<'light' | 'dark'>
   /**
    * Switches the scheme. With `reveal`, the new one spreads in a circle from `reveal.from` (a View
-   * Transition); browsers without View Transitions, and reduced motion, switch at once.
+   * Transition). Your own CSS animation on `::view-transition-old(root)` or
+   * `::view-transition-new(root)` replaces the circle. Browsers without View Transitions, reduced
+   * motion and a ConfigProvider with `motion: false` switch at once.
    */
   setMode: (mode: ColorSchemeMode, reveal?: ColorSchemeRevealOptions) => void
 }
+
+const OLD = '::view-transition-old(root)'
+const NEW = '::view-transition-new(root)'
 
 type ViewTransitionDocument = Document & {
   startViewTransition?: (update: () => Promise<void> | void) => { ready: Promise<void> }
@@ -51,6 +58,34 @@ function revealPoint(from: ColorSchemeRevealOptions['from']): { x: number; y: nu
     return { x: innerWidth / 2, y: innerHeight / 2 }
   }
   return from
+}
+
+// The element the reveal starts on: its ConfigProvider's motion setting and tokens apply.
+function revealSource(from: ColorSchemeRevealOptions['from']): Element {
+  const candidates =
+    from instanceof Element
+      ? [from]
+      : from instanceof Event
+        ? [from.currentTarget, from.target]
+        : [document.elementFromPoint(from.x, from.y)]
+  return candidates.find((el) => el instanceof Element) ?? document.documentElement
+}
+
+// The browser's own View Transition animations (the crossfade), not the page's.
+const fromBrowser = (animation: Animation) =>
+  animation instanceof CSSAnimation && animation.animationName.startsWith('-ua-')
+
+// The drawer's motion tokens where the reveal starts, so a theme or ConfigProvider retimes it.
+function revealTiming(el: Element, reveal: ColorSchemeRevealOptions) {
+  const style = getComputedStyle(el)
+  const token = style.getPropertyValue('--ui-duration-drawer').trim()
+  const ms = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000)
+  return {
+    duration: reveal.duration ?? (Number.isNaN(ms) ? 500 : ms),
+    easing:
+      reveal.easing ??
+      (style.getPropertyValue('--ui-ease-drawer').trim() || 'cubic-bezier(0.32, 0.72, 0, 1)'),
+  }
 }
 
 type SchemeState = {
@@ -76,6 +111,7 @@ export function useColorScheme(options: UseColorSchemeOptions = {}): UseColorSch
     }
   }
   const { mode, resolvedMode } = typeof window === 'undefined' ? create() : (shared ??= create())
+  const defaults = injectDefaults()
 
   function apply() {
     if (mode.value === 'system') {
@@ -91,7 +127,12 @@ export function useColorScheme(options: UseColorSchemeOptions = {}): UseColorSch
     mode.value = next
     options.persist?.set(next === 'system' ? null : next)
     const doc = document as ViewTransitionDocument
-    if (!reveal || !doc.startViewTransition || prefersReducedMotion()) {
+    const source = reveal && revealSource(reveal.from)
+    const quiet =
+      !source || prefersReducedMotion() || defaults?.value.motion === false || motionOffAt(source)
+    const timing = reveal && !quiet ? revealTiming(source, reveal) : undefined
+    // Without View Transitions, or at zero duration (motion tokens turned off), it switches at once.
+    if (!reveal || !timing || !(timing.duration > 0) || !doc.startViewTransition) {
       apply()
       return
     }
@@ -102,19 +143,18 @@ export function useColorScheme(options: UseColorSchemeOptions = {}): UseColorSch
       await nextTick()
     })
     void transition.ready.then(() => {
-      // Drop the default crossfade, so the new scheme only shows inside the growing circle.
-      for (const animation of document.getAnimations()) {
-        const pseudo = (animation.effect as KeyframeEffect | null)?.pseudoElement
-        if (pseudo === '::view-transition-old(root)' || pseudo === '::view-transition-new(root)')
-          animation.cancel()
-      }
+      const root = document
+        .getAnimations()
+        .filter((animation) =>
+          [OLD, NEW].includes((animation.effect as KeyframeEffect | null)?.pseudoElement ?? ''),
+        )
+      // The page animates these in its own CSS: that plays instead of the circle.
+      if (!root.every(fromBrowser)) return
+      // Drop the browser's crossfade, so the new scheme only shows inside the growing circle.
+      for (const animation of root) animation.cancel()
       document.documentElement.animate(
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-        {
-          duration: reveal.duration ?? 500,
-          easing: reveal.easing ?? 'cubic-bezier(0.32, 0.72, 0, 1)',
-          pseudoElement: '::view-transition-new(root)',
-        },
+        { ...timing, pseudoElement: NEW },
       )
     })
   }
