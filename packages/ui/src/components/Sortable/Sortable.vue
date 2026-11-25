@@ -108,6 +108,7 @@ import type { SortableMotion } from '../../motion/types'
 import { useMessages, sortableMessages } from '../../messages'
 import { useSortable } from '../../composables/useSortable'
 import { moveTreeNode } from '../../composables/useSortable'
+import { findScrollParent } from '../../composables/sortableAutoScroll'
 import type {
   DropPosition,
   FlatSortableRow,
@@ -382,7 +383,8 @@ function restingSize(item: T) {
   return props.axis === 'x' ? { inlineSize: `${size}px` } : { blockSize: `${size}px` }
 }
 let watcher: IntersectionObserver | undefined
-const watched = new WeakSet<Element>()
+let watched = new WeakSet<Element>()
+let watcherRoot: Element | null = null
 function onSight(entries: IntersectionObserverEntry[]) {
   for (const entry of entries) {
     const key = (entry.target as HTMLElement).dataset.value
@@ -419,8 +421,16 @@ watch(
       watcher = undefined
       return
     }
-    // Rows a screen away render ahead, so a scroll or an autoscroll never shows a blank one.
-    watcher ??= new IntersectionObserver(onSight, { rootMargin: '100% 100%' })
+    // Rows a screen away render ahead, measured on what scrolls the list now: a column clips first.
+    const scroller = findScrollParent(root.value, props.axis)
+    const box = scroller === document.scrollingElement ? null : scroller
+    if (watcher && box !== watcherRoot) {
+      watcher.disconnect()
+      watcher = undefined
+      watched = new WeakSet()
+    }
+    watcherRoot = box
+    watcher ??= new IntersectionObserver(onSight, { root: box, rootMargin: '100% 100%' })
     for (const row of root.value.querySelectorAll('[data-sortable-item]'))
       if (!watched.has(row)) {
         watched.add(row)

@@ -158,6 +158,8 @@
   .ui-sortable-item[data-sortable-resting] {
     box-sizing: border-box;
     overflow: hidden;
+    /* Its size is a flex basis; a list squeezed by its scroller would shrink it to nothing. */
+    flex-shrink: 0;
   }
 
   .ui-sortable-content {

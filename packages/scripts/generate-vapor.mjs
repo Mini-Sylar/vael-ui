@@ -55,6 +55,7 @@ const PER_BUILD_MODULES = new Set([
   'composables/componentHaptic',
   'composables/lazyParts',
   'composables/sortableSettle',
+  'composables/sortableAutoScroll',
   'composables/loaderType',
   'composables/numberParts',
   'composables/useTextOverlay',
