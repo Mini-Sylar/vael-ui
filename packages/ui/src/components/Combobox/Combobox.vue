@@ -112,7 +112,7 @@
     </template>
   </Input>
 
-  <Teleport :to="teleportTo">
+  <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
@@ -140,8 +140,27 @@
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
             <slot name="header" :count="filteredItems.length" :total="options.length" />
           </div>
+          <!-- v-memo: this component re-renders as you type and as the panel is placed; the list only with its own inputs. -->
           <SelectListBody
             ref="listBody"
+            v-memo="[
+              listItems,
+              listSections,
+              virtualizeConfig,
+              effectiveOverscan,
+              listUi,
+              listboxId,
+              multiple,
+              loading,
+              scrollFade,
+              !!props.motion,
+              messages.combobox.empty,
+              $slots.item,
+              $slots.create,
+              showCreateRow,
+              $slots['group-label'],
+              $slots.empty,
+            ]"
             :items="listItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
@@ -152,22 +171,18 @@
             :loading="loading"
             :empty-text="messages.combobox.empty"
             :item-size="virtualizeConfig?.itemSize"
+            :windowed="!!virtualizeConfig"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
             :motion="!!props.motion"
             :sections="listSections"
-            :ui="{
-              list: themedUi()?.list,
-              option: themedUi()?.option,
-              empty: themedUi()?.empty,
-              group: themedUi()?.group,
-              groupLabel: themedUi()?.groupLabel,
-            }"
+            :ui="listUi"
             @select="(item: T, index: number) => selectItem(item, index)"
             @hover="point"
             @reach-end="emit('reach-end')"
           >
-            <template #item="slotProps">
+            <!-- Passed only when a row needs it: without it the list draws its lean default rows. -->
+            <template v-if="$slots.item || $slots.create || showCreateRow" #item="slotProps">
               <slot
                 v-if="isCreateRow(slotProps.item)"
                 name="create"
@@ -192,30 +207,8 @@
                 </svg>
                 <span class="ui-select-option-label">{{ createLabel }}</span>
               </slot>
-              <slot v-else name="item" v-bind="slotProps" :query="trimmedQuery">
-                <span class="ui-select-option-label">{{ slotProps.item.label }}</span>
-                <!-- No `appear`: only a pick on a row already showing draws it in (shared/tick.css). -->
-                <Transition name="ui-tick">
-                  <svg
-                    v-if="slotProps.selected"
-                    class="ui-select-option-check ui-tick"
-                    viewBox="0 0 16 16"
-                    width="14"
-                    height="14"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M3.5 8.5l3 3 6-7"
-                      pathLength="1"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </Transition>
-              </slot>
+              <!-- No `#item` slot: this renders nothing, and the list draws its own row. -->
+              <slot v-else-if="$slots.item" name="item" v-bind="slotProps" :query="trimmedQuery" />
             </template>
             <template v-if="$slots['group-label']" #group-label="slotProps">
               <slot name="group-label" v-bind="slotProps" />
@@ -833,6 +826,20 @@ const {
 
 // Held in a stable object, with the active id written to the element: a highlight move re-renders nothing here.
 const highlight = { current: activeIndex }
+// The panel's Teleport and Transition wait for the first open; closed, it skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
+// One object while its parts stay the same: the list is only handed a new one when they change.
+const listUi = computed(() => {
+  const ui = themedUi()
+  return {
+    list: ui?.list,
+    option: ui?.option,
+    empty: ui?.empty,
+    group: ui?.group,
+    groupLabel: ui?.groupLabel,
+  }
+})
 useActiveDescendant(
   () => inputEl.value,
   () => (open.value ? activeId.value : undefined),

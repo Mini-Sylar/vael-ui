@@ -121,7 +121,7 @@
     </span>
   </div>
 
-  <Teleport :to="teleportTo">
+  <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
@@ -195,8 +195,25 @@
               </Input>
             </slot>
           </div>
+          <!-- v-memo: this component re-renders as the panel is placed; the list only with its own inputs. -->
           <SelectListBody
             ref="listBody"
+            v-memo="[
+              filteredItems,
+              hasGroups && filtered.sections,
+              virtualizeConfig,
+              effectiveOverscan,
+              listUi,
+              listboxId,
+              multiple,
+              loading,
+              scrollFade,
+              !!props.motion,
+              messages.select.empty,
+              $slots.item,
+              $slots['group-label'],
+              $slots.empty,
+            ]"
             :items="filteredItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
@@ -207,17 +224,12 @@
             :loading="loading"
             :empty-text="messages.select.empty"
             :item-size="virtualizeConfig?.itemSize"
+            :windowed="!!virtualizeConfig"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
             :motion="!!props.motion"
             :sections="hasGroups ? filtered.sections : undefined"
-            :ui="{
-              list: themedUi()?.list,
-              option: themedUi()?.option,
-              empty: themedUi()?.empty,
-              group: themedUi()?.group,
-              groupLabel: themedUi()?.groupLabel,
-            }"
+            :ui="listUi"
             @select="(item: T, index: number) => selectItem(item, index)"
             @hover="point"
             @reach-end="emit('reach-end')"
@@ -716,6 +728,20 @@ const {
 
 // Held in a stable object, with the active id written to the element: a highlight move re-renders nothing here.
 const highlight = { current: activeIndex }
+// The panel's Teleport and Transition wait for the first open; closed, it skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
+// One object while its parts stay the same: the list is only handed a new one when they change.
+const listUi = computed(() => {
+  const ui = themedUi()
+  return {
+    list: ui?.list,
+    option: ui?.option,
+    empty: ui?.empty,
+    group: ui?.group,
+    groupLabel: ui?.groupLabel,
+  }
+})
 useActiveDescendant(
   () => controlEl.value,
   () => (open.value && !props.filter ? activeId.value : undefined),

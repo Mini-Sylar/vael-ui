@@ -10,6 +10,9 @@
     :aria-multiselectable="multiple || undefined"
     :aria-busy="loading || undefined"
     v-scroll-mask="scrollFade"
+    @mousemove="onListMove"
+    @mousedown="onListDown"
+    @click="onListClick"
   >
     <div ref="indicatorEl" class="ui-indicator ui-select-indicator" aria-hidden="true" />
     <div v-if="items.length === 0 && !loading" :class="emptyPart.class" :style="emptyPart.style">
@@ -19,18 +22,18 @@
       <LoaderMark />
       <span class="ui-select-loading-label">{{ messages.select.loading }}</span>
     </div>
-    <!-- Grouped: real role="group" wrappers, so screen readers announce each group's name. Rows
-         aren't evenly spaced here, so every option renders and scrolls into view by itself. Keyed
-         by label and value, so a search keeps each group and option on its own element, which
-         animations that track elements rely on. -->
-    <template v-else-if="sections">
+    <!-- One run of options, or one per group. Grouped: real role="group" wrappers, so screen readers
+         announce each group's name, keyed by label and value, so a search keeps each group and
+         option on its own element, which animations that track elements rely on. Windowed: the
+         rows in view, each placed in a box as tall as the whole list, saying its place in it. -->
+    <template v-else>
       <div
-        v-for="(section, si) in sections"
-        :key="section.label ?? `loose-${section.start}`"
+        v-for="(section, si) in runs"
+        :key="section.label ?? (windowed ? 'window' : `loose-${section.start}`)"
         :role="section.label ? 'group' : undefined"
         :aria-labelledby="section.label ? `${listboxId}-group-${si}` : undefined"
         :class="section.label ? groupPart.class : undefined"
-        :style="section.label ? groupPart.style : undefined"
+        :style="windowed ? listStyle : section.label ? groupPart.style : undefined"
       >
         <div
           v-if="section.label"
@@ -51,19 +54,24 @@
         <div
           v-for="index in sectionIndexes(section)"
           :id="`${listboxId}-opt-${index}`"
-          :key="items[index]!.value ?? NULL_KEY"
+          :key="keyOf(index)"
           role="option"
           :class="optionPart.class"
+          :data-virtual-index="windowed ? index : undefined"
           :data-selected="isSelected(items[index]) || undefined"
           :data-disabled="items[index]?.disabled || undefined"
           :aria-selected="isSelected(items[index])"
           :aria-disabled="items[index]?.disabled || undefined"
-          :style="optionPart.style"
-          @mousemove="onRowHover(index)"
-          @mousedown.prevent
-          @click="onRowClick(index)"
+          :aria-setsize="windowed ? items.length : undefined"
+          :aria-posinset="windowed ? index + 1 : undefined"
+          :style="
+            windowed
+              ? [virtualRows[index - section.start]?.style, optionPart.style]
+              : optionPart.style
+          "
         >
           <slot
+            v-if="$slots.item"
             name="item"
             :item="items[index]"
             :index="index"
@@ -72,7 +80,6 @@
             :group="section.group"
           >
             <span class="ui-select-option-label">{{ getLabel(items[index]) }}</span>
-            <!-- No `appear`: only a pick on a row already showing draws it in (shared/tick.css). -->
             <Transition name="ui-tick">
               <svg
                 v-if="isSelected(items[index])"
@@ -94,45 +101,11 @@
               </svg>
             </Transition>
           </slot>
-        </div>
-      </div>
-      <div v-if="loading" class="ui-select-loading-more" aria-hidden="true">
-        <LoaderMark />
-      </div>
-    </template>
-    <!-- Each option says its place in the whole list, which a long list renders only part of. -->
-    <template v-else>
-      <div :style="listStyle">
-        <div
-          v-for="row in virtualRows"
-          :id="`${listboxId}-opt-${row.index}`"
-          :key="row.index"
-          role="option"
-          :class="optionPart.class"
-          :data-virtual-index="row.index"
-          :data-selected="isSelected(items[row.index]) || undefined"
-          :data-disabled="items[row.index]?.disabled || undefined"
-          :aria-selected="isSelected(items[row.index])"
-          :aria-disabled="items[row.index]?.disabled || undefined"
-          :aria-setsize="items.length"
-          :aria-posinset="row.index + 1"
-          :style="[row.style, optionPart.style]"
-          @mousemove="onRowHover(row.index)"
-          @mousedown.prevent
-          @click="onRowClick(row.index)"
-        >
-          <slot
-            name="item"
-            :item="items[row.index]"
-            :index="row.index"
-            :active="trackActive && row.index === props.highlight.current.value"
-            :selected="isSelected(items[row.index])"
-          >
-            <span class="ui-select-option-label">{{ getLabel(items[row.index]) }}</span>
-            <!-- No `appear`: only a pick on a row already showing draws it in (shared/tick.css). -->
-            <Transition name="ui-tick">
+          <template v-else-if="tickOf(keyOf(index), isSelected(items[index]))">
+            <span class="ui-select-option-label">{{ getLabel(items[index]) }}</span>
+            <Transition name="ui-tick" :appear="drawn.has(keyOf(index))">
               <svg
-                v-if="isSelected(items[row.index])"
+                v-if="isSelected(items[index])"
                 class="ui-select-option-check ui-tick"
                 viewBox="0 0 16 16"
                 width="14"
@@ -150,7 +123,8 @@
                 />
               </svg>
             </Transition>
-          </slot>
+          </template>
+          <span v-else class="ui-select-option-label">{{ getLabel(items[index]) }}</span>
         </div>
       </div>
       <div v-if="loading" class="ui-select-loading-more" aria-hidden="true">
@@ -213,15 +187,13 @@ export interface SelectListSection<T extends SelectChoice = SelectItemData> {
   Chromium makes any scrollable box keyboard-focusable, which would put an
   overflowing list into the Tab order right after the trigger.
 
-  ALWAYS runs `useVirtualizer`, even when the "virtualize" prop the consumer
-  sees is off: a non-virtualized list is just a windowed one whose window
-  covers every row (`overscan` passed large enough to never clip). This
-  keeps exactly one code path for windowing/positioning/reach-end instead of
-  two, and produces an identical DOM/visual result either way — the row
-  wrapper's `translate` positioning is invisible to the user, "virtualize"
-  only ever changes how many rows exist in the DOM at once. Deliberate
-  simplification over maintaining a second plain-scroll reach-end listener
-  for the non-virtualized path, flagged here for review.
+  Two ways to draw the rows. Windowed (`windowed`, a long list): `useVirtualizer` renders the rows
+  in view, each placed with `translate`. Otherwise every row renders in normal flow, grouped or
+  not: no row carries a style, and nothing is measured to place them.
+
+  A row is its label alone. The tick, with its Transition, exists only on rows that are or were
+  picked, and a pick on a row already showing draws it in (shared/tick.css). A custom `#item` row
+  that renders nothing shows the label and tick as it would without the slot.
 
   Comment stays outside <template> — see Button.vue for why.
 -->
@@ -230,7 +202,7 @@ import '../shared/loader-spinner.css'
 import LoaderMark from './LoaderMark.vue'
 import { useMessages, selectMessages } from '../../messages'
 import '../shared/tick.css'
-import { computed, useTemplateRef, watchPostEffect } from 'vue'
+import { computed, useTemplateRef, watch, watchPostEffect } from 'vue'
 import type { Ref } from 'vue'
 import { useEasedHeight } from '../../composables/useEasedHeight'
 import { useVirtualizer } from '../../composables/useVirtualizer'
@@ -259,8 +231,9 @@ const props = defineProps<{
   emptyText: string
   /** px. Omitted → auto-measured from the first rendered row. */
   itemSize?: number
-  /** Large enough (≥ items.length) effectively disables windowing — the
-   * "not virtualized" case is just an overscan that never clips. */
+  /** Renders only the rows in view. Off, or with `sections`, every row renders in normal flow. */
+  windowed?: boolean
+  /** Rows kept rendered past each edge of the view while `windowed`. */
   overscan: number
   scrollFade?: boolean
   /** Eases the list to its new height when its options change, as CommandPalette does. */
@@ -284,6 +257,29 @@ const groupPart = computed(() => resolveUiPart(cx, props.ui?.group, 'ui-select-g
 const groupLabelPart = computed(() =>
   resolveUiPart(cx, props.ui?.groupLabel, 'ui-select-group-label'),
 )
+
+const windowed = computed(() => !!props.windowed && !props.sections)
+// The groups, or one run: every option, or while windowed the rows in view.
+const runs = computed<readonly SelectListSection<T>[]>(() => {
+  if (props.sections) return props.sections
+  if (!windowed.value) return [{ start: 0, end: props.items.length }]
+  const rows = virtualRows.value
+  return [{ start: rows[0]?.index ?? 0, end: rows.length ? rows[rows.length - 1]!.index + 1 : 0 }]
+})
+// Grouped rows are keyed by value; a plain run by position, as windowed rows are.
+const keyOf = (index: number) => (props.sections ? (props.items[index]!.value ?? NULL_KEY) : index)
+
+// A tick's Transition exists only on rows that are, or were, selected: most rows never need one.
+const ticks = new Set<unknown>()
+const tickOf = (key: unknown, selected: boolean) =>
+  selected ? (ticks.add(key), true) : ticks.has(key)
+// The rows already on the page: a pick on one of them draws its tick in, a new row shows it at once.
+const drawn = new Set<unknown>()
+watchPostEffect(() => {
+  drawn.clear()
+  if (windowed.value) for (const row of virtualRows.value) drawn.add(row.index)
+  else for (let index = 0; index < props.items.length; index++) drawn.add(keyOf(index))
+})
 
 function sectionIndexes(section: SelectListSection<T>): number[] {
   return Array.from({ length: section.end - section.start }, (_, i) => section.start + i)
@@ -331,6 +327,7 @@ watchPostEffect(() => {
   const list = listEl.value
   if (!list) return
   void virtualRows.value
+  void props.items
   void props.sections
   const id = `${props.listboxId}-opt-${props.highlight.current.value}`
   for (const row of list.querySelectorAll('[role="option"][data-active]'))
@@ -363,27 +360,44 @@ const {
   scrollToIndex,
 } = useVirtualizer({
   containerEl: listEl,
-  count: () => props.items.length,
+  count: () => (windowed.value ? props.items.length : 0),
   itemSize: () => props.itemSize,
   overscan: () => props.overscan,
   onReachEnd: () => emit('reach-end'),
 })
 
-function onRowHover(index: number) {
-  if (props.items[index]?.disabled) return
-  emit('hover', index)
+// Every row is there, so the end is reached as soon as there are rows, and again when they change.
+watch(
+  () => (windowed.value ? 0 : props.items.length),
+  (count) => count && emit('reach-end'),
+  { immediate: true },
+)
+
+// One listener of each kind on the list, not three on every row.
+function rowAt(event: Event): number {
+  const prefix = `${props.listboxId}-opt-`
+  const row = (event.target as Element).closest?.(`[id^="${prefix}"]`)
+  return row ? Number(row.id.slice(prefix.length)) : -1
 }
-function onRowClick(index: number) {
+function onListMove(event: MouseEvent) {
+  const index = rowAt(event)
+  if (index >= 0 && !props.items[index]?.disabled) emit('hover', index)
+}
+// A press on a row leaves focus where it is, on the trigger or the input.
+function onListDown(event: MouseEvent) {
+  if (rowAt(event) >= 0) event.preventDefault()
+}
+function onListClick(event: MouseEvent) {
+  const index = rowAt(event)
   const item = props.items[index]
-  if (!item || item.disabled) return
-  emit('select', item, index)
+  if (item && !item.disabled) emit('select', item, index)
 }
 
 defineExpose({
   listEl,
   indicatorEl,
   scrollToIndex: (index: number, align?: ScrollAlign) => {
-    if (!props.sections) return scrollToIndex(index, align)
+    if (windowed.value) return scrollToIndex(index, align)
     const row = listEl.value?.querySelector<HTMLElement>(`[id="${props.listboxId}-opt-${index}"]`)
     if (listEl.value && row) scrollIntoContainer(listEl.value, row, align)
   },
