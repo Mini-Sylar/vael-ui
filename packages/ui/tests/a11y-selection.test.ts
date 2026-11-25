@@ -79,6 +79,26 @@ test("TreeSelect: the tree is named by the Field's label, or by the trigger's ar
   await expect.element(screen.getByRole('tree', { name: 'Aisle' })).toBeInTheDocument()
 })
 
+for (const [name, Component] of [
+  ['Select', Select],
+  ['Combobox', Combobox],
+] as const) {
+  test(`${name}: the listbox is named by the Field's label, or by the aria-label`, async () => {
+    const screen = await render({
+      components: { Component, Field },
+      data: () => ({ items }),
+      template: `<Field label="Fruit"><Component :items="items" /></Field>
+        <Component :items="items" aria-label="Snack" />`,
+    })
+    const [inField, labelled] = screen.container.querySelectorAll<HTMLElement>('[role="combobox"]')
+    await userEvent.click(inField!)
+    await expect.element(screen.getByRole('listbox', { name: 'Fruit' })).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(labelled!)
+    await expect.element(screen.getByRole('listbox', { name: 'Snack' })).toBeInTheDocument()
+  })
+}
+
 test('CascadeSelect: the trigger is a menu button, not a combobox over a menu', async () => {
   const screen = await render({
     components: { CascadeSelect, Field },

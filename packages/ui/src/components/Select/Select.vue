@@ -213,7 +213,11 @@
               $slots.item,
               $slots['group-label'],
               $slots.empty,
+              listLabelledBy(),
+              listLabel(),
             ]"
+            :aria-labelledby="listLabelledBy()"
+            :aria-label="listLabel()"
             :items="filteredItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
@@ -358,6 +362,10 @@ const panelAttrs = useAttrListeners(
   () => panelEl.value,
   () => panelOwnAttrs.value,
 )
+// The listbox carries the field's name, as in the APG combobox examples.
+const listLabelledBy = () =>
+  (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
+const listLabel = () => (listLabelledBy() ? undefined : (attrs['aria-label'] as string | undefined))
 const triggerAttrs = computed(() =>
   fieldControl.own(Object.fromEntries(Object.entries(attrs).filter(([key]) => isTriggerAttr(key)))),
 )

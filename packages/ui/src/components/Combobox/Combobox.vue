@@ -160,7 +160,11 @@
               showCreateRow,
               $slots['group-label'],
               $slots.empty,
+              listLabelledBy(),
+              listLabel(),
             ]"
+            :aria-labelledby="listLabelledBy()"
+            :aria-label="listLabel()"
             :items="listItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
@@ -345,6 +349,10 @@ const panelOwnAttrs = computed(() =>
   ),
 )
 // Your `required` is checked on the selection (below), not on the typed text.
+// The listbox carries the field's name, as in the APG combobox examples.
+const listLabelledBy = () =>
+  (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
+const listLabel = () => (listLabelledBy() ? undefined : (attrs['aria-label'] as string | undefined))
 const inputAttrs = computed(() => {
   const { required: _required, ...rest } = attrs
   return rest
