@@ -76,10 +76,6 @@ function measureBars(el: HTMLElement) {
   el.style.setProperty('--ui-scroll-bar-x', `${hidden ? 0 : Math.max(x, 0)}px`)
 }
 
-// vael-ui's sliding highlights: hidden from readers, positioned, never content.
-const isDecoration = (el: Element) =>
-  el.classList?.contains('ui-indicator') && el.getAttribute('aria-hidden') === 'true'
-
 // A sliding highlight (a positioned, aria-hidden decoration) swinging past the end isn't content to
 // scroll to: it doesn't make the box scroll, or fade its edges mid-glide. Measured by the rest.
 function overflowsX(el: HTMLElement): boolean {
@@ -123,13 +119,14 @@ function start(el: HTMLElement, axis: ScrollMaskAxis) {
     check(el, axis)
     return
   }
-  const observer = new ResizeObserver(() => check(el, state.get(el)?.axis ?? axis))
+  const observer = new ResizeObserver(() => check(el, entry.axis))
   // One check per frame, so a list that re-renders while scrolling adds no extra layout.
   const mutations = new MutationObserver((records) => {
     // New children are watched for size too.
     if (records.some((r) => r.type === 'childList' && r.target === el)) watchChildren()
-    // A decoration moving, such as a sliding highlight, changes nothing that scrolls.
-    if (records.every((r) => r.type === 'attributes' && isDecoration(r.target as Element))) return
+    // vael-ui's sliding highlight (an aria-hidden, positioned decoration) moving changes nothing
+    // that scrolls.
+    if (records.every((r) => (r.target as Element).classList?.contains('ui-indicator'))) return
     if (entry.frame) return
     entry.frame = requestAnimationFrame(() => {
       entry.frame = 0
@@ -163,12 +160,14 @@ function start(el: HTMLElement, axis: ScrollMaskAxis) {
 
 function stop(el: HTMLElement) {
   const entry = state.get(el)
-  entry?.observer.disconnect()
-  entry?.mutations.disconnect()
-  if (entry?.frame) cancelAnimationFrame(entry.frame)
-  if (entry?.onScroll) {
-    el.removeEventListener('scroll', entry.onScroll)
-    for (const property of FADE_PROPERTIES) el.style.removeProperty(property)
+  if (entry) {
+    entry.observer.disconnect()
+    entry.mutations.disconnect()
+    cancelAnimationFrame(entry.frame)
+    if (entry.onScroll) {
+      el.removeEventListener('scroll', entry.onScroll)
+      for (const property of FADE_PROPERTIES) el.style.removeProperty(property)
+    }
   }
   state.delete(el)
   el.classList.remove('scroll-fade', 'scroll-fade-x', 'scroll-fade-manual')
