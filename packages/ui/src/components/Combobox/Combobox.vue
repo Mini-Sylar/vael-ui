@@ -1022,9 +1022,10 @@ const effectiveOverscan = computed(() =>
     : listItems.value.length,
 )
 
-const panelMaxHeightStyle = computed(() =>
-  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},
-)
+// Capped from its first layout: before it's placed, a long list would lay out at its full height.
+const panelMaxHeightStyle = computed(() => ({
+  maxHeight: `${maxHeight.value ?? props.maxPanelHeight}px`,
+}))
 
 const innerUi = computed(() => ({
   root: resolveUiPart(
