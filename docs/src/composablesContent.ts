@@ -1150,7 +1150,7 @@ export function shake(el: Element) {
   },
   useDragSelect: {
     description:
-      "Drag across empty space in a box and everything the band touches is selected. The box's children are the items, by their position among them, so a `v-for` list needs no selectors or attributes. Shift adds to the selection, ctrl or cmd toggles, a click on empty space clears it, and Escape during a drag puts it back. Near an edge of whatever scrolls, it scrolls and the band grows with it. A mouse or a pen draws the band at once. A touch has to press and hold first, then drag, so a swipe still scrolls. It is pointer only, so pair it with checkboxes or keys for everyone else.",
+      "Drag across empty space in a box and everything the band touches is selected. The box's children are the items, by their position among them, so a `v-for` list needs no selectors or attributes. When the items sit deeper, such as cards in a board's columns, pass `items` a CSS selector. Shift adds to the selection, ctrl or cmd toggles, a click on empty space clears it, and Escape during a drag puts it back. Near an edge of whatever scrolls, it scrolls and the band grows with it. A mouse or a pen draws the band at once. A touch has to press and hold first, then drag, so a swipe still scrolls. It is pointer only, so pair it with checkboxes or keys for everyone else.",
     installNames: ['useDragSelect'],
     hasLiveDemo: true,
     params: [
@@ -1164,6 +1164,12 @@ export function shake(el: Element) {
         name: 'options.disabled',
         type: 'MaybeRefOrGetter<boolean>',
         description: 'Ignores the pointer.',
+      },
+      {
+        name: 'options.items',
+        type: 'MaybeRefOrGetter<string>',
+        description:
+          "A CSS selector for the items at any depth in the box, for example the cards in a board's columns. Pressing an item doesn't start a band, and an item scrolled out of view in its column isn't selected. Default: the box's children.",
       },
       {
         name: 'options.spring',
@@ -1195,7 +1201,7 @@ export function shake(el: Element) {
         name: 'selected',
         type: 'Ref<number[]>',
         description:
-          "The items the band holds, by position among the box's children. Set it to select from code.",
+          "The selected items, by position among the box's children, or among the `items` matches in document order. Set it to select from code.",
       },
       {
         name: 'clear()',

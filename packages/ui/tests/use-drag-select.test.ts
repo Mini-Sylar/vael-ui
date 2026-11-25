@@ -181,3 +181,66 @@ test('while a touch is held the page does not scroll under it', async () => {
   window.dispatchEvent(after)
   expect(after.defaultPrevented).toBe(false)
 })
+
+// A board: two 100 px columns, each a scroller of 50 px cards three levels down.
+function board() {
+  const box = document.createElement('div')
+  box.style.cssText = 'display: flex; gap: 20px; padding: 20px; margin: 20px; width: 300px'
+  for (let c = 0; c < 2; c++) {
+    const column = document.createElement('section')
+    column.style.cssText = 'width: 100px; height: 130px; overflow-y: auto'
+    const list = document.createElement('ul')
+    list.style.cssText = 'margin: 0; padding: 0; list-style: none'
+    for (let i = 0; i < 4; i++) {
+      const card = document.createElement('li')
+      card.className = 'card'
+      card.style.cssText = 'height: 50px; margin-bottom: 10px'
+      list.append(card)
+    }
+    column.append(list)
+    box.append(column)
+  }
+  document.body.append(box)
+  let select!: UseDragSelectReturn
+  const scope = effectScope()
+  scopes.push(scope)
+  scope.run(() => {
+    select = useDragSelect({ el: shallowRef(box), items: '.card' })
+  })
+  const at = (x: number, y: number) => {
+    const r = box.getBoundingClientRect()
+    return { clientX: r.left + x, clientY: r.top + y, bubbles: true, pointerId: 1, button: 0 }
+  }
+  const drag = (from: EventTarget, a: [number, number], b: [number, number]) => {
+    from.dispatchEvent(new PointerEvent('pointerdown', at(...a)))
+    window.dispatchEvent(new PointerEvent('pointermove', at(...b)))
+    window.dispatchEvent(new PointerEvent('pointerup', at(...b)))
+  }
+  return { box, select, drag, cards: [...box.querySelectorAll('.card')] }
+}
+
+test('items: cards deep inside columns are hit, across columns, in document order', () => {
+  const { box, select, drag } = board()
+  // From the column's own empty space is fine too; here from the board's padding.
+  drag(box, [5, 5], [180, 90])
+  // Column 1: cards 0 and 1 (0–50, 60–110); column 2: cards 4 and 5.
+  expect(select.selected.value).toEqual([0, 1, 4, 5])
+})
+
+test('items: a press on a card is the card’s own, a press in a column’s empty space starts a band', () => {
+  const { select, drag, cards, box } = board()
+  drag(cards[0]!, [30, 30], [180, 80])
+  expect(select.isDragging.value).toBe(false)
+  expect(select.selected.value).toEqual([])
+  // Between cards 1 and 2, down onto the strip of card 2 still in view.
+  drag(box.querySelector('ul')!, [30, 135], [60, 145])
+  expect(select.selected.value).toEqual([2])
+})
+
+test('items: a card scrolled out of its column is not selected', () => {
+  const { box, select, drag } = board()
+  // Below both columns (they end at 150): cards 2 and 3 sit there, clipped.
+  box.style.height = '260px'
+  drag(box, [5, 155], [250, 255])
+  expect(select.selected.value).toEqual([])
+})

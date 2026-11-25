@@ -10,7 +10,8 @@ import { DRAG_THRESHOLD, gestureSprings } from './gesture'
 import { AUTO_SCROLL_EDGE, AUTO_SCROLL_MAX_SPEED, findScrollParent } from './sortableAutoScroll'
 
 // A drag-select band: drag across empty space in a box and everything it touches is selected. The
-// box's children are the items (the same convention as useWheel), by their position among them.
+// box's children are the items (the same convention as useWheel), or what `items` matches inside it,
+// by their position among them.
 // A mouse or pen draws it at once; a touch has to press and hold first, so a swipe still scrolls.
 
 /** How long a touch holds still before it starts a band, in ms. */
@@ -19,6 +20,12 @@ const HOLD = 350
 export interface UseDragSelectOptions {
   /** The box you drag in. Its children are the items; one with `pointer-events: none` isn't. */
   el: ElRef<HTMLElement | null>
+  /**
+   * A CSS selector for the items at any depth in the box, for example the cards in a board's
+   * columns. Pressing an item doesn't start a band, and an item scrolled out of view in its column
+   * isn't selected. Default: the box's children.
+   */
+  items?: MaybeRefOrGetter<string | undefined>
   /** Ignores the pointer. */
   disabled?: MaybeRefOrGetter<boolean>
   /**
@@ -48,7 +55,10 @@ export interface UseDragSelectReturn {
   stretch: Ref<{ x: number; y: number }>
   /** Whether a band is being drawn. */
   isDragging: Ref<boolean>
-  /** The items the band holds, by position among the box's children. Set it to select from code. */
+  /**
+   * The selected items, by position among the box's children, or among the `items` matches in
+   * document order. Set it to select from code.
+   */
   selected: Ref<number[]>
   /** Selects nothing. */
   clear: () => void
@@ -97,6 +107,33 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
     }
   }
   const isItem = (node: Element) => getComputedStyle(node).pointerEvents !== 'none'
+  const itemsOf = (box: HTMLElement) => {
+    const match = toValue(options.items)
+    return match ? [...box.querySelectorAll(match)] : [...box.children]
+  }
+  // What clips each item inside the box (a column that scrolls), found once per band.
+  let clips = new WeakMap<Element, Element[]>()
+  function shown(item: Element, box: HTMLElement): DOMRect | undefined {
+    let r = item.getBoundingClientRect()
+    if (!toValue(options.items)) return r
+    let around = clips.get(item)
+    if (!around) {
+      around = []
+      for (let up = item.parentElement; up && up !== box; up = up.parentElement)
+        if (getComputedStyle(up).overflow !== 'visible') around.push(up)
+      clips.set(item, around)
+    }
+    for (const clip of around) {
+      const c = clip.getBoundingClientRect()
+      const left = Math.max(r.left, c.left)
+      const top = Math.max(r.top, c.top)
+      const right = Math.min(r.right, c.right)
+      const bottom = Math.min(r.bottom, c.bottom)
+      if (right <= left || bottom <= top) return undefined
+      r = new DOMRect(left, top, right - left, bottom - top)
+    }
+    return r
+  }
 
   // Where the pointer is now, and the band's moving corner heading there (on a spring, or at once).
   function update() {
@@ -152,10 +189,10 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
     const r = box.getBoundingClientRect()
     const dx = r.left + box.clientLeft - box.scrollLeft
     const dy = r.top + box.clientTop - box.scrollTop
-    Array.from(box.children).forEach((child, i) => {
+    itemsOf(box).forEach((child, i) => {
       if (!isItem(child)) return
-      const b = child.getBoundingClientRect()
-      if (!b.width && !b.height) return
+      const b = shown(child, box)
+      if (!b || (!b.width && !b.height)) return
       const l = b.left - dx
       const t = b.top - dy
       if (l < left + w && l + b.width > left && t < top + h && t + b.height > top) hits.push(i)
@@ -210,10 +247,16 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
     if (!box || toValue(options.disabled) || pointerId !== null) return
     if (event.button !== 0) return
     // On an item, a drag is that item's own.
-    for (let node = event.target as Node | null; node && node !== box; node = node.parentNode)
-      if (node.parentNode === box && isItem(node as Element)) return
+    const match = toValue(options.items)
+    const target = event.target as Element
+    const on = match ? target.closest(match) : undefined
+    if (on && box.contains(on) && isItem(on)) return
+    if (!match)
+      for (let node: Node | null = target; node && node !== box; node = node.parentNode)
+        if (node.parentNode === box && isItem(node as Element)) return
     pointerId = event.pointerId
     committed = false
+    clips = new WeakMap()
     origin = { x: event.clientX, y: event.clientY }
     holding = event.pointerType === 'touch'
     last = { ...origin }
