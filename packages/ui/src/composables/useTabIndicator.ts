@@ -120,6 +120,7 @@ export function useTabIndicator(
   const springs = new Map<string, SpringHandle>()
   let springKey = ''
   let measuredOnce = false
+  let fontsLoaded: Promise<void> | undefined
   // Tracks whether a real match has ever been positioned, separately from
   // measuredOnce — lets the first real selection (from "nothing selected")
   // skip only the position/size transition, not the opacity fade.
@@ -131,6 +132,11 @@ export function useTabIndicator(
     const selector = toValue(options.selector) ?? '[role="tab"][aria-selected="true"]'
     const tab = list?.querySelector<HTMLElement>(selector)
     if (!list) return
+    // Asked once a list exists: each read of fonts.ready forces a style and layout pass.
+    fontsLoaded ??= document.fonts?.ready.then(() => {
+      measuredOnce = false
+      measure()
+    })
     // Only an indicator about to appear can be inside an ancestor that is still animating in.
     if (!hasAppeared) remeasureAfterAncestorTransitions(list)
     if (!tab) {
@@ -446,13 +452,6 @@ export function useTabIndicator(
         springKey = ''
       },
     )
-
-  if (typeof document !== 'undefined' && document.fonts) {
-    document.fonts.ready.then(() => {
-      measuredOnce = false
-      measure()
-    })
-  }
 
   // An ancestor still animating in can make measure() run mid-transition, so re-measure when it ends.
   const awaited = new WeakSet<Animation>()
