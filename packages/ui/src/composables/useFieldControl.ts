@@ -50,14 +50,13 @@ export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldC
   const ownId = useId()
   const attrs = useAttrs()
 
-  const filled = options.filled
-  if (filled !== undefined) {
-    watchEffect(() => ctx?.reportFilled(toValue(filled)))
-  }
-
-  const startInset = options.startInset
-  if (startInset !== undefined) {
-    watchEffect(() => ctx?.reportStartInset(toValue(startInset)))
+  // One watcher reports both, and only to a Field: outside one there's no one to tell.
+  const { filled, startInset } = options
+  if (ctx && (filled !== undefined || startInset !== undefined)) {
+    watchEffect(() => {
+      if (filled !== undefined) ctx.reportFilled(toValue(filled))
+      if (startInset !== undefined) ctx.reportStartInset(toValue(startInset))
+    })
   }
 
   const frame = options.frame

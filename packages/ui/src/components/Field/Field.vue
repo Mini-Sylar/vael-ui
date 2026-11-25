@@ -14,19 +14,19 @@
       <div v-if="$slots.prepend || $slots.append" :class="groupPart.class" :style="groupPart.style">
         <span
           v-if="$slots.prepend"
-          ref="prependEl"
+          :ref="prependCell.setEl"
           :class="prependPart.class"
           :style="prependPart.style"
-          :data-mixed="prependMixed || undefined"
+          :data-mixed="prependCell.mixed.value || undefined"
           @mousedown="onCellMousedown"
           ><FieldCellScope><slot name="prepend" /></FieldCellScope
         ></span>
         <slot />
         <span
           v-if="$slots.append"
-          ref="appendEl"
+          :ref="appendCell.setEl"
           :class="appendPart.class"
-          :data-mixed="appendMixed || undefined"
+          :data-mixed="appendCell.mixed.value || undefined"
           :style="appendPart.style"
           @mousedown="onCellMousedown"
           ><FieldCellScope><slot name="append" /></FieldCellScope
@@ -58,13 +58,12 @@ import '../../motion/timing.css'
 import {
   computed,
   onBeforeUnmount,
-  onMounted,
   provide,
   shallowRef,
   useId,
   useSlots,
   useTemplateRef,
-  watch,
+  watchEffect,
 } from 'vue'
 import { useSlotPresence } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -149,8 +148,6 @@ const filled = shallowRef(false)
 const startInset = shallowRef(0)
 // Framed controls register on mount; until then a joined Field assumes it has one.
 const frames = shallowRef<(() => string | undefined)[]>([])
-const mounted = shallowRef(false)
-onMounted(() => (mounted.value = true))
 
 const describedBy = computed(() => {
   const ids: string[] = []
@@ -184,23 +181,7 @@ provide<FieldContext>(fieldKey, {
 })
 
 // A float/inset label rests over the control, so it also clears a #prepend cell's width.
-const prependEl = useTemplateRef<HTMLElement>('prependEl')
 const prependWidth = shallowRef(0)
-let prependObserver: ResizeObserver | undefined
-watch(
-  prependEl,
-  (el) => {
-    prependObserver?.disconnect()
-    prependWidth.value = el ? el.offsetWidth : 0
-    if (!el) return
-    prependObserver = new ResizeObserver(() => {
-      prependWidth.value = el.offsetWidth
-    })
-    prependObserver.observe(el)
-  },
-  { immediate: true },
-)
-onBeforeUnmount(() => prependObserver?.disconnect())
 
 /** Children that take their own divided segment inside a Field #prepend/#append cell. */
 const FIELD_CELL_CONTROL = '[data-ui-frame], button, .ui-button'
@@ -243,29 +224,34 @@ function syncCell(cell: HTMLElement): boolean {
   return parts.length > 1 && parts.some((part) => part.control)
 }
 
-function useFieldCell(cell: () => HTMLElement | null): ShallowRef<boolean> {
+// A function ref, so a Field without cells sets up nothing for them.
+function useFieldCell(width?: ShallowRef<number>) {
   const mixed = shallowRef(false)
-  let observer: MutationObserver | undefined
-  watch(
-    cell,
-    (el) => {
-      observer?.disconnect()
-      mixed.value = el ? syncCell(el) : false
-      if (!el) return
-      observer = new MutationObserver(() => {
-        mixed.value = syncCell(el)
-      })
-      observer.observe(el, { childList: true, characterData: true, subtree: true })
-    },
-    { immediate: true },
-  )
-  onBeforeUnmount(() => observer?.disconnect())
-  return mixed
+  let cell: HTMLElement | null = null
+  let observers: { disconnect(): void }[] = []
+  const stop = () => observers.forEach((observer) => observer.disconnect())
+  onBeforeUnmount(stop)
+  function setEl(el: unknown) {
+    if (el === cell) return
+    stop()
+    const next = (cell = el as HTMLElement | null)
+    mixed.value = next ? syncCell(next) : false
+    // Called while it mounts, before it's in the page: its observer reports its width.
+    if (width && !next) width.value = 0
+    if (!next) return
+    const mutations = new MutationObserver(() => (mixed.value = syncCell(next)))
+    mutations.observe(next, { childList: true, characterData: true, subtree: true })
+    observers = [mutations]
+    if (!width) return
+    const resize = new ResizeObserver(() => (width.value = next.offsetWidth))
+    resize.observe(next)
+    observers.push(resize)
+  }
+  return { mixed, setEl }
 }
 
-const appendEl = useTemplateRef<HTMLElement>('appendEl')
-const prependMixed = useFieldCell(() => prependEl.value)
-const appendMixed = useFieldCell(() => appendEl.value)
+const prependCell = useFieldCell(prependWidth)
+const appendCell = useFieldCell()
 
 // A text or icon cell behaves like the control's own frame: clicking it focuses the control.
 function onCellMousedown(event: MouseEvent) {
@@ -304,19 +290,31 @@ const dataAttrs = computed(() => ({
   'data-placement': props.labelPlacement,
   'data-attached': isAttached.value || undefined,
   'data-joined': joinStart.value || joinEnd.value || undefined,
-  'data-frameless':
-    ((joinStart.value || joinEnd.value) && mounted.value && !frames.value.length) || undefined,
-  'data-frame-size': frames.value[0]?.(),
   'data-join-start': joinStart.value || undefined,
   'data-join-end': joinEnd.value || undefined,
   'data-label-align': isSide.value ? props.labelAlign : undefined,
-  'data-focused': focused.value || undefined,
-  'data-filled': filled.value || undefined,
   'data-invalid': isInvalid.value || undefined,
   'data-disabled': props.disabled || undefined,
 }))
 
 const root = useTemplateRef<HTMLElement>('root')
+// What the control reports once it's set up, written on the element: no re-render for it.
+watchEffect(
+  () => {
+    const el = root.value
+    if (!el) return
+    const reported = {
+      'data-frameless': (joinStart.value || joinEnd.value) && !frames.value.length,
+      'data-frame-size': frames.value[0]?.(),
+      'data-focused': focused.value,
+      'data-filled': filled.value,
+    }
+    for (const [name, value] of Object.entries(reported))
+      if (value) el.setAttribute(name, String(value))
+      else el.removeAttribute(name)
+  },
+  { flush: 'post' },
+)
 const parts = useStateMotion({
   key: 'field',
   mainPart: 'root',
