@@ -176,7 +176,6 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
 import type { PopoverExposed } from '../Popover/Popover.vue'
 import TourSpotlight from './TourSpotlight.vue'
@@ -196,7 +195,7 @@ import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
 import { isComposing, useLayer } from '../../composables/useLayerStack'
 import { useThemedUi } from '../../theme'
-import { ssrDocument, ssrWindow } from '../../ssr'
+import { ssrDocument } from '../../ssr'
 import { useMessages, tourMessages } from '../../messages'
 import { withProviderDefaults } from '../../config'
 
@@ -515,23 +514,17 @@ function onKeydown(event: KeyboardEvent) {
   if (inlineKey(event.key, ssrDocument()?.documentElement) === 'ArrowRight') next()
   else prev()
 }
-useEventListener(() => (open.value ? ssrDocument() : undefined), 'keydown', onKeydown)
 
 // A step's own overlay stacks above the callout and would otherwise eat Escape, so capture on
 // window runs first; reclaimTop keeps those overlays below the tour's layer. Anything opened
 // above the tour after that (a Dialog from the target) gets Escape first. skip() (not close())
 // lets the consumer unwind it.
-useEventListener(
-  () => (open.value && props.closeOnEsc ? ssrWindow() : undefined),
-  'keydown',
-  (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || event.defaultPrevented || isComposing(event)) return
-    if (!layer.isTopmost(positionerEl.value)) return
-    event.preventDefault()
-    skip()
-  },
-  true,
-)
+function onEscape(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || event.defaultPrevented || isComposing(event)) return
+  if (!layer.isTopmost(positionerEl.value)) return
+  event.preventDefault()
+  skip()
+}
 
 // Closing returns focus to what started the tour, even in Safari, where a clicked button isn't
 // focused and Popover would fall back to the last step's target.
@@ -557,27 +550,43 @@ watch(open, (value) => {
 })
 
 // Modal: Tab cycles through the callout, then an interactive target, as in a Dialog. Capture, so Popover's own Tab-out never runs.
-useEventListener(
-  () => (open.value && props.modal ? ssrDocument() : undefined),
-  'keydown',
-  (event: KeyboardEvent) => {
-    if (event.key !== 'Tab' || event.defaultPrevented) return
-    if (!layer.isTopmost(positionerEl.value)) return
-    const panel = popoverPanelEl.value
-    if (!panel) return
-    event.preventDefault()
-    const focusables = [...getFocusable(panel), ...targetStops()]
-    const current = document.activeElement as HTMLElement | null
-    const index = current ? focusables.indexOf(current) : -1
-    const step = event.shiftKey ? -1 : 1
-    const next =
-      index === -1
-        ? focusables[event.shiftKey ? focusables.length - 1 : 0]
-        : focusables[(index + step + focusables.length) % focusables.length]
-    ;(next ?? panel).focus()
-  },
-  true,
+function onTab(event: KeyboardEvent) {
+  if (event.key !== 'Tab' || event.defaultPrevented) return
+  if (!layer.isTopmost(positionerEl.value)) return
+  const panel = popoverPanelEl.value
+  if (!panel) return
+  event.preventDefault()
+  const focusables = [...getFocusable(panel), ...targetStops()]
+  const current = document.activeElement as HTMLElement | null
+  const index = current ? focusables.indexOf(current) : -1
+  const step = event.shiftKey ? -1 : 1
+  const next =
+    index === -1
+      ? focusables[event.shiftKey ? focusables.length - 1 : 0]
+      : focusables[(index + step + focusables.length) % focusables.length]
+  ;(next ?? panel).focus()
+}
+
+// Document and window keys, bound only while open: one watcher for the three.
+let keysOn: { esc: boolean; tab: boolean } | null = null
+function listenKeys(next: typeof keysOn) {
+  const set = (on: boolean, keys: NonNullable<typeof keysOn>) => {
+    const method = on ? 'addEventListener' : 'removeEventListener'
+    document[method]('keydown', onKeydown as EventListener)
+    if (keys.esc) window[method]('keydown', onEscape as EventListener, true)
+    if (keys.tab) document[method]('keydown', onTab as EventListener, true)
+  }
+  if (keysOn) set(false, keysOn)
+  keysOn = next
+  if (keysOn) set(true, keysOn)
+}
+watch(
+  () =>
+    open.value && typeof document !== 'undefined' && { esc: props.closeOnEsc, tab: props.modal },
+  (keys) => listenKeys(keys || null),
+  { immediate: true, flush: 'post' },
 )
+onScopeDispose(() => listenKeys(null))
 
 // A target closed out from under the tour would strand the callout on a detached
 // node. Re-resolve first — a re-rendered list swaps the node but the selector still matches.

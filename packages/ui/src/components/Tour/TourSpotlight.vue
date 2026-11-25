@@ -1,6 +1,6 @@
 <template>
-  <Teleport :to="teleportTo">
-    <Transition name="ui-tour-spotlight" :css="!forceMount">
+  <Teleport v-if="mounted" :to="teleportTo">
+    <Transition name="ui-tour-spotlight" :appear="appearOnOpen" :css="!forceMount">
       <div
         v-if="forceMount || active"
         v-show="active"
@@ -93,6 +93,10 @@ const props = withDefaults(defineProps<TourSpotlightProps>(), {
 })
 
 const contained = computed(() => props.containerEl !== null)
+// Mounted on the first open, which fades in like any later one; mounted open, it shows at once.
+let everShown = false
+const mounted = computed(() => (everShown ||= props.active || props.forceMount))
+const appearOnOpen = !props.active
 
 const overlay = useTemplateRef<HTMLElement>('overlay')
 const cx = useClassMerge()
