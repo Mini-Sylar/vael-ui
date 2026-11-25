@@ -5,6 +5,7 @@
     :style="rootPart.style"
     :data-state="dataState"
     :data-invalid="isInvalid || undefined"
+    :data-fresh="fresh || undefined"
     @focusin="focusEvents.onFocusin"
     @focusout="focusEvents.onFocusout"
     v-bind="rootAttrs"
@@ -44,15 +45,6 @@
             stroke-linejoin="round"
           />
         </svg>
-        <svg
-          class="ui-checkbox-indeterminate"
-          viewBox="0 0 16 16"
-          width="12"
-          height="12"
-          fill="none"
-        >
-          <path d="M4 8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
       </span>
     </span>
     <span v-if="label || $slots.default" :class="labelPart.class" :style="labelPart.style">
@@ -67,15 +59,7 @@ import './Checkbox.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import {
-  computed,
-  nextTick,
-  onMounted,
-  shallowRef,
-  useAttrs,
-  useTemplateRef,
-  watchEffect,
-} from 'vue'
+import { computed, nextTick, onMounted, useAttrs, useTemplateRef, watchEffect } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'
 import { useControlAttrs, useFocusEvents } from '../../composables/forwardedListeners'
@@ -176,13 +160,15 @@ const dataState = computed(() =>
 )
 
 // First paint only: suppress transitions to prevent drawing check on initial render
-const firstPaint = shallowRef(true)
+// First paint: no transitions, so a pre-checked box doesn't draw its check on load. Plain, not
+// reactive, and cleared on the element itself: turning it off doesn't re-render the checkbox.
+let fresh = true
 onMounted(() => {
   void nextTick(() => {
-    firstPaint.value = false
+    fresh = false
+    root.value?.removeAttribute('data-fresh')
   })
 })
-const skipTransition = computed(() => firstPaint.value || !props.motion)
 
 const root = useTemplateRef<HTMLElement>('root')
 useFormReset(modelValue, () => root.value)
@@ -219,7 +205,7 @@ const rootPart = computed(() =>
     'ui-checkbox',
     `ui-checkbox--${props.size}`,
     isDisabled.value && 'ui-checkbox--disabled',
-    skipTransition.value && 'ui-checkbox--no-anim',
+    !props.motion && 'ui-checkbox--no-anim',
   ),
 )
 const controlClass = computed(() => cx('ui-checkbox-control'))

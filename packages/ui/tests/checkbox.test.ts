@@ -75,14 +75,20 @@ test('form participation: FormData carries the name for a checked box', async ()
 
 test('no draw animation on initial checked mount; transitions resume right after', async () => {
   // render()'s own async completion (a trace-mark round-trip) now takes long enough that awaiting
-  // it first lets the no-anim class's own nextTick removal fire before we ever see it - the actual
+  // it first lets the first-paint mark's own nextTick removal fire before we ever see it - the actual
   // mount (and onMounted's synchronous class application) still happens the instant render() is
   // called, before its internal await, so check the DOM through that unawaited call instead.
   const pending = render(Checkbox, { props: { modelValue: true, label: 'Pre-checked' } })
   const root = document.querySelector<HTMLElement>('.ui-checkbox')!
-  expect(root).toHaveClass('ui-checkbox--no-anim')
+  expect(root).toHaveAttribute('data-fresh')
+  expect(getComputedStyle(root.querySelector('.ui-checkbox-check path')!).transitionProperty).toBe(
+    'none',
+  )
   await pending
-  await vi.waitFor(() => expect(root).not.toHaveClass('ui-checkbox--no-anim'))
+  await vi.waitFor(() => expect(root).not.toHaveAttribute('data-fresh'))
+  expect(
+    getComputedStyle(root.querySelector('.ui-checkbox-check path')!).transitionProperty,
+  ).not.toBe('none')
 })
 
 test('motion=false keeps the no-anim class permanently, past first paint', async () => {

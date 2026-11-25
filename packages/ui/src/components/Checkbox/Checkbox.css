@@ -54,11 +54,22 @@
   .ui-checkbox-input:active:not(:disabled) + .ui-checkbox-box {
     scale: 0.94;
   }
-  .ui-checkbox-check,
-  .ui-checkbox-indeterminate {
+  .ui-checkbox-check {
     position: absolute;
     inset: 0;
     margin: auto;
+    opacity: 0;
+  }
+  /* The indeterminate dash: the 12px check's `M4 8h8` stroke, drawn by the box itself. */
+  .ui-checkbox-box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    inline-size: 7.5px;
+    block-size: 1.5px;
+    border-radius: 1px;
+    background: currentColor;
     opacity: 0;
   }
   .ui-checkbox-check path {
@@ -79,7 +90,7 @@
     stroke-dashoffset: 0;
     transition: stroke-dashoffset var(--ui-duration-press) var(--ui-ease-out);
   }
-  .ui-checkbox[data-state='indeterminate'] .ui-checkbox-indeterminate {
+  .ui-checkbox[data-state='indeterminate'] .ui-checkbox-box::after {
     opacity: 1;
     transition: opacity var(--ui-duration-press) ease;
   }
@@ -102,10 +113,10 @@
   }
   /* First paint only: a pre-checked box must not visibly draw its check on
      page load (the Badge/useTabIndicator first-mount-guard technique). */
-  .ui-checkbox--no-anim .ui-checkbox-box,
-  .ui-checkbox--no-anim .ui-checkbox-check,
-  .ui-checkbox--no-anim .ui-checkbox-check path,
-  .ui-checkbox--no-anim .ui-checkbox-indeterminate {
+  :is(.ui-checkbox--no-anim, .ui-checkbox[data-fresh]) .ui-checkbox-box,
+  :is(.ui-checkbox--no-anim, .ui-checkbox[data-fresh]) .ui-checkbox-check,
+  :is(.ui-checkbox--no-anim, .ui-checkbox[data-fresh]) .ui-checkbox-check path,
+  :is(.ui-checkbox--no-anim, .ui-checkbox[data-fresh]) .ui-checkbox-box::after {
     transition: none;
   }
   .ui-checkbox-label {
