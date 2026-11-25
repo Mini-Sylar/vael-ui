@@ -135,12 +135,15 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // by the check that decides whether CSS can play a look. Measured 1415 B.
 // up front 9.7 → 9.75 KB (2026-11-18): an exit carries on at the speed its element was moving (a
 // throw, a live value), and an entrance that ends hands live values back their own. Measured 9955 B.
+// states 8.4 → 8.45 KB (2026-11-25): the spring lookup moves out of every component's up-front
+// code into the wiring that loads only once a component's motion is customised, so Button, Switch,
+// Input and the rest each ship about 115 B less; the states chunk is counted with it.
 const BUDGET = {
   upFront: 9.75 * 1024,
   runtime: 8.05 * 1024,
   morph: 1.55 * 1024,
   button: 1.4 * 1024,
-  states: 8.4 * 1024,
+  states: 8.45 * 1024,
   linked: 3.4 * 1024,
 }
 

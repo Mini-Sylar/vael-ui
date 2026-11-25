@@ -2,9 +2,10 @@
 // states player and `replay`. Loaded on demand, run inside the component's scope.
 import { computed, watch } from 'vue'
 import type { ComputedRef } from 'vue'
+import { springOf } from './springNames'
 import { putTimingTokens, specOf, startStates } from './states'
 import { loading } from './styleKey'
-import type { MotionStyle, MotionTiming, Spring } from './types'
+import type { MotionStyle, MotionTiming } from './types'
 import type { StateMotionOptions } from './useStateMotion'
 
 let appearance: typeof import('./appearance') | undefined
@@ -21,7 +22,6 @@ export interface StateWiring {
   els: (name: string) => Element[]
   parts: () => Record<string, Element | undefined>
   timing: () => MotionTiming
-  spring: () => Spring | undefined
   afterEnter: () => void
 }
 
@@ -68,7 +68,7 @@ export function wireStates(ctx: StateWiring, initial?: Record<string, boolean | 
         parts,
         spec: () => spec.value,
         timing: () => timing.value,
-        spring: ctx.spring,
+        spring: () => springOf(style?.value?.spring),
         repeated: () => Object.fromEntries((options.repeated ?? []).map((n) => [n, els(n)])),
         initial: known,
       })

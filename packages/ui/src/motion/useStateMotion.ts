@@ -5,7 +5,6 @@ import { useMotionStyle, motionSettingsKey } from './styleKey'
 import type { MotionStyle, MotionTiming } from './types'
 import { loading } from './styleKey'
 import { holdUnseen } from './ids'
-import { springOf } from './springNames'
 
 let appearance: typeof import('./appearance') | undefined
 const loadAppearance = () => loading(import('./appearance')).then((module) => (appearance = module))
@@ -107,8 +106,6 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
               parts,
               timing,
               afterEnter,
-              // Named here: in the wiring chunk its bytes would count against the states budget.
-              spring: () => springOf(style?.value?.spring),
             },
             initial,
           ),
