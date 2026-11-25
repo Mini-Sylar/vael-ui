@@ -26,6 +26,15 @@ export interface UseNumberFormatReturn {
   isPartial: (text: string) => boolean
 }
 
+// Shared by every field with the same locale and options: a formatter is slow to create.
+const formatters = new Map<string, Intl.NumberFormat>()
+function cachedFormat(locale: string | undefined, options: Intl.NumberFormatOptions) {
+  const key = `${locale}|${JSON.stringify(options)}`
+  let formatter = formatters.get(key)
+  if (!formatter) formatters.set(key, (formatter = new Intl.NumberFormat(locale, options)))
+  return formatter
+}
+
 export function useNumberFormat(options: UseNumberFormatOptions = {}): UseNumberFormatReturn {
   const baseOptions = computed<Intl.NumberFormatOptions>(() => {
     const mode = toValue(options.mode) ?? 'decimal'
@@ -42,14 +51,13 @@ export function useNumberFormat(options: UseNumberFormatOptions = {}): UseNumber
   })
 
   const locale = computed(() => toValue(options.locale))
-  const formatter = computed(() => new Intl.NumberFormat(locale.value, baseOptions.value))
-  const structureFormatter = computed(
-    () =>
-      new Intl.NumberFormat(locale.value, {
-        ...baseOptions.value,
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 6,
-      }),
+  const formatter = computed(() => cachedFormat(locale.value, baseOptions.value))
+  const structureFormatter = computed(() =>
+    cachedFormat(locale.value, {
+      ...baseOptions.value,
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 6,
+    }),
   )
 
   const structure = computed(() => {
