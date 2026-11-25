@@ -71,7 +71,8 @@ test('a closed menu sets up a fixed number of watchers', async () => {
   let effects = 0
   for (let link = menu.value!.$.scope.deps; link; link = link.nextDep as typeof link) effects++
   // Was 46, when each popover document listener and highlight list listener had its own watcher.
-  expect(effects).toBeLessThanOrEqual(37)
+  // Then 37, while its motion set up a watcher per job before it ever opened.
+  expect(effects).toBeLessThanOrEqual(34)
 })
 
 test('the first open plays the enter, and every open after it too', async () => {

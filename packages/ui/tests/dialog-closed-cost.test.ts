@@ -35,7 +35,8 @@ test('a closed dialog sets up a fixed number of watchers', async () => {
   let effects = 0
   for (let link = dialog.value!.$.scope.deps; link; link = link.nextDep as typeof link) effects++
   // Was 23, with watchers for the document Tab listener, the new-content observer and transitionend.
-  expect(effects).toBeLessThanOrEqual(20)
+  // Then 20, while its motion set up a watcher per job before it ever opened.
+  expect(effects).toBeLessThanOrEqual(14)
 })
 
 test('the first open plays the enter, and every open after it too', async () => {

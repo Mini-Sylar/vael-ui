@@ -42,7 +42,8 @@ test('a closed popover sets up a fixed number of watchers', async () => {
   let effects = 0
   for (let link = popover.value!.$.scope.deps; link; link = link.nextDep as typeof link) effects++
   // Was 21, when the trigger's MutationObserver was a watcher of its own beside the trigger's.
-  expect(effects).toBeLessThanOrEqual(19)
+  // Then 19, while its motion set up a watcher per job before it ever opened.
+  expect(effects).toBeLessThanOrEqual(15)
 })
 
 test('the first open plays the enter, and every open after it too', async () => {
