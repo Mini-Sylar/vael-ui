@@ -172,19 +172,28 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
     // text shifts onto the pixel grid, which reads as a flinch.
     const dpr = window.devicePixelRatio || 1
     const snap = (value: number) => Math.round(value * dpr) / dpr
-    positionerStyle.value = {
+    setStyle({
       position: 'absolute',
       ...(options.holdFacingEdge
         ? facingEdge(floating, result.placement, result.x, result.y, snap)
         : { top: `${snap(result.y)}px`, left: `${snap(result.x)}px` }),
       visibility: 'visible',
       ...(anchorInlineSize ? { '--ui-anchor-inline-size': anchorInlineSize } : {}),
-    }
+    })
     placement.value = result.placement
     const origin = result.middlewareData.triggerOrigin as { x: number; y: number } | undefined
     transformOrigin.value = origin
       ? `${origin.x}px ${origin.y}px`
       : toTransformOrigin(result.placement)
+  }
+
+  // A pass that lands where the panel already is re-renders nothing; the first after a (re)start always lands.
+  let fresh = true
+  function setStyle(next: Record<string, string>) {
+    const now = positionerStyle.value
+    if (fresh || Object.keys({ ...now, ...next }).some((key) => now[key] !== next[key]))
+      positionerStyle.value = next
+    fresh = false
   }
 
   let stopAutoUpdate: (() => void) | undefined
@@ -203,9 +212,12 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
       updateToken++
       // Reset on (re)open, but not on reference swap while active (avoid blink)
       if (!isActive || !wasActive) {
-        positionerStyle.value = { ...HIDDEN_STYLE }
+        // Already hidden (a first open) stays the same object.
+        if (positionerStyle.value.visibility !== 'hidden')
+          positionerStyle.value = { ...HIDDEN_STYLE }
         maxHeight.value = null
       }
+      fresh = true
       const floating = options.floatingEl.value
       if (!isActive || !reference || !floating) return
       stopAutoUpdate = autoUpdate(reference, floating, update)
