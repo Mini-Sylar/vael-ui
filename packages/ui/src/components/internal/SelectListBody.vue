@@ -58,10 +58,49 @@
           :key="keyOf(index)"
           role="option"
           :class="optionPart.class"
-          v-bind="rowAttrs(index, section.start)"
+          :data-virtual-index="windowed ? index : undefined"
+          :data-selected="isSelected(items[index]) || undefined"
+          :data-disabled="items[index]?.disabled || undefined"
+          :aria-selected="isSelected(items[index])"
+          :aria-disabled="items[index]?.disabled || undefined"
+          :aria-setsize="windowed ? items.length : undefined"
+          :aria-posinset="windowed ? index + 1 : undefined"
+          :style="
+            windowed
+              ? [virtualRows[index - section.start]?.style, optionPart.style]
+              : optionPart.style
+          "
         >
+          <span
+            v-if="!$slots.item && !tickOf(keyOf(index), isSelected(items[index]))"
+            class="ui-select-option-label"
+            >{{ getLabel(items[index]) }}</span
+          >
+          <template v-else-if="!$slots.item">
+            <span class="ui-select-option-label">{{ getLabel(items[index]) }}</span>
+            <Transition name="ui-tick" :appear="drawn.has(keyOf(index))">
+              <svg
+                v-if="isSelected(items[index])"
+                class="ui-select-option-check ui-tick"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3.5 8.5l3 3 6-7"
+                  pathLength="1"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </Transition>
+          </template>
           <slot
-            v-if="$slots.item"
+            v-else
             name="item"
             :item="items[index]"
             :index="index"
@@ -91,30 +130,6 @@
               </svg>
             </Transition>
           </slot>
-          <template v-else-if="tickOf(keyOf(index), isSelected(items[index]))">
-            <span class="ui-select-option-label">{{ getLabel(items[index]) }}</span>
-            <Transition name="ui-tick" :appear="drawn.has(keyOf(index))">
-              <svg
-                v-if="isSelected(items[index])"
-                class="ui-select-option-check ui-tick"
-                viewBox="0 0 16 16"
-                width="14"
-                height="14"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M3.5 8.5l3 3 6-7"
-                  pathLength="1"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </Transition>
-          </template>
-          <span v-else class="ui-select-option-label">{{ getLabel(items[index]) }}</span>
         </div>
       </div>
       <div v-if="loading" class="ui-select-loading-more" aria-hidden="true">
@@ -249,26 +264,6 @@ const groupLabelPart = computed(() =>
 )
 
 const windowed = computed(() => !!props.windowed && !props.sections)
-// Only the attributes a row has: Vue mounts an unset binding by removing it, a call each per row.
-const PLAIN = Object.freeze({ 'aria-selected': false })
-const PICKED = Object.freeze({ 'aria-selected': true, 'data-selected': true })
-function rowAttrs(index: number, start: number): Record<string, unknown> {
-  const item = props.items[index]
-  const selected = props.isSelected(item!)
-  const style = windowed.value
-    ? [virtualRows.value[index - start]?.style, optionPart.value.style]
-    : optionPart.value.style
-  if (!item?.disabled && !windowed.value && !style) return selected ? PICKED : PLAIN
-  const attrs: Record<string, unknown> = { ...(selected ? PICKED : PLAIN) }
-  if (item?.disabled) attrs['data-disabled'] = attrs['aria-disabled'] = true
-  if (windowed.value) {
-    attrs['data-virtual-index'] = index
-    attrs['aria-setsize'] = props.items.length
-    attrs['aria-posinset'] = index + 1
-  }
-  if (style) attrs.style = style
-  return attrs
-}
 // The groups, or one run: every option, or while windowed the rows in view.
 const runs = computed<readonly SelectListSection<T>[]>(() => {
   if (props.sections) return props.sections
@@ -280,6 +275,7 @@ const runs = computed<readonly SelectListSection<T>[]>(() => {
 const keyOf = (index: number) => (props.sections ? (props.items[index]!.value ?? NULL_KEY) : index)
 
 // A tick's Transition exists only on rows that are, or were, selected: most rows never need one.
+// The template asks for the plain row first: one check decides it, the rest build only if it fails.
 const ticks = new Set<unknown>()
 const tickOf = (key: unknown, selected: boolean) =>
   selected ? (ticks.add(key), true) : ticks.has(key)
