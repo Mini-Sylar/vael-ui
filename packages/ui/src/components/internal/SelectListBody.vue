@@ -9,6 +9,7 @@
     :style="listPart.style"
     :aria-multiselectable="multiple || undefined"
     :aria-busy="loading || undefined"
+    :data-custom-rows="$slots.item ? '' : undefined"
     v-scroll-mask="scrollFade"
     @mousemove="onListMove"
     @mousedown="onListDown"
@@ -57,18 +58,7 @@
           :key="keyOf(index)"
           role="option"
           :class="optionPart.class"
-          :data-virtual-index="windowed ? index : undefined"
-          :data-selected="isSelected(items[index]) || undefined"
-          :data-disabled="items[index]?.disabled || undefined"
-          :aria-selected="isSelected(items[index])"
-          :aria-disabled="items[index]?.disabled || undefined"
-          :aria-setsize="windowed ? items.length : undefined"
-          :aria-posinset="windowed ? index + 1 : undefined"
-          :style="
-            windowed
-              ? [virtualRows[index - section.start]?.style, optionPart.style]
-              : optionPart.style
-          "
+          v-bind="rowAttrs(index, section.start)"
         >
           <slot
             v-if="$slots.item"
@@ -259,6 +249,26 @@ const groupLabelPart = computed(() =>
 )
 
 const windowed = computed(() => !!props.windowed && !props.sections)
+// Only the attributes a row has: Vue mounts an unset binding by removing it, a call each per row.
+const PLAIN = Object.freeze({ 'aria-selected': false })
+const PICKED = Object.freeze({ 'aria-selected': true, 'data-selected': true })
+function rowAttrs(index: number, start: number): Record<string, unknown> {
+  const item = props.items[index]
+  const selected = props.isSelected(item!)
+  const style = windowed.value
+    ? [virtualRows.value[index - start]?.style, optionPart.value.style]
+    : optionPart.value.style
+  if (!item?.disabled && !windowed.value && !style) return selected ? PICKED : PLAIN
+  const attrs: Record<string, unknown> = { ...(selected ? PICKED : PLAIN) }
+  if (item?.disabled) attrs['data-disabled'] = attrs['aria-disabled'] = true
+  if (windowed.value) {
+    attrs['data-virtual-index'] = index
+    attrs['aria-setsize'] = props.items.length
+    attrs['aria-posinset'] = index + 1
+  }
+  if (style) attrs.style = style
+  return attrs
+}
 // The groups, or one run: every option, or while windowed the rows in view.
 const runs = computed<readonly SelectListSection<T>[]>(() => {
   if (props.sections) return props.sections

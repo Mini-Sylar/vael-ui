@@ -50,6 +50,38 @@ for (const [name, Component] of [
   })
 }
 
+for (const [name, Component] of [
+  ['Select', Select],
+  ['Combobox', Combobox],
+] as const) {
+  test(`${name}: placing the panel restyles neither the rows nor what they inherit`, async () => {
+    const writes: string[] = []
+    const watcher = new MutationObserver((records) => {
+      for (const record of records) {
+        const el = record.target as HTMLElement
+        if (el.classList?.contains('ui-select-positioner'))
+          writes.push(el.getAttribute('style') ?? '')
+      }
+    })
+    watcher.observe(document.body, { attributes: true, attributeFilter: ['style'], subtree: true })
+    const screen = await render(() =>
+      h(Component as never, { items, virtualize: false, 'aria-label': 'x' }),
+    )
+    await screen.getByRole('combobox').click()
+    await vi.waitFor(() => expect(options()).toHaveLength(300))
+    await frames()
+    watcher.disconnect()
+    // Hidden until placed by a clip, which doesn't inherit; never by `visibility`, which does.
+    expect(writes.some((style) => style.includes('visibility'))).toBe(false)
+    const positioner = document.querySelector<HTMLElement>('.ui-select-positioner')!
+    expect(positioner.style.clip).toBe('')
+    // The panel reads the trigger's width; the rows never see it.
+    const read = (el: Element) => getComputedStyle(el).getPropertyValue('--ui-anchor-inline-size')
+    expect(read(document.querySelector('.ui-select-panel')!)).not.toBe('')
+    expect(read(options()[0]!)).toBe('')
+  })
+}
+
 test('each row renders once as the panel opens and is placed', async () => {
   let calls = 0
   const screen = await render(() =>

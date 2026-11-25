@@ -93,6 +93,17 @@
     text-align: start;
     cursor: pointer;
   }
+  /* The panel reads the trigger's width from the positioner; the rows don't, so a new width stops
+     here instead of restyling each one. */
+  .ui-select-body {
+    --ui-anchor-inline-size: initial;
+  }
+  /* Rows out of view skip style, layout and paint until they scroll near, still found by find in
+     page and read by screen readers. Default rows only: a custom row may draw outside itself. */
+  .ui-select-body:not([data-custom-rows]) .ui-select-option:not([data-virtual-index]) {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 2.25rem;
+  }
   /* Current value gets quiet permanent tint. */
   .ui-select-option[data-selected] {
     background: color-mix(in srgb, var(--ui-primary) 8%, transparent);

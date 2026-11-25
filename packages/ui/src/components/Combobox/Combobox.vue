@@ -119,7 +119,7 @@
         v-show="open"
         ref="positioner"
         :class="positionerPart.class"
-        :style="[positionerStyle, { zIndex }, positionerPart.style]"
+        :style="[shownStyle, { zIndex }, positionerPart.style]"
         :data-ui-theme="themeScope"
         :data-state="isClosing ? 'closing' : 'open'"
         :data-side="resolvedSide"
@@ -317,7 +317,7 @@ import {
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import Input from '../Input/Input.vue'
 import { usePopover } from '../../composables/usePopover'
-import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
+import { clipUntilPlaced, useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import { useChipTransition } from '../../composables/useChipTransition'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
@@ -749,6 +749,7 @@ const {
   maxHeightCap: () => props.maxPanelHeight,
   onOpenChange: (value, details) => emit('open-change', value, details),
 })
+const shownStyle = clipUntilPlaced(positionerStyle)
 
 // Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
 const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
