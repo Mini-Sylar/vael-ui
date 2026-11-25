@@ -57,7 +57,6 @@ import {
   onBeforeUnmount,
   onMounted,
   onUnmounted,
-  shallowRef,
   useAttrs,
   useTemplateRef,
 } from 'vue'
@@ -125,9 +124,14 @@ function onKeydown(event: KeyboardEvent) {
 const root = useTemplateRef<HTMLElement>('root')
 // Inside a combobox or button (Select's trigger) nothing may be interactive: the remove is for the
 // pointer only, and the field removes the last chip with Backspace instead.
-const pointerOnly = shallowRef(false)
+// Plain, and written on the button at mount: finding it doesn't re-render the chip.
+let pointerOnly = false
 onMounted(() => {
-  pointerOnly.value = !!root.value?.parentElement?.closest('[role="combobox"], [role="button"]')
+  pointerOnly = !!root.value?.parentElement?.closest('[role="combobox"], [role="button"]')
+  const remove = pointerOnly && root.value!.querySelector(':scope > .ui-chip-remove')
+  if (!remove) return
+  remove.setAttribute('tabindex', '-1')
+  remove.setAttribute('aria-hidden', 'true')
 })
 const focusFallback = inject(chipFocusFallbackKey, null)
 const parts = useStateMotion({
