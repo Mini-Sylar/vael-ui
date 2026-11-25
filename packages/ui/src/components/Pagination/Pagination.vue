@@ -4,7 +4,6 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :aria-label="messages.pagination.label"
-    :data-indicator-placed="indicator.placed.value || undefined"
     v-bind="attrs"
   >
     <ul ref="list" :class="listPart.class" :style="listPart.style">
@@ -195,7 +194,7 @@ import './Pagination.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, onBeforeUnmount, onMounted, useAttrs, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, useAttrs, useTemplateRef, watch } from 'vue'
 import Button from '../Button/Button.vue'
 import Select from '../Select/Select.vue'
 import type { SelectItemData } from '../Select/Select.vue'
@@ -238,6 +237,11 @@ const indicator = useTabIndicator(page, {
   motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
   stretch: () => (typeof props.motion === 'object' ? props.motion.stretch : undefined),
   squash: () => (typeof props.motion === 'object' ? props.motion.squash : undefined),
+})
+// Written on the element once placed: no re-render of every button for it.
+watch(indicator.placed, () => root.value?.setAttribute('data-indicator-placed', 'true'), {
+  flush: 'sync',
+  once: true,
 })
 // The hover and keyboard highlight slides between buttons, under the current page's own.
 const hoverEl = useTemplateRef<HTMLElement>('hoverEl')

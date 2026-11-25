@@ -6,7 +6,6 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :data-invalid="isInvalid || undefined"
-    :data-indicator-placed="indicatorPlaced || undefined"
     :aria-labelledby="fieldControl.labelledBy()"
     :aria-describedby="fieldControl.describedBy()"
     :aria-invalid="isInvalid || undefined"
@@ -68,7 +67,7 @@ import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, useAttrs, useId, useTemplateRef } from 'vue'
+import { computed, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { omitAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -200,6 +199,12 @@ const { style: indicatorStyle, placed: indicatorPlaced } = useTabIndicator(model
   motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
   stretch: () => (typeof props.motion === 'object' ? props.motion.stretch : undefined),
   squash: () => (typeof props.motion === 'object' ? props.motion.squash : undefined),
+})
+
+// Written on the element once placed: no re-render of every option for it.
+watch(indicatorPlaced, () => root.value?.setAttribute('data-indicator-placed', 'true'), {
+  flush: 'sync',
+  once: true,
 })
 
 const cx = useClassMerge()

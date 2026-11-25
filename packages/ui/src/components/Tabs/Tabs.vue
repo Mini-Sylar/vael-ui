@@ -6,7 +6,6 @@
     :class="listPart.class"
     :style="listPart.style"
     v-scroll-mask="props.orientation === 'vertical' ? false : 'x'"
-    :data-indicator-placed="indicator.placed.value || undefined"
     @keydown="onKeydown"
     v-bind="attrs"
   >
@@ -34,7 +33,7 @@
 import './Tabs.css'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, useAttrs, useId, useTemplateRef } from 'vue'
+import { computed, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 import { useTabs } from '../../composables/useTabs'
 import { useTabIndicator } from '../../composables/useTabIndicator'
@@ -186,6 +185,11 @@ const indicator = useTabIndicator(active, {
   motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
   stretch: () => (typeof props.motion === 'object' ? props.motion.stretch : undefined),
   squash: () => (typeof props.motion === 'object' ? props.motion.squash : undefined),
+})
+// Written on the element once placed: no re-render of the tabs for it.
+watch(indicator.placed, () => listEl.value?.setAttribute('data-indicator-placed', 'true'), {
+  flush: 'sync',
+  once: true,
 })
 
 const generatedId = useId()
