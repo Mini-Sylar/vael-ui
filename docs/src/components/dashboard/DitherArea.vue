@@ -2,7 +2,7 @@
   <div
     class="dither-area"
     :style="{ '--reveal-delay': `${delay}s` }"
-    :data-drawn="drawn || undefined"
+    :data-first-paint="firstPaint || undefined"
     aria-hidden="true"
   >
     <div class="dither-fill" :style="{ '--area-mask': areaMask }" />
@@ -37,8 +37,8 @@ const props = withDefaults(
   { secondary: undefined, endDot: false, delay: 0, headroom: 0 },
 )
 
-// Drawn already on the page's first paint; it draws in from the next page on.
-const drawn = isFirstPaint()
+// On the page's first paint it draws on the page's clock (see entrance.css).
+const firstPaint = isFirstPaint()
 
 const W = 100
 const H = 40
@@ -71,10 +71,11 @@ const areaMask = computed(() => {
   /* The theme picker's accent when one is set, else plain ink. */
   color: var(--docs-accent-ink, var(--ui-text));
   /* Draws in left to right once, as its card lands. */
-  animation: dither-reveal 800ms var(--ui-ease-out) var(--reveal-delay, 0s) both;
+  animation: dither-reveal 800ms var(--ui-ease-out)
+    calc(var(--reveal-delay, 0s) + var(--paint-offset, 0ms)) both;
 }
-.dither-area[data-drawn] {
-  animation: none;
+.dither-area[data-first-paint] {
+  --paint-offset: calc(120ms - var(--showcase-elapsed, 0ms));
 }
 @keyframes dither-reveal {
   from {

@@ -1,0 +1,21 @@
+/* A stat card lands: it rises and fades in, staggered by --i. CSS, so the prerendered page plays it too. */
+.dash-entrance {
+  animation: dash-entrance 350ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * var(--stagger, 50ms) + var(--paint-offset, 0ms));
+}
+/* On the page's first paint it runs on the page's clock, so the app's copy carries on from the
+   prerendered one (--showcase-elapsed, main.ts), with the dashboard's own rise. */
+.dash-entrance[data-first-paint] {
+  --paint-offset: calc(120ms - var(--showcase-elapsed, 0ms));
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-entrance {
+    animation: none;
+  }
+}
+@keyframes dash-entrance {
+  from {
+    opacity: 0;
+    translate: 0 var(--rise, 10px);
+  }
+}

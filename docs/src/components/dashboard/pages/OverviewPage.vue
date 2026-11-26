@@ -1,16 +1,12 @@
 <template>
   <div>
     <div class="dash-stats-row">
-      <motion.div
+      <div
         v-for="(stat, i) in stats"
         :key="stat.label"
-        :initial="reduce || firstPaint ? false : { opacity: 0, y: 12 }"
-        :animate="{ opacity: 1, y: 0 }"
-        :transition="{
-          duration: 0.35,
-          delay: reduce ? 0 : i * 0.06,
-          ease: [0.22, 1, 0.36, 1],
-        }"
+        class="dash-entrance"
+        :style="{ '--i': i, '--stagger': '60ms', '--rise': '12px' }"
+        :data-first-paint="firstPaint || undefined"
       >
         <Card class="dash-stat-card">
           <div class="dash-stat-head">
@@ -57,7 +53,7 @@
             />
           </svg>
         </Card>
-      </motion.div>
+      </div>
     </div>
 
     <Card class="dash-recent-orders-card">
@@ -124,8 +120,9 @@
 
 <script setup lang="ts">
 import { computed, inject } from 'vue'
-import { motion, useReducedMotion } from 'motion-v'
+import { useReducedMotion } from 'motion-v'
 import { isFirstPaint } from '../firstPaint'
+import '../entrance.css'
 import { Avatar, AvatarGroup, Card, Column, DataTable, Progress, Tag, vTooltip } from 'vael-ui'
 import { currency, orders, STATUS_VARIANT, stats, teamMembers } from '../data'
 import type { StatDef } from '../data'
