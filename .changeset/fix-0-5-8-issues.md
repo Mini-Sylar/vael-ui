@@ -23,7 +23,8 @@
 
 ## Performance
 
-- **Select, Combobox:** long lists open and respond far faster. In a list of 1,000 options with `virtualize` off, an arrow key took about 46 ms on a throttled CPU and now takes about 2 ms, and opening takes about a quarter of the time. Each option renders once on open instead of about seven times. Options out of view, in blocks of 50, skip style, layout and paint until they scroll near, and stay findable with find in page and readable by screen readers. Options from a custom `#item` slot always render in full and still get a live `active`.
+- **Select, Combobox:** long lists open and respond far faster. In a list of 1,000 options with `virtualize` off, an arrow key took about 46 ms on a throttled CPU and now takes about 2 ms, and opening takes about a quarter of the time. Each option renders once on open instead of about seven times. Options out of view, in blocks of 50, skip style, layout and paint until they scroll near, and stay findable with find in page and readable by screen readers. Options from a custom `#item` slot always render in full and still get a live `active`. The panel is capped at its max height from its first layout, so opening lays the list out once.
+- **Closed overlays:** a closed Popover, Dialog, Drawer, BottomSheet, Menu, Tooltip, DatePicker, TreeSelect, ColorPicker, CommandPalette or Tour costs almost nothing. It mounts no Teleport, Transition, observers or drag listeners until it first opens, and its motion resolves nothing until then. A closed Tooltip sets up about half the watchers it did, and a closed Menu no longer waits for web fonts.
 - **Every component with built-in motion:** when you don't customise its motion, it sets up less and ships less. The code for its timing, states and `replay` loads only once you customise it, so Button, Switch, Checkbox and Input each ship about 300 B less gzipped.
 - **Checkbox:** mounts about 15% faster. The indeterminate dash is now drawn by the box itself, with the same look and fade.
 - **Tabs, SelectButton, menus and other sliding highlights:** a page with many of them no longer slows down as it grows. Mounting 100 Tabs takes about 40% less time.
@@ -32,7 +33,7 @@
 - **Accordion, AccordionItem, Collapsible:** closed items render once on mount, and each item sets up less. Panels stay findable with find in page.
 - **Floating panels:** an open panel re-renders only when it moves. DatePicker, TreeSelect and ColorPicker draw their content once on open, not again as the panel is placed or the page scrolls. Popovers add their document listeners when they open and remove them when they close.
 - **Input, Textarea, InputNumber, Progress, Slider:** each sets up only what you use. Input's clear button, start slot and `#display` overlay wait until needed, Textarea observes its size only with `autoGrow`, fields with the same locale and options share one number formatter, and Slider listens on the window only while you drag.
-- **v-scroll-mask, `scrollFade`:** a box with a scroll fade no longer restyles everything inside it when it mounts or resizes, or measures its content again as a highlight moves inside it.
+- **v-scroll-mask, `scrollFade`:** a box with a scroll fade no longer restyles everything inside it when it mounts or resizes, or measures its content again as a highlight moves inside it. The clear buttons' transition rules no longer run against every element on the page.
 
 ## Fixes
 
