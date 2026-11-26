@@ -61,8 +61,9 @@ function inWindow(to: DragPoint): DragPoint {
 }
 
 // Let go: a flick coasts where it was heading; slower, it stays where you put it, as a window does.
-// Either way it stops at the window's edge.
-const FLICK = 1000
+// Either way it stops at the window's edge. A mouse moving with intent easily passes 1000 px/s: a flick
+// is a sharp snap well past that.
+const FLICK = 2500
 let heading: DragPoint | null = null
 const drag = useDrag({
   el: panel,
