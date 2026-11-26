@@ -1,6 +1,6 @@
 // useDragSelect: a band across empty space selects what it touches, the modifiers combine, and an
 // elastic band trails the pointer yet selects only what it covers.
-import { effectScope, shallowRef } from 'vue'
+import { effectScope, shallowRef, watch } from 'vue'
 import { afterEach, expect, test } from 'vitest'
 import { useDragSelect } from '../src/composables/useDragSelect'
 import type { UseDragSelectOptions, UseDragSelectReturn } from '../src/composables/useDragSelect'
@@ -113,6 +113,32 @@ test('an elastic band trails the pointer, selects only what it covers, then sett
     poll()
   })
   expect(select.selected.value).toEqual([0, 1])
+})
+
+test('a new band shows at its press, not where the last one ended', async () => {
+  const { select, at, fire, box } = setup({ spring: true })
+  const settled = () =>
+    new Promise<void>((resolve) => {
+      const poll = () => (select.isDragging.value ? requestAnimationFrame(poll) : resolve())
+      poll()
+    })
+  fire('pointerdown', box, at(5, 5))
+  fire('pointermove', window, at(100, 50))
+  fire('pointerup', window, at(100, 50))
+  await settled()
+  // As it appears, from the far corner up and back.
+  const seen: number[][] = []
+  const stop = watch(
+    select.isDragging,
+    (on) => on && seen.push([select.x.value, select.y.value, select.width.value]),
+    { flush: 'sync' },
+  )
+  fire('pointerdown', box, at(265, 135))
+  fire('pointermove', window, at(150, 60))
+  stop()
+  expect(seen).toEqual([[265, 135, 0]])
+  fire('pointerup', window, at(150, 60))
+  await settled()
 })
 
 test('stretch is how far the corner is behind the pointer: zero for an exact band, positive for a sprung one', async () => {

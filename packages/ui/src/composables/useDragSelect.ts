@@ -283,16 +283,21 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
       holdTimer = window.setTimeout(startBand, HOLD)
     }
   }
+  // The band starts where the press was, so it never shows where the last one ended.
+  function begin() {
+    committed = true
+    place()
+    isDragging.value = true
+    before = 0
+    getSelection()?.removeAllRanges()
+    frame = requestAnimationFrame(tick)
+  }
   // Starts the band under a finger that has held still.
   function startBand() {
     if (pointerId === null || !holding) return
     holding = false
-    committed = true
-    isDragging.value = true
-    before = 0
-    getSelection()?.removeAllRanges()
+    begin()
     navigator.vibrate?.(8)
-    frame = requestAnimationFrame(tick)
     update()
   }
   // Held: the page doesn't scroll under the band.
@@ -338,11 +343,7 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
     }
     if (!committed) {
       if (Math.hypot(last.x - origin.x, last.y - origin.y) < DRAG_THRESHOLD) return
-      committed = true
-      isDragging.value = true
-      before = 0
-      getSelection()?.removeAllRanges()
-      frame = requestAnimationFrame(tick)
+      begin()
     }
     update()
   }
