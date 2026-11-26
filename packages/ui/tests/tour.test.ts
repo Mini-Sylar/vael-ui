@@ -271,8 +271,8 @@ test('the callout is at its new position by the first animation frame after @ste
   const positions: string[] = []
   const tour = shallowRef<TourHandle | null>(null)
   const read = () => {
-    const el = tour.value!.positionerEl as HTMLElement
-    return `${el.style.top} ${el.style.left}`
+    const box = (tour.value!.positionerEl as HTMLElement).getBoundingClientRect()
+    return `${Math.round(box.top)} ${Math.round(box.left)}`
   }
   await render(() => [
     h('button', { id: 'frame-a', style: 'margin: 16px' }, 'A'),

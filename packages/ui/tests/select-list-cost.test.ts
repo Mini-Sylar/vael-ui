@@ -73,7 +73,7 @@ for (const [name, Component] of [
     await frames()
     watcher.disconnect()
     // Hidden until placed by a clip, which doesn't inherit; never by `visibility`, which does.
-    expect(writes.some((style) => style.includes('visibility'))).toBe(false)
+    expect(writes.some((style) => /(^|;\s*)visibility:/.test(style))).toBe(false)
     const positioner = document.querySelector<HTMLElement>('.ui-select-positioner')!
     expect(positioner.style.clip).toBe('')
     // The panel reads the trigger's width; the rows never see it.
