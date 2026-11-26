@@ -325,7 +325,7 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
        re-anchors every position: fixed inside the dashboard. */
     animation: showcase-in 700ms var(--ui-ease-out) backwards;
     /* The app replaces the prerendered page mid-rise: its copy carries on from there (main.ts). */
-    animation-delay: calc(120ms - var(--showcase-elapsed, 0ms));
+    animation-delay: 120ms;
   }
 }
 

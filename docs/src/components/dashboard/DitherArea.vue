@@ -75,7 +75,7 @@ const areaMask = computed(() => {
     calc(var(--reveal-delay, 0s) + var(--paint-offset, 0ms)) both;
 }
 .dither-area[data-first-paint] {
-  --paint-offset: calc(120ms - var(--showcase-elapsed, 0ms));
+  --paint-offset: 120ms;
 }
 @keyframes dither-reveal {
   from {

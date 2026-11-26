@@ -3,10 +3,10 @@
   animation: dash-entrance 350ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   animation-delay: calc(var(--i, 0) * var(--stagger, 50ms) + var(--paint-offset, 0ms));
 }
-/* On the page's first paint it runs on the page's clock, so the app's copy carries on from the
-   prerendered one (--showcase-elapsed, main.ts), with the dashboard's own rise. */
+/* On the page's first paint it starts with the dashboard's rise; the app's copy carries on from
+   the prerendered one's (main.ts). */
 .dash-entrance[data-first-paint] {
-  --paint-offset: calc(120ms - var(--showcase-elapsed, 0ms));
+  --paint-offset: 120ms;
 }
 @media (prefers-reduced-motion: reduce) {
   .dash-entrance {
