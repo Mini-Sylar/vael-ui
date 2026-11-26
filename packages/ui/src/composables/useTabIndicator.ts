@@ -162,8 +162,13 @@ export function useTabIndicator(
       list.offsetHeight && Math.abs(listRect.height - list.offsetHeight) > 1
         ? listRect.height / list.offsetHeight
         : 1
-    const left = (tabRect.left - listRect.left) / scaleX + (options.scroller ? list.scrollLeft : 0)
-    const top = (tabRect.top - listRect.top) / scaleY + (options.scroller ? list.scrollTop : 0)
+    // Where the row rests: a translate on it or between it and the list (rising in, a FLIP slide, a
+    // GSAP tween) is left out, so the highlight is in place from the start and never moves after.
+    const moved = restOffset(tab, list)
+    const left =
+      (tabRect.left - listRect.left) / scaleX - moved.x + (options.scroller ? list.scrollLeft : 0)
+    const top =
+      (tabRect.top - listRect.top) / scaleY - moved.y + (options.scroller ? list.scrollTop : 0)
     const width = tabRect.width / scaleX
     const height = tabRect.height / scaleY
     const vertical = toValue(options.orientation) === 'vertical'
@@ -471,6 +476,26 @@ export function useTabIndicator(
           () => {},
         )
       }
+  }
+
+  // How far translates between the row and the list move it now, in the list's pixels.
+  function restOffset(tab: HTMLElement, list: HTMLElement) {
+    let x = 0
+    let y = 0
+    for (let el: Element | null = tab; el && el !== list; el = el.parentElement) {
+      const style = getComputedStyle(el)
+      if (style.translate !== 'none') {
+        const [tx = '0', ty = '0'] = style.translate.split(' ')
+        x += Number.parseFloat(tx) || 0
+        y += Number.parseFloat(ty) || 0
+      }
+      if (style.transform !== 'none') {
+        const matrix = new DOMMatrix(style.transform)
+        x += matrix.m41
+        y += matrix.m42
+      }
+    }
+    return { x, y }
   }
 
   // A row measured mid-slide (a FLIP after a delete) is measured again where it comes to rest.
