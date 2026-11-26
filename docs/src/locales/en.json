@@ -121,7 +121,7 @@
     "browseComponents": "Browse components",
     "themeLabel": "Try a color:",
     "newTag": "New",
-    "newText": "0.5.6: windows, a dock and two-axis resizing",
+    "newText": "{version}: faster long lists and lighter popups",
     "showcaseLabel": "Live demo built with vael-ui"
   },
   "gettingStarted": {

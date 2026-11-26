@@ -257,7 +257,7 @@
     "featureSkillTitle": "KI-Agent-Skills",
     "themeLabel": "Farbe ausprobieren:",
     "newTag": "Neu",
-    "newText": "0.5.6: Fenster, ein Dock und Größenänderung in zwei Achsen",
+    "newText": "{version}: schnellere lange Listen und leichtere Popups",
     "showcaseLabel": "Live-Demo, gebaut mit vael-ui"
   },
   "metaTable": {

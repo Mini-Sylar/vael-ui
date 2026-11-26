@@ -44,7 +44,7 @@ export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => 
     const showcase = document.querySelector('.hero-showcase')
     if (showcase) {
       const rise = showcase.getAnimations()[0]
-      const origin = rise ? (rise.startTime ?? document.timeline.currentTime) : -1e6
+      const origin = Number(rise ? (rise.startTime ?? document.timeline.currentTime) : -1e6)
       const watch = new MutationObserver(() => {
         const copy = document.querySelector('.hero-showcase')
         if (!copy || copy === showcase) return

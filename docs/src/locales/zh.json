@@ -257,7 +257,7 @@
     "featureSkillTitle": "AI 智能体技能",
     "themeLabel": "试试颜色：",
     "newTag": "新",
-    "newText": "0.5.6：窗口、程序坞与双轴调整大小",
+    "newText": "{version}：长列表更快，弹出层更轻",
     "showcaseLabel": "使用 vael-ui 构建的在线演示"
   },
   "i18nKeys": {

@@ -74,7 +74,7 @@
       <div class="repo-col">
         <Card class="repo-panel">
           <div class="repo-panel-head">
-            <h2 class="repo-h">Release <span class="repo-mono">v0.5.6</span></h2>
+            <h2 class="repo-h">Release <span class="repo-mono">v{{ version }}</span></h2>
             <Tag size="sm" variant="muted" class="repo-push">minor</Tag>
           </div>
           <ol class="repo-stages">
@@ -109,7 +109,7 @@
           </SplitButton>
           <Dialog
             v-model:open="shipOpen"
-            title="Ship v0.5.6"
+            :title="`Ship v${version}`"
             description="Publishes to npm, then rolls out to the docs site."
             :container="shell"
             size="sm"
@@ -194,6 +194,8 @@ import type { PullRequest } from '../repoData'
 import { dashboardNavigateKey, dashboardShellKey } from '../dashboardNavigate'
 
 const firstPaint = isFirstPaint()
+// The release it shows is the one you're looking at.
+const version = __VAEL_UI_VERSION__
 const navigate = inject(dashboardNavigateKey, undefined)
 const shell = inject(dashboardShellKey, undefined)
 
@@ -245,7 +247,7 @@ const shipItems: MenuEntry[] = [
 function ship(close: () => void) {
   close()
   const notified = notify.value ? ', #releases notified' : ''
-  toast.success(`v0.5.6 is on its way to npm, rolling out to ${rollout.value}%${notified}.`, {
+  toast.success(`v${version} is on its way to npm, rolling out to ${rollout.value}%${notified}.`, {
     toaster: 'dashboard',
   })
 }
