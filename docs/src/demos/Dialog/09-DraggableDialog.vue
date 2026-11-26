@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Draggable dialog</h3>
     <p class="note">
-      <code>useDrag</code> with a <code>handle</code> moves the panel by its header. A throw carries
-      on at the speed you let go and settles on a spring, inside the window. With the grip focused,
-      the arrow keys move it 10 px, or 50 px with Shift. It reopens centered.
+      <code>useDrag</code> with a <code>handle</code> moves the panel by its header. Let go and it
+      stays where you put it; a quick flick carries on and settles on a spring, inside the window.
+      With the grip focused, the arrow keys move it 10 px, or 50 px with Shift. It reopens centered.
     </p>
     <Button @click="open = true">Open dialog</Button>
     <Dialog ref="dialog" v-model:open="open" :aria-labelledby="titleId">
@@ -55,11 +55,14 @@ function inWindow(to: DragPoint): DragPoint {
   }
 }
 
-// Let go: it coasts where the throw was heading, and stops at the window's edge.
+// Let go: a flick coasts where it was heading; slower, it stays where you put it, as a window does.
+// Either way it stops at the window's edge.
+const FLICK = 1000
 const drag = useDrag({
   el: panel,
   handle: '.drag-header',
-  onRelease: ({ projected }) => inWindow(projected),
+  onRelease: ({ offset, velocity, projected }) =>
+    inWindow(Math.hypot(velocity.x, velocity.y) > FLICK ? projected : offset),
 })
 
 const KEYS: Record<string, [number, number]> = {
