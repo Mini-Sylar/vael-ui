@@ -49,6 +49,7 @@ import {
   watch,
 } from 'vue'
 import DashboardHero from './DashboardHero.vue'
+import { firstPaintDone } from './firstPaint'
 import { resetRepo } from './repoData'
 import type { DashVariant } from './dashboardNavigate'
 import { useLiveCard, useTicker } from '../home/useLiveCard'
@@ -107,6 +108,7 @@ const mounted = shallowRef(false)
 const variant = shallowRef<DashVariant>('repo')
 const hero = useTemplateRef<{ resetPage: () => void }>('hero')
 onMounted(() => {
+  firstPaintDone()
   if (new URLSearchParams(location.search).get('dashboard') === 'store') variant.value = 'store'
   mounted.value = true
   window.addEventListener('keydown', onKeydown, true)

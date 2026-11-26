@@ -1,5 +1,10 @@
 <template>
-  <div class="dither-area" :style="{ '--reveal-delay': `${delay}s` }" aria-hidden="true">
+  <div
+    class="dither-area"
+    :style="{ '--reveal-delay': `${delay}s` }"
+    :data-drawn="drawn || undefined"
+    aria-hidden="true"
+  >
     <div class="dither-fill" :style="{ '--area-mask': areaMask }" />
     <svg class="dither-line" :viewBox="`0 0 ${W} ${H}`" preserveAspectRatio="none">
       <path v-if="secondary" :d="secondaryPaths!.line" class="dither-line-secondary" />
@@ -16,6 +21,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { sparkPaths } from './sparkPath'
+import { isFirstPaint } from './firstPaint'
 
 const props = withDefaults(
   defineProps<{
@@ -30,6 +36,9 @@ const props = withDefaults(
   }>(),
   { secondary: undefined, endDot: false, delay: 0, headroom: 0 },
 )
+
+// Drawn already on the page's first paint; it draws in from the next page on.
+const drawn = isFirstPaint()
 
 const W = 100
 const H = 40
@@ -63,6 +72,9 @@ const areaMask = computed(() => {
   color: var(--docs-accent-ink, var(--ui-text));
   /* Draws in left to right once, as its card lands. */
   animation: dither-reveal 800ms var(--ui-ease-out) var(--reveal-delay, 0s) both;
+}
+.dither-area[data-drawn] {
+  animation: none;
 }
 @keyframes dither-reveal {
   from {

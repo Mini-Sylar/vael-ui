@@ -4,7 +4,7 @@
       <motion.div
         v-for="(stat, i) in stats"
         :key="stat.label"
-        :initial="reduce ? false : { opacity: 0, y: 12 }"
+        :initial="reduce || firstPaint ? false : { opacity: 0, y: 12 }"
         :animate="{ opacity: 1, y: 0 }"
         :transition="{
           duration: 0.35,
@@ -125,6 +125,7 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import { motion, useReducedMotion } from 'motion-v'
+import { isFirstPaint } from '../firstPaint'
 import { Avatar, AvatarGroup, Card, Column, DataTable, Progress, Tag, vTooltip } from 'vael-ui'
 import { currency, orders, STATUS_VARIANT, stats, teamMembers } from '../data'
 import type { StatDef } from '../data'
@@ -134,6 +135,7 @@ import { useDashStacked } from '../useDashStacked'
 
 const navigate = inject(dashboardNavigateKey, null)
 const reduce = useReducedMotion()
+const firstPaint = isFirstPaint()
 
 const recentOrders = computed(() => orders.slice(0, 10))
 const stacked = useDashStacked(560)

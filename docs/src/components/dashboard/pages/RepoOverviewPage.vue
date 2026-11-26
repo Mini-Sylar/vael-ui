@@ -4,7 +4,7 @@
       <motion.div
         v-for="(stat, i) in stats"
         :key="stat.label"
-        :initial="reduce ? false : { opacity: 0, y: 10 }"
+        :initial="reduce || firstPaint ? false : { opacity: 0, y: 10 }"
         :animate="{ opacity: 1, y: 0 }"
         :transition="{ duration: 0.35, delay: reduce ? 0 : i * 0.05, ease: [0.22, 1, 0.36, 1] }"
       >
@@ -164,6 +164,7 @@
 <script setup lang="ts">
 import { computed, inject, shallowRef } from 'vue'
 import { motion, useReducedMotion } from 'motion-v'
+import { isFirstPaint } from '../firstPaint'
 import {
   Avatar,
   AvatarGroup,
@@ -193,6 +194,7 @@ import type { PullRequest } from '../repoData'
 import { dashboardNavigateKey, dashboardShellKey } from '../dashboardNavigate'
 
 const reduce = useReducedMotion()
+const firstPaint = isFirstPaint()
 const navigate = inject(dashboardNavigateKey, undefined)
 const shell = inject(dashboardShellKey, undefined)
 
