@@ -1,6 +1,7 @@
 import { computed, watch } from 'vue'
 import type { ComputedRef, Ref, TransitionProps } from 'vue'
 import { useComponentMotion } from '../motion/useComponentMotion'
+import { loadFloatingUi } from './useFloatingPosition'
 import type { MotionStyle } from '../motion/types'
 
 interface SelectPanelMotionOptions {
@@ -24,8 +25,12 @@ export function clipUntilPlaced(style: Ref<Record<string, string>>) {
   })
 }
 
-/** Resolves once floating-ui has placed it, or after 150 ms if it never is. */
+/** Resolves once floating-ui has placed it, or 150 ms after its code has loaded if it never is. */
 export function whenPlaced(placed: () => boolean): Promise<void> {
+  if (placed()) return Promise.resolve()
+  return loadFloatingUi().then(whenPlacedNow.bind(null, placed))
+}
+function whenPlacedNow(placed: () => boolean): Promise<void> {
   return new Promise((resolve) => {
     if (placed()) return resolve()
     const timer = setTimeout(done, 150)

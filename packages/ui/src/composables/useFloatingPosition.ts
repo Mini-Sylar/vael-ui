@@ -2,10 +2,17 @@ import { shallowRef, toValue, watch, onScopeDispose } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
 import type { ElRef } from './dom'
 import { restingRect } from './dom'
-import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom'
 import type { Middleware, Placement, Side } from '@floating-ui/dom'
 
 export type Align = 'start' | 'center' | 'end'
+
+type FloatingUi = typeof import('@floating-ui/dom')
+// Floating UI loads apart: only an open panel is placed, and it stays hidden until placed.
+let floatingUi: FloatingUi | undefined
+let loadingFloatingUi: Promise<FloatingUi> | undefined
+/** @internal The positioning code, loaded once; every popover starts it as it sets up. */
+export const loadFloatingUi = (): Promise<FloatingUi> =>
+  (loadingFloatingUi ??= import('@floating-ui/dom').then((module) => (floatingUi = module)))
 
 export interface UseFloatingPositionOptions {
   referenceEl: ElRef<HTMLElement | null>
@@ -102,6 +109,7 @@ function facingEdge(
 }
 
 export function useFloatingPosition(options: UseFloatingPositionOptions) {
+  if (typeof window !== 'undefined') void loadFloatingUi()
   const positionerStyle = shallowRef<Record<string, string>>({ ...HIDDEN_STYLE })
   const placement = shallowRef<Placement>('bottom')
   const transformOrigin = shallowRef('center center')
@@ -120,7 +128,8 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
   async function update() {
     const reference = options.referenceEl.value
     const floating = options.floatingEl.value
-    if (!reference || !floating) return
+    if (!reference || !floating || !floatingUi) return
+    const { computePosition, offset, flip, shift, size } = floatingUi
     if (!reference.isConnected) return
     const token = ++updateToken
 
@@ -220,7 +229,15 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
       fresh = true
       const floating = options.floatingEl.value
       if (!isActive || !reference || !floating) return
-      stopAutoUpdate = autoUpdate(reference, floating, update)
+      // Opened before the positioning code arrived: placed as soon as it does, hidden till then.
+      const start = ({ autoUpdate }: FloatingUi) => {
+        stopAutoUpdate = autoUpdate(reference, floating, update)
+      }
+      if (floatingUi) start(floatingUi)
+      else {
+        const token = updateToken
+        void loadFloatingUi().then((module) => token === updateToken && start(module))
+      }
       if (options.onReferenceDisconnected && typeof MutationObserver !== 'undefined') {
         disconnectObserver = new MutationObserver(() => {
           if (reference.isConnected) return

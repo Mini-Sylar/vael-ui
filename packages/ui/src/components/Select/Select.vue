@@ -10,8 +10,9 @@
     :data-invalid="isInvalid || undefined"
     @click="onTriggerClick"
     @focus="focusControl"
-    @focusin="focusEvents.onFocusin"
+    @focusin="onTriggerFocusin"
     @focusout="focusEvents.onFocusout"
+    @pointerenter="loadPanel"
   >
     <!-- Start and end sit outside the combobox, so they don't join its accessible name. -->
     <span v-if="$slots.start" :class="startPart.class" :style="startPart.style"
@@ -129,7 +130,7 @@
   <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition name="ui-select" appear v-bind="panelTransition">
       <div
-        v-if="forceMount || open"
+        v-if="(forceMount || open) && panelReady"
         v-show="open"
         ref="positioner"
         :class="positionerPart.class"
@@ -160,7 +161,7 @@
             :style="filterPart.style"
           >
             <slot name="filter" :query="query" :on-keydown="onFilterKeydown">
-              <Input
+              <FilterInput
                 ref="filterInputRef"
                 autocapitalize="off"
                 autocorrect="off"
@@ -197,7 +198,7 @@
                     </svg>
                   </slot>
                 </template>
-              </Input>
+              </FilterInput>
             </slot>
           </div>
           <!-- v-memo: this component re-renders as the panel is placed; the list only with its own inputs. -->
@@ -325,7 +326,18 @@ import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
 import { useActiveDescendant } from '../../composables/useActiveDescendant'
-import { computed, inject, nextTick, provide, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  nextTick,
+  onMounted,
+  provide,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useAttrListeners, useFocusEvents } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
 import { clipUntilPlaced, useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
@@ -340,9 +352,8 @@ import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useMessages, selectMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
-import SelectListBody from '../internal/SelectListBody.vue'
+import { lazyComponent, preloadParts } from '../../composables/lazyComponent'
 import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
-import Input from '../Input/Input.vue'
 import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 import RequiredInput from '../internal/RequiredInput.vue'
@@ -742,6 +753,33 @@ const {
 
 // Held in a stable object, with the active id written to the element: a highlight move re-renders nothing here.
 const highlight = { current: activeIndex }
+// The list and the filter field load apart, from mount, or as the pointer or focus
+// reaches the field; opened before they have, the panel waits and comes in with them.
+const selectListBody = lazyComponent('SelectListBody', () =>
+  defineAsyncComponent(() => import('../internal/SelectListBody.vue')),
+)
+const filterInput = lazyComponent('FilterInput', () =>
+  defineAsyncComponent(() => import('../Input/Input.vue')),
+)
+const SelectListBody = selectListBody.component
+const FilterInput = filterInput.component
+const hasFilter = () => props.filter !== undefined
+const panelReady = computed(
+  () => selectListBody.ready.value && (!hasFilter() || filterInput.ready.value),
+)
+function loadPanel() {
+  void selectListBody.load()
+  if (hasFilter()) void filterInput.load()
+}
+function onTriggerFocusin(event: FocusEvent) {
+  loadPanel()
+  focusEvents.onFocusin(event)
+}
+watch(open, (isOpen) => isOpen && loadPanel(), { immediate: true })
+if (props.forceMount) loadPanel()
+onMounted(() =>
+  hasFilter() ? preloadParts(selectListBody, filterInput) : preloadParts(selectListBody),
+)
 // The panel's Teleport and Transition wait for the first open; closed, it skips them.
 let everShown = false
 const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))

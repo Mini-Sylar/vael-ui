@@ -26,6 +26,7 @@
     @input="onQueryInput"
     @keydown="onInputKeydown"
     @focus="onInputFocus"
+    @pointerenter="loadPanel"
     @blur="onInputBlur"
     @click="onInputClick"
   >
@@ -116,7 +117,7 @@
   <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition name="ui-select" appear v-bind="panelTransition">
       <div
-        v-if="forceMount || open"
+        v-if="(forceMount || open) && selectListBody.ready.value"
         v-show="open"
         ref="positioner"
         :class="positionerPart.class"
@@ -306,8 +307,10 @@ import '../shared/select-list.css'
 import '../shared/chip.css'
 import {
   computed,
+  defineAsyncComponent,
   inject,
   nextTick,
+  onMounted,
   provide,
   ref,
   useAttrs,
@@ -332,7 +335,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { inputPickedKey } from '../../composables/inputPicked'
 import { useMessages, comboboxMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
-import SelectListBody from '../internal/SelectListBody.vue'
+import { lazyComponent, preloadParts } from '../../composables/lazyComponent'
 import RequiredInput from '../internal/RequiredInput.vue'
 import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
 import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
@@ -842,6 +845,16 @@ const {
 // Held in a stable object, with the active id written to the element: a highlight move re-renders nothing here.
 const highlight = { current: activeIndex }
 // The panel's Teleport and Transition wait for the first open; closed, it skips them.
+// The list loads apart, from mount, or as the pointer or focus reaches the field;
+// opened before it has, the panel waits and comes in with it.
+const selectListBody = lazyComponent('SelectListBody', () =>
+  defineAsyncComponent(() => import('../internal/SelectListBody.vue')),
+)
+const SelectListBody = selectListBody.component
+const loadPanel = () => void selectListBody.load()
+watch(open, (isOpen) => isOpen && loadPanel(), { immediate: true })
+if (props.forceMount) loadPanel()
+onMounted(() => preloadParts(selectListBody))
 let everShown = false
 const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
 // One object while its parts stay the same: the list is only handed a new one when they change.
@@ -898,6 +911,7 @@ function onQueryInput() {
   if (!open.value) open.value = true
 }
 function onInputFocus() {
+  loadPanel()
   isFocused.value = true
   if (!isDisabled.value && openOnFocusResolved.value) open.value = true
 }

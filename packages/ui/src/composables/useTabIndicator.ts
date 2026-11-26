@@ -8,7 +8,7 @@ import {
   toValue,
   watch,
 } from 'vue'
-import type { MaybeRefOrGetter, Ref, WatchSource } from 'vue'
+import type { MaybeRefOrGetter, Ref, ShallowRef, WatchSource } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 import { injectDefaults, isOutside } from '../config'
@@ -38,6 +38,8 @@ export type { IndicatorStretch }
 
 export interface UseTabIndicatorOptions {
   listEl: ElRef<HTMLElement | null>
+  /** @internal Refs to write into instead of its own: a highlight that starts late keeps the ones handed out. */
+  into?: { style: ShallowRef<Record<string, string | undefined>>; placed: ShallowRef<boolean> }
   /** Must match the `Tabs` instance's own `orientation` — same axis, same keys. */
   orientation?: MaybeRefOrGetter<'horizontal' | 'vertical'>
   /** The active element to measure inside `listEl`. Defaults to Tabs' own shape; SelectButton passes `'[data-checked]'` to reuse the same sliding technique for its single-select indicator. */
@@ -85,8 +87,8 @@ export function useTabIndicator(
   active: WatchSource<unknown>,
   options: UseTabIndicatorOptions,
 ): UseTabIndicatorReturn {
-  const style = shallowRef<Record<string, string | undefined>>({})
-  const placed = shallowRef(false)
+  const style = options.into?.style ?? shallowRef<Record<string, string | undefined>>({})
+  const placed = options.into?.placed ?? shallowRef(false)
   const provided = injectDefaults()
   const mode = (): IndicatorMode =>
     toValue(options.indicator) ?? provided?.value.indicator ?? 'glide'

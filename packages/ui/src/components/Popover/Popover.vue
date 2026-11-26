@@ -195,6 +195,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useComponentMotion } from '../../motion/useComponentMotion'
 import { loadSurface } from '../../composables/lazyParts'
+import { whenPlaced } from '../../composables/useSelectPanelMotion'
 import type { MotionRef, PopoverMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
@@ -361,23 +362,11 @@ function measureSurface() {
 }
 // Placed: floating-ui has put it where it opens. A panel that's never placed opens anyway.
 function placed(): Promise<void> {
-  return new Promise((resolve) => {
-    let stop: (() => void) | undefined
-    const done = () => {
-      clearTimeout(timer)
-      stop?.()
-      if (!surface.value) return resolve()
-      void loadSurface().then((kit) => {
-        surfaceKit = kit
-        measureSurface()
-        resolve()
-      })
-    }
-    const timer = setTimeout(done, 150)
-    // Already placed: at once.
-    if (positionerStyle.value.visibility === 'visible') return done()
-    stop = watch(positionerStyle, (style) => style.visibility === 'visible' && done(), {
-      flush: 'post',
+  return whenPlaced(() => positionerStyle.value.visibility === 'visible').then(() => {
+    if (!surface.value) return
+    return loadSurface().then((kit) => {
+      surfaceKit = kit
+      measureSurface()
     })
   })
 }

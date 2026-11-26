@@ -1,11 +1,10 @@
-import { onScopeDispose, toValue, watch } from 'vue'
+import { effectScope, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { MaybeRefOrGetter } from 'vue'
-import { useTabIndicator } from './useTabIndicator'
 import type { IndicatorMode, UseTabIndicatorReturn } from './useTabIndicator'
 import type { ElRef } from './dom'
-import { loadHoverHandoff } from './lazyParts'
-import { injectDefaults } from '../config'
+import { loadHoverHandoff, loadTabIndicator } from './lazyParts'
+import { injectDefaults, runOutside } from '../config'
 
 export interface UseHoverIndicatorOptions {
   /** The rows the indicator moves between, matched inside `listEl`. */
@@ -56,18 +55,38 @@ export function useHoverIndicator(
   // so a quick sweep chases the cursor instead of teleporting between the rows it skipped.
   let fromKeyboard = false
 
-  const indicator = useTabIndicator(() => listEl.value, {
-    listEl,
-    orientation: options.orientation ?? 'vertical',
-    selector: `[${MARK}="${id}"]`,
-    scroller: options.scroller,
-    matchCross: options.matchCross ?? true,
-    maxGlide: () => (fromKeyboard ? (options.maxGlide ?? 3) : Number.POSITIVE_INFINITY),
-    motion: () => toValue(options.motion) ?? provided?.value.motion,
-    indicator: options.indicator,
-    indicatorEl: options.indicatorEl,
-    position: 'translate',
-  })
+  // The highlight's code loads apart, fetched as this sets up: it shows only on a hover or a key.
+  // It starts in this scope with the provider's defaults, writing into the refs handed out now.
+  const into = {
+    style: shallowRef<Record<string, string | undefined>>({}),
+    placed: shallowRef(false),
+  }
+  let moved: UseTabIndicatorReturn | undefined
+  const indicator: UseTabIndicatorReturn = { ...into, update: () => moved?.update() }
+  const later = effectScope()
+  let gone = false
+  if (typeof window !== 'undefined') {
+    void loadTabIndicator().then(({ useTabIndicator }) => {
+      if (gone) return
+      later.run(() => {
+        moved = runOutside(provided, () =>
+          useTabIndicator(() => listEl.value, {
+            listEl,
+            into,
+            orientation: options.orientation ?? 'vertical',
+            selector: `[${MARK}="${id}"]`,
+            scroller: options.scroller,
+            matchCross: options.matchCross ?? true,
+            maxGlide: () => (fromKeyboard ? (options.maxGlide ?? 3) : Number.POSITIVE_INFINITY),
+            motion: () => toValue(options.motion) ?? provided?.value.motion,
+            indicator: options.indicator,
+            indicatorEl: options.indicatorEl,
+            position: 'translate',
+          }),
+        )
+      })
+    })
+  }
   function mark(el: HTMLElement | null, keyboard = false) {
     if (el === current) return
     current?.removeAttribute(MARK)
@@ -152,6 +171,8 @@ export function useHoverIndicator(
   })
   onScopeDispose(() => {
     current = null
+    gone = true
+    later.stop()
   })
   watch(
     () => toValue(options.enabled),

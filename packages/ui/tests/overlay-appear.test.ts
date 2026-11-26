@@ -66,7 +66,8 @@ for (const [name, tree, selector] of cases) {
     // The engine may still be loading on a cold start: give it a moment, then the panel moves.
     const panel = engineDriven[name]
     if (panel) await vi.waitFor(() => expect(panelMoving(panel)).toBe(true))
-    else expect(entering(document.querySelector(selector))).toBe(true)
+    // A Select's list loads apart: mounted open, the panel comes in once it has.
+    else await vi.waitFor(() => expect(entering(document.querySelector(selector))).toBe(true))
   })
 }
 
