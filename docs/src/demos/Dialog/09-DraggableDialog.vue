@@ -7,7 +7,12 @@
       With the grip focused, the arrow keys move it 10 px, or 50 px with Shift. It reopens centered.
     </p>
     <Button @click="open = true">Open dialog</Button>
-    <Dialog ref="dialog" v-model:open="open" :aria-labelledby="titleId">
+    <Dialog
+      ref="dialog"
+      v-model:open="open"
+      :aria-labelledby="titleId"
+      :ui="{ header: 'drag-zone' }"
+    >
       <template #header>
         <div class="drag-header">
           <Button
@@ -60,7 +65,7 @@ function inWindow(to: DragPoint): DragPoint {
 const FLICK = 1000
 const drag = useDrag({
   el: panel,
-  handle: '.drag-header',
+  handle: '.drag-zone',
   onRelease: ({ offset, velocity, projected }) =>
     inWindow(Math.hypot(velocity.x, velocity.y) > FLICK ? projected : offset),
 })
@@ -90,15 +95,6 @@ function nudge(event: KeyboardEvent) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin: -0.5rem 0;
-  padding-block: 0.5rem;
-  cursor: grab;
-  /* Touch drags move the panel instead of scrolling the page. */
-  touch-action: none;
-  user-select: none;
-}
-.drag-header:active {
-  cursor: grabbing;
 }
 .grip {
   margin-inline-start: -0.5rem;
@@ -108,5 +104,18 @@ function nudge(event: KeyboardEvent) {
   margin: 0;
   font-size: 1.0625rem;
   font-weight: 600;
+}
+</style>
+
+<!-- The whole header bar grabs, not just its title row. The panel is teleported, so it's styled here. -->
+<style>
+.drag-zone {
+  cursor: grab;
+  /* Touch drags move the panel instead of scrolling the page. */
+  touch-action: none;
+  user-select: none;
+}
+.drag-zone:active {
+  cursor: grabbing;
 }
 </style>

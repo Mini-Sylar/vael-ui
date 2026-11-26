@@ -215,3 +215,27 @@ test('a release kept where it is stays put', async () => {
   expect(drag.x.value).toBe(released)
   expect(rests.at(-1)).toEqual({ x: released, y: 0 })
 })
+
+test('a press off the handle catches it mid-flight where it is; only the handle drags', async () => {
+  const { el, drag, rested } = setup({ handle: '.grip' })
+  el.innerHTML = '<div class="grip">grip</div><p class="body">body</p>'
+  drag.throwTo({ x: 400, y: 0 })
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  const body = el.querySelector('.body')!
+  const resting = rested()
+  body.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 3,
+      button: 0,
+      clientX: 10,
+      clientY: 10,
+    }),
+  )
+  const caught = await resting
+  expect(caught.x).toBeGreaterThan(0)
+  expect(caught.x).toBeLessThan(400)
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  // Stopped where it was caught, not still flying to 400.
+  expect(drag.x.value).toBe(caught.x)
+})
