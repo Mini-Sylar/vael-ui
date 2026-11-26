@@ -746,3 +746,26 @@ test('with motion off a pick writes the label straight into the field', async ()
   await vi.waitFor(() => expect(input.element()).toHaveValue('Cranberry'))
   expect(document.querySelector('.ui-input-display')).toBeNull()
 })
+
+test('nothing matching what you typed says what: "No results for …"; no query, just "No results"', async () => {
+  const items = [
+    { label: 'Apple', value: 'apple' },
+    { label: 'Banana', value: 'banana' },
+  ]
+  const screen = await render(Combobox, { props: { items, 'aria-label': 'Fruit' } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'kiwi')
+  await vi.waitFor(() =>
+    expect(document.querySelector('.ui-select-empty')?.textContent?.trim()).toBe(
+      'No results for "kiwi"',
+    ),
+  )
+  const none = await render(Combobox, { props: { items: [], 'aria-label': 'Empty' } })
+  await none.getByRole('combobox', { name: 'Empty' }).click()
+  await vi.waitFor(() =>
+    expect(
+      [...document.querySelectorAll('.ui-select-empty')].map((el) => el.textContent?.trim()),
+    ).toContain('No results'),
+  )
+})
