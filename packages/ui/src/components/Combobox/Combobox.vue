@@ -155,7 +155,7 @@
               loading,
               scrollFade,
               !!props.motion,
-              emptyText,
+              emptyText(),
               $slots.item,
               $slots.create,
               showCreateRow,
@@ -174,7 +174,7 @@
             :listbox-id="listboxId"
             :multiple="multiple"
             :loading="loading"
-            :empty-text="emptyText"
+            :empty-text="emptyText()"
             :item-size="virtualizeConfig?.itemSize"
             :windowed="!!virtualizeConfig"
             :overscan="effectiveOverscan"
@@ -610,11 +610,10 @@ function isCreateRow(item: T): boolean {
 }
 const trimmedQuery = computed(() => query.value.trim())
 // Nothing matches what you typed: it says what, as a search does.
-const emptyText = computed(() =>
+const emptyText = () =>
   queryDirty.value && trimmedQuery.value
     ? messages.value.combobox.emptyFor.replace('{query}', trimmedQuery.value)
-    : messages.value.combobox.empty,
-)
+    : messages.value.combobox.empty
 const showCreateRow = computed(() => {
   if (!props.allowCustom || !props.createOption || !queryDirty.value || props.loading) return false
   const raw = trimmedQuery.value
