@@ -63,11 +63,15 @@ function inWindow(to: DragPoint): DragPoint {
 // Let go: a flick coasts where it was heading; slower, it stays where you put it, as a window does.
 // Either way it stops at the window's edge.
 const FLICK = 1000
+let heading: DragPoint | null = null
 const drag = useDrag({
   el: panel,
   handle: '.drag-zone',
-  onRelease: ({ offset, velocity, projected }) =>
-    inWindow(Math.hypot(velocity.x, velocity.y) > FLICK ? projected : offset),
+  onRelease: ({ offset, velocity, projected }) => {
+    heading = null
+    return inWindow(Math.hypot(velocity.x, velocity.y) > FLICK ? projected : offset)
+  },
+  onRest: () => (heading = null),
 })
 
 const KEYS: Record<string, [number, number]> = {
@@ -81,12 +85,10 @@ function nudge(event: KeyboardEvent) {
   if (!direction) return
   event.preventDefault()
   const step = event.shiftKey ? 50 : 10
-  drag.throwTo(
-    inWindow({
-      x: drag.x.value + direction[0] * step,
-      y: drag.y.value + direction[1] * step,
-    }),
-  )
+  // From where the last press is heading, so keys pressed in a row add up.
+  const from = heading ?? { x: drag.x.value, y: drag.y.value }
+  heading = inWindow({ x: from.x + direction[0] * step, y: from.y + direction[1] * step })
+  drag.throwTo(heading)
 }
 </script>
 

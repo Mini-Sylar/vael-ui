@@ -239,3 +239,19 @@ test('a press off the handle catches it mid-flight where it is; only the handle 
   // Stopped where it was caught, not still flying to 400.
   expect(drag.x.value).toBe(caught.x)
 })
+
+test('a drag follows the pointer 1:1 from wherever it was left, not only from home', async () => {
+  const { el, drag, rested } = setup()
+  el.style.cssText = 'width: 100px; height: 40px'
+  drag.throwTo({ x: 30, y: 50 })
+  await rested()
+  const fire = (type: string, x: number, y: number) =>
+    el.dispatchEvent(
+      new PointerEvent(type, { bubbles: true, pointerId: 4, button: 0, clientX: x, clientY: y }),
+    )
+  fire('pointerdown', 200, 200)
+  for (let i = 1; i <= 10; i++) fire('pointermove', 200 - i * 6, 200 - i * 10)
+  // Past the threshold's catch-up, it's moved as far as the pointer: 60 and 100 px back.
+  expect(drag.x.value).toBeCloseTo(30 - 60, -1)
+  expect(drag.y.value).toBeCloseTo(50 - 100, -1)
+})
