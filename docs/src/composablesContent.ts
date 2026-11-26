@@ -19,6 +19,8 @@ export interface ComposableContent {
   exampleCode?: string
   /** Optional script that must run in the HTML head before Vue loads. */
   headCode?: string
+  /** A topic of its own after the examples: its text, and the demos (`UseFoo/02-Name`) it shows instead of them. */
+  sections?: { id: string; title: string; text: string; examples: string[] }[]
   params: MetaRow[]
   returns: MetaRow[]
 }
@@ -560,7 +562,7 @@ el.style.transition = \`transform \${spring.duration}ms \${spring.easing}\``,
   useColorScheme: {
     hasLiveDemo: true,
     description:
-      "Sets the root `data-theme` to `light` or `dark`; `system` follows the OS preference. Pass `persist` to save the choice in cookies, a store or `localStorage`. Vue restores a saved choice on mount, which can be after first paint, so the HTML head example restores the color mode, and an optional root font size, before paint. Every call in the browser shares one state, so two toggles never disagree. Pass `{ from: event }` as the second argument to `setMode` and the new scheme spreads in a circle from the click, as the example below and this site's header toggle do. It uses a View Transition, timed by the `--ui-duration-drawer` and `--ui-ease-drawer` tokens, so a theme or a ConfigProvider `spring` that changes them retimes it too. Browsers without View Transitions, reduced motion and a ConfigProvider with `motion: false` switch at once. To use your own effect, animate `::view-transition-old(root)` or `::view-transition-new(root)` in your CSS, and your animation plays instead of the circle. For a crossfade, add `@keyframes fade-in { from { opacity: 0; } }`, then `::view-transition-old(root) { animation: none; }` and `::view-transition-new(root) { animation: fade-in 300ms; }`.",
+      "Sets the root `data-theme` to `light` or `dark`; `system` follows the OS preference. Pass `persist` to save the choice in cookies, a store or `localStorage`. Vue restores a saved choice on mount, which can be after first paint, so the HTML head example restores the color mode, and an optional root font size, before paint. Every call in the browser shares one state, so two toggles never disagree. Pass `{ from: event }` as the second argument to `setMode` and the new scheme spreads in a circle from the click, as the example below and this site's header toggle do. It uses a View Transition, timed by the `--ui-duration-drawer` and `--ui-ease-drawer` tokens, so a theme or a ConfigProvider `spring` that changes them retimes it too. Browsers without View Transitions, reduced motion and a ConfigProvider with `motion: false` switch at once.",
     exampleCode: `import { useColorScheme } from 'vael-ui'
 
 const { mode, resolvedMode, setMode } = useColorScheme({
@@ -591,6 +593,12 @@ const { mode, resolvedMode, setMode } = useColorScheme({
         description:
           "Saves and restores the choice. Without it, nothing is saved. `set` receives `null` for `'system'`.",
       },
+      {
+        name: 'motion',
+        type: '{ duration?; easing?; initial?: { new? }; exit?: { old? } } | false',
+        description:
+          'Your own transition for every switch from this call, instead of the circle. `false` switches at once.',
+      },
     ],
     returns: [
       {
@@ -605,9 +613,17 @@ const { mode, resolvedMode, setMode } = useColorScheme({
       },
       {
         name: 'setMode',
-        type: '(mode, reveal?: { from: Event | Element | { x, y }; duration?; easing? }) => void',
+        type: '(mode, reveal?: { from?: Event | Element | { x, y }; duration?; easing?; motion? }) => void',
         description:
-          'Sets the mode, persists it and applies it. With `reveal`, the new scheme spreads in a circle from `from`: a click, an element, or a point. `duration` (in ms) and `easing` default to the `--ui-duration-drawer` (500 ms) and `--ui-ease-drawer` (`cubic-bezier(0.32, 0.72, 0, 1)`) tokens.',
+          'Sets the mode, persists it and applies it. With `reveal`, the new scheme spreads in a circle from `from`: a click, an element, or a point. `duration` (in ms) and `easing` default to the `--ui-duration-drawer` (500 ms) and `--ui-ease-drawer` (`cubic-bezier(0.32, 0.72, 0, 1)`) tokens. `motion` overrides the one given to `useColorScheme` for this switch.',
+      },
+    ],
+    sections: [
+      {
+        id: 'your-own-transition',
+        title: 'Your own transition',
+        text: "Pass `motion` to `useColorScheme`, written like a component's `motion`: the new scheme enters from `initial.new` and the old page leaves to `exit.old`, both about the click.",
+        examples: ['UseColorScheme/02-YourOwnTransition'],
       },
     ],
   },

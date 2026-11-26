@@ -65,6 +65,27 @@ test('a reveal spreads the new scheme in a circle from the given point', async (
   expect(document.documentElement.dataset.theme).toBe('dark')
 })
 
+test('without from, the reveal spreads from the centre of the screen', async () => {
+  let api: ReturnType<typeof useColorScheme> | undefined
+  await render({
+    setup() {
+      api = useColorScheme()
+      return () => null
+    },
+  })
+  api!.setMode('dark', {})
+  await vi.waitFor(() => {
+    const reveal = document
+      .getAnimations()
+      .find(
+        (animation) =>
+          (animation.effect as KeyframeEffect).pseudoElement === '::view-transition-new(root)',
+      )
+    const frames = (reveal!.effect as KeyframeEffect).getKeyframes()
+    expect(frames[0]!.clipPath).toBe(`circle(0px at ${innerWidth / 2}px ${innerHeight / 2}px)`)
+  })
+})
+
 test('without View Transitions the scheme switches at once', async () => {
   const original = (document as { startViewTransition?: unknown }).startViewTransition
   ;(document as { startViewTransition?: unknown }).startViewTransition = undefined
@@ -117,11 +138,14 @@ const circle = () =>
       .some((frame) => String(frame.clipPath).startsWith('circle')),
   )
 
-async function mountScheme(wrap?: (child: Component) => VNode) {
+async function mountScheme(
+  wrap?: (child: Component) => VNode,
+  options?: Parameters<typeof useColorScheme>[0],
+) {
   let api: ReturnType<typeof useColorScheme> | undefined
   const Child = defineComponent({
     setup() {
-      api = useColorScheme()
+      api = useColorScheme(options)
       return () => h('button', { 'data-testid': 'toggle' }, 'toggle')
     },
   })
@@ -150,6 +174,88 @@ test('your own CSS animation on the root pseudos plays, and the circle steps asi
   expect(circle()).toBeUndefined()
   // The rest of the transition stays the browser's own.
   expect(named('-ua-view-transition-fade-out')).toBeDefined()
+})
+
+test('motion plays your values for this switch, about the point it starts from, instead of the circle', async () => {
+  const { api } = await mountScheme()
+  api.setMode('dark', {
+    from: { x: 40, y: 30 },
+    duration: 600,
+    motion: {
+      initial: { new: { opacity: 0, scale: 0.5 } },
+      exit: { old: { rotate: -90, blur: { value: 8, delay: 0.1, duration: 200 } } },
+    },
+  })
+  const on = (pseudo: string, prop: string) =>
+    onRoot().find(
+      (animation) =>
+        (animation.effect as KeyframeEffect).pseudoElement === pseudo &&
+        (animation.effect as KeyframeEffect).getKeyframes().some((frame) => prop in frame),
+    )
+  await vi.waitFor(() => expect(on(OLD, 'filter')).toBeDefined())
+  // In from its values, out to them, on the switch's timing or a value's own.
+  const fade = on(NEW, 'opacity')!.effect as KeyframeEffect
+  expect(fade.getKeyframes()[0]!.opacity).toBe('0')
+  expect(fade.getComputedTiming().duration).toBe(600)
+  const turn = (on(OLD, 'rotate')!.effect as KeyframeEffect).getKeyframes()
+  expect(turn.at(-1)!.rotate).toBe('-90deg')
+  const blur = on(OLD, 'filter')!.effect as KeyframeEffect
+  expect(blur.getTiming().delay).toBe(100)
+  expect(blur.getComputedTiming().duration).toBe(200)
+  // Both turn and scale about where it started.
+  const origin = (on(NEW, 'transformOrigin')!.effect as KeyframeEffect).getKeyframes()
+  expect(origin[0]!.transformOrigin).toBe('40px 30px')
+  // Nothing of the browser's crossfade, nor the circle.
+  expect(circle()).toBeUndefined()
+  expect(onRoot().some((animation) => animation instanceof CSSAnimation)).toBe(false)
+})
+
+test("useColorScheme's motion plays on every switch, from the centre, and a switch's own wins", async () => {
+  const { api } = await mountScheme(undefined, {
+    motion: { duration: 300, exit: { old: { scale: 0 } } },
+  })
+  const shrink = () =>
+    onRoot().find(
+      (animation) =>
+        (animation.effect as KeyframeEffect).pseudoElement === OLD &&
+        (animation.effect as KeyframeEffect).getKeyframes().some((frame) => 'scale' in frame),
+    )
+  api.setMode('dark')
+  await vi.waitFor(() => expect(shrink()).toBeDefined())
+  expect(shrink()!.effect!.getComputedTiming().duration).toBe(300)
+  const origin = onRoot().find((animation) =>
+    (animation.effect as KeyframeEffect).getKeyframes().some((frame) => 'transformOrigin' in frame),
+  )!
+  expect((origin.effect as KeyframeEffect).getKeyframes()[0]!.transformOrigin).toBe(
+    `${innerWidth / 2}px ${innerHeight / 2}px`,
+  )
+  await vi.waitFor(() => expect(shrink()).toBeUndefined())
+  // This switch's motion: retimes the circle instead.
+  api.setMode('light', { from: { x: 10, y: 10 }, motion: { duration: 200 } })
+  await vi.waitFor(() => expect(circle()).toBeDefined())
+  expect(circle()!.effect!.getComputedTiming().duration).toBe(200)
+  expect(shrink()).toBeUndefined()
+})
+
+test('motion: false switches at once, from useColorScheme or one switch', async () => {
+  const doc = document as Document & { startViewTransition: () => unknown }
+  const spy = vi.spyOn(doc, 'startViewTransition')
+  try {
+    const { api } = await mountScheme(undefined, { motion: false })
+    api.setMode('dark', { from: { x: 10, y: 10 } })
+    let other: ReturnType<typeof useColorScheme> | undefined
+    await render({
+      setup() {
+        other = useColorScheme()
+        return () => null
+      },
+    })
+    other!.setMode('light', { from: { x: 10, y: 10 }, motion: false })
+    expect(spy).not.toHaveBeenCalled()
+    expect(document.documentElement.dataset.theme).toBe('light')
+  } finally {
+    spy.mockRestore()
+  }
 })
 
 test('a ConfigProvider with motion: false switches at once', async () => {

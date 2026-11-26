@@ -3,6 +3,7 @@ import type { ShallowRef } from 'vue'
 import { prefersReducedMotion } from './dom'
 import { injectDefaults } from '../config'
 import { motionOffAt } from '../motion/styleHolder'
+import type { MotionValues } from '../motion/types'
 
 export type ColorSchemeMode = 'system' | 'light' | 'dark'
 
@@ -14,23 +15,44 @@ export interface UseColorSchemeOptions {
     get: () => string | null
     set: (mode: ColorSchemeMode | null) => void
   }
+  /**
+   * Your own transition for every switch from this call, instead of the circle. `false` switches at
+   * once. A switch's own `motion` overrides it.
+   */
+  motion?: ColorSchemeMotion | false
+}
+
+/**
+ * A switch's transition, written like a component's `motion`: the new scheme enters from
+ * `initial.new`, the old page leaves to `exit.old`, both about where it starts. With neither, the
+ * circle plays on this timing. `{ exit: { old: { scale: 0 } } }`
+ */
+export interface ColorSchemeMotion {
+  /** How long it takes, in ms. Defaults to the `--ui-duration-drawer` token (500 ms). */
+  duration?: number
+  /** Its CSS easing. Defaults to the `--ui-ease-drawer` token. */
+  easing?: string
+  initial?: { new?: MotionValues }
+  exit?: { old?: MotionValues }
 }
 
 export interface ColorSchemeRevealOptions {
-  /** Where the new scheme spreads from: the click or tap, an element's centre, or a point. */
-  from: Event | Element | { x: number; y: number }
-  /** How long the circle takes to cover the page, in ms. Defaults to the `--ui-duration-drawer` token (500 ms). */
+  /** Where it spreads from: the click or tap, an element's centre, or a point. Unset: the screen's centre. */
+  from?: Event | Element | { x: number; y: number }
+  /** How long the switch takes, in ms. Defaults to the `--ui-duration-drawer` token (500 ms). */
   duration?: number
-  /** The circle's CSS easing. Defaults to the `--ui-ease-drawer` token (`cubic-bezier(0.32, 0.72, 0, 1)`). */
+  /** Its CSS easing. Defaults to the `--ui-ease-drawer` token (`cubic-bezier(0.32, 0.72, 0, 1)`). */
   easing?: string
+  /** This switch's transition, over the one given to `useColorScheme`. `false` switches at once. */
+  motion?: ColorSchemeMotion | false
 }
 
 export interface UseColorSchemeReturn {
   mode: ShallowRef<ColorSchemeMode>
   resolvedMode: ShallowRef<'light' | 'dark'>
   /**
-   * Switches the scheme. With `reveal`, the new one spreads in a circle from `reveal.from` (a View
-   * Transition). Your own CSS animation on `::view-transition-old(root)` or
+   * Switches the scheme. With `reveal`, or a `motion` given to `useColorScheme`, it plays that or
+   * the circle from `reveal.from` (a View Transition). Your own CSS animation on `::view-transition-old(root)` or
    * `::view-transition-new(root)` replaces the circle. Browsers without View Transitions, reduced
    * motion and a ConfigProvider with `motion: false` switch at once.
    */
@@ -44,7 +66,9 @@ type ViewTransitionDocument = Document & {
   startViewTransition?: (update: () => Promise<void> | void) => { ready: Promise<void> }
 }
 
-function revealPoint(from: ColorSchemeRevealOptions['from']): { x: number; y: number } {
+function revealPoint(
+  from: ColorSchemeRevealOptions['from'] = { x: innerWidth / 2, y: innerHeight / 2 },
+): { x: number; y: number } {
   if (from instanceof Element) {
     const rect = from.getBoundingClientRect()
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
@@ -62,6 +86,7 @@ function revealPoint(from: ColorSchemeRevealOptions['from']): { x: number; y: nu
 
 // The element the reveal starts on: its ConfigProvider's motion setting and tokens apply.
 function revealSource(from: ColorSchemeRevealOptions['from']): Element {
+  if (!from) return document.documentElement
   const candidates =
     from instanceof Element
       ? [from]
@@ -76,7 +101,7 @@ const fromBrowser = (animation: Animation) =>
   animation instanceof CSSAnimation && animation.animationName.startsWith('-ua-')
 
 // The drawer's motion tokens where the reveal starts, so a theme or ConfigProvider retimes it.
-function revealTiming(el: Element, reveal: ColorSchemeRevealOptions) {
+function revealTiming(el: Element, reveal: { duration?: number; easing?: string }) {
   const style = getComputedStyle(el)
   const token = style.getPropertyValue('--ui-duration-drawer').trim()
   const ms = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000)
@@ -127,32 +152,78 @@ export function useColorScheme(options: UseColorSchemeOptions = {}): UseColorSch
     mode.value = next
     options.persist?.set(next === 'system' ? null : next)
     const doc = document as ViewTransitionDocument
-    const source = reveal && revealSource(reveal.from)
+    // This switch's motion, else this call's; with either, it plays without a `reveal`.
+    const motion = reveal?.motion ?? options.motion
+    const source = (reveal || motion) && revealSource(reveal?.from)
     const quiet =
-      !source || prefersReducedMotion() || defaults?.value.motion === false || motionOffAt(source)
-    const timing = reveal && !quiet ? revealTiming(source, reveal) : undefined
+      !source ||
+      motion === false ||
+      prefersReducedMotion() ||
+      defaults?.value.motion === false ||
+      motionOffAt(source)
+    const timing = quiet
+      ? undefined
+      : revealTiming(source, {
+          duration: reveal?.duration ?? motion?.duration,
+          easing: reveal?.easing ?? motion?.easing,
+        })
     // Without View Transitions, or at zero duration (motion tokens turned off), it switches at once.
-    if (!reveal || !timing || !(timing.duration > 0) || !doc.startViewTransition) {
+    if (!timing || !(timing.duration > 0) || !doc.startViewTransition) {
       apply()
       return
     }
-    const { x, y } = revealPoint(reveal.from)
+    const { x, y } = revealPoint(reveal?.from)
     const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))
-    const transition = doc.startViewTransition(async () => {
-      apply()
-      await nextTick()
-    })
-    void transition.ready.then(() => {
-      const root = document
-        .getAnimations()
-        .filter((animation) =>
-          [OLD, NEW].includes((animation.effect as KeyframeEffect | null)?.pseudoElement ?? ''),
-        )
+    const html = document.documentElement
+    // Switches inside a View Transition, then hands `play` the browser's own animations of it.
+    const run = (play: (root: Animation[], done: Promise<unknown>) => void) => {
+      const transition = doc.startViewTransition!(async () => {
+        apply()
+        await nextTick()
+      })
+      void transition.ready.then(() =>
+        play(
+          document
+            .getAnimations()
+            .filter((animation) =>
+              [OLD, NEW].includes((animation.effect as KeyframeEffect | null)?.pseudoElement ?? ''),
+            ),
+          transition.finished,
+        ),
+      )
+    }
+    // Yours, instead of the circle or any CSS of the page's own. The engine loads first, so no
+    // frame shows without it.
+    if (motion && (motion.initial || motion.exit)) {
+      void import('../motion/pseudo').then(({ animatePseudo }) =>
+        run((root, done) => {
+          for (const animation of root) animation.cancel()
+          const runs = [
+            ...animatePseudo(html, NEW, motion.initial?.new ?? {}, timing, 'in'),
+            ...animatePseudo(html, OLD, motion.exit?.old ?? {}, timing, 'out'),
+          ]
+          // Both turn and scale about the point it starts from, for as long as anything plays.
+          const end = Math.max(
+            0,
+            ...runs.map((each) => Number(each.effect?.getComputedTiming().endTime ?? 0)),
+          )
+          for (const pseudoElement of [OLD, NEW])
+            html.animate(
+              { transformOrigin: [`${x}px ${y}px`, `${x}px ${y}px`] },
+              { duration: end, pseudoElement },
+            )
+          // Held at their ends until the switch is over, then gone: the next one starts clean.
+          void done.then(() => runs.forEach((each) => each.cancel()))
+        }),
+      )
+      return
+    }
+    run((root) => {
       // The page animates these in its own CSS: that plays instead of the circle.
       if (!root.every(fromBrowser)) return
       // Drop the browser's crossfade, so the new scheme only shows inside the growing circle.
       for (const animation of root) animation.cancel()
-      document.documentElement.animate(
+      html.animate(
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
         { ...timing, pseudoElement: NEW },
       )
