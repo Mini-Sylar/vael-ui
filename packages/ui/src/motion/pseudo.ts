@@ -1,10 +1,12 @@
-import { resolveTiming } from './timing'
-import { groupValues, toKeyframe } from './values'
+import { easingOf, resolveTiming } from './timing'
+import { groupValues, toKeyframe, toKeyframes } from './values'
+import type { Sequence } from './values'
 import type { MotionValues } from './types'
 
 /**
  * Plays motion values on one of `el`'s pseudo-elements, such as a View Transition's snapshots:
- * from them (`'in'`) or to them (`'out'`), each value on its own timing or `base`'s.
+ * from them (`'in'`) or to them (`'out'`), each value on its own timing or `base`'s. Arrays play
+ * as keyframes, as in the runtime: each segment eases on its own, at `times`.
  */
 export function animatePseudo(
   el: Element,
@@ -15,9 +17,13 @@ export function animatePseudo(
 ): Animation[] {
   return groupValues(values).map((group) => {
     const own = group.timing ? resolveTiming(el, group.timing) : base
-    return el.animate([{ ...toKeyframe(group.values), offset: way === 'in' ? 0 : 1 }], {
+    const frames = toKeyframes(group.values, false, {
+      easing: easingOf(el, group.timing?.easing) ?? base.easing,
+      times: (group.timing as Sequence | undefined)?.times,
+    })
+    return el.animate(frames ?? [{ ...toKeyframe(group.values), offset: way === 'in' ? 0 : 1 }], {
       duration: own.duration,
-      easing: own.easing,
+      easing: frames ? 'linear' : own.easing,
       delay: group.delay * 1000,
       fill: 'both',
       pseudoElement,

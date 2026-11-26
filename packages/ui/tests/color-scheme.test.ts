@@ -237,6 +237,28 @@ test("useColorScheme's motion plays on every switch, from the centre, and a swit
   expect(shrink()).toBeUndefined()
 })
 
+test('motion values given as arrays play as keyframes, at their times', async () => {
+  const { api } = await mountScheme(undefined, {
+    motion: {
+      duration: 400,
+      exit: { old: { rotate: [0, -90, -360] } },
+      initial: { new: { scale: { value: [0, 1.1, 1], times: [0, 0.3, 1], duration: 500 } } },
+    },
+  })
+  api.setMode('dark', { from: { x: 10, y: 10 } })
+  const frames = (pseudo: string, prop: string) =>
+    (
+      onRoot().find(
+        (animation) =>
+          (animation.effect as KeyframeEffect).pseudoElement === pseudo &&
+          (animation.effect as KeyframeEffect).getKeyframes().some((frame) => prop in frame),
+      )?.effect as KeyframeEffect | undefined
+    )?.getKeyframes()
+  await vi.waitFor(() => expect(frames(NEW, 'scale')).toBeDefined())
+  expect(frames(OLD, 'rotate')!.map((frame) => frame.rotate)).toEqual(['0deg', '-90deg', '-360deg'])
+  expect(frames(NEW, 'scale')!.map((frame) => frame.offset)).toEqual([0, 0.3, 1])
+})
+
 test('motion: false switches at once, from useColorScheme or one switch', async () => {
   const doc = document as Document & { startViewTransition: () => unknown }
   const spy = vi.spyOn(doc, 'startViewTransition')

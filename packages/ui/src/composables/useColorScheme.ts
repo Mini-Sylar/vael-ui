@@ -202,16 +202,20 @@ export function useColorScheme(options: UseColorSchemeOptions = {}): UseColorSch
             ...animatePseudo(html, NEW, motion.initial?.new ?? {}, timing, 'in'),
             ...animatePseudo(html, OLD, motion.exit?.old ?? {}, timing, 'out'),
           ]
-          // Both turn and scale about the point it starts from, for as long as anything plays.
+          // Both turn and scale about the point it starts from, unless given their own origin.
           const end = Math.max(
             0,
             ...runs.map((each) => Number(each.effect?.getComputedTiming().endTime ?? 0)),
           )
-          for (const pseudoElement of [OLD, NEW])
-            html.animate(
-              { transformOrigin: [`${x}px ${y}px`, `${x}px ${y}px`] },
-              { duration: end, pseudoElement },
-            )
+          for (const [pseudoElement, values] of [
+            [OLD, motion.exit?.old],
+            [NEW, motion.initial?.new],
+          ] as const)
+            if (!values?.transformOrigin)
+              html.animate(
+                { transformOrigin: [`${x}px ${y}px`, `${x}px ${y}px`] },
+                { duration: end, pseudoElement },
+              )
           // Held at their ends until the switch is over, then gone: the next one starts clean.
           void done.then(() => runs.forEach((each) => each.cancel()))
         }),
