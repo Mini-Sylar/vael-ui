@@ -50,3 +50,21 @@ test('a real move under the same transforms still slides', async () => {
   expect(slides(body).length).toBeGreaterThan(0)
   stop()
 })
+
+test("a panel scaling open around content that follows its size doesn't resize it", async () => {
+  const { followSize } = await import('../src/motion/size')
+  const { box, body } = panel()
+  // An icon and a label in a row, as in a Select's custom row.
+  body.style.cssText = 'display: flex; gap: 8px; width: 228px; height: 17.5px'
+  body.innerHTML = '<svg width="12" height="12"></svg><span>Build runner</span>'
+  box.style.scale = '0.96'
+  const { stop } = followSize(body, () => ({ duration: 300 }), false, true)
+  // The panel scales on toward 1; what's in the row redraws with it.
+  for (const at of ['0.97', '0.985', '0.995', '1']) {
+    box.style.scale = at
+    body.lastElementChild!.textContent = 'Build runner'
+    await frame()
+  }
+  expect(body.getAnimations().filter((run) => run.id === 'ui-size')).toHaveLength(0)
+  stop()
+})
