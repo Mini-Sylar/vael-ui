@@ -210,7 +210,8 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
       selected.value = next
   }
 
-  // Near an edge of whatever scrolls, it scrolls, and the band grows with it.
+  // Near an edge of whatever scrolls, once the pointer has moved toward it, it scrolls and the band
+  // grows with it. A press near an edge doesn't scroll by itself, as in a desktop file manager.
   function edgeScroll(axis: 'x' | 'y', dt: number) {
     const box = el()
     const scroller = box && findScrollParent(box, axis)
@@ -222,10 +223,11 @@ export function useDragSelect(options: UseDragSelectOptions): UseDragSelectRetur
     const pos = axis === 'x' ? last.x : last.y
     const lo = axis === 'x' ? r.left : r.top
     const hi = lo + (axis === 'x' ? r.width : r.height)
+    const start = axis === 'x' ? origin.x : origin.y
     const push =
-      pos - lo < AUTO_SCROLL_EDGE
+      pos - lo < AUTO_SCROLL_EDGE && pos < start
         ? -Math.min(2, 1 - (pos - lo) / AUTO_SCROLL_EDGE)
-        : hi - pos < AUTO_SCROLL_EDGE
+        : hi - pos < AUTO_SCROLL_EDGE && pos > start
           ? Math.min(2, 1 - (hi - pos) / AUTO_SCROLL_EDGE)
           : 0
     if (push)

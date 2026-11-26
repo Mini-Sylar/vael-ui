@@ -141,6 +141,30 @@ test('a new band shows at its press, not where the last one ended', async () => 
   await settled()
 })
 
+test('a press near an edge scrolls only once the drag heads toward it', async () => {
+  const { select, at, fire, box } = setup()
+  box.style.height = '90px'
+  box.style.overflow = 'auto'
+  const frames = (n: number) =>
+    new Promise<void>((resolve) => {
+      const step = () => (n-- ? requestAnimationFrame(step) : resolve())
+      step()
+    })
+  // Pressed just above the bottom edge, dragged up and left: nothing scrolls, the band starts there.
+  fire('pointerdown', box, at(265, 105))
+  fire('pointermove', window, at(200, 100))
+  await frames(10)
+  expect(box.scrollTop).toBe(0)
+  expect(select.y.value + select.height.value).toBe(105)
+  fire('pointerup', window, at(200, 100))
+  // Dragged down toward that edge: it scrolls.
+  fire('pointerdown', box, at(265, 60))
+  fire('pointermove', window, at(265, 105))
+  await frames(10)
+  expect(box.scrollTop).toBeGreaterThan(0)
+  fire('pointerup', window, at(265, 105))
+})
+
 test('stretch is how far the corner is behind the pointer: zero for an exact band, positive for a sprung one', async () => {
   const exact = setup()
   exact.fire('pointerdown', exact.box, exact.at(5, 5))
