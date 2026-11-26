@@ -43,7 +43,7 @@ const count = shallowRef(0)
   min-inline-size: 1.25rem;
   padding-inline: 0.25rem;
   border-radius: 999px;
-  background: var(--ui-text);
+  background: var(--ui-primary);
   color: var(--ui-surface);
   font-size: 0.75rem;
   line-height: 1.25rem;
