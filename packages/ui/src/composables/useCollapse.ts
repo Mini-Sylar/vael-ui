@@ -1,6 +1,5 @@
-import { onScopeDispose, shallowRef, watch } from 'vue'
+import { getCurrentInstance, onBeforeMount, onScopeDispose, shallowRef, watch } from 'vue'
 import type { Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
 import type { ElRef } from './dom'
 
 export type CollapseState = 'open' | 'closed' | 'opening' | 'closing'
@@ -68,7 +67,7 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
   const style = shallowRef<Record<string, string>>(open.value || handOff() ? {} : closedStyle())
   const state = shallowRef<CollapseState>(open.value ? 'open' : 'closed')
 
-  // Set once mounted, where the browser has it: the server renders it closed the plain way.
+  // Set before a fresh mount, or once hydrated: the server renders it closed the plain way.
   const findable = shallowRef(false)
   const closed = () => closedStyle(findable.value)
 
@@ -85,50 +84,57 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
   }
 
   if (options.onFind) {
-    watch(
-      () => options.el.value,
-      (el) => {
-        findable.value = !!el && 'onbeforematch' in el
-        if (state.value === 'closed' && !handOff()) style.value = closed()
-      },
-      { immediate: true, flush: 'post' },
-    )
-    // Closed: out of the page but findable. Opening, it's back before anything is measured.
+    const setFindable = (on: boolean) => {
+      if (findable.value === on) return
+      findable.value = on
+      if (state.value === 'closed' && !handOff()) style.value = closed()
+    }
+    // A fresh mount renders findable from the start, no re-render; hydration keeps the server's.
+    const instance = getCurrentInstance()
+    if (instance)
+      onBeforeMount(() => {
+        if (!instance.vnode?.el) setFindable('onbeforematch' in HTMLElement.prototype)
+      })
+    // A match: open at once, laid out before the browser scrolls to it.
+    const onMatch = () => {
+      const el = options.el.value!
+      token = null
+      clearTimeout(fallbackTimer)
+      for (const prop of ['block-size', 'overflow', 'visibility']) el.style.removeProperty(prop)
+      style.value = {}
+      state.value = 'open'
+      options.onFind?.()
+    }
+    // One watcher per panel: a new element gets the listener; closed, it's out of the page but
+    // findable, and opening, it's back before anything is measured.
+    let bound: HTMLElement | null | undefined
     watch(
       [() => options.el.value, state, findable],
-      ([el, now, on]) => {
+      ([el, now]) => {
+        if (el !== bound) {
+          bound?.removeEventListener('beforematch', onMatch)
+          el?.addEventListener('beforematch', onMatch)
+          bound = el
+          setFindable(!!el && 'onbeforematch' in el)
+        }
         if (!el) return
-        if (on && now === 'closed') el.setAttribute('hidden', 'until-found')
+        if (findable.value && now === 'closed') el.setAttribute('hidden', 'until-found')
         else if (el.getAttribute('hidden') === 'until-found') el.removeAttribute('hidden')
       },
       { immediate: true, flush: 'sync' },
     )
-    // A match: open at once, laid out before the browser scrolls to it.
-    useEventListener(
-      () => options.el.value,
-      'beforematch',
-      () => {
-        const el = options.el.value!
-        token = null
-        clearTimeout(fallbackTimer)
-        for (const prop of ['block-size', 'overflow', 'visibility']) el.style.removeProperty(prop)
-        style.value = {}
-        state.value = 'open'
-        options.onFind?.()
-      },
-    )
+    onScopeDispose(() => bound?.removeEventListener('beforematch', onMatch))
   }
 
-  useEventListener(
-    () => options.el.value,
-    'transitionend',
-    (event: TransitionEvent) => {
-      // Chrome reports a logical property by its physical name.
-      if (event.target !== options.el.value) return
-      if (event.propertyName !== 'block-size' && event.propertyName !== 'height') return
-      if (token) settle(open.value)
-    },
-  )
+  function onTransitionEnd(event: TransitionEvent) {
+    // Chrome reports a logical property by its physical name.
+    if (event.target !== options.el.value) return
+    if (event.propertyName !== 'block-size' && event.propertyName !== 'height') return
+    if (token) settle(open.value)
+  }
+  // Listened for from the first animated toggle: only a running transition needs it.
+  let listening: HTMLElement | undefined
+  const unlisten = () => listening?.removeEventListener('transitionend', onTransitionEnd)
 
   // The open height to the fraction of a pixel. scrollHeight rounds (51 for a 50.75px panel), so
   // a panel opened to it dropped by the remainder when the pin came off: a hop at the very end.
@@ -172,6 +178,11 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
       return
     }
 
+    if (panel !== listening) {
+      unlisten()
+      panel.addEventListener('transitionend', onTransitionEnd)
+      listening = panel
+    }
     state.value = target ? 'opening' : 'closing'
     const currentHeight = panel.getBoundingClientRect().height
     style.value = { blockSize: `${currentHeight}px`, overflow: 'hidden', visibility: 'visible' }
@@ -220,6 +231,7 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
 
   watch(open, (value) => run(value))
   onScopeDispose(() => {
+    unlisten()
     clearTimeout(fallbackTimer)
     while (observers.length) observers.pop()!.disconnect()
   })

@@ -8,7 +8,7 @@ import {
   toValue,
   watch,
 } from 'vue'
-import type { MaybeRefOrGetter, Ref, WatchSource } from 'vue'
+import type { MaybeRefOrGetter, Ref, ShallowRef, WatchSource } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 import { injectDefaults, isOutside } from '../config'
@@ -38,6 +38,8 @@ export type { IndicatorStretch }
 
 export interface UseTabIndicatorOptions {
   listEl: ElRef<HTMLElement | null>
+  /** @internal Refs to write into instead of its own: a highlight that starts late keeps the ones handed out. */
+  into?: { style: ShallowRef<Record<string, string | undefined>>; placed: ShallowRef<boolean> }
   /** Must match the `Tabs` instance's own `orientation` — same axis, same keys. */
   orientation?: MaybeRefOrGetter<'horizontal' | 'vertical'>
   /** The active element to measure inside `listEl`. Defaults to Tabs' own shape; SelectButton passes `'[data-checked]'` to reuse the same sliding technique for its single-select indicator. */
@@ -85,8 +87,8 @@ export function useTabIndicator(
   active: WatchSource<unknown>,
   options: UseTabIndicatorOptions,
 ): UseTabIndicatorReturn {
-  const style = shallowRef<Record<string, string | undefined>>({})
-  const placed = shallowRef(false)
+  const style = options.into?.style ?? shallowRef<Record<string, string | undefined>>({})
+  const placed = options.into?.placed ?? shallowRef(false)
   const provided = injectDefaults()
   const mode = (): IndicatorMode =>
     toValue(options.indicator) ?? provided?.value.indicator ?? 'glide'
@@ -120,6 +122,7 @@ export function useTabIndicator(
   const springs = new Map<string, SpringHandle>()
   let springKey = ''
   let measuredOnce = false
+  let fontsLoaded: Promise<void> | undefined
   // Tracks whether a real match has ever been positioned, separately from
   // measuredOnce — lets the first real selection (from "nothing selected")
   // skip only the position/size transition, not the opacity fade.
@@ -131,6 +134,11 @@ export function useTabIndicator(
     const selector = toValue(options.selector) ?? '[role="tab"][aria-selected="true"]'
     const tab = list?.querySelector<HTMLElement>(selector)
     if (!list) return
+    // Asked once a list exists: each read of fonts.ready forces a style and layout pass.
+    fontsLoaded ??= document.fonts?.ready.then(() => {
+      measuredOnce = false
+      measure()
+    })
     // Only an indicator about to appear can be inside an ancestor that is still animating in.
     if (!hasAppeared) remeasureAfterAncestorTransitions(list)
     if (!tab) {
@@ -143,6 +151,7 @@ export function useTabIndicator(
       measuredOnce = true
       return
     }
+    remeasureAfterOwnAnimations(tab, list)
     const listRect = list.getBoundingClientRect()
     const tabRect = tab.getBoundingClientRect()
     // Undo any ancestor scale (e.g. a Dialog still animating in) so px values match layout size.
@@ -155,8 +164,13 @@ export function useTabIndicator(
       list.offsetHeight && Math.abs(listRect.height - list.offsetHeight) > 1
         ? listRect.height / list.offsetHeight
         : 1
-    const left = (tabRect.left - listRect.left) / scaleX + (options.scroller ? list.scrollLeft : 0)
-    const top = (tabRect.top - listRect.top) / scaleY + (options.scroller ? list.scrollTop : 0)
+    // Where the row rests: a translate on it or between it and the list (rising in, a FLIP slide, a
+    // GSAP tween) is left out, so the highlight is in place from the start and never moves after.
+    const moved = restOffset(tab, list)
+    const left =
+      (tabRect.left - listRect.left) / scaleX - moved.x + (options.scroller ? list.scrollLeft : 0)
+    const top =
+      (tabRect.top - listRect.top) / scaleY - moved.y + (options.scroller ? list.scrollTop : 0)
     const width = tabRect.width / scaleX
     const height = tabRect.height / scaleY
     const vertical = toValue(options.orientation) === 'vertical'
@@ -446,31 +460,55 @@ export function useTabIndicator(
       },
     )
 
-  if (typeof document !== 'undefined' && document.fonts) {
-    document.fonts.ready.then(() => {
-      measuredOnce = false
-      measure()
-    })
-  }
-
   // An ancestor still animating in can make measure() run mid-transition, so re-measure when it ends.
   const awaited = new WeakSet<Animation>()
   function remeasureAfterAncestorTransitions(list: HTMLElement) {
-    if (typeof document.getAnimations !== 'function') return
-    for (const animation of document.getAnimations()) {
-      if (!(animation instanceof CSSTransition) || awaited.has(animation)) continue
-      const target = (animation.effect as KeyframeEffect | null)?.target
-      if (!target || target === list || !target.contains(list)) continue
-      awaited.add(animation)
-      animation.finished.then(
-        () => {
-          measuredOnce = false
-          measure()
-        },
-        // Cancelled before it finished: nothing to settle.
-        () => {},
-      )
+    if (typeof list.getAnimations !== 'function') return
+    // Only the list's ancestors: asking the whole document for its animations, once per list, grows with the page.
+    for (let node = list.parentElement; node; node = node.parentElement)
+      for (const animation of node.getAnimations()) {
+        if (!(animation instanceof CSSTransition) || awaited.has(animation)) continue
+        awaited.add(animation)
+        animation.finished.then(
+          () => {
+            measuredOnce = false
+            measure()
+          },
+          // Cancelled before it finished: nothing to settle.
+          () => {},
+        )
+      }
+  }
+
+  // How far translates between the row and the list move it now, in the list's pixels.
+  function restOffset(tab: HTMLElement, list: HTMLElement) {
+    let x = 0
+    let y = 0
+    for (let el: Element | null = tab; el && el !== list; el = el.parentElement) {
+      const style = getComputedStyle(el)
+      if (style.translate !== 'none') {
+        const [tx = '0', ty = '0'] = style.translate.split(' ')
+        x += Number.parseFloat(tx) || 0
+        y += Number.parseFloat(ty) || 0
+      }
+      if (style.transform !== 'none') {
+        const matrix = new DOMMatrix(style.transform)
+        x += matrix.m41
+        y += matrix.m42
+      }
     }
+    return { x, y }
+  }
+
+  // A row measured mid-slide (a FLIP after a delete) is measured again where it comes to rest.
+  function remeasureAfterOwnAnimations(tab: HTMLElement, list: HTMLElement) {
+    if (typeof tab.getAnimations !== 'function') return
+    for (let el: Element | null = tab; el && el !== list; el = el.parentElement)
+      for (const animation of el.getAnimations()) {
+        if (awaited.has(animation) || animation.playState === 'finished') continue
+        awaited.add(animation)
+        animation.finished.then(update, () => {})
+      }
   }
 
   useResizeObserver(options.listEl, (entries) => {

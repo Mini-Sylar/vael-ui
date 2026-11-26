@@ -207,3 +207,38 @@ test('a leaving element with live size keeps that size as it fades', async () =>
   expect(el.getBoundingClientRect().width).toBe(260)
   expect(el.getBoundingClientRect().height).toBe(80)
 })
+
+test('while it fades in, a live place is where the value says, not eased toward it', async () => {
+  const shown = shallowRef(false)
+  const x = shallowRef(0)
+  const screen = await render(() =>
+    h('div', [
+      shown.value
+        ? withDirectives(h('div', { 'data-p': '', style: 'width: 50px; height: 50px' }), [
+            [
+              vAnimate,
+              {
+                initial: { opacity: 0 },
+                animate: { opacity: 1, x: () => x.value },
+                duration: 1000,
+              },
+            ],
+          ])
+        : null,
+    ]),
+  )
+  shown.value = true
+  await nextTick()
+  const el = screen.container.querySelector<HTMLElement>('[data-p]')!
+  await expect.poll(() => el.getAnimations().length).toBeGreaterThan(0)
+  // As a band under a moving pointer: each new place shows at once.
+  for (const to of [40, 90, 150]) {
+    x.value = to
+    await frame()
+    expect(getComputedStyle(el).translate).toBe(`${to}px`)
+  }
+  const moves = el
+    .getAnimations()
+    .filter((a) => (a as CSSTransition).transitionProperty === 'translate')
+  expect(moves).toEqual([])
+})

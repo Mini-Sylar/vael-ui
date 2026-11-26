@@ -4,6 +4,7 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="dataState"
+    :data-fresh="fresh || undefined"
     @focusin="focusEvents.onFocusin"
     @focusout="focusEvents.onFocusout"
     v-bind="rootAttrs"
@@ -47,16 +48,7 @@ import './Radio.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import {
-  computed,
-  inject,
-  nextTick,
-  onMounted,
-  shallowRef,
-  useAttrs,
-  useId,
-  useTemplateRef,
-} from 'vue'
+import { computed, inject, nextTick, onMounted, useAttrs, useId, useTemplateRef } from 'vue'
 import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
 import { useControlAttrs, useFocusEvents } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -119,12 +111,12 @@ function onNativeChange() {
 
 const dataState = computed(() => (isChecked.value ? 'checked' : 'unchecked'))
 
-// First paint only: suppress transitions to prevent initial render
-const firstPaint = shallowRef(true)
-const skipTransition = computed(() => firstPaint.value || !props.motion)
+// First paint: no transitions; cleared on the element, so it doesn't re-render the radio.
+let fresh = true
 onMounted(() => {
   void nextTick(() => {
-    firstPaint.value = false
+    fresh = false
+    root.value?.removeAttribute('data-fresh')
   })
 })
 
@@ -162,7 +154,7 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-radio',
     isDisabled.value && 'ui-radio--disabled',
-    skipTransition.value && 'ui-radio--no-anim',
+    !props.motion && 'ui-radio--no-anim',
   ),
 )
 const controlPart = computed(() => resolveUiPart(cx, themedUi()?.control, 'ui-radio-control'))

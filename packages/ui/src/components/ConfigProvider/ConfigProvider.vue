@@ -182,7 +182,8 @@ provide(motionSettingsKey, defaults)
 // The `:is` sidesteps the compiler's "no <style> in templates" error. The wrapper is always
 // rendered, since swapping it in when a theme is first set would remount the whole subtree.
 const scopeId = useId()
-const scopeSelector = `[data-ui-theme='${scopeId}']`
+// One word of a list: an overlay teleported out carries every provider's scope around it.
+const scopeSelector = `[data-ui-theme~='${scopeId}']`
 // Motion off zeroes the duration tokens. Teleported overlays carry this scope too.
 const DURATION_TOKENS = [
   'drawer',
@@ -222,8 +223,15 @@ provide(
 )
 // Inherit scope from parent if no active theme.
 const inheritedScope = inject(themeScopeKey, undefined)
+// Outermost first, so a nested provider's rules (its <style> is later) win over its parent's.
 provide(
   themeScopeKey,
-  computed(() => (themeCss.value ? scopeId : inheritedScope?.value)),
+  computed(() =>
+    themeCss.value
+      ? inheritedScope?.value
+        ? `${inheritedScope.value} ${scopeId}`
+        : scopeId
+      : inheritedScope?.value,
+  ),
 )
 </script>

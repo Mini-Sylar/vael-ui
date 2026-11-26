@@ -90,7 +90,7 @@ test('right-clicking a NEW point while already open moves the menu instead of st
     const rect = document.querySelector<HTMLElement>('.ui-menu-panel')!.getBoundingClientRect()
     expect(Math.abs(rect.left - 150)).toBeLessThan(10)
   })
-  expect(document.querySelectorAll('.ui-menu-panel').length).toBe(1)
+  await expect.poll(() => document.querySelectorAll('.ui-menu-panel').length).toBe(1)
 })
 
 test('disabled suppresses the contextmenu trigger entirely', async () => {

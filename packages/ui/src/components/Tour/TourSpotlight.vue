@@ -1,6 +1,6 @@
 <template>
-  <Teleport :to="teleportTo">
-    <Transition name="ui-tour-spotlight" :css="!forceMount">
+  <Teleport v-if="mounted" :to="teleportTo">
+    <Transition name="ui-tour-spotlight" :appear="appearOnOpen" :css="!forceMount">
       <div
         v-if="forceMount || active"
         v-show="active"
@@ -76,7 +76,7 @@ import { prefersReducedMotion, restingRect } from '../../composables/dom'
 import { easingFn, glideOf } from '../../composables/tourGlide'
 import './Tour.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
-import { autoUpdate } from '@floating-ui/dom'
+import { loadFloatingUi } from '../../composables/useFloatingPosition'
 import { useClassMerge, resolveUiPart } from '../../classes'
 
 const props = withDefaults(defineProps<TourSpotlightProps>(), {
@@ -93,6 +93,10 @@ const props = withDefaults(defineProps<TourSpotlightProps>(), {
 })
 
 const contained = computed(() => props.containerEl !== null)
+// Mounted on the first open, which fades in like any later one; mounted open, it shows at once.
+let everShown = false
+const mounted = computed(() => (everShown ||= props.active || props.forceMount))
+const appearOnOpen = !props.active
 
 const overlay = useTemplateRef<HTMLElement>('overlay')
 const cx = useClassMerge()
@@ -265,7 +269,7 @@ watch(
       fresh = false
     }
     if (paintedOverlay === overlayEl) {
-      stopAutoUpdate = autoUpdate(target, overlayEl, measureStep)
+      stopAutoUpdate = track(target, overlayEl, measureStep)
       return
     }
     // First paint of a freshly-inserted overlay: some compositors don't reflect the real cutout
@@ -276,11 +280,24 @@ watch(
     pendingFrame = requestAnimationFrame(() => {
       pendingFrame = undefined
       paintedOverlay = overlayEl
-      stopAutoUpdate = autoUpdate(target, overlayEl, measureStep)
+      stopAutoUpdate = track(target, overlayEl, measureStep)
     })
   },
   { flush: 'post' },
 )
+
+// Tracks the target once the positioning code has loaded; stopping first cancels it.
+function track(target: HTMLElement, overlayEl: HTMLElement, measure: () => void): () => void {
+  let stop: (() => void) | undefined
+  let stopped = false
+  void loadFloatingUi().then(({ autoUpdate }) => {
+    if (!stopped) stop = autoUpdate(target, overlayEl, measure)
+  })
+  return () => {
+    stopped = true
+    stop?.()
+  }
+}
 
 onScopeDispose(() => {
   stopAutoUpdate?.()

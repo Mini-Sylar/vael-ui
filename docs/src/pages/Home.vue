@@ -4,7 +4,7 @@
       <div class="hero-copy">
         <a class="news-pill" :href="CHANGELOG_URL" target="_blank" rel="noreferrer">
           <span class="news-pill-tag">{{ t('home.newTag') }}</span>
-          <span class="news-pill-text">{{ t('home.newText') }}</span>
+          <span class="news-pill-text">{{ t('home.newText', { version }) }}</span>
           <PhArrowRight :size="12" aria-hidden="true" />
         </a>
         <p class="eyebrow">{{ t('home.eyebrow') }}</p>
@@ -143,6 +143,7 @@ import TerminalVisual from '../components/home/TerminalVisual.vue'
 const ThemeSwatches = defineAsyncComponent(() => import('../components/ThemeSwatches.vue'))
 
 const { t } = useI18n()
+const version = __VAEL_UI_VERSION__
 
 // The last "Vapor" in the headline gets the steam treatment; in every locale
 // that's the one about compiling straight to it.
@@ -324,6 +325,7 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
     /* backwards, not both: a kept end frame leaves an identity transform that
        re-anchors every position: fixed inside the dashboard. */
     animation: showcase-in 700ms var(--ui-ease-out) backwards;
+    /* The app replaces the prerendered page mid-rise: its copy carries on from there (main.ts). */
     animation-delay: 120ms;
   }
 }

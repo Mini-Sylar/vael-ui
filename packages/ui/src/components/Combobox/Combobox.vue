@@ -19,7 +19,6 @@
     aria-haspopup="listbox"
     :aria-expanded="open"
     :aria-controls="listboxId"
-    :aria-activedescendant="open ? activeId : undefined"
     aria-autocomplete="list"
     :aria-required="fieldControl.required() || undefined"
     :data-open="open || undefined"
@@ -27,6 +26,7 @@
     @input="onQueryInput"
     @keydown="onInputKeydown"
     @focus="onInputFocus"
+    @pointerenter="loadPanel"
     @blur="onInputBlur"
     @click="onInputClick"
   >
@@ -93,6 +93,7 @@
         type="button"
         :class="chevronPart.class"
         :style="chevronPart.style"
+        :data-motion="props.motion ? undefined : 'off'"
         :aria-label="messages.combobox.toggle"
         :aria-expanded="open"
         :disabled="isDisabled"
@@ -113,14 +114,14 @@
     </template>
   </Input>
 
-  <Teleport :to="teleportTo">
+  <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition name="ui-select" appear v-bind="panelTransition">
       <div
-        v-if="forceMount || open"
+        v-if="(forceMount || open) && selectListBody.ready.value"
         v-show="open"
         ref="positioner"
         :class="positionerPart.class"
-        :style="[positionerStyle, { zIndex }, positionerPart.style]"
+        :style="[shownStyle, { zIndex }, positionerPart.style]"
         :data-ui-theme="themeScope"
         :data-state="isClosing ? 'closing' : 'open'"
         :data-side="resolvedSide"
@@ -141,33 +142,53 @@
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
             <slot name="header" :count="filteredItems.length" :total="options.length" />
           </div>
+          <!-- v-memo: this component re-renders as you type and as the panel is placed; the list only with its own inputs. -->
           <SelectListBody
             ref="listBody"
+            v-memo="[
+              listItems,
+              listSections,
+              virtualizeConfig,
+              effectiveOverscan,
+              listUi,
+              listboxId,
+              multiple,
+              loading,
+              scrollFade,
+              !!props.motion,
+              emptyText(),
+              $slots.item,
+              $slots.create,
+              showCreateRow,
+              $slots['group-label'],
+              $slots.empty,
+              listLabelledBy(),
+              listLabel(),
+            ]"
+            :aria-labelledby="listLabelledBy()"
+            :aria-label="listLabel()"
             :items="listItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
-            :active-index="activeIndex"
+            :highlight="highlight"
+            :track-active="!!($slots.item || $slots.create)"
             :listbox-id="listboxId"
             :multiple="multiple"
             :loading="loading"
-            :empty-text="messages.combobox.empty"
+            :empty-text="emptyText()"
             :item-size="virtualizeConfig?.itemSize"
+            :windowed="!!virtualizeConfig"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
             :motion="!!props.motion"
             :sections="listSections"
-            :ui="{
-              list: themedUi()?.list,
-              option: themedUi()?.option,
-              empty: themedUi()?.empty,
-              group: themedUi()?.group,
-              groupLabel: themedUi()?.groupLabel,
-            }"
+            :ui="listUi"
             @select="(item: T, index: number) => selectItem(item, index)"
             @hover="point"
             @reach-end="emit('reach-end')"
           >
-            <template #item="slotProps">
+            <!-- Passed only when a row needs it: without it the list draws its lean default rows. -->
+            <template v-if="$slots.item || $slots.create || showCreateRow" #item="slotProps">
               <slot
                 v-if="isCreateRow(slotProps.item)"
                 name="create"
@@ -192,30 +213,8 @@
                 </svg>
                 <span class="ui-select-option-label">{{ createLabel }}</span>
               </slot>
-              <slot v-else name="item" v-bind="slotProps" :query="trimmedQuery">
-                <span class="ui-select-option-label">{{ slotProps.item.label }}</span>
-                <!-- No `appear`: only a pick on a row already showing draws it in (shared/tick.css). -->
-                <Transition name="ui-tick">
-                  <svg
-                    v-if="slotProps.selected"
-                    class="ui-select-option-check ui-tick"
-                    viewBox="0 0 16 16"
-                    width="14"
-                    height="14"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M3.5 8.5l3 3 6-7"
-                      pathLength="1"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </Transition>
-              </slot>
+              <!-- No `#item` slot: this renders nothing, and the list draws its own row. -->
+              <slot v-else-if="$slots.item" name="item" v-bind="slotProps" :query="trimmedQuery" />
             </template>
             <template v-if="$slots['group-label']" #group-label="slotProps">
               <slot name="group-label" v-bind="slotProps" />
@@ -253,6 +252,7 @@
 </template>
 
 <script lang="ts">
+import { useActiveDescendant } from '../../composables/useActiveDescendant'
 import { useValueSwap } from '../../composables/valueSwap'
 import { panelWidthStyle } from '../../composables/panelWidth'
 import type { PanelWidth } from '../../composables/panelWidth'
@@ -307,8 +307,10 @@ import '../shared/select-list.css'
 import '../shared/chip.css'
 import {
   computed,
+  defineAsyncComponent,
   inject,
   nextTick,
+  onMounted,
   provide,
   ref,
   useAttrs,
@@ -319,7 +321,7 @@ import {
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import Input from '../Input/Input.vue'
 import { usePopover } from '../../composables/usePopover'
-import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
+import { clipUntilPlaced, useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import { useChipTransition } from '../../composables/useChipTransition'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
@@ -333,7 +335,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { inputPickedKey } from '../../composables/inputPicked'
 import { useMessages, comboboxMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
-import SelectListBody from '../internal/SelectListBody.vue'
+import { lazyComponent, preloadParts } from '../../composables/lazyComponent'
 import RequiredInput from '../internal/RequiredInput.vue'
 import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
 import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
@@ -351,6 +353,10 @@ const panelOwnAttrs = computed(() =>
   ),
 )
 // Your `required` is checked on the selection (below), not on the typed text.
+// The listbox carries the field's name, as in the APG combobox examples.
+const listLabelledBy = () =>
+  (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
+const listLabel = () => (listLabelledBy() ? undefined : (attrs['aria-label'] as string | undefined))
 const inputAttrs = computed(() => {
   const { required: _required, ...rest } = attrs
   return rest
@@ -606,6 +612,11 @@ function isCreateRow(item: T): boolean {
   return (item as { [CREATE_ROW]?: true })[CREATE_ROW] === true
 }
 const trimmedQuery = computed(() => query.value.trim())
+// Nothing matches what you typed: it says what, as a search does.
+const emptyText = () =>
+  queryDirty.value && trimmedQuery.value
+    ? messages.value.combobox.emptyFor.replace('{query}', trimmedQuery.value)
+    : messages.value.combobox.empty
 const showCreateRow = computed(() => {
   if (!props.allowCustom || !props.createOption || !queryDirty.value || props.loading) return false
   const raw = trimmedQuery.value
@@ -747,6 +758,7 @@ const {
   maxHeightCap: () => props.maxPanelHeight,
   onOpenChange: (value, details) => emit('open-change', value, details),
 })
+const shownStyle = clipUntilPlaced(positionerStyle)
 
 // Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
 const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
@@ -830,6 +842,37 @@ const {
   listboxId,
 })
 
+// Held in a stable object, with the active id written to the element: a highlight move re-renders nothing here.
+const highlight = { current: activeIndex }
+// The panel's Teleport and Transition wait for the first open; closed, it skips them.
+// The list loads apart, from mount, or as the pointer or focus reaches the field;
+// opened before it has, the panel waits and comes in with it.
+const selectListBody = lazyComponent('SelectListBody', () =>
+  defineAsyncComponent(() => import('../internal/SelectListBody.vue')),
+)
+const SelectListBody = selectListBody.component
+const loadPanel = () => void selectListBody.load()
+watch(open, (isOpen) => isOpen && loadPanel(), { immediate: true })
+if (props.forceMount) loadPanel()
+onMounted(() => preloadParts(selectListBody))
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
+// One object while its parts stay the same: the list is only handed a new one when they change.
+const listUi = computed(() => {
+  const ui = themedUi()
+  return {
+    list: ui?.list,
+    option: ui?.option,
+    empty: ui?.empty,
+    group: ui?.group,
+    groupLabel: ui?.groupLabel,
+  }
+})
+useActiveDescendant(
+  () => inputEl.value,
+  () => (open.value ? activeId.value : undefined),
+)
+
 // Priority: a row whose label IS the typed text, then the current selection, then the first
 // enabled row. `multiple` has no single selection to re-focus, so it skips the middle step.
 function computeInitialActive(): number {
@@ -868,6 +911,7 @@ function onQueryInput() {
   if (!open.value) open.value = true
 }
 function onInputFocus() {
+  loadPanel()
   isFocused.value = true
   if (!isDisabled.value && openOnFocusResolved.value) open.value = true
 }
@@ -1007,9 +1051,10 @@ const effectiveOverscan = computed(() =>
     : listItems.value.length,
 )
 
-const panelMaxHeightStyle = computed(() =>
-  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},
-)
+// Capped from its first layout: before it's placed, a long list would lay out at its full height.
+const panelMaxHeightStyle = computed(() => ({
+  maxHeight: `${maxHeight.value ?? props.maxPanelHeight}px`,
+}))
 
 const innerUi = computed(() => ({
   root: resolveUiPart(

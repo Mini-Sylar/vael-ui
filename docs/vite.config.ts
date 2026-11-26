@@ -1,6 +1,7 @@
 /// <reference types="vite-ssg" />
 
 import { readFileSync } from 'node:fs'
+import { relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
@@ -50,8 +51,41 @@ function batchLibraryReloads(): Plugin {
   }
 }
 
+// vite-ssg links a page's stylesheets from the modules its render registers, and only .vue files
+// register themselves: vael-ui's built components pre-rendered without their CSS, so a page showed
+// them unstyled until their chunk loaded. Each one registers as its setup runs on the server.
+function registerLibraryModules(): Plugin {
+  const dist = fileURLToPath(new URL('../packages/ui/dist/', import.meta.url))
+  let root = ''
+  return {
+    name: 'docs:register-library-modules',
+    apply: 'build',
+    configResolved(config) {
+      root = config.root
+    },
+    transform(code, id) {
+      if (this.environment.config.consumer !== 'server') return
+      if (!id.startsWith(dist) || !id.endsWith('.js')) return
+      const component = /export\s*\{[^}]*?\b([\w$]+)\s+as\s+default\b/.exec(code)?.[1]
+      if (!component) return
+      const key = JSON.stringify(relative(root, id).split(sep).join('/'))
+      return `${code}
+import { useSSRContext as __docsSsr } from 'vue'
+{
+  const own = ${component}, setup = own && own.setup
+  if (own && typeof own === 'object' && (own.render || setup))
+    own.setup = (props, ctx) => {
+      const ssr = __docsSsr()
+      if (ssr) (ssr.modules ||= new Set()).add(${key})
+      return setup ? setup(props, ctx) : undefined
+    }
+}`
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [vue(), batchLibraryReloads()],
+  plugins: [vue(), batchLibraryReloads(), registerLibraryModules()],
   resolve: { dedupe: ['vue'] },
   optimizeDeps: { exclude: ['motion-v'] },
   define: {

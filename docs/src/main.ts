@@ -39,6 +39,30 @@ export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => 
     app.use(vaporInteropPlugin)
     // The app replaces the prerendered page: its code renders highlighted from the first frame.
     adoptPrerendered(document)
+    // The app replaces the prerendered page: the home dashboard's entrance carries on from the
+    // prerendered copy's on the same frame. One that already ended stays ended.
+    const showcase = document.querySelector('.hero-showcase')
+    if (showcase) {
+      const rise = showcase.getAnimations()[0]
+      const origin = Number(rise ? (rise.startTime ?? document.timeline.currentTime) : -1e6)
+      const watch = new MutationObserver(() => {
+        const copy = document.querySelector('.hero-showcase')
+        if (!copy || copy === showcase) return
+        watch.disconnect()
+        const entrance = copy.getAnimations({ subtree: true })
+        const start = (at: number) => {
+          for (const animation of entrance) animation.startTime = at
+        }
+        start(origin)
+        // Rendering the app held the main thread while the prerendered copy kept moving: its first
+        // frame runs on a time from before that, so it starts that much earlier, then exactly.
+        requestAnimationFrame((frame) => {
+          start(origin - (performance.now() - frame))
+          requestAnimationFrame(() => start(origin))
+        })
+      })
+      watch.observe(document.getElementById('app')!, { childList: true })
+    }
 
     // Route components are lazy-loaded (`() => import('./pages/X.vue')`) by
     // their build hash. After a redeploy, a tab still holding the old

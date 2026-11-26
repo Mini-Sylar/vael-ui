@@ -285,7 +285,9 @@ function slide(
 type Point = { x: number; y: number }
 // With what it was measured against: an ancestor is the offsetParent only while it's transformed
 // (an entrance under way), so a reading from another box isn't a move.
-type Place = Point & { via?: Element | null }
+// And the boxes its offsets were read through: each offset rounds, so a reading through others
+// (an entrance's transform made a row one of them) differs by a pixel or so without a move.
+type Place = Point & { via?: Element | null; through?: readonly Element[] }
 const placeOf = new WeakMap<Element, Place | undefined>()
 const timingOf = new WeakMap<Element, () => MotionTiming>()
 // `onAfterMove`: run once its slide has played, or at once when it moves without one.
@@ -319,21 +321,40 @@ function ownShift(el: Element, shown: Point = shownOn(el)): Point | undefined {
   }
 }
 
+const sameBoxes = (a?: readonly Element[], b?: readonly Element[]) =>
+  a?.length === b?.length && !!a?.every((box, i) => box === b![i])
+
+/** Its place from the offsets up to the box that holds it all: no transform, scale or scroll counts. */
+function laidOut(el: HTMLElement): Place {
+  let x = 0
+  let y = 0
+  let at = el
+  const through: HTMLElement[] = []
+  for (
+    let up = el.offsetParent as HTMLElement | null;
+    up;
+    up = up.offsetParent as HTMLElement | null
+  ) {
+    x += at.offsetLeft + up.clientLeft
+    y += at.offsetTop + up.clientTop
+    through.push(up)
+    at = up
+  }
+  return { x: x + at.offsetLeft, y: y + at.offsetTop, via: at, through }
+}
+
 /**
- * Where layout puts it in its parent, its own transforms left out (a card's own scale or offset,
- * an entrance or a glide on its way, aren't moves), and scrolling or the parent moving as a whole
- * neither.
+ * Where layout puts it in its parent: transforms anywhere between (its own entrance, a row's
+ * entrance around it, a panel scaling open) and scrolling aren't moves.
  */
 function placeIn(el: Element, parent: Element): Place | undefined {
   // Not rendered (display: none around it): no place, so showing it isn't a move.
   if (el instanceof HTMLElement && !el.offsetParent && !el.getClientRects().length) return undefined
   if (el instanceof HTMLElement && parent instanceof HTMLElement) {
-    const via = el.offsetParent
-    if (via === parent) return { x: el.offsetLeft, y: el.offsetTop, via }
-    // Both read against the same box, so the gap between them is the same whichever box that is: an
-    // ancestor mid-entrance holds it for a while, then lets go, and that isn't a change of box.
-    if (via === parent.offsetParent)
-      return { x: el.offsetLeft - parent.offsetLeft, y: el.offsetTop - parent.offsetTop, via: null }
+    const own = laidOut(el)
+    const box = laidOut(parent)
+    if (own.via === box.via)
+      return { x: own.x - box.x, y: own.y - box.y, via: own.via, through: own.through }
   }
   const box = el.getBoundingClientRect()
   const at = parent.getBoundingClientRect()
@@ -427,12 +448,17 @@ function relayout(parent: Element, members: Set<Element>) {
     const own = ownNow[i]
     placeOf.set(el, place)
     ownOf.set(el, own)
-    // Unmoved, or measured against another box: a glide on its way carries on undisturbed.
+    // Read through other boxes, each offset rounding its half pixel: closer than that isn't a move.
+    const noise =
+      !last || sameBoxes(last.through, place?.through)
+        ? 0.5
+        : ((last.through?.length ?? 0) + (place?.through?.length ?? 0) + 2) / 2
+    // Unmoved, measured against another box, or never painted: a glide on its way carries on.
     if (
       !last ||
       !place ||
       last.via !== place.via ||
-      (Math.abs(last.x - place.x) < 0.5 && Math.abs(last.y - place.y) < 0.5)
+      (Math.abs(last.x - place.x) < noise && Math.abs(last.y - place.y) < noise)
     )
       return
     for (const run of runs[i]!) run.cancel()

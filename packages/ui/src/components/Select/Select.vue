@@ -10,8 +10,9 @@
     :data-invalid="isInvalid || undefined"
     @click="onTriggerClick"
     @focus="focusControl"
-    @focusin="focusEvents.onFocusin"
+    @focusin="onTriggerFocusin"
     @focusout="focusEvents.onFocusout"
+    @pointerenter="loadPanel"
   >
     <!-- Start and end sit outside the combobox, so they don't join its accessible name. -->
     <span v-if="$slots.start" :class="startPart.class" :style="startPart.style"
@@ -28,7 +29,6 @@
       aria-haspopup="listbox"
       :aria-expanded="open"
       :aria-controls="listboxId"
-      :aria-activedescendant="open && !filter ? activeId : undefined"
       :aria-describedby="fieldControl.describedBy()"
       :aria-labelledby="
         (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
@@ -109,7 +109,12 @@
         </svg>
       </button>
     </Transition>
-    <span :class="chevronPart.class" :style="chevronPart.style" aria-hidden="true">
+    <span
+      :class="chevronPart.class"
+      :style="chevronPart.style"
+      :data-motion="props.motion ? undefined : 'off'"
+      aria-hidden="true"
+    >
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
         <path
           d="M4 6l4 4 4-4"
@@ -122,14 +127,14 @@
     </span>
   </div>
 
-  <Teleport :to="teleportTo">
+  <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition name="ui-select" appear v-bind="panelTransition">
       <div
-        v-if="forceMount || open"
+        v-if="(forceMount || open) && panelReady"
         v-show="open"
         ref="positioner"
         :class="positionerPart.class"
-        :style="[positionerStyle, { zIndex }, positionerPart.style]"
+        :style="[shownStyle, { zIndex }, positionerPart.style]"
         :data-ui-theme="themeScope"
         :data-state="isClosing ? 'closing' : 'open'"
         :data-side="resolvedSide"
@@ -156,7 +161,7 @@
             :style="filterPart.style"
           >
             <slot name="filter" :query="query" :on-keydown="onFilterKeydown">
-              <Input
+              <FilterInput
                 ref="filterInputRef"
                 autocapitalize="off"
                 autocorrect="off"
@@ -170,7 +175,6 @@
                 aria-autocomplete="list"
                 :aria-expanded="open"
                 :aria-controls="listboxId"
-                :aria-activedescendant="open ? activeId : undefined"
                 @keydown="onFilterKeydown"
               >
                 <template #start>
@@ -194,31 +198,48 @@
                     </svg>
                   </slot>
                 </template>
-              </Input>
+              </FilterInput>
             </slot>
           </div>
+          <!-- v-memo: this component re-renders as the panel is placed; the list only with its own inputs. -->
           <SelectListBody
             ref="listBody"
+            v-memo="[
+              filteredItems,
+              hasGroups && filtered.sections,
+              virtualizeConfig,
+              effectiveOverscan,
+              listUi,
+              listboxId,
+              multiple,
+              loading,
+              scrollFade,
+              !!props.motion,
+              messages.select.empty,
+              $slots.item,
+              $slots['group-label'],
+              $slots.empty,
+              listLabelledBy(),
+              listLabel(),
+            ]"
+            :aria-labelledby="listLabelledBy()"
+            :aria-label="listLabel()"
             :items="filteredItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
-            :active-index="activeIndex"
+            :highlight="highlight"
+            :track-active="!!$slots.item"
             :listbox-id="listboxId"
             :multiple="multiple"
             :loading="loading"
             :empty-text="messages.select.empty"
             :item-size="virtualizeConfig?.itemSize"
+            :windowed="!!virtualizeConfig"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
             :motion="!!props.motion"
             :sections="hasGroups ? filtered.sections : undefined"
-            :ui="{
-              list: themedUi()?.list,
-              option: themedUi()?.option,
-              empty: themedUi()?.empty,
-              group: themedUi()?.group,
-              groupLabel: themedUi()?.groupLabel,
-            }"
+            :ui="listUi"
             @select="(item: T, index: number) => selectItem(item, index)"
             @hover="point"
             @reach-end="emit('reach-end')"
@@ -304,10 +325,22 @@ import { useChipTransition } from '../../composables/useChipTransition'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
-import { computed, inject, nextTick, provide, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { useActiveDescendant } from '../../composables/useActiveDescendant'
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  nextTick,
+  onMounted,
+  provide,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useAttrListeners, useFocusEvents } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
-import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
+import { clipUntilPlaced, useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
@@ -319,9 +352,8 @@ import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useMessages, selectMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
-import SelectListBody from '../internal/SelectListBody.vue'
+import { lazyComponent, preloadParts } from '../../composables/lazyComponent'
 import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
-import Input from '../Input/Input.vue'
 import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 import RequiredInput from '../internal/RequiredInput.vue'
@@ -346,6 +378,10 @@ const panelAttrs = useAttrListeners(
   () => panelEl.value,
   () => panelOwnAttrs.value,
 )
+// The listbox carries the field's name, as in the APG combobox examples.
+const listLabelledBy = () =>
+  (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
+const listLabel = () => (listLabelledBy() ? undefined : (attrs['aria-label'] as string | undefined))
 const triggerAttrs = computed(() =>
   fieldControl.own(Object.fromEntries(Object.entries(attrs).filter(([key]) => isTriggerAttr(key)))),
 )
@@ -674,6 +710,7 @@ const {
   maxHeightCap: () => props.maxPanelHeight,
   onOpenChange: (value, details) => emit('open-change', value, details),
 })
+const shownStyle = clipUntilPlaced(positionerStyle)
 
 // Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
 const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
@@ -713,6 +750,58 @@ const {
   onActiveChange: (index) => listBody.value?.scrollToIndex(index),
   listboxId,
 })
+
+// Held in a stable object, with the active id written to the element: a highlight move re-renders nothing here.
+const highlight = { current: activeIndex }
+// The list and the filter field load apart, from mount, or as the pointer or focus
+// reaches the field; opened before they have, the panel waits and comes in with them.
+const selectListBody = lazyComponent('SelectListBody', () =>
+  defineAsyncComponent(() => import('../internal/SelectListBody.vue')),
+)
+const filterInput = lazyComponent('FilterInput', () =>
+  defineAsyncComponent(() => import('../Input/Input.vue')),
+)
+const SelectListBody = selectListBody.component
+const FilterInput = filterInput.component
+const hasFilter = () => props.filter !== undefined
+const panelReady = computed(
+  () => selectListBody.ready.value && (!hasFilter() || filterInput.ready.value),
+)
+function loadPanel() {
+  void selectListBody.load()
+  if (hasFilter()) void filterInput.load()
+}
+function onTriggerFocusin(event: FocusEvent) {
+  loadPanel()
+  focusEvents.onFocusin(event)
+}
+watch(open, (isOpen) => isOpen && loadPanel(), { immediate: true })
+if (props.forceMount) loadPanel()
+onMounted(() =>
+  hasFilter() ? preloadParts(selectListBody, filterInput) : preloadParts(selectListBody),
+)
+// The panel's Teleport and Transition wait for the first open; closed, it skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
+// One object while its parts stay the same: the list is only handed a new one when they change.
+const listUi = computed(() => {
+  const ui = themedUi()
+  return {
+    list: ui?.list,
+    option: ui?.option,
+    empty: ui?.empty,
+    group: ui?.group,
+    groupLabel: ui?.groupLabel,
+  }
+})
+useActiveDescendant(
+  () => controlEl.value,
+  () => (open.value && !props.filter ? activeId.value : undefined),
+)
+useActiveDescendant(
+  () => filterInputRef.value?.inputEl,
+  () => (open.value ? activeId.value : undefined),
+)
 
 function openSelect() {
   if (isDisabled.value) return
@@ -790,7 +879,9 @@ watch(
     nextTick(() => {
       const initial = computeInitialActive()
       setActive(initial)
-      if (initial >= 0) listBody.value?.scrollToIndex(initial, 'center')
+      // A list mounted by this open starts at its top: the first option needs no scroll.
+      if (initial > 0 || (initial === 0 && props.forceMount))
+        listBody.value?.scrollToIndex(initial, 'center')
       if (props.filter) filterInputRef.value?.inputEl?.focus()
     })
   },
@@ -820,9 +911,10 @@ const effectiveOverscan = computed(() =>
     : filteredItems.value.length,
 )
 
-const panelMaxHeightStyle = computed(() =>
-  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},
-)
+// Capped from its first layout: before it's placed, a long list would lay out at its full height.
+const panelMaxHeightStyle = computed(() => ({
+  maxHeight: `${maxHeight.value ?? props.maxPanelHeight}px`,
+}))
 
 const rootPart = computed(() =>
   resolveUiPart(

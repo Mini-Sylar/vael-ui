@@ -55,7 +55,7 @@
     </template>
   </Input>
 
-  <Teleport :to="teleportTo">
+  <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || shown"
@@ -79,9 +79,27 @@
           :style="[{ transformOrigin }, panelWidthStyle(props.panelWidth), panelPart.style]"
           v-bind="panelAttrs"
         >
+          <!-- v-memo: placing the panel re-renders this component; the calendar only with its own inputs. -->
           <Calendar
             v-if="!timeOnlyEffective"
             ref="calendarRef"
+            v-memo="[
+              model,
+              selectionMode,
+              view,
+              minDate,
+              maxDate,
+              disabledDates,
+              props.locale,
+              firstDayOfWeek,
+              months,
+              showYearButtons,
+              showWeekNumbers,
+              !!props.motion,
+              calendarUi,
+              $slots.day,
+              $slots.label,
+            ]"
             v-model="model"
             :selection-mode="selectionMode"
             :view="view"
@@ -775,6 +793,10 @@ watch(
   },
   { immediate: true },
 )
+
+// The panel's Teleport and Transition wait for the first open; closed, it skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
 
 const { positionerStyle, placement, transformOrigin, isClosing, close, cancelClose, layerIndex } =
   usePopover(shown, {

@@ -6,6 +6,7 @@
     :data-state="dataState"
     :data-invalid="isInvalid || undefined"
     :data-dragging="dragging || undefined"
+    :data-fresh="fresh || undefined"
     @focusin="focusEvents.onFocusin"
     @focusout="focusEvents.onFocusout"
     v-bind="rootAttrs"
@@ -179,14 +180,14 @@ function onInputClick(event: MouseEvent) {
 
 const dataState = computed(() => ((dragOn.value ?? modelValue.value) ? 'checked' : 'unchecked'))
 
-// First paint only: suppress transitions to prevent initial jump
-const firstPaint = shallowRef(true)
+// First paint: no transitions; cleared on the element, so it doesn't re-render the switch.
+let fresh = true
 onMounted(() => {
   void nextTick(() => {
-    firstPaint.value = false
+    fresh = false
+    root.value?.removeAttribute('data-fresh')
   })
 })
-const skipTransition = computed(() => firstPaint.value || !props.motion)
 
 const root = useTemplateRef<HTMLElement>('root')
 useFormReset(modelValue, () => root.value)
@@ -220,7 +221,7 @@ const rootPart = computed(() =>
     'ui-switch',
     `ui-switch--${props.size}`,
     isDisabled.value && 'ui-switch--disabled',
-    skipTransition.value && 'ui-switch--no-anim',
+    !props.motion && 'ui-switch--no-anim',
   ),
 )
 const trackPart = computed(() => resolveUiPart(cx, themedUi()?.track, 'ui-switch-track'))

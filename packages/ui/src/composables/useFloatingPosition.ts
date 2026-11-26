@@ -2,10 +2,17 @@ import { shallowRef, toValue, watch, onScopeDispose } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
 import type { ElRef } from './dom'
 import { restingRect } from './dom'
-import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom'
 import type { Middleware, Placement, Side } from '@floating-ui/dom'
 
 export type Align = 'start' | 'center' | 'end'
+
+type FloatingUi = typeof import('@floating-ui/dom')
+// Floating UI loads apart: only an open panel is placed, and it stays hidden until placed.
+let floatingUi: FloatingUi | undefined
+let loadingFloatingUi: Promise<FloatingUi> | undefined
+/** @internal The positioning code, loaded once; every popover starts it as it sets up. */
+export const loadFloatingUi = (): Promise<FloatingUi> =>
+  (loadingFloatingUi ??= import('@floating-ui/dom').then((module) => (floatingUi = module)))
 
 export interface UseFloatingPositionOptions {
   referenceEl: ElRef<HTMLElement | null>
@@ -102,6 +109,7 @@ function facingEdge(
 }
 
 export function useFloatingPosition(options: UseFloatingPositionOptions) {
+  if (typeof window !== 'undefined') void loadFloatingUi()
   const positionerStyle = shallowRef<Record<string, string>>({ ...HIDDEN_STYLE })
   const placement = shallowRef<Placement>('bottom')
   const transformOrigin = shallowRef('center center')
@@ -120,7 +128,8 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
   async function update() {
     const reference = options.referenceEl.value
     const floating = options.floatingEl.value
-    if (!reference || !floating) return
+    if (!reference || !floating || !floatingUi) return
+    const { computePosition, offset, flip, shift, size } = floatingUi
     if (!reference.isConnected) return
     const token = ++updateToken
 
@@ -172,19 +181,28 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
     // text shifts onto the pixel grid, which reads as a flinch.
     const dpr = window.devicePixelRatio || 1
     const snap = (value: number) => Math.round(value * dpr) / dpr
-    positionerStyle.value = {
+    setStyle({
       position: 'absolute',
       ...(options.holdFacingEdge
         ? facingEdge(floating, result.placement, result.x, result.y, snap)
         : { top: `${snap(result.y)}px`, left: `${snap(result.x)}px` }),
       visibility: 'visible',
       ...(anchorInlineSize ? { '--ui-anchor-inline-size': anchorInlineSize } : {}),
-    }
+    })
     placement.value = result.placement
     const origin = result.middlewareData.triggerOrigin as { x: number; y: number } | undefined
     transformOrigin.value = origin
       ? `${origin.x}px ${origin.y}px`
       : toTransformOrigin(result.placement)
+  }
+
+  // A pass that lands where the panel already is re-renders nothing; the first after a (re)start always lands.
+  let fresh = true
+  function setStyle(next: Record<string, string>) {
+    const now = positionerStyle.value
+    if (fresh || Object.keys({ ...now, ...next }).some((key) => now[key] !== next[key]))
+      positionerStyle.value = next
+    fresh = false
   }
 
   let stopAutoUpdate: (() => void) | undefined
@@ -203,12 +221,23 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
       updateToken++
       // Reset on (re)open, but not on reference swap while active (avoid blink)
       if (!isActive || !wasActive) {
-        positionerStyle.value = { ...HIDDEN_STYLE }
+        // Already hidden (a first open) stays the same object.
+        if (positionerStyle.value.visibility !== 'hidden')
+          positionerStyle.value = { ...HIDDEN_STYLE }
         maxHeight.value = null
       }
+      fresh = true
       const floating = options.floatingEl.value
       if (!isActive || !reference || !floating) return
-      stopAutoUpdate = autoUpdate(reference, floating, update)
+      // Opened before the positioning code arrived: placed as soon as it does, hidden till then.
+      const start = ({ autoUpdate }: FloatingUi) => {
+        stopAutoUpdate = autoUpdate(reference, floating, update)
+      }
+      if (floatingUi) start(floatingUi)
+      else {
+        const token = updateToken
+        void loadFloatingUi().then((module) => token === updateToken && start(module))
+      }
       if (options.onReferenceDisconnected && typeof MutationObserver !== 'undefined') {
         disconnectObserver = new MutationObserver(() => {
           if (reference.isConnected) return

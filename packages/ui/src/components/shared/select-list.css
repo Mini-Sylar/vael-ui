@@ -93,6 +93,18 @@
     text-align: start;
     cursor: pointer;
   }
+  /* The panel reads the trigger's width from the positioner; the rows don't, so a new width stops
+     here instead of restyling each one. */
+  .ui-select-body {
+    --ui-anchor-inline-size: initial;
+  }
+  /* Blocks of 50 rows after the first skip style, layout and paint while out of view, held at
+     their rows' height (2.25rem each); still found by find in page and read by screen readers.
+     The first block renders at once, since a list opens at its top. Default rows only: a custom
+     row may be another height or draw outside itself. */
+  .ui-select-body:not([data-custom-rows]) .ui-select-run + .ui-select-run {
+    content-visibility: auto;
+  }
   /* Current value gets quiet permanent tint. */
   .ui-select-option[data-selected] {
     background: color-mix(in srgb, var(--ui-primary) 8%, transparent);

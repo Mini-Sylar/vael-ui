@@ -5,9 +5,8 @@
 // a browser-only global during server rendering, or when the two builds disagree on which
 // components render.
 //
-// Components are rendered bare, with no props or parent, so ones that need either (an
-// AccordionItem outside an Accordion, a Select without `items`) throw in both builds. That's
-// expected; only the errors below are treated as real SSR bugs.
+// Each component renders with the least it needs: bare, or with the props and parent in NEEDS. Any
+// that throws is a problem, so a component that stops rendering can't hide behind a smaller count.
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
@@ -25,8 +24,15 @@ import { vAnimate, vAnimateVapor } from 'vael-ui/motion'
 export const builds = { vdom, vapor }
 // A Vapor file renders through VDOM on the server, so vAnimateVapor must work there too.
 export const motions = { vAnimate, vAnimateVapor }
-export const render = (component) =>
-  renderToString(createSSRApp({ render: () => h(component, null, () => 'x') }))
+export const render = (component, props = null, parent = null, parentProps = null) =>
+  renderToString(
+    createSSRApp({
+      render: () =>
+        parent
+          ? h(parent, parentProps, () => h(component, props, () => 'x'))
+          : h(component, props, () => 'x'),
+    }),
+  )
 // v-animate's first appearance as CSS, from either build's directive.
 export const appear = (directive) =>
   renderToString(
@@ -52,6 +58,19 @@ const vite = await createServer({
   ],
 })
 
+// What a component can't render without: [props, parent name, parent props].
+const NEEDS = {
+  Select: [{ items: [] }],
+  CascadeSelect: [{ items: [] }],
+  CommandPalette: [{ items: [] }],
+  Tree: [{ items: [] }],
+  Timeline: [{ items: [] }],
+  DataTable: [{ data: [] }],
+  Column: [{ field: 'name', label: 'Name' }, 'DataTable', { data: [] }],
+  Radio: [{ value: 'a', label: 'A' }, 'RadioGroup'],
+  AccordionItem: [{ value: 'a', title: 'A' }, 'Accordion'],
+}
+
 const problems = []
 const rendered = {}
 try {
@@ -65,12 +84,15 @@ try {
       (name) => /^[A-Z]/.test(name) && typeof lib[name] === 'object' && 'setup' in lib[name],
     )
     for (const name of components) {
+      const [props, parent, parentProps] = NEEDS[name] ?? []
       try {
-        await render(lib[name])
+        await render(lib[name], props, parent && lib[parent], parentProps)
         rendered[label].add(name)
       } catch (error) {
         const message = String(error?.message ?? error).split('\n')[0]
-        if (SSR_BUGS.test(message)) problems.push(`${label} ${name}: ${message}`)
+        problems.push(
+          `${label} ${name}: ${message}${SSR_BUGS.test(message) ? '' : ' (add what it needs to NEEDS if it needs props or a parent)'}`,
+        )
       }
     }
   }

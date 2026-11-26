@@ -166,3 +166,22 @@ test('End does nothing without a max, instead of sizing the panel to Infinity', 
   await userEvent.keyboard('{End}')
   expect(size.value).toBe(150)
 })
+
+test('each handle controls the box it resizes, by your id or its own', async () => {
+  const { h } = await import('vue')
+  const { default: Resizable } = await import('../src/components/Resizable/Resizable.vue')
+  const screen = await render(() =>
+    h('div', [
+      h(Resizable as never, { modelValue: 200, edge: 'both', 'data-testid': 'auto' }),
+      h(Resizable as never, { modelValue: 200, id: 'sidebar', 'data-testid': 'mine' }),
+    ]),
+  )
+  const auto = rootEl(screen, 'auto')
+  expect(auto.id).not.toBe('')
+  const handles = auto.querySelectorAll('[role="separator"]')
+  expect(handles.length).toBe(2)
+  for (const handle of handles) expect(handle.getAttribute('aria-controls')).toBe(auto.id)
+  const mine = rootEl(screen, 'mine')
+  expect(mine.id).toBe('sidebar')
+  expect(mine.querySelector('[role="separator"]')!.getAttribute('aria-controls')).toBe('sidebar')
+})

@@ -117,13 +117,25 @@ test('v-animate measures a drawn path as 1 long', async () => {
       ]),
     ]),
   )
-  await wait(60)
   const path = document.querySelector('path')!
+  // Its code loads on first use, slower in a busy run: held halfway once it's drawing, not timed.
+  const drawing = () =>
+    path
+      .getAnimations()
+      .find((run) =>
+        (run.effect as KeyframeEffect).getKeyframes().some((key) => 'strokeDasharray' in key),
+      )
+  await vi.waitFor(() => expect(drawing()).toBeDefined())
   expect(path.getAttribute('pathLength')).toBe('1')
+  const draw = drawing()!
+  draw.pause()
+  draw.currentTime = 100
   // Mid-draw: a dash part of the way, easing toward its resting full dash.
   const [drawn] = getComputedStyle(path).strokeDasharray.split(/[ ,]+/).map(Number.parseFloat)
   expect(drawn).toBeGreaterThan(0)
   expect(drawn).toBeLessThan(1)
-  await wait(250)
+  draw.play()
+  await draw.finished
+  await wait(30)
   expect(getComputedStyle(path).strokeDasharray.replace(/px/g, '')).toMatch(/^1,? 1$/)
 })

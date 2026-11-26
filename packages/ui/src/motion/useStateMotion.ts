@@ -1,27 +1,17 @@
 // Motion while a component lives (`states`). The built-in state looks are the component's own CSS;
 // this stays asleep until states are customised, then loads the player and its listeners (states.ts).
-import {
-  computed,
-  effectScope,
-  getCurrentInstance,
-  inject,
-  onBeforeMount,
-  onMounted,
-  onScopeDispose,
-  watch,
-} from 'vue'
+import { getCurrentInstance, getCurrentScope, inject, onBeforeMount, onMounted, watch } from 'vue'
 import { useMotionStyle, motionSettingsKey } from './styleKey'
 import type { MotionStyle, MotionTiming } from './types'
-import { springOf } from './springNames'
 import { loading } from './styleKey'
 import { holdUnseen } from './ids'
 
 let appearance: typeof import('./appearance') | undefined
 const loadAppearance = () => loading(import('./appearance')).then((module) => (appearance = module))
-let statesModule: Promise<typeof import('./states')> | undefined
-let loaded: typeof import('./states') | undefined
-const loadStates = () =>
-  (statesModule ??= loading(import('./states')).then((module) => (loaded = module)))
+let wiringModule: Promise<typeof import('./stateWiring')> | undefined
+let wiring: typeof import('./stateWiring') | undefined
+const loadWiring = () =>
+  (wiringModule ??= loading(import('./stateWiring')).then((module) => (wiring = module)))
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
@@ -80,88 +70,59 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
   const style = useMotionStyle()
   const provider = inject(motionSettingsKey, undefined)
 
-  // What a style's press look, its states and your own add up to: merged in the states chunk.
-  const sources = () => {
-    const own = options.motion()
-    if (own === false || provider?.value.motion === false) return undefined
-    const keyStyle = style?.value?.[options.key] as Record<string, unknown> | undefined
-    const press = options.role === 'press' ? style?.value?.press : undefined
-    const wanted =
-      (isObject(own) && own.states) || keyStyle?.states || press?.active || press?.hover
-    return wanted ? { own, keyStyle, press, mainPart: options.mainPart } : undefined
-  }
-  const timing = computed(
-    () =>
-      timingOf(options.motion()) ??
-      timingOf(style?.value?.[options.key]) ??
-      (options.role === 'press' ? timingOf(style?.value?.press) : undefined) ??
-      {},
-  )
-
-  // Your timing on this component: its own transitions read these tokens, so they follow it (and
-  // so does what's inside it). Closes keep the exit token: they get out of the way.
-  watch(
-    [timing, () => options.root?.() ?? parts()[options.mainPart]],
-    ([t, el], _, onCleanup) => {
-      if (!(el instanceof HTMLElement || el instanceof SVGElement)) return
-      if (!Object.keys(t as object).length) return
-      let set: string[] = []
-      let live = true
-      onCleanup(() => {
-        live = false
-        set.forEach((name) => el.style.removeProperty(name))
-      })
-      const put = (module: typeof import('./states')) => {
-        if (live) set = module.putTimingTokens(el, t as MotionTiming)
-      }
-      // Loaded already: in the same flush, so nothing starts on the default timing in between.
-      if (loaded) put(loaded)
-      else void loadStates().then(put)
-    },
-    { flush: 'post', immediate: true },
-  )
-
-  // Customised: the player and its listeners load, inside a scope this component owns.
-  const scope = effectScope()
-  let started = false
-  watch(
-    () => !!sources(),
-    (needed) => {
-      if (!needed || started) return
-      started = true
-      // What it knows now: a state that turns on while the player loads still plays once it's here.
-      const initial = { ...options.states() }
-      // Until it arrives the component's own CSS look shows.
-      loadStates().then(
-        (module) =>
-          scope.run(() => {
-            const spec = computed(() => module.specOf(sources()))
-            module.startStates({
-              ...options,
-              parts,
-              spec: () => spec.value,
-              timing: () => timing.value,
-              spring: () => springOf(style?.value?.spring),
-              repeated: () => Object.fromEntries((options.repeated ?? []).map((n) => [n, els(n)])),
-              initial,
-            })
-          }),
-        () => {},
-      )
-    },
-    { immediate: true },
-  )
-  onScopeDispose(() => scope.stop())
-
-  // Its appearance (`initial`, by part): opt-in, when it mounts, never on hydration.
-  const instance = getCurrentInstance() as { vnode?: { el?: unknown } } | null
-  let fromServer = false
-  onBeforeMount(() => (fromServer = !!instance?.vnode?.el))
+  const timing = (): MotionTiming =>
+    timingOf(options.motion()) ??
+    timingOf(style?.value?.[options.key]) ??
+    (options.role === 'press' ? timingOf(style?.value?.press) : undefined) ??
+    {}
   // Your `onAfterEnter`, once its appearance has played; at once when none plays.
   const afterEnter = () => {
     const own = options.motion()
     if (isObject(own) && typeof own.onAfterEnter === 'function') own.onAfterEnter()
   }
+  // Customised (your motion object, or a shared style for it): its timing, states and replay load
+  // and wire up in its scope. Until then one cheap watcher is all it costs.
+  const custom = () =>
+    isObject(options.motion()) ||
+    !!style?.value?.[options.key] ||
+    (options.role === 'press' && !!style?.value?.press)
+  const scope = getCurrentScope()
+  let initial: Record<string, boolean | undefined> | undefined
+  watch(
+    custom,
+    (on) => {
+      if (!on || initial) return
+      // What it knows now: a state that turns on while the player loads still plays once it's here.
+      initial = { ...options.states() }
+      const wire = (module: typeof import('./stateWiring')) =>
+        scope?.active &&
+        scope.run(() =>
+          module.wireStates(
+            {
+              options,
+              style,
+              provider,
+              els,
+              parts,
+              timing,
+              afterEnter,
+            },
+            initial,
+          ),
+        )
+      // Loaded already: in the same flush, so nothing starts on the default timing in between.
+      if (wiring) wire(wiring)
+      else loadWiring().then(wire, () => {})
+    },
+    { immediate: true },
+  )
+  // Its appearance needs a motion object or a shared style when it mounts.
+  if (!custom()) return exposed
+
+  // Its appearance (`initial`, by part): opt-in, when it mounts, never on hydration.
+  const instance = getCurrentInstance() as { vnode?: { el?: unknown } } | null
+  let fromServer = false
+  onBeforeMount(() => (fromServer = !!instance?.vnode?.el))
   onMounted(() => {
     const own = options.motion()
     const keyStyle = style?.value?.[options.key] as Record<string, unknown> | undefined
@@ -184,31 +145,11 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
         keyStyle,
         own,
         els,
-        timing.value,
+        timing(),
         afterEnter,
         options.root?.(),
       )
     }, release)
   })
-  // `replay`: when it changes, the appearance plays again, without remounting.
-  watch(
-    () => {
-      const own = options.motion()
-      return isObject(own) ? own.replay : undefined
-    },
-    (next, before) => {
-      const own = options.motion()
-      if (Object.is(next, before) || !isObject(own) || !own.initial) return
-      // Motion off: nothing plays, so your callback runs at once, as on mount.
-      if (provider?.value.motion === false) return afterEnter()
-      const keyStyle = style?.value?.[options.key] as Record<string, unknown> | undefined
-      // Loaded already (it played on mount, or replayed before): at once, in this flush.
-      const play = (module: typeof import('./appearance')) =>
-        module.appearParts(String(options.key), keyStyle, own, els, timing.value, true, afterEnter)
-      if (appearance) play(appearance)
-      else void loadAppearance().then(play)
-    },
-    { flush: 'post' },
-  )
   return exposed
 }

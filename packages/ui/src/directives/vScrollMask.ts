@@ -40,19 +40,19 @@ function clamp01(value: number) {
 
 // Mirrors scroll-fade.css's keyframes: start fade over the first 40px, end fade over the last 10%.
 function applyManualFade(el: HTMLElement, axis: ScrollMaskAxis) {
-  if (axis !== 'x') {
-    const max = el.scrollHeight - el.clientHeight
-    const progress = max > 0 ? el.scrollTop / max : 0
-    el.style.setProperty('--fade-top-end', `${clamp01(el.scrollTop / 40) * 9}%`)
-    el.style.setProperty('--fade-bottom-start', `${91 + clamp01((progress - 0.9) / 0.1) * 9}%`)
+  const fade = (start: string, end: string, scrolled: number, max: number) => {
+    el.style.setProperty(start, `${clamp01(scrolled / 40) * 9}%`)
+    el.style.setProperty(end, `${91 + clamp01(((max > 0 ? scrolled / max : 0) - 0.9) / 0.1) * 9}%`)
   }
-  if (axis !== 'y') {
-    const max = el.scrollWidth - el.clientWidth
-    const scrolled = Math.abs(el.scrollLeft)
-    const progress = max > 0 ? scrolled / max : 0
-    el.style.setProperty('--fade-left-end', `${clamp01(scrolled / 40) * 9}%`)
-    el.style.setProperty('--fade-right-start', `${91 + clamp01((progress - 0.9) / 0.1) * 9}%`)
-  }
+  if (axis !== 'x')
+    fade('--fade-top-end', '--fade-bottom-start', el.scrollTop, el.scrollHeight - el.clientHeight)
+  if (axis !== 'y')
+    fade(
+      '--fade-left-end',
+      '--fade-right-start',
+      Math.abs(el.scrollLeft),
+      el.scrollWidth - el.clientWidth,
+    )
 }
 
 type Modifiers = Partial<Record<string, boolean>> | undefined
@@ -76,27 +76,25 @@ function measureBars(el: HTMLElement) {
   el.style.setProperty('--ui-scroll-bar-x', `${hidden ? 0 : Math.max(x, 0)}px`)
 }
 
-// A sliding highlight (a positioned, aria-hidden decoration) swinging past the end isn't content to
-// scroll to: it doesn't make the box scroll, or fade its edges mid-glide. Measured by the rest.
+// Content to scroll to is laid out: a child moved by a transform (a sliding highlight, a tab dragged
+// out and settling back) doesn't make the box scroll or fade its edges mid-move, so each child is
+// measured by its layout box and its own content, which its transform leaves alone. A positioned,
+// aria-hidden decoration isn't content at all. Bare text, or a child with no box: the scroll width decides.
 function overflowsX(el: HTMLElement): boolean {
   if (el.scrollWidth <= el.clientWidth) return false
-  const content = [...el.children].filter(
-    (child) =>
-      !(
-        child.getAttribute('aria-hidden') === 'true' &&
-        getComputedStyle(child).position === 'absolute'
-      ),
-  )
-  if (content.length === el.children.length) return true
   let start = Infinity
   let end = -Infinity
-  for (const child of content) {
-    const box = child.getBoundingClientRect()
-    if (!box.width && !box.height) continue
-    start = Math.min(start, box.left)
-    end = Math.max(end, box.right)
+  for (const child of el.children as HTMLCollectionOf<HTMLElement>) {
+    const width = child.offsetWidth
+    // An SVG has no layout box to read, a display: contents child neither.
+    if (width === undefined || (!width && getComputedStyle(child).display === 'contents'))
+      return true
+    if (!width || (child.ariaHidden === 'true' && getComputedStyle(child).position === 'absolute'))
+      continue
+    start = Math.min(start, child.offsetLeft)
+    end = Math.max(end, child.offsetLeft + Math.max(width, child.scrollWidth))
   }
-  if (start === Infinity) return false
+  if (start === Infinity) return !el.childElementCount
   const style = getComputedStyle(el)
   const padding = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight)
   return end - start + padding > el.clientWidth + 0.5
@@ -119,11 +117,14 @@ function start(el: HTMLElement, axis: ScrollMaskAxis) {
     check(el, axis)
     return
   }
-  const observer = new ResizeObserver(() => check(el, state.get(el)?.axis ?? axis))
+  const observer = new ResizeObserver(() => check(el, entry.axis))
   // One check per frame, so a list that re-renders while scrolling adds no extra layout.
   const mutations = new MutationObserver((records) => {
     // New children are watched for size too.
     if (records.some((r) => r.type === 'childList' && r.target === el)) watchChildren()
+    // vael-ui's sliding highlight (an aria-hidden, positioned decoration) moving changes nothing
+    // that scrolls.
+    if (records.every((r) => (r.target as Element).classList?.contains('ui-indicator'))) return
     if (entry.frame) return
     entry.frame = requestAnimationFrame(() => {
       entry.frame = 0
@@ -157,12 +158,14 @@ function start(el: HTMLElement, axis: ScrollMaskAxis) {
 
 function stop(el: HTMLElement) {
   const entry = state.get(el)
-  entry?.observer.disconnect()
-  entry?.mutations.disconnect()
-  if (entry?.frame) cancelAnimationFrame(entry.frame)
-  if (entry?.onScroll) {
-    el.removeEventListener('scroll', entry.onScroll)
-    for (const property of FADE_PROPERTIES) el.style.removeProperty(property)
+  if (entry) {
+    entry.observer.disconnect()
+    entry.mutations.disconnect()
+    cancelAnimationFrame(entry.frame)
+    if (entry.onScroll) {
+      el.removeEventListener('scroll', entry.onScroll)
+      for (const property of FADE_PROPERTIES) el.style.removeProperty(property)
+    }
   }
   state.delete(el)
   el.classList.remove('scroll-fade', 'scroll-fade-x', 'scroll-fade-manual')

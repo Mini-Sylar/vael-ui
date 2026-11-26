@@ -1,11 +1,9 @@
 import { onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
 import type { Side } from '@floating-ui/dom'
 import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
 import type { ElRef } from './dom'
-import { ssrWindow } from '../ssr'
 import { useCloseGuard } from './useCloseGuard'
 import type { BeforeClose } from '../motion/types'
 import { isRtl, prefersReducedMotion } from './dom'
@@ -17,6 +15,26 @@ export interface TooltipOpenChangeDetails {
   reason: TooltipCloseReason
   event?: Event
   cancel: () => void
+}
+
+type Listener = [type: string, fn: (event: never) => void, capture?: boolean]
+/** Binds `listeners` to whatever `target` is now, moving them when it changes: one watcher for all. */
+function listenOn(target: () => EventTarget | null | undefined, listeners: Listener[]) {
+  let bound: EventTarget | null | undefined
+  const bind = (on: boolean) => {
+    for (const [type, fn, capture] of listeners)
+      bound?.[on ? 'addEventListener' : 'removeEventListener'](type, fn as EventListener, capture)
+  }
+  watch(
+    target,
+    (el) => {
+      bind(false)
+      bound = el
+      bind(true)
+    },
+    { immediate: true, flush: 'post' },
+  )
+  onScopeDispose(() => bind(false))
 }
 
 // Warm group: next tooltip opens instantly, glides from previous rect.
@@ -622,7 +640,6 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
   // A touch held 500 ms within 10 px is a long press (the platform's convention): it shows the tip.
   // It stays up 1500 ms after the finger lifts, or until the next tap elsewhere.
   const TOUCH_HIDE_MS = 1500
-  const touchTip = shallowRef(false)
   let hold:
     | { x: number; y: number; timer: ReturnType<typeof setTimeout>; held: boolean }
     | undefined
@@ -630,99 +647,119 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     clearTimeout(hold?.timer)
     hold = undefined
   }
-  useEventListener(options.triggerEl, 'pointerdown', (event: PointerEvent) => {
-    lastPointerWasTouch = event.pointerType === 'touch'
-    // A new press is a new gesture. Android fires no click after a long press, so a flag left
-    // from one would swallow the next real tap and the trigger would need two.
-    suppressNextClick = false
-    release()
-    if (!lastPointerWasTouch) return
-    const current = {
-      x: event.clientX,
-      y: event.clientY,
-      held: false,
-      timer: setTimeout(() => {
-        current.held = true
-        show()
-        touchTip.value = open.value
-      }, 500),
-    }
-    hold = current
-  })
-  useEventListener(options.triggerEl, 'pointermove', (event: PointerEvent) => {
-    trackPointer(event)
-    if (hold && !hold.held && Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > 10)
-      release()
-  })
-  useEventListener(options.triggerEl, 'pointerup', () => {
-    if (hold?.held) {
-      suppressNextClick = true
-      clearTimeout(closeTimer)
-      closeTimer = setTimeout(() => requestClose('pointer'), TOUCH_HIDE_MS)
-    }
-    release()
-  })
-  useEventListener(
-    () => (touchTip.value ? ssrWindow() : undefined),
-    'pointerdown',
-    (event: PointerEvent) => {
-      const target = event.target as Node | null
-      if (options.triggerEl.value?.contains(target) || options.positionerEl.value?.contains(target))
-        return
-      clearTimers()
-      requestClose('pointer', event)
-    },
-    true,
+  // A tap outside hides a long-press tip.
+  function onOutsidePress(event: PointerEvent) {
+    const target = event.target as Node | null
+    if (options.triggerEl.value?.contains(target) || options.positionerEl.value?.contains(target))
+      return
+    clearTimers()
+    requestClose('pointer', event)
+  }
+  const touchTip = (on: boolean) =>
+    window[on ? 'addEventListener' : 'removeEventListener'](
+      'pointerdown',
+      onOutsidePress as EventListener,
+      true,
+    )
+  listenOn(
+    () => options.triggerEl.value,
+    [
+      [
+        'pointerdown',
+        (event: PointerEvent) => {
+          lastPointerWasTouch = event.pointerType === 'touch'
+          // A new press is a new gesture. Android fires no click after a long press, so a flag left
+          // from one would swallow the next real tap and the trigger would need two.
+          suppressNextClick = false
+          release()
+          if (!lastPointerWasTouch) return
+          const current = {
+            x: event.clientX,
+            y: event.clientY,
+            held: false,
+            timer: setTimeout(() => {
+              current.held = true
+              show()
+              touchTip(open.value)
+            }, 500),
+          }
+          hold = current
+        },
+      ],
+      [
+        'pointermove',
+        (event: PointerEvent) => {
+          trackPointer(event)
+          if (hold && !hold.held && Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > 10)
+            release()
+        },
+      ],
+      [
+        'pointerup',
+        () => {
+          if (hold?.held) {
+            suppressNextClick = true
+            clearTimeout(closeTimer)
+            closeTimer = setTimeout(() => requestClose('pointer'), TOUCH_HIDE_MS)
+          }
+          release()
+        },
+      ],
+      ['pointercancel', release],
+      ['pointerleave', release],
+      // A long-press that fires mid-gesture shouldn't also activate the trigger's own click handler right after.
+      [
+        'click',
+        (event: MouseEvent) => {
+          if (!suppressNextClick) return
+          suppressNextClick = false
+          event.preventDefault()
+          event.stopPropagation()
+        },
+        true,
+      ],
+    ],
   )
-  useEventListener(options.triggerEl, ['pointercancel', 'pointerleave'], release)
   onScopeDispose(release)
-  // A long-press that fires mid-gesture shouldn't also activate the trigger's own click handler right after.
-  useEventListener(
-    options.triggerEl,
-    'click',
-    (event: MouseEvent) => {
-      if (!suppressNextClick) return
-      suppressNextClick = false
-      event.preventDefault()
-      event.stopPropagation()
-    },
-    true,
-  )
 
-  useEventListener(
+  listenOn(
     () => (toValue(options.interactive) !== false ? options.positionerEl.value : undefined),
-    'pointerenter',
-    () => {
-      clearTimeout(closeTimer)
-      if (isClosing.value) cancelClose()
-    },
-  )
-  useEventListener(
-    () => (toValue(options.interactive) !== false ? options.positionerEl.value : undefined),
-    'pointerleave',
-    () => scheduleClose(),
+    [
+      [
+        'pointerenter',
+        () => {
+          clearTimeout(closeTimer)
+          if (isClosing.value) cancelClose()
+        },
+      ],
+      ['pointerleave', () => scheduleClose()],
+    ],
   )
 
   // Window capture runs before the layer stack's document listener, so a visible
   // tooltip takes this Escape and the dialog around it stays open (WCAG 1.4.13).
-  useEventListener(
-    () => (open.value ? ssrWindow() : undefined),
-    'keydown',
-    (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.isComposing || isClosing.value) return
-      if (!toValue(options.closeOnEsc ?? true)) return
-      requestClose('escape', event)
-      if (open.value && !isClosing.value) return
-      event.preventDefault()
-      // The pointer still on the trigger (or its icon) mustn't reopen it until it leaves.
-      if (options.triggerEl.value?.matches(':hover')) suppressed = true
-    },
-    true,
-  )
+  function onEscape(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || event.isComposing || isClosing.value) return
+    if (!toValue(options.closeOnEsc ?? true)) return
+    requestClose('escape', event)
+    if (open.value && !isClosing.value) return
+    event.preventDefault()
+    // The pointer still on the trigger (or its icon) mustn't reopen it until it leaves.
+    if (options.triggerEl.value?.matches(':hover')) suppressed = true
+  }
+  // Bound only while open.
+  const listenEscape = (on: boolean) =>
+    window[on ? 'addEventListener' : 'removeEventListener'](
+      'keydown',
+      onEscape as EventListener,
+      true,
+    )
+  if (open.value) listenEscape(true)
 
   watch(
     open,
     (value) => {
+      listenEscape(value)
       if (value) {
         warmth.visible++
         visiblePeers.add(peer)
@@ -731,7 +768,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
         warmth.lastHideAt = performance.now()
         visiblePeers.delete(peer)
         stopFollow()
-        touchTip.value = false
+        touchTip(false)
       }
     },
     { flush: 'post' },
@@ -741,6 +778,8 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     clearTimers()
     clearTravelSchedule()
     stopFollow()
+    listenEscape(false)
+    touchTip(false)
     visiblePeers.delete(peer)
     if (open.value) {
       warmth.visible = Math.max(0, warmth.visible - 1)
@@ -810,11 +849,16 @@ export function useTooltip(open: Ref<boolean>, options: UseTooltipOptions) {
   const core = useTooltipCore(open, options)
   if (typeof window === 'undefined') return core
 
-  useEventListener(options.triggerEl, 'pointerenter', core.pointerEnter)
-  useEventListener(options.triggerEl, 'pointerleave', core.pointerLeave)
-  useEventListener(options.triggerEl, 'focusin', core.focusEnter)
-  useEventListener(options.triggerEl, 'focusout', core.focusLeave)
-  useEventListener(options.triggerEl, 'pointerdown', core.press)
+  listenOn(
+    () => options.triggerEl.value,
+    [
+      ['pointerenter', core.pointerEnter],
+      ['pointerleave', core.pointerLeave],
+      ['focusin', core.focusEnter],
+      ['focusout', core.focusLeave],
+      ['pointerdown', core.press],
+    ],
+  )
 
   return core
 }

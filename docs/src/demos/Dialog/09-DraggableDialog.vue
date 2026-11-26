@@ -2,12 +2,17 @@
   <section class="demo">
     <h3>Draggable dialog</h3>
     <p class="note">
-      <code>useDrag</code> with a <code>handle</code> moves the panel by its header. A throw carries
-      on at the speed you let go and settles on a spring, inside the window. With the grip focused,
-      the arrow keys move it 10 px, or 50 px with Shift. It reopens centered.
+      <code>useDrag</code> with a <code>handle</code> moves the panel by its header. Let go and it
+      stays where you put it; a quick flick carries on and settles on a spring, inside the window.
+      With the grip focused, the arrow keys move it 10 px, or 50 px with Shift. It reopens centered.
     </p>
     <Button @click="open = true">Open dialog</Button>
-    <Dialog ref="dialog" v-model:open="open" :aria-labelledby="titleId">
+    <Dialog
+      ref="dialog"
+      v-model:open="open"
+      :aria-labelledby="titleId"
+      :ui="{ header: 'drag-zone' }"
+    >
       <template #header>
         <div class="drag-header">
           <Button
@@ -55,11 +60,19 @@ function inWindow(to: DragPoint): DragPoint {
   }
 }
 
-// Let go: it coasts where the throw was heading, and stops at the window's edge.
+// Let go: a flick coasts where it was heading; slower, it stays where you put it, as a window does.
+// Either way it stops at the window's edge. A mouse moving with intent easily passes 1000 px/s: a flick
+// is a sharp snap well past that.
+const FLICK = 2500
+let heading: DragPoint | null = null
 const drag = useDrag({
   el: panel,
-  handle: '.drag-header',
-  onRelease: ({ projected }) => inWindow(projected),
+  handle: '.drag-zone',
+  onRelease: ({ offset, velocity, projected }) => {
+    heading = null
+    return inWindow(Math.hypot(velocity.x, velocity.y) > FLICK ? projected : offset)
+  },
+  onRest: () => (heading = null),
 })
 
 const KEYS: Record<string, [number, number]> = {
@@ -73,12 +86,10 @@ function nudge(event: KeyboardEvent) {
   if (!direction) return
   event.preventDefault()
   const step = event.shiftKey ? 50 : 10
-  drag.throwTo(
-    inWindow({
-      x: drag.x.value + direction[0] * step,
-      y: drag.y.value + direction[1] * step,
-    }),
-  )
+  // From where the last press is heading, so keys pressed in a row add up.
+  const from = heading ?? { x: drag.x.value, y: drag.y.value }
+  heading = inWindow({ x: from.x + direction[0] * step, y: from.y + direction[1] * step })
+  drag.throwTo(heading)
 }
 </script>
 
@@ -87,15 +98,6 @@ function nudge(event: KeyboardEvent) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin: -0.5rem 0;
-  padding-block: 0.5rem;
-  cursor: grab;
-  /* Touch drags move the panel instead of scrolling the page. */
-  touch-action: none;
-  user-select: none;
-}
-.drag-header:active {
-  cursor: grabbing;
 }
 .grip {
   margin-inline-start: -0.5rem;
@@ -105,5 +107,18 @@ function nudge(event: KeyboardEvent) {
   margin: 0;
   font-size: 1.0625rem;
   font-weight: 600;
+}
+</style>
+
+<!-- The whole header bar grabs, not just its title row. The panel is teleported, so it's styled here. -->
+<style>
+.drag-zone {
+  cursor: grab;
+  /* Touch drags move the panel instead of scrolling the page. */
+  touch-action: none;
+  user-select: none;
+}
+.drag-zone:active {
+  cursor: grabbing;
 }
 </style>

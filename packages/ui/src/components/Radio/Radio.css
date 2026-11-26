@@ -74,8 +74,8 @@
     cursor: not-allowed;
   }
   /* First paint, and `motion="false"` — see Checkbox's identical guard. */
-  .ui-radio--no-anim .ui-radio-control,
-  .ui-radio--no-anim .ui-radio-dot {
+  :is(.ui-radio--no-anim, .ui-radio[data-fresh]) .ui-radio-control,
+  :is(.ui-radio--no-anim, .ui-radio[data-fresh]) .ui-radio-dot {
     transition: none;
   }
   .ui-radio-text {

@@ -19,7 +19,6 @@
       ref="panel"
       :id="panelId"
       role="region"
-      :aria-labelledby="triggerId"
       :class="panelPart.class"
       :style="[collapseStyle, panelPart.style]"
       :data-state="collapseState"
@@ -95,8 +94,6 @@ function onToggle() {
 }
 
 const panelId = useId()
-// The trigger names the panel's region.
-const triggerId = shallowRef<string>()
 
 const root = useTemplateRef<HTMLElement>('root')
 const triggerWrapper = useTemplateRef<HTMLElement>('triggerWrapper')
@@ -165,7 +162,8 @@ function syncTrigger() {
     (triggerWrapper.value?.firstElementChild as HTMLElement | null)
   if (!trigger) return
   if (!trigger.id) trigger.id = `${panelId}-trigger`
-  triggerId.value = trigger.id
+  // The trigger names the panel's region; written here so mounting doesn't re-render.
+  panel.value?.setAttribute('aria-labelledby', trigger.id)
   trigger.setAttribute('aria-expanded', String(open.value))
   trigger.setAttribute('aria-controls', panelId)
   if (props.disabled) trigger.setAttribute('aria-disabled', 'true')

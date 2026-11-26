@@ -139,3 +139,54 @@ test("the scrollbar's strip stays out of the fade: its own width, none when hidd
     rtl.unmount()
   }
 })
+
+test('a sliding highlight moving inside the box re-measures nothing; content changing does', async () => {
+  const frames = () =>
+    new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  const screen = render(() =>
+    withDirectives(
+      h('div', { class: 'box', style: 'height: 100px; overflow: auto' }, [
+        h('div', { class: 'ui-indicator', 'aria-hidden': 'true', style: 'position: absolute' }),
+        h('div', { class: 'content', style: 'height: 50px' }),
+      ]),
+      [[vScrollMask]],
+    ),
+  )
+  const box = (await screen).container.querySelector<HTMLElement>('.box')!
+  await frames()
+  const toggle = vi.spyOn(box.classList, 'toggle')
+  box.querySelector<HTMLElement>('.ui-indicator')!.style.translate = '0 40px'
+  await frames()
+  expect(toggle).not.toHaveBeenCalled()
+  box.querySelector<HTMLElement>('.content')!.style.height = '400px'
+  await vi.waitFor(() => expect(box.classList.contains('scroll-fade')).toBe(true))
+})
+
+test('x: a child moved past the edge by a transform is not content to scroll to; laid-out overflow is', async () => {
+  const frames = () =>
+    new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  const box = (children: ReturnType<typeof h>[]) =>
+    withDirectives(
+      h('div', { class: 'box', style: 'width: 200px; display: flex; overflow-x: auto' }, children),
+      [[vScrollMask, 'x']],
+    )
+  const screen = await render(() =>
+    h('div', [
+      box([
+        h('div', { class: 'tab', style: 'width: 60px; height: 20px; flex: none' }),
+        h('div', { class: 'moved', style: 'width: 60px; height: 20px; flex: none' }),
+      ]),
+      box([h('div', { style: 'width: 600px; height: 20px; flex: none' })]),
+      box([h('p', { style: 'margin: 0; white-space: nowrap; width: 100%' }, 'x'.repeat(200))]),
+    ]),
+  )
+  const [moved, wide, text] = screen.container.querySelectorAll<HTMLElement>('.box')
+  await frames()
+  // A tab dragged out past the right edge, sliding back: no fade, nothing masked off.
+  moved!.querySelector<HTMLElement>('.moved')!.style.translate = '400px 0'
+  await frames()
+  await frames()
+  expect(moved!.classList.contains('scroll-fade-x')).toBe(false)
+  await vi.waitFor(() => expect(wide!.classList.contains('scroll-fade-x')).toBe(true))
+  await vi.waitFor(() => expect(text!.classList.contains('scroll-fade-x')).toBe(true))
+})

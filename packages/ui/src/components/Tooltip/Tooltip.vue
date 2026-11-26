@@ -1,6 +1,6 @@
 <template>
   <slot v-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
-  <Teleport :to="teleportTo">
+  <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition name="ui-tooltip" appear v-bind="tooltipTransition">
       <div
         v-if="forceMount || open"
@@ -190,6 +190,10 @@ const {
   beforeClose: () => props.beforeClose,
   onOpenChange: (value, details) => emit('open-change', value, details),
 })
+
+// The panel's Teleport and Transition wait for the first open; closed, it skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
 
 const tooltipId = useId()
 

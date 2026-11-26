@@ -96,11 +96,11 @@ test.each([
     await new Promise((r) => setTimeout(r, 50))
     expect(document.querySelectorAll('#fruit')).toHaveLength(1)
     expect(document.querySelectorAll('[data-testid="fruit-control"]')).toHaveLength(1)
-    // TreeSelect's tree takes the trigger's name on purpose; CascadeSelect reads it through a hidden
-    // copy so its value follows.
-    expect(document.querySelectorAll('[aria-label="Fruit"]:not([role="tree"])')).toHaveLength(
-      name === 'CascadeSelect' ? 0 : 1,
-    )
+    // The tree and the listbox take the trigger's name on purpose; CascadeSelect reads it through a
+    // hidden copy so its value follows.
+    expect(
+      document.querySelectorAll('[aria-label="Fruit"]:not([role="tree"], [role="listbox"])'),
+    ).toHaveLength(name === 'CascadeSelect' ? 0 : 1)
     screen.unmount()
   },
 )

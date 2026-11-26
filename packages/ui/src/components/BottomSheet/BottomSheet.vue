@@ -2,7 +2,7 @@
   <Dialog
     ref="dialog"
     v-model:open="open"
-    force-mount
+    :force-mount="panelMounted"
     flush
     :before-close="beforeClose"
     :motion="sheetMotion"
@@ -160,22 +160,13 @@ export interface BottomSheetProps {
 </script>
 
 <!--
-  Composes Dialog (position="bottom" force-mount); useSheetDrag only touches panelEl.
+  Composes Dialog (position="bottom", force-mount from the first open); useSheetDrag only touches panelEl.
 -->
 <script setup lang="ts">
 // Dialog import (and its CSS) must precede BottomSheet.css: this panel
 // carries both .ui-dialog-panel and .ui-bottom-sheet-panel, and the latter's
 // overrides (e.g. max-block-size) need to win the cascade.
-import {
-  computed,
-  inject,
-  provide,
-  shallowRef,
-  useId,
-  useTemplateRef,
-  watch,
-  watchEffect,
-} from 'vue'
+import { computed, inject, provide, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogExposed } from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
@@ -232,6 +223,9 @@ const content = useTemplateRef<HTMLElement>('content')
 const handleButton = useTemplateRef<HTMLElement>('handleButton')
 const titleId = useId()
 
+// The panel mounts on the first open and stays after, so its content keeps its state.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value))
 const panelEl = computed(() => dialog.value?.panelEl ?? null)
 const isClosing = computed(() => dialog.value?.isClosing ?? false)
 function cancelClose() {
@@ -297,7 +291,7 @@ function initialFocus() {
 // Nesting auto-detected: instance tells ancestor when opening/closing.
 const parentSheet = inject(nestingKey, null)
 provide(nestingKey, { onNestedOpenChange: setReceded })
-watch(open, (value) => parentSheet?.onNestedOpenChange(value))
+if (parentSheet) watch(open, (value) => parentSheet.onNestedOpenChange(value))
 // Your guard, asked with the drag's release speed. While it decides, a dragged sheet stays where
 // it was let go; refused, it springs back to rest. Deciding only: the exit is the engine's.
 async function beforeClose(context: CloseContext<DialogCloseReason>) {
@@ -373,10 +367,9 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 // A closing sheet keeps the size it was open at, even when its width changes as it closes.
-const shownSize = shallowRef({ width: props.width, fullScreen: props.fullScreen })
-watchEffect(() => {
-  if (open.value) shownSize.value = { width: props.width, fullScreen: props.fullScreen }
-})
+const shownSize = computed<{ width: BottomSheetProps['width']; fullScreen: boolean }>((previous) =>
+  open.value || !previous ? { width: props.width, fullScreen: props.fullScreen } : previous,
+)
 // Forward to Dialog as { class, style } pair (bare string would drop style half).
 const panelPart = computed(() =>
   resolveUiPart(

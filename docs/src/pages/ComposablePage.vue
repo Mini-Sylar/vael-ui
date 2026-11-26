@@ -25,11 +25,20 @@
 
     <section id="usage" class="section">
       <h2>{{ t('component.examples') }}</h2>
-      <DemoFrame v-if="content.hasLiveDemo" :name="name" :examples="examples" />
+      <DemoFrame v-if="content.hasLiveDemo" :name="name" :examples="mainExamples" />
       <template v-else>
         <CodeBlock :lang="exampleLang" :code="exampleCode" />
         <CodeBlock v-if="content.headCode" lang="html" :code="content.headCode" class="head-code" />
       </template>
+    </section>
+
+    <section v-for="topic in content.sections" :id="topic.id" :key="topic.id" class="section">
+      <h2>{{ topic.title }}</h2>
+      <p class="details"><RichText :text="topic.text" /></p>
+      <DemoFrame
+        :name="name"
+        :examples="examples.filter((example) => topic.examples.includes(example.id))"
+      />
     </section>
 
     <MetaTable
@@ -135,6 +144,11 @@ function stripDemoProse(source: string): string {
 // render (same reasoning as ComponentPage.vue's vdom/vapor component cache).
 const demoComponentCache = new Map<string, Component>()
 const examples = shallowRef<DemoExample[]>([])
+// The examples a section of its own doesn't show.
+const mainExamples = computed(() => {
+  const shown = new Set(content.value?.sections?.flatMap((topic) => topic.examples))
+  return examples.value.filter((example) => !shown.has(example.id))
+})
 watchEffect(async () => {
   if (!content.value?.hasLiveDemo) {
     examples.value = []

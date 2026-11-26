@@ -56,8 +56,10 @@ export function dampen(overshoot: number, range = 60): number {
  */
 export function screenPerTranslate(el: HTMLElement): { x: number; y: number } {
   const own = el.style.translate
+  // 100px on from where it is now: one already moved (dragged, thrown, nudged) has its own.
+  const [ox = 0, oy = 0] = own ? own.split(' ').map((part) => Number.parseFloat(part) || 0) : []
   const before = el.getBoundingClientRect()
-  el.style.translate = '100px 100px'
+  el.style.translate = `${ox + 100}px ${oy + 100}px`
   const after = el.getBoundingClientRect()
   el.style.translate = own
   const x = (after.left - before.left) / 100

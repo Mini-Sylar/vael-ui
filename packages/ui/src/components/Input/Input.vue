@@ -8,7 +8,7 @@
     :data-focus-visible="focusVisible || undefined"
     @mousedown="onFrameMousedown"
   >
-    <span v-if="$slots.start" ref="startEl" :class="startPart.class" :style="startPart.style"
+    <span v-if="$slots.start" :ref="setStartEl" :class="startPart.class" :style="startPart.style"
       ><slot name="start"
     /></span>
     <!-- readonly || undefined: Vapor compiler requires undefined, not false, to omit the attribute -->
@@ -55,7 +55,9 @@
       </span>
     </span>
     <Transition
+      v-if="everClearable"
       name="ui-clear"
+      :appear="clearableLater"
       @enter="measureClearSpace"
       @leave="startClearLeave"
       @leave-cancelled="resetLeaveStyles"
@@ -107,7 +109,6 @@ import {
   useAttrs,
   useSlots,
   useTemplateRef,
-  watch,
 } from 'vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 import { useTextOverlay } from '../../composables/useTextOverlay'
@@ -182,11 +183,13 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
-const everLoaded = shallowRef(rawProps.loading)
-watch(
-  () => rawProps.loading,
-  (on) => on && (everLoaded.value = true),
-)
+// Latched: once on, they stay on (a computed with memory, not a watcher).
+let loadedOnce = false
+const everLoaded = computed(() => (loadedOnce ||= rawProps.loading))
+// The clear button's Transition mounts with the first `clearable`; added later, it enters as before.
+const clearableLater = !rawProps.clearable
+let clearableOnce = false
+const everClearable = computed(() => (clearableOnce ||= rawProps.clearable))
 
 defineSlots<{
   /** Inline leading content, such as an icon, a Kbd hint or a copy Button. */
@@ -294,7 +297,7 @@ const describedBy = computed(() => fieldControl.describedBy())
 const root = useTemplateRef<HTMLElement>('root')
 useFormReset(modelValue, () => root.value)
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
-const startEl = useTemplateRef<HTMLElement>('startEl')
+const startEl = shallowRef<HTMLElement | null>(null)
 const endEl = useTemplateRef<HTMLElement>('endEl')
 
 useStateMotion({
@@ -331,20 +334,19 @@ function measureStartInset() {
       : 0
 }
 let startResizeObserver: ResizeObserver | undefined
-watch(
-  startEl,
-  (el) => {
-    startResizeObserver?.disconnect()
-    if (!el) {
-      fieldStartInset.value = 0
-      return
-    }
-    measureStartInset()
-    startResizeObserver = new ResizeObserver(measureStartInset)
-    startResizeObserver.observe(el)
-  },
-  { immediate: true },
-)
+// A function ref: an input without `#start` sets up nothing for it.
+function setStartEl(el: unknown) {
+  if (el === startEl.value) return
+  startEl.value = el as HTMLElement | null
+  startResizeObserver?.disconnect()
+  if (!el) {
+    fieldStartInset.value = 0
+    return
+  }
+  // Called while it mounts, before it's in the page: the observer's first report measures it.
+  startResizeObserver = new ResizeObserver(measureStartInset)
+  startResizeObserver.observe(el as HTMLElement)
+}
 onBeforeUnmount(() => startResizeObserver?.disconnect())
 
 const cx = useClassMerge()

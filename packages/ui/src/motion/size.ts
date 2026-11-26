@@ -97,10 +97,28 @@ export function followSize(
   }
   const measure = (): Box => {
     const { width, height } = el.getBoundingClientRect()
-    // Scaled (its own entrance, or an opening around it): its layout size, not the drawn one.
-    if (Math.abs(width - el.offsetWidth) >= 1 || Math.abs(height - el.offsetHeight) >= 1)
-      return { width: el.offsetWidth, height: el.offsetHeight }
-    return { width, height }
+    if (Math.abs(width - el.offsetWidth) < 1 && Math.abs(height - el.offsetHeight) < 1)
+      return { width, height }
+    // Scaled (its own entrance, or an opening around it): its layout size, not the drawn one, to the
+    // fraction as drawn sizes are, so a size read mid-scale matches one read after it.
+    const style = getComputedStyle(el)
+    const sum = (...all: string[]) => all.reduce((total, one) => total + Number.parseFloat(one), 0)
+    const box = style.boxSizing === 'border-box'
+    const w = sum(
+      style.width,
+      ...(box
+        ? []
+        : [style.paddingLeft, style.paddingRight, style.borderLeftWidth, style.borderRightWidth]),
+    )
+    const h = sum(
+      style.height,
+      ...(box
+        ? []
+        : [style.paddingTop, style.paddingBottom, style.borderTopWidth, style.borderBottomWidth]),
+    )
+    return Number.isNaN(w + h)
+      ? { width: el.offsetWidth, height: el.offsetHeight }
+      : { width: w, height: h }
   }
   // Marked, so what leaves inside it is clipped to it (leaveInPlace).
   el.setAttribute('data-ui-size', '')

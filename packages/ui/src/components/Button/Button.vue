@@ -21,14 +21,7 @@
       :data-hold="holdMs ? (held ? 'done' : holding ? 'holding' : '') : undefined"
       :aria-describedby="describedBy"
       @click="onRootClick"
-      @pointerdown="onHoldPointerdown"
-      @pointerup="releaseHold"
-      @pointerleave="releaseHold"
-      @pointercancel="releaseHold"
-      @keydown="onKeydown"
-      @keyup="onKeyup"
-      @blur="onBlur"
-      @contextmenu="holdMs && $event.preventDefault()"
+      v-on="holdMs || actsAsButton ? pressHandlers : {}"
     >
       <span
         v-if="holdMs"
@@ -39,7 +32,7 @@
       <span v-if="holdMs" :id="holdHintId" hidden>{{ messages.button.hold }}</span>
       <span class="ui-button-inner">
         <span class="ui-button-loader" aria-hidden="true">
-          <slot name="loader" :loading="isLoading" :el="el">
+          <slot name="loader" v-bind="slotProps">
             <LoaderMark :type="loaderType" />
           </slot>
         </span>
@@ -54,7 +47,7 @@
         </span>
         <span ref="contentEl" :class="contentPart.class" :style="contentPart.style">
           <span ref="labelEl" :class="labelPart.class" :style="labelPart.style"
-            ><slot :loading="isLoading" :el="el" :run="run" :hold-progress="holdProgress"
+            ><slot v-bind="slotProps"
           /></span>
         </span>
         <span
@@ -96,14 +89,7 @@
     :data-hold="holdMs ? (held ? 'done' : holding ? 'holding' : '') : undefined"
     :aria-describedby="describedBy"
     @click="onRootClick"
-    @pointerdown="onHoldPointerdown"
-    @pointerup="releaseHold"
-    @pointerleave="releaseHold"
-    @pointercancel="releaseHold"
-    @keydown="onKeydown"
-    @keyup="onKeyup"
-    @blur="onBlur"
-    @contextmenu="holdMs && $event.preventDefault()"
+    v-on="holdMs || actsAsButton ? pressHandlers : {}"
   >
     <span
       v-if="holdMs"
@@ -114,7 +100,7 @@
     <span v-if="holdMs" :id="holdHintId" hidden>{{ messages.button.hold }}</span>
     <span class="ui-button-inner">
       <span class="ui-button-loader" aria-hidden="true">
-        <slot name="loader" :loading="isLoading" :el="el">
+        <slot name="loader" v-bind="slotProps">
           <LoaderMark :type="loaderType" />
         </slot>
       </span>
@@ -129,7 +115,7 @@
       </span>
       <span ref="contentEl" :class="contentPart.class" :style="contentPart.style">
         <span ref="labelEl" :class="labelPart.class" :style="labelPart.style"
-          ><slot :loading="isLoading" :el="el" :run="run" :hold-progress="holdProgress"
+          ><slot v-bind="slotProps"
         /></span>
       </span>
       <span
@@ -186,7 +172,6 @@ import {
   useId,
   useSlots,
   useTemplateRef,
-  watch,
 } from 'vue'
 import { useMessages, buttonMessages } from '../../messages'
 import { useComponentHaptic } from '../../composables/componentHaptic'
@@ -321,10 +306,9 @@ const isLoading = computed(() => (props.loading === 'auto' ? autoLoading.value :
 
 const isButtonTag = computed(() => props.as === 'button')
 // A plain tag with no semantics of its own (div, span, a without href) acts as a button.
-const INTERACTIVE_TAGS = new Set(['button', 'input', 'select', 'textarea', 'summary'])
 const actsAsButton = computed(() => {
   const tag = props.as
-  if (!/^[a-z][a-z0-9]*$/.test(tag) || INTERACTIVE_TAGS.has(tag)) return false
+  if (!/^(?!(?:button|input|select|textarea|summary)$)[a-z][a-z0-9]*$/.test(tag)) return false
   return !((tag === 'a' || tag === 'area') && attrs.href != null)
 })
 const role = computed(
@@ -347,7 +331,6 @@ const rootTabindex = computed(() => {
 // Hold: the fill runs while you hold, and only the click fired on completion gets through.
 const messages = useMessages({ button: buttonMessages })
 const haptic = useComponentHaptic()
-const tick = () => haptic.impact('heavy')
 const holdMs = computed(() => (props.hold === true ? 1200 : props.hold || 0))
 // A hidden element inside the button: left out of its name, still read as its description.
 const holdHintId = useId()
@@ -366,41 +349,37 @@ let holdKit: ButtonHold | undefined
 let ready: Promise<unknown> | undefined
 // Pressed before it arrived (a press right as the page loads): it starts then, if still held.
 let pressed$ = false
-watch(
-  holdMs,
-  (ms) =>
-    ms &&
-    !holdKit &&
-    (ready = loadButtonHold().then(
-      (kit) =>
-        (holdKit ??= kit.createButtonHold({
-          ms: () => holdMs.value,
-          blocked: () => isLoading.value || !!props.disabled,
-          el: () => el.value,
-          holding,
-          held,
-          progress: holdProgress,
-          complete: () => {
-            tick()
-            completing = true
-            el.value?.click()
-            completing = false
-          },
-        })),
-    )),
-  { immediate: true },
-)
+// Loaded at setup with `hold`, or on the first press when `hold` was added later: no watcher.
+const loadHold = () =>
+  (ready ??= loadButtonHold().then(
+    (kit) =>
+      (holdKit ??= kit.createButtonHold({
+        ms: () => holdMs.value,
+        blocked: () => isLoading.value || !!props.disabled,
+        el: () => el.value,
+        holding,
+        held,
+        progress: holdProgress,
+        complete: () => {
+          haptic.impact('heavy')
+          completing = true
+          el.value?.click()
+          completing = false
+        },
+      })),
+  ))
+if (rawProps.hold) loadHold()
 function startHold() {
   pressed$ = true
   if (holdKit) holdKit.start()
-  else void ready?.then(() => pressed$ && holdKit?.start())
+  else void loadHold().then(() => pressed$ && holdKit?.start())
 }
 function releaseHold() {
   pressed$ = false
   holdKit?.release()
 }
 function onHoldPointerdown(event: PointerEvent) {
-  if (event.button === 0) startHold()
+  if (event.button === 0 && holdMs.value) startHold()
 }
 function onHoldKeydown(event: KeyboardEvent) {
   if (!holdMs.value || (event.key !== ' ' && event.key !== 'Enter')) return
@@ -434,6 +413,18 @@ function onKeyup(event: KeyboardEvent) {
 function onBlur() {
   spaceDown = false
   releaseHold()
+}
+
+// Only a hold, or a plain tag acting as a button, listens for more than clicks.
+const pressHandlers = {
+  keydown: onKeydown,
+  keyup: onKeyup,
+  blur: onBlur,
+  pointerdown: onHoldPointerdown,
+  pointerup: releaseHold,
+  pointerleave: releaseHold,
+  pointercancel: releaseHold,
+  contextmenu: (event: Event) => holdMs.value && event.preventDefault(),
 }
 
 // Detects promise-returning handlers to trigger auto-loading.
@@ -476,6 +467,19 @@ const restAttrs = computed(() => {
 })
 
 const el = useTemplateRef<HTMLElement>('root')
+// Getters: only a slot that reads `el` re-renders the button once it mounts.
+const slotProps = {
+  run,
+  get loading() {
+    return isLoading.value
+  },
+  get el() {
+    return el.value
+  },
+  get holdProgress() {
+    return holdProgress.value
+  },
+}
 const leadingEl = useTemplateRef<HTMLElement>('leadingEl')
 const contentEl = useTemplateRef<HTMLElement>('contentEl')
 const labelEl = useTemplateRef<HTMLElement>('labelEl')

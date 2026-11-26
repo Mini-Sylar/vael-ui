@@ -114,7 +114,7 @@
     "featureSkillTitle": "Skills pour agents IA",
     "themeLabel": "Essayez une couleur :",
     "newTag": "Nouveau",
-    "newText": "0.5.6 : fenêtres, un dock et redimensionnement sur deux axes",
+    "newText": "{version} : listes longues plus rapides et popups plus légers",
     "showcaseLabel": "Démo en direct réalisée avec vael-ui"
   },
   "gettingStarted": {

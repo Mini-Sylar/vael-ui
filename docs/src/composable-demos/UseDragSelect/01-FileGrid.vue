@@ -48,7 +48,7 @@ import { vAnimate } from 'vael-ui/motion'
 
 const files = Array.from({ length: 40 }, (_, i) => `File ${i + 1}.pdf`)
 const box = useTemplateRef<HTMLElement>('box')
-const elastic = shallowRef(true)
+const elastic = shallowRef(false)
 const dragSelect = useDragSelect({ el: box, spring: elastic })
 </script>
 

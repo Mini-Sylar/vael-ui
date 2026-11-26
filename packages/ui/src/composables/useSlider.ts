@@ -1,4 +1,4 @@
-import { computed, shallowRef, toValue, watch } from 'vue'
+import { computed, onScopeDispose, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import type { ElRef } from './dom'
 import { inlineKey, isRtl } from './dom'
@@ -139,6 +139,7 @@ export function useSlider(
   function beginDrag(index: number, event: PointerEvent, target: HTMLElement) {
     activeThumb.value = index
     isDragging.value = true
+    windowListeners('addEventListener')
     capturedPointerId = event.pointerId
     target.setPointerCapture(event.pointerId)
     options.thumbEls?.value?.[index]?.focus({ preventScroll: true })
@@ -168,27 +169,19 @@ export function useSlider(
     if (!isDragging.value) return
     if (capturedPointerId !== null && event.pointerId !== capturedPointerId) return
     isDragging.value = false
+    windowListeners('removeEventListener')
     activeThumb.value = null
     capturedPointerId = null
     options.onCommit?.()
   }
 
-  // Bound to window for 1:1 tracking outside hit target, only while dragging.
-  watch(
-    isDragging,
-    (active, _, onCleanup) => {
-      if (!active) return
-      window.addEventListener('pointermove', onPointerMove)
-      window.addEventListener('pointerup', endDrag)
-      window.addEventListener('pointercancel', endDrag)
-      onCleanup(() => {
-        window.removeEventListener('pointermove', onPointerMove)
-        window.removeEventListener('pointerup', endDrag)
-        window.removeEventListener('pointercancel', endDrag)
-      })
-    },
-    { flush: 'sync' },
-  )
+  // Bound to window for 1:1 tracking outside hit target, only while dragging: no watcher.
+  function windowListeners(method: 'addEventListener' | 'removeEventListener') {
+    window[method]('pointermove', onPointerMove as EventListener)
+    window[method]('pointerup', endDrag as EventListener)
+    window[method]('pointercancel', endDrag as EventListener)
+  }
+  onScopeDispose(() => isDragging.value && windowListeners('removeEventListener'))
 
   function stepValue(index: number, delta: number) {
     setValue(index, values()[index] + delta)

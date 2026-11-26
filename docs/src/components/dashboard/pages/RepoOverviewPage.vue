@@ -1,12 +1,12 @@
 <template>
   <div class="repo">
     <div class="repo-stats">
-      <motion.div
+      <div
         v-for="(stat, i) in stats"
         :key="stat.label"
-        :initial="reduce ? false : { opacity: 0, y: 10 }"
-        :animate="{ opacity: 1, y: 0 }"
-        :transition="{ duration: 0.35, delay: reduce ? 0 : i * 0.05, ease: [0.22, 1, 0.36, 1] }"
+        class="dash-entrance"
+        :style="{ '--i': i }"
+        :data-first-paint="firstPaint || undefined"
       >
         <Card class="repo-stat">
           <div class="repo-stat-head">
@@ -21,7 +21,7 @@
             <Progress :value="stat.progress" size="sm" :label="stat.label" />
           </div>
         </Card>
-      </motion.div>
+      </div>
     </div>
 
     <div class="repo-grid">
@@ -74,7 +74,7 @@
       <div class="repo-col">
         <Card class="repo-panel">
           <div class="repo-panel-head">
-            <h2 class="repo-h">Release <span class="repo-mono">v0.5.6</span></h2>
+            <h2 class="repo-h">Release <span class="repo-mono">v{{ version }}</span></h2>
             <Tag size="sm" variant="muted" class="repo-push">minor</Tag>
           </div>
           <ol class="repo-stages">
@@ -109,7 +109,7 @@
           </SplitButton>
           <Dialog
             v-model:open="shipOpen"
-            title="Ship v0.5.6"
+            :title="`Ship v${version}`"
             description="Publishes to npm, then rolls out to the docs site."
             :container="shell"
             size="sm"
@@ -163,7 +163,8 @@
 
 <script setup lang="ts">
 import { computed, inject, shallowRef } from 'vue'
-import { motion, useReducedMotion } from 'motion-v'
+import { isFirstPaint } from '../firstPaint'
+import '../entrance.css'
 import {
   Avatar,
   AvatarGroup,
@@ -192,7 +193,9 @@ import { RELEASE_STAGES, people, repo, throughput } from '../repoData'
 import type { PullRequest } from '../repoData'
 import { dashboardNavigateKey, dashboardShellKey } from '../dashboardNavigate'
 
-const reduce = useReducedMotion()
+const firstPaint = isFirstPaint()
+// The release it shows is the one you're looking at.
+const version = __VAEL_UI_VERSION__
 const navigate = inject(dashboardNavigateKey, undefined)
 const shell = inject(dashboardShellKey, undefined)
 
@@ -244,7 +247,7 @@ const shipItems: MenuEntry[] = [
 function ship(close: () => void) {
   close()
   const notified = notify.value ? ', #releases notified' : ''
-  toast.success(`v0.5.6 is on its way to npm, rolling out to ${rollout.value}%${notified}.`, {
+  toast.success(`v${version} is on its way to npm, rolling out to ${rollout.value}%${notified}.`, {
     toaster: 'dashboard',
   })
 }

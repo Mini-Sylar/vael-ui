@@ -214,3 +214,34 @@ test('a closing popover lets clicks through to what is under it', async () => {
   )
   expect(document.elementFromPoint(x, y)?.getAttribute('data-testid')).toBe('under')
 })
+
+test('Tab steps from the trigger into the panel, and past its last element closes it and moves on', async () => {
+  const screen = await render(() =>
+    h('div', [
+      h(
+        Popover,
+        { openOnTriggerClick: true, motion: false },
+        {
+          trigger: () => h('button', { 'data-testid': 'trigger' }, 'Open'),
+          default: () => [
+            h('button', { 'data-testid': 'a' }, 'A'),
+            h('button', { 'data-testid': 'b' }, 'B'),
+          ],
+        },
+      ),
+      h('button', { 'data-testid': 'after' }, 'After'),
+    ]),
+  )
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByTestId('a')).toBeVisible()
+  const focused = () => document.activeElement?.getAttribute('data-testid')
+  await userEvent.keyboard('{Tab}')
+  expect(focused()).toBe('a')
+  await userEvent.keyboard('{Tab}')
+  expect(focused()).toBe('b')
+  await userEvent.keyboard('{Shift>}{Tab}{/Shift}')
+  expect(focused()).toBe('a')
+  await userEvent.keyboard('{Tab}{Tab}')
+  expect(focused()).toBe('after')
+  await vi.waitFor(() => expect(document.querySelector('.ui-popover-positioner')).toBeNull())
+})

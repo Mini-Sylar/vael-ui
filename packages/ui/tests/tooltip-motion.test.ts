@@ -4,6 +4,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef } from 'vue'
 import Tooltip from '../src/components/Tooltip/Tooltip.vue'
+import { __resetTooltipWarmth } from '../src/composables/useTooltip'
 
 const global = { stubs: { transition: false } }
 const panel = () => document.querySelector<HTMLElement>('.ui-tooltip-panel')
@@ -89,4 +90,53 @@ test('closed before it was placed, your leave still gets the panel', async () =>
   expect(positioner()!.style.visibility).toBe('hidden')
   open.value = false
   await vi.waitFor(() => expect(left).toEqual([shown]))
+})
+
+test('your motion: hovered again mid-exit, it turns back from where it is', async () => {
+  const { userEvent } = await import('vitest/browser')
+  __resetTooltipWarmth()
+  const trigger = document.createElement('button')
+  trigger.textContent = 'T'
+  trigger.style.margin = '80px'
+  document.body.append(trigger)
+  const linear = (value: number) => ({ value, duration: 400, easing: 'linear' })
+  render(
+    () =>
+      h(
+        Tooltip as never,
+        {
+          triggerEl: trigger,
+          openDelay: 0,
+          closeDelay: 0,
+          motion: { duration: 400, easing: 'linear', exit: { panel: { opacity: linear(0) } } },
+        },
+        { default: () => 'Tip' },
+      ),
+    { global },
+  )
+  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+  const opacity = () => {
+    let value = panel() ? 1 : 0
+    for (let el = panel(); el; el = el.parentElement) value *= Number(getComputedStyle(el).opacity)
+    return value
+  }
+  await userEvent.hover(trigger)
+  await vi.waitFor(() => expect(opacity()).toBe(1))
+  await userEvent.hover(document.body, { position: { x: 1, y: 1 } })
+  await vi.waitFor(() => expect(opacity()).toBeLessThan(0.8))
+  // Every frame from just before the second hover: no frame jumps.
+  const seen: number[] = []
+  let recording = true
+  const record = () => {
+    seen.push(opacity())
+    if (recording) requestAnimationFrame(record)
+  }
+  record()
+  await userEvent.hover(trigger)
+  for (let i = 0; i < 10; i++) await frame()
+  recording = false
+  const jumps = seen.slice(1).map((value, i) => Math.abs(value - seen[i]!))
+  expect(Math.max(...jumps)).toBeLessThan(0.2)
+  await vi.waitFor(() => expect(opacity()).toBe(1))
+  trigger.remove()
 })

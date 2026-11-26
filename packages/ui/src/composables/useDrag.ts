@@ -155,7 +155,15 @@ export function useDrag(options: UseDragOptions): UseDragReturn {
   function onPointerdown(event: PointerEvent) {
     if (toValue(options.disabled) || pointerId !== null) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
-    if (options.handle && !(event.target as Element | null)?.closest(options.handle)) return
+    if (options.handle && !(event.target as Element | null)?.closest(options.handle)) {
+      // A press anywhere on it catches it mid-flight; only the handle drags.
+      if (moving && !isDragging.value) {
+        sx.stop()
+        sy.stop()
+        frame()
+      }
+      return
+    }
     pointerId = event.pointerId
     committed = false
     start = { x: event.clientX, y: event.clientY }

@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { afterEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeAll, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { userEvent } from 'vitest/browser'
 import { h, nextTick, shallowRef } from 'vue'
@@ -46,6 +46,9 @@ const settle = async () => {
 afterEach(() => {
   document.body.innerHTML = ''
 })
+
+// The states player loads on first use; in a busy run that can outlast a waitFor, so it's here first.
+beforeAll(() => import('../src/motion/states'))
 
 test('an invalid field shakes on entering the state, not when it mounts invalid, and again each time', async () => {
   const invalid = shallowRef(true)

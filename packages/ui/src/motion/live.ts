@@ -113,6 +113,15 @@ export function followLive(
       ;(el.style as unknown as Record<string, string>)[prop] = String(value)
       written.add(prop)
     }
+    // An entrance easing the element doesn't ease these: each one shows as it comes.
+    if (el.hasAttribute('data-ui-m'))
+      for (const run of el.getAnimations())
+        if (
+          ((run as CSSTransition).transitionProperty ?? '').replace(/-(\w)/g, (_, c: string) =>
+            c.toUpperCase(),
+          ) in frame
+        )
+          run.cancel()
   }
   // Each number's speed, from what it was given (or where its spring put it) over time.
   const begin = (key: string, value: number) => {

@@ -11,6 +11,26 @@
     initial-value: 91%;
   }
 
+  /* Read only by the box that sets them: not inherited, so setting one doesn't restyle every row. */
+  @property --ui-scroll-bar-x {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+  @property --ui-scroll-bar-y {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+  @property --timeline-self {
+    syntax: '*';
+    inherits: false;
+  }
+  @property --timeline-self-x {
+    syntax: '*';
+    inherits: false;
+  }
+
   .scroll-fade {
     /* Variable prevents Lightning CSS from folding scroll() into shorthand. */
     --timeline-self: scroll(self);

@@ -64,17 +64,16 @@ export function useListbox<T>(options: UseListboxOptions<T>): UseListboxReturn {
     activeIndex.value >= 0 ? optionId(activeIndex.value) : undefined,
   )
 
-  function step(delta: number) {
-    const enabled = enabledIndices()
-    if (enabled.length === 0) return
-    const currentPos = enabled.indexOf(activeIndex.value)
-    const nextPos =
-      currentPos === -1
-        ? delta > 0
-          ? 0
-          : enabled.length - 1
-        : (((currentPos + delta) % enabled.length) + enabled.length) % enabled.length
-    setActive(enabled[nextPos])
+  function step(delta: 1 | -1) {
+    // Steps from the active option, skipping disabled ones, without listing every option.
+    const list = items()
+    const count = list.length
+    const from = activeIndex.value
+    let index = from >= 0 && from < count && !isDisabled(list[from]) ? from : delta > 0 ? -1 : count
+    for (let tried = 0; tried < count; tried++) {
+      index = (((index + delta) % count) + count) % count
+      if (!isDisabled(list[index])) return setActive(index)
+    }
   }
 
   function jumpToEnd(end: 'first' | 'last') {

@@ -8,7 +8,7 @@
   >
     <slot name="trigger" :open="open" />
   </span>
-  <Teleport :to="teleportTo">
+  <Teleport v-if="panelMounted" :to="teleportTo">
     <Transition
       name="ui-menu"
       appear
@@ -106,7 +106,7 @@
                   :aria-expanded="entry.items ? !!submenuOpen[i] : undefined"
                   :ref="rowRef(i)"
                   @mouseenter="entry.items ? onRowMouseEnter(i, entry.disabled) : undefined"
-                  @mouseleave="entry.items ? onRowMouseLeave(i) : undefined"
+                  @mouseleave="entry.items ? onRowMouseLeave(i, $event) : undefined"
                   v-bind="entry.attrs"
                 >
                   <slot name="item" :item="entry">
@@ -171,6 +171,7 @@
               <template v-for="i in mountedSubmenus" :key="`submenu-${i}`">
                 <MenuSelf
                   v-if="submenuItems(i) && positionerEl"
+                  :ref="submenuRef(i)"
                   :items="submenuItems(i)"
                   :trigger-el="rowEls[i]"
                   v-model:open="submenuOpen[i]"
@@ -366,6 +367,8 @@ import {
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'
+import { loadSubmenuGrace } from '../../composables/lazyParts'
+import type { SubmenuGrace } from '../../composables/submenuGrace'
 import { useVirtualizer } from '../../composables/useVirtualizer'
 import { useComponentMotion } from '../../motion/useComponentMotion'
 import { whenPlaced } from '../../composables/useSelectPanelMotion'
@@ -592,6 +595,10 @@ const motionHooks = computed(() => {
   }
 })
 
+// The panel's Teleport and Transition wait for the first open; a closed menu skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
+
 // Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
 const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
 
@@ -647,7 +654,8 @@ function closeAllSubmenusExcept(except?: number) {
   }
 }
 
-const HOVER_OPEN_DELAY = 150
+// Radix's: quick enough to feel direct, long enough that a sweep down the list opens nothing.
+const HOVER_OPEN_DELAY = 100
 const HOVER_CLOSE_DELAY = 200
 
 // Row & panel are not siblings (teleported). Only close if neither is hovered AND no descendant is active.
@@ -670,10 +678,43 @@ function updateActive() {
   emit('active', value)
 }
 
+// The safe triangle: heading from a row to its open submenu across other rows, the pointer keeps it
+// open while it moves inside the triangle from where it left the row to the submenu's near edge.
+const submenus: Record<number, { panelEl?: HTMLElement | null } | null> = {}
+const submenuRefs = new Map<number, (el: unknown) => void>()
+function submenuRef(i: number) {
+  let fn = submenuRefs.get(i)
+  if (!fn) {
+    fn = (el) => (submenus[i] = el as { panelEl?: HTMLElement | null } | null)
+    submenuRefs.set(i, fn)
+  }
+  return fn
+}
+let grace: SubmenuGrace | undefined
+function loadGrace() {
+  if (grace || typeof window === 'undefined') return
+  void loadSubmenuGrace().then((kit) => (grace ??= kit.createSubmenuGrace(afterGrace)))
+}
+// Let go by leaving the triangle or resting, the row under the pointer counts as entered now.
+function afterGrace(i: number, at: [number, number]) {
+  const row = document.elementFromPoint(...at)?.closest<HTMLElement>('[data-menu-index]')
+  const j = row && listEl.value?.contains(row) ? Number(row.dataset.menuIndex) : -1
+  const entry = props.items?.[j]
+  if (j !== i && entry && !isSeparator(entry) && entry.items) onRowMouseEnter(j, entry.disabled)
+  else if (!panelHovered[i]) scheduleClose(i)
+  if (row && j !== i) focusItem(row, { preventScroll: true })
+}
+onBeforeUnmount(() => grace?.end())
+
 // Debounce open to avoid flickering on pointer pass-through.
 function onRowMouseEnter(i: number, disabled?: boolean) {
   if (disabled) return
   rowHovered[i] = true
+  loadGrace()
+  // On the way to another row's submenu: noted, acted on once the pointer leaves the triangle.
+  const held = grace?.holding()
+  if (held !== undefined && held !== i) return
+  grace?.end()
   clearTimeout(closeTimers[i])
   clearTimeout(openTimer)
   openTimer = setTimeout(() => {
@@ -682,14 +723,22 @@ function onRowMouseEnter(i: number, disabled?: boolean) {
   }, HOVER_OPEN_DELAY)
   updateActive()
 }
-function onRowMouseLeave(i: number) {
+function onRowMouseLeave(i: number, event?: MouseEvent) {
   rowHovered[i] = false
   clearTimeout(openTimer)
-  scheduleClose(i)
+  if (
+    !(
+      submenuOpen[i] &&
+      event &&
+      grace?.start(i, event, submenus[i]?.panelEl?.getBoundingClientRect())
+    )
+  )
+    scheduleClose(i)
   updateActive()
 }
 // Submenu's panel receives these via fallthrough attrs (inheritAttrs:false).
 function onSubmenuPanelMouseEnter(i: number) {
+  grace?.end()
   panelHovered[i] = true
   clearTimeout(closeTimers[i])
   updateActive()
@@ -981,7 +1030,12 @@ function onListKeydown(event: KeyboardEvent) {
 // The row under the mouse takes focus, so Enter activates the highlighted row.
 const EDITABLE = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
 function onListPointermove(event: PointerEvent) {
-  if (event.pointerType === 'touch' || !(event.target instanceof Element)) return
+  if (
+    event.pointerType === 'touch' ||
+    !(event.target instanceof Element) ||
+    grace?.holding() !== undefined
+  )
+    return
   const row = event.target.closest<HTMLElement>(
     ':is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"])',
   )

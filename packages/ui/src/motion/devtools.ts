@@ -27,20 +27,16 @@ export function warnOwnTransition(el: Element, animated: string[]): void {
  * What moved and why, readable in DevTools. The component carries `data-motion` (which layers set
  * its motion), and each open or close is a measure on the Performance panel's Timings track.
  */
-export function traceMotion(o: {
-  name: string
-  role: keyof MotionStyle
-  key: keyof MotionStyle
-  motion: () => unknown
-  style: () => MotionStyle | undefined
-  root: () => Element | null | undefined
-  phase: () => string
-  engine: () => string
-}): (now: string) => void {
+export function traceMotion(
+  o: { name: string; role: keyof MotionStyle; key: keyof MotionStyle; motion: () => unknown },
+  style: { value: MotionStyle | undefined } | undefined,
+  host: { root: () => Element | null | undefined; phase: { value: string } },
+  engine: { value: string },
+): (now: string) => void {
   let start = 0
   const layers = () => {
     const own = o.motion()
-    const shared = o.style()
+    const shared = style?.value
     return [
       'built-in',
       shared?.[o.role] && `style ${String(o.role)}`,
@@ -52,7 +48,7 @@ export function traceMotion(o: {
       .join(', ')
   }
   return (now) => {
-    o.root()?.setAttribute('data-motion', `${o.name} · ${layers()}`)
+    host.root()?.setAttribute('data-motion', `${o.name} · ${layers()}`)
     if (now === 'entering' || now === 'leaving') {
       start = performance.now()
       return
@@ -64,7 +60,7 @@ export function traceMotion(o: {
     performance.measure(label, {
       start,
       end: performance.now(),
-      detail: { layers: layers(), engine: o.engine(), phase: o.phase() },
+      detail: { layers: layers(), engine: engine.value, phase: host.phase.value },
     })
     start = 0
   }

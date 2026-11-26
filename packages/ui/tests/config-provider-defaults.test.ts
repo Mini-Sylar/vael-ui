@@ -230,3 +230,31 @@ test('a provider with motion on leaves the duration tokens alone', async () => {
     '0s',
   )
 })
+
+test('a nested provider that only turns motion off keeps its parent’s theme on teleported overlays', async () => {
+  const { default: Dialog } = await import('../src/components/Dialog/Dialog.vue')
+  const motion = shallowRef<boolean>(true)
+  const screen = await render(() =>
+    h(ConfigProvider, { theme: { primary: '#7c3aed' } }, () =>
+      h(ConfigProvider, { motion: motion.value }, () =>
+        h(Dialog as never, { open: true, title: 'Archive' }, () =>
+          h('p', { 'data-p': '' }, 'Body'),
+        ),
+      ),
+    ),
+  )
+  const primary = () =>
+    getComputedStyle(document.querySelector('[data-p]')!).getPropertyValue('--ui-primary').trim()
+  await expect.poll(() => document.querySelector('[data-p]')).not.toBeNull()
+  expect(primary()).toBe('#7c3aed')
+  motion.value = false
+  await nextTick()
+  expect(primary()).toBe('#7c3aed')
+  // Its own motion off still applies there.
+  expect(
+    getComputedStyle(document.querySelector('[data-p]')!)
+      .getPropertyValue('--ui-duration-enter')
+      .trim(),
+  ).toBe('0s')
+  screen.unmount()
+})

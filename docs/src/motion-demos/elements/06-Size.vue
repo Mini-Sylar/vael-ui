@@ -23,9 +23,12 @@ const long =
 .panel {
   overflow: hidden;
   margin-block-end: 1rem;
-  padding-inline: 1rem;
+  padding: 0.75rem 1rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   background: var(--ui-surface);
+}
+.panel p {
+  margin: 0;
 }
 </style>

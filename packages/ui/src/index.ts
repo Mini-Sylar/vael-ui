@@ -422,6 +422,7 @@ export { defaultsKey, validLocale, withProviderDefaults } from './config'
 export type { UiDefaults } from './config'
 export type {
   ColorSchemeMode,
+  ColorSchemeMotion,
   ColorSchemeRevealOptions,
   UseColorSchemeOptions,
   UseColorSchemeReturn,

@@ -1,6 +1,7 @@
 import { computed, watch } from 'vue'
-import type { ComputedRef, TransitionProps } from 'vue'
+import type { ComputedRef, Ref, TransitionProps } from 'vue'
 import { useComponentMotion } from '../motion/useComponentMotion'
+import { loadFloatingUi } from './useFloatingPosition'
 import type { MotionStyle } from '../motion/types'
 
 interface SelectPanelMotionOptions {
@@ -15,8 +16,21 @@ interface SelectPanelMotionOptions {
   placed: () => boolean
 }
 
-/** Resolves once floating-ui has placed it, or after 150 ms if it never is. */
+/** The positioner's style, hidden until placed by `clip` rather than `visibility`, which every row
+ *  inherits: showing a long list would restyle each one. `clip-path` is the motion's own to set. */
+export function clipUntilPlaced(style: Ref<Record<string, string>>) {
+  return computed(() => {
+    const { visibility, ...rest } = style.value
+    return visibility === 'hidden' ? { ...rest, clip: 'rect(0 0 0 0)' } : rest
+  })
+}
+
+/** Resolves once floating-ui has placed it, or 150 ms after its code has loaded if it never is. */
 export function whenPlaced(placed: () => boolean): Promise<void> {
+  if (placed()) return Promise.resolve()
+  return loadFloatingUi().then(whenPlacedNow.bind(null, placed))
+}
+function whenPlacedNow(placed: () => boolean): Promise<void> {
   return new Promise((resolve) => {
     if (placed()) return resolve()
     const timer = setTimeout(done, 150)

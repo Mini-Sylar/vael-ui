@@ -1,6 +1,5 @@
 import { computed, nextTick, onMounted, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
 import { useLayer } from './useLayerStack'
 import { useScrollLock } from './useScrollLock'
 import { useInert } from './useInert'
@@ -231,7 +230,8 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     )
   }
   let newcomers: MutationObserver | undefined
-  watch(isOpen, (open) => {
+  // Watches body only while open: started in activate(), stopped in deactivate().
+  function watchNewcomers(open: boolean) {
     newcomers?.disconnect()
     newcomers = undefined
     if (!open || typeof MutationObserver === 'undefined') return
@@ -246,8 +246,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
       if (arrived) domTick.value++
     })
     newcomers.observe(document.body, { childList: true, subtree: true })
-  })
-  onScopeDispose(() => newcomers?.disconnect())
+  }
 
   // Overlays opened on top (a popover, a nested dialog) stay reachable too, re-read as they open.
   const inerted = useInert({
@@ -301,12 +300,15 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     }
   }
 
-  useEventListener(
-    () => (isOpen.value ? ssrDocument() : undefined),
-    'keydown',
-    onDocumentKeydown,
-    true,
-  )
+  // Bound only while open, with the newcomers observer.
+  function listen(on: boolean) {
+    watchNewcomers(on)
+    document[on ? 'addEventListener' : 'removeEventListener'](
+      'keydown',
+      onDocumentKeydown as EventListener,
+      true,
+    )
+  }
 
   function activate() {
     if (active) return
@@ -318,6 +320,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     containedActive = contained.value
     layer.push()
     isOpen.value = true
+    listen(true)
     pushHistoryEntry()
     // What opened it, even in Safari (a clicked button isn't focused there): focus goes back to it.
     previouslyFocused = opener()
@@ -351,6 +354,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     active = false
     layer.pop()
     isOpen.value = false
+    listen(false)
     popHistoryEntryIfOwned()
     if (modalActive) {
       // Nothing to wait for when the exit already ended (forceMount, no animation) or the dialog left

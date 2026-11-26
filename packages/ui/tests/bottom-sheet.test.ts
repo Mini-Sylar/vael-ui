@@ -219,6 +219,29 @@ test('a vertically-dominant downward drag on content at the top still promotes t
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
+test("a drag from the content follows the finger from where it went down, and a touch's capture moving to the panel doesn't cancel it", async () => {
+  const screen = await render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  content().scrollTop = 0
+  const before = visibleHeight()
+  const c = content()
+  const pointerId = 9
+  const fire = (type: string, y: number) =>
+    c.dispatchEvent(new PointerEvent(type, { clientX: 100, clientY: y, pointerId, bubbles: true }))
+  fire('pointerdown', 200)
+  fire('pointermove', 216)
+  // A touch's implicit capture on the content ends as the panel takes it; that bubbles to the panel.
+  c.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId, bubbles: true }))
+  fire('pointermove', 300)
+  expect(before - visibleHeight()).toBeCloseTo(100, -1)
+  fire('pointermove', 260)
+  expect(before - visibleHeight()).toBeCloseTo(60, -1)
+  await new Promise((r) => setTimeout(r, 300))
+  fire('pointerup', 260)
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(before, -1))
+})
+
 test('closing slides the sheet down while its backdrop fades, together', async () => {
   const screen = await render(BottomSheetFixture, { global: { stubs: { transition: false } } })
   await screen.getByTestId('trigger').click()
@@ -424,6 +447,35 @@ test('container: the sheet fills the container and snaps to fractions of its hei
   await vi.waitFor(() =>
     expect(boxRect.bottom - sheet().getBoundingClientRect().top).toBeCloseTo(240, -1),
   )
+})
+
+test('container: opening is left to the slide in; only a real resize of the container moves the sheet', async () => {
+  const box = shallowRef<HTMLElement | null>(null)
+  const open = shallowRef(false)
+  await render({
+    render: () => [
+      h('div', {
+        ref: (el: unknown) => (box.value = el as HTMLElement | null),
+        style: 'position: relative; height: 400px; overflow: hidden',
+      }),
+      box.value &&
+        h(BottomSheet, {
+          open: open.value,
+          'onUpdate:open': (v: boolean) => (open.value = v),
+          container: box.value,
+          title: 'Contained',
+        }),
+    ],
+  })
+  await vi.waitFor(() => expect(box.value).not.toBeNull())
+  open.value = true
+  await vi.waitFor(() => expect(document.querySelector('.ui-bottom-sheet-panel')).not.toBeNull())
+  for (let i = 0; i < 5; i++) await new Promise(requestAnimationFrame)
+  // The container's size observer reports once as it starts: not a resize, so no settle of its own
+  // replaces the opening's transition.
+  expect(panel().style.transition).not.toMatch(/^transform /)
+  box.value!.style.height = '300px'
+  await vi.waitFor(() => expect(panel().style.transition).toMatch(/^transform /))
 })
 
 // The body's height cap re-lays out the whole sheet when it changes, so a drag

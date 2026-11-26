@@ -170,7 +170,12 @@
             <DitherBackground still />
           </div>
           <RouterView v-slot="{ Component }">
-            <Transition name="page" mode="out-in" @before-enter="pageEntered">
+            <Transition
+              name="page"
+              mode="out-in"
+              @before-enter="pageEntered"
+              @after-enter="rescanLinks()"
+            >
               <component :is="Component" />
             </Transition>
           </RouterView>
@@ -353,6 +358,7 @@ import { MOTION_PRESETS, motionPresets, tunedStyle } from './motionPresets'
 import type { MotionPreset, MotionTune } from './motionPresets'
 import Sidebar from './components/Sidebar.vue'
 import { pageEntered } from './router'
+import { prefetchPages } from './prefetchPages'
 import SiteSearch from './components/SiteSearch.vue'
 import { siteSearchOpen } from './siteSearch'
 import { docsSettingsKey } from './docsSettings'
@@ -415,6 +421,9 @@ onMounted(async () => {
 
 const route = useRoute()
 const router = useRouter()
+// Pages behind the links on screen load while idle, so navigating doesn't wait on the network.
+let rescanLinks = () => {}
+onMounted(() => (rescanLinks = prefetchPages(router)))
 const canonicalUrl = computed(() => `https://vael-ui.dev${route.path}`)
 
 useHead({
@@ -1202,15 +1211,11 @@ const theme = computed(() => ({
 <style>
 /* Global (not scoped): applies to whatever route component's root element
    Vue mounts, which carries that component's own scope id, not App.vue's. */
-.page-enter-active,
-.page-leave-active {
+/* The old page goes at once, so the new one is at the top without a wait; only it fades in. */
+.page-enter-active {
   transition:
     opacity var(--ui-duration-enter) var(--ui-ease-out),
     transform var(--ui-duration-enter) var(--ui-ease-out);
-}
-
-.page-leave-active {
-  transition-duration: var(--ui-duration-exit);
 }
 
 .page-enter-from {
@@ -1218,18 +1223,12 @@ const theme = computed(() => ({
   transform: translateY(6px);
 }
 
-.page-leave-to {
-  opacity: 0;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .page-enter-active,
-  .page-leave-active {
+  .page-enter-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
   }
 
-  .page-enter-from,
-  .page-leave-to {
+  .page-enter-from {
     transform: none;
   }
 }

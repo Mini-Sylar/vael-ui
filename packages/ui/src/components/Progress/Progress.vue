@@ -68,6 +68,8 @@
 </template>
 
 <script lang="ts">
+// Built once, for the legend only: a formatter is slow to create.
+let percentFormat: Intl.NumberFormat | undefined
 import type { StyleValue } from 'vue'
 
 export type ProgressVariant = 'primary' | 'success' | 'warning' | 'danger' | 'info'
@@ -296,12 +298,11 @@ const showLegend = computed(
   () => props.legend && Array.isArray(props.value) && props.value.some((segment) => segment.label),
 )
 
-const percentFormat = new Intl.NumberFormat(undefined, {
-  style: 'percent',
-  maximumFractionDigits: 0,
-})
 function formatPercent(percent: number): string {
-  return percentFormat.format(percent / 100)
+  return (percentFormat ??= new Intl.NumberFormat(undefined, {
+    style: 'percent',
+    maximumFractionDigits: 0,
+  })).format(percent / 100)
 }
 
 const root = useTemplateRef<HTMLElement>('root')

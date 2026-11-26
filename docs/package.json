@@ -33,7 +33,7 @@
     "@vitejs/plugin-vue": "^6.0.11",
     "beasties": "^0.5.5",
     "typescript": "^6.0.3",
-    "vite": "^8.3.8",
+    "vite": "^8.4.0",
     "vite-ssg-sitemap": "^0.11.1",
     "vue-component-meta": "3.3.11",
     "vue-tsc": "3.3.11"

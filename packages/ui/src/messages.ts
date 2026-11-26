@@ -52,6 +52,8 @@ export interface UiMessages {
   }
   combobox: {
     empty: string
+    /** Shown instead when what you typed matches nothing; `{query}` is replaced with it. */
+    emptyFor: string
     clear: string
     toggle: string
     /** `{query}` is replaced with the typed text — the `allowCustom` create row. */
@@ -259,6 +261,7 @@ export const selectMessages: UiMessages['select'] = {
 }
 export const comboboxMessages: UiMessages['combobox'] = {
   empty: 'No results',
+  emptyFor: 'No results for "{query}"',
   clear: 'Clear selection',
   toggle: 'Toggle options',
   create: 'Create "{query}"',

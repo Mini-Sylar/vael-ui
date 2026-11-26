@@ -163,16 +163,38 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       ;(own?.[name] ?? resolved.value.targets[entry.name]?.[name])?.(el as HTMLElement)
       return true
     }
+  const scope = getCurrentScope()
+  let trace: ((now: string) => void) | undefined
+  // `swap` and `resize`, in their own chunk, loaded as it first opens.
+  const swapHost = { resolved, root: currentRoot }
+  let resizing = false
+  // Each opening and closing, on one watcher: your elements' callbacks, the dev trace, `resize`.
   if (typeof window !== 'undefined')
     watch(
       phase,
       (now) => {
         const root = now === 'entering' ? options.root() : currentRoot()
         const entries = root ? collectEntries(root, resolved.value.targets) : []
-        // Content kept between openings is armed again; newly mounted content armed itself.
-        if (now === 'entering')
+        if (now === 'entering') {
+          // Content kept between openings is armed again; newly mounted content armed itself.
           for (const { el } of entries)
             armEnter(el, elementCallback(el, 'onAfterEnter'), elementCallback(el, 'onStart'))
+          // `resize`: still opening once this flush is through (motion off has entered by then).
+          if (options.resizes && !resizing)
+            queueMicrotask(() => {
+              if (phase.value !== 'entering' || resizing || !resolved.value.resize) return
+              resizing = true
+              void loadSwap().then((kit) =>
+                scope?.run(() =>
+                  kit.attachResize(
+                    swapHost,
+                    () => currentParts()[options.mainPart] as HTMLElement,
+                    phase,
+                  ),
+                ),
+              )
+            })
+        }
         if (now === 'entered') {
           for (const { el } of entries) if (!playsAfter.has(el)) entered(el)
           resolved.value.onAfterEnter?.(filled(currentParts()))
@@ -181,16 +203,91 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
           for (const { el } of entries) left(el, elementCallback(el, 'onAfterLeave'))
           resolved.value.onAfterLeave?.(filled(currentParts()))
         }
+        // Dev: which layers set it, and each open and close timed, in DevTools.
+        if (process.env.NODE_ENV !== 'production')
+          (trace ??= dev?.traceMotion(options, style, host, kind))?.(now)
       },
       { flush: 'sync' },
     )
 
-  // An element that joins while it's open (a v-if turning true inside) plays its appearance.
+  // Elements that join together (a swapped-in view) wait on each other as an opening's do: with
+  // `after` or `steps`, one timeline, the component's parts counted as in already.
+  let joining: { entry: PresenceEntry; play: () => void }[] = []
+  function join(entry: PresenceEntry, play: () => void) {
+    if (!joining.length) queueMicrotask(flushJoining)
+    joining.push({ entry, play })
+  }
+  async function flushJoining() {
+    const batch = joining.splice(0)
+    const entries = batch.map((b) => b.entry)
+    const groups = targetsOf(entries, resolved.value, true)
+    if (!groups.some((g) => g.motion.after || g.motion.steps)) return batch.forEach((b) => b.play())
+    const { joinTargets } = await loading(import('./schedule'))
+    await joinTargets(groups, Object.keys(currentParts()), resolved.value.spring).catch(() => {})
+    for (const { el } of entries) entered(el)
+  }
+
+  const swapped = (el: Element, done: () => void) => () => {
+    done()
+    resolved.value.onAfterSwap?.(el, { direction: resolved.value.direction })
+  }
+  const swap = {
+    onEnter: (el: Element, done: () => void) =>
+      void loadSwap().then((kit) => kit.swapIn(el, swapped(el, done), swapHost), swapped(el, done)),
+    onLeave: (el: Element, done: () => void) => {
+      if (!resolved.value.off && resolved.value.swap !== 'wait') stepOut(el)
+      void loadSwap().then((kit) => kit.swapOut(el, done, swapHost), done)
+    },
+  }
+
+  // Its name, main part, trigger, mirror, ready and callbacks are the options' own.
+  const host: RunnerHost = {
+    ...options,
+    resolved: () => resolved.value,
+    parts: currentParts,
+    root: currentRoot,
+    phase,
+  }
+  const engines: { css?: Runner; runtime?: Runner } = {}
+  const kind = computed(() => (needsRuntime(resolved.value) ? 'runtime' : 'css'))
+  const runtimeEngine = () =>
+    loadMotionRuntime().then((module) => (engines.runtime ??= module.createRunner(host)))
+  // The engine for its look, if here; the bundled CSS engine is made as it first plays.
+  const engine = () =>
+    kind.value === 'css'
+      ? (engines.css ??= cssModule.createCssEngine(host, runtimeEngine))
+      : engines.runtime
+  const load = (): Promise<Runner> => Promise.resolve(engine() ?? runtimeEngine())
+  // With the phase's, its only watcher while closed: nothing resolves until opened or customised.
+  let linking = false
   if (typeof window !== 'undefined')
     watch(
-      () => options.root(),
-      (root) => {
-        if (!root) return
+      () => {
+        const custom = typeof options.motion() === 'object' || style?.value
+        return [
+          options.root(),
+          custom && !resolved.value.off && kind.value,
+          custom && resolved.value.linked,
+        ] as const
+      },
+      ([root, needed, linked], before) => {
+        // Customised: its engine loads now, long before anyone opens it, and `linked` once set.
+        if (needed) void load().catch(() => {})
+        if (linked && !linking) {
+          linking = true
+          void loading(import('./linked')).then((kit) =>
+            scope?.run(() =>
+              kit.attach(
+                resolved,
+                options.open ?? (() => false),
+                options.mainPart,
+                options.gesture,
+              ),
+            ),
+          )
+        }
+        // Its root, once there: what joins while it's open (a v-if inside) plays its appearance.
+        if (!root || root === before?.[0]) return
         // Seen as it mounts, so a close before the enter (not placed yet) still hands over its parts.
         currentParts()
         currentRoot()
@@ -234,113 +331,6 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       { immediate: true, flush: 'post' },
     )
 
-  // Elements that join together (a swapped-in view) wait on each other as an opening's do: with
-  // `after` or `steps`, one timeline, the component's parts counted as in already.
-  let joining: { entry: PresenceEntry; play: () => void }[] = []
-  function join(entry: PresenceEntry, play: () => void) {
-    if (!joining.length) queueMicrotask(flushJoining)
-    joining.push({ entry, play })
-  }
-  async function flushJoining() {
-    const batch = joining.splice(0)
-    const entries = batch.map((b) => b.entry)
-    const groups = targetsOf(entries, resolved.value, true)
-    if (!groups.some((g) => g.motion.after || g.motion.steps)) return batch.forEach((b) => b.play())
-    const { joinTargets } = await loading(import('./schedule'))
-    await joinTargets(groups, Object.keys(currentParts()), resolved.value.spring).catch(() => {})
-    for (const { el } of entries) entered(el)
-  }
-
-  // Dev: which layers set it, and each open and close timed, in DevTools.
-  let trace: ((now: string) => void) | undefined
-  // Development only: in production no watcher is made at all.
-  if (process.env.NODE_ENV !== 'production')
-    watch(
-      phase,
-      (now) =>
-        (trace ??= dev?.traceMotion({
-          ...options,
-          style: () => style?.value,
-          root: currentRoot,
-          phase: () => phase.value,
-          engine: () => kind.value,
-        }))?.(now),
-      { flush: 'sync' },
-    )
-  const scope = getCurrentScope()
-  // `swap` and `resize`, in their own chunk, loaded as it first opens.
-  const swapHost = { resolved, root: () => currentRoot() }
-  let resizing = false
-  if (typeof window !== 'undefined' && options.resizes)
-    watch(phase, (now) => {
-      if (now !== 'entering' || resizing || !resolved.value.resize) return
-      resizing = true
-      void loadSwap().then((kit) =>
-        scope?.run(() =>
-          kit.attachResize(swapHost, () => currentParts()[options.mainPart] as HTMLElement, phase),
-        ),
-      )
-    })
-  const swapped = (el: Element, done: () => void) => () => {
-    done()
-    resolved.value.onAfterSwap?.(el, { direction: resolved.value.direction })
-  }
-  const swap = {
-    onEnter: (el: Element, done: () => void) =>
-      void loadSwap().then((kit) => kit.swapIn(el, swapped(el, done), swapHost), swapped(el, done)),
-    onLeave: (el: Element, done: () => void) => {
-      if (!resolved.value.off && resolved.value.swap !== 'wait') stepOut(el)
-      void loadSwap().then((kit) => kit.swapOut(el, done, swapHost), done)
-    },
-  }
-
-  // `linked`: elements outside it follow it. All of it is in its own chunk, loaded once it's set.
-  let linking = false
-  if (typeof window !== 'undefined')
-    watch(
-      () => !!resolved.value.linked,
-      (on) => {
-        if (!on || linking) return
-        linking = true
-        void loading(import('./linked')).then((kit) =>
-          scope?.run(() =>
-            kit.attach(resolved, options.open ?? (() => false), options.mainPart, options.gesture),
-          ),
-        )
-      },
-      { immediate: true },
-    )
-
-  const host: RunnerHost = {
-    name: options.name,
-    mainPart: options.mainPart,
-    resolved: () => resolved.value,
-    parts: currentParts,
-    root: currentRoot,
-    phase,
-    trigger: options.trigger,
-    mirror: options.mirror,
-    ready: options.ready,
-    onAfterEnter: options.onAfterEnter,
-    onAfterLeave: options.onAfterLeave,
-  }
-  const engines: { css?: Runner; runtime?: Runner } = {}
-  const kind = computed(() => (needsRuntime(resolved.value) ? 'runtime' : 'css'))
-  const runtimeEngine = () =>
-    loadMotionRuntime().then((module) => (engines.runtime ??= module.createRunner(host)))
-  const load = (): Promise<Runner> =>
-    kind.value === 'runtime'
-      ? runtimeEngine()
-      : // The CSS engine is bundled: every animating component uses it.
-        Promise.resolve((engines.css ??= cssModule.createCssEngine(host, runtimeEngine)))
-  // Customised motion: fetch its engine now, so it's ready long before anyone opens anything.
-  if (typeof window !== 'undefined')
-    watch(
-      () => (resolved.value.custom || !!options.owns?.()) && !resolved.value.off && kind.value,
-      (needed) => needed && void load().catch(() => {}),
-      { immediate: true },
-    )
-
   // A leaving element is detached from Vue's render, so a template binding can't mark it: we do.
   const LEAVING = 'data-ui-leaving'
 
@@ -371,7 +361,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       fromServer = false
       return enterNow(done)
     }
-    const ready = engines[kind.value]
+    const ready = engine()
     if (ready) return ready.enter(el, done)
     // Not loaded yet (opened the instant it mounted): keep it hidden meanwhile, then hand over. The
     // runtime sets its own starting look a microtask later, before anything paints.
@@ -402,7 +392,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     }
     leaving = done
     if (resolved.value.off || pageHidden()) return leaveNow(done)
-    const ready = engines[kind.value]
+    const ready = engine()
     if (ready) return ready.leave(el, done)
     load().then(
       (ready) => ready.leave(el, done),

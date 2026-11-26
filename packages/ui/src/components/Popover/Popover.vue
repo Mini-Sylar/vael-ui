@@ -8,7 +8,7 @@
     <slot name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   </span>
   <slot v-else-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
-  <Teleport :to="teleportTarget">
+  <Teleport v-if="panelMounted" :to="teleportTarget">
     <Transition
       name="ui-popover"
       appear
@@ -182,7 +182,6 @@ import {
 } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance, StyleValue } from 'vue'
-import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import {
@@ -196,6 +195,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useComponentMotion } from '../../motion/useComponentMotion'
 import { loadSurface } from '../../composables/lazyParts'
+import { whenPlaced } from '../../composables/useSelectPanelMotion'
 import type { MotionRef, PopoverMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
@@ -282,8 +282,17 @@ function refreshResolvedTrigger() {
     ? resolvePastDisplayContents(triggerWrapper.value)
     : null
 }
-watch(triggerWrapper, refreshResolvedTrigger, { immediate: true })
-useMutationObserver(triggerWrapper, refreshResolvedTrigger, { childList: true, subtree: true })
+watch(
+  triggerWrapper,
+  (el, _, onCleanup) => {
+    refreshResolvedTrigger()
+    if (!el) return
+    const observer = new MutationObserver(refreshResolvedTrigger)
+    observer.observe(el, { childList: true, subtree: true })
+    onCleanup(() => observer.disconnect())
+  },
+  { immediate: true },
+)
 
 const triggerElRef = computed<HTMLElement | null>(() => {
   if (props.triggerEl !== undefined) return unwrapEl(props.triggerEl, 'Popover triggerEl')
@@ -353,23 +362,11 @@ function measureSurface() {
 }
 // Placed: floating-ui has put it where it opens. A panel that's never placed opens anyway.
 function placed(): Promise<void> {
-  return new Promise((resolve) => {
-    let stop: (() => void) | undefined
-    const done = () => {
-      clearTimeout(timer)
-      stop?.()
-      if (!surface.value) return resolve()
-      void loadSurface().then((kit) => {
-        surfaceKit = kit
-        measureSurface()
-        resolve()
-      })
-    }
-    const timer = setTimeout(done, 150)
-    // Already placed: at once.
-    if (positionerStyle.value.visibility === 'visible') return done()
-    stop = watch(positionerStyle, (style) => style.visibility === 'visible' && done(), {
-      flush: 'post',
+  return whenPlaced(() => positionerStyle.value.visibility === 'visible').then(() => {
+    if (!surface.value) return
+    return loadSurface().then((kit) => {
+      surfaceKit = kit
+      measureSurface()
     })
   })
 }
@@ -475,6 +472,10 @@ const {
 })
 // Moved while open (scroll, flip, shift): the shapes follow.
 watch(positionerStyle, () => open.value && measureSurface(), { flush: 'post' })
+
+// The panel's Teleport and Transition wait for the first open; closed, it skips them.
+let everShown = false
+const panelMounted = computed(() => (everShown ||= open.value || props.forceMount))
 
 // Same shared-layer-stack stacking Dialog uses (see Dialog.vue's rootStyle.zIndex) - deliberately --ui-z-dialog, not --ui-z-popover, so both families compare on one shared axis.
 const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)

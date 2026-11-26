@@ -8,6 +8,7 @@
     :aria-disabled="disabled || undefined"
     :tabindex="canMove && !disabled ? 0 : undefined"
     v-bind="attrs"
+    :id="boxId"
     @pointerdown="canMove ? onMovePointerdown($event) : undefined"
     @keydown="canMove ? onMoveKeydown($event) : undefined"
   >
@@ -28,6 +29,7 @@
       :aria-valuemin="min"
       :aria-valuemax="valueMax"
       :aria-label="labelOf(side)"
+      :aria-controls="boxId"
       :tabindex="disabled ? -1 : 0"
       @pointerdown.stop="grab($event, side)"
       @keydown.stop="key($event, side)"
@@ -43,7 +45,16 @@
 import './Resizable.css'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, nextTick, reactive, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  reactive,
+  shallowRef,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import type { Ref } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import { useMessages, resizableMessages } from '../../messages'
@@ -58,6 +69,9 @@ import type { ResizableMotion } from '../../motion/types'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// The handles control the box they resize, as the APG window splitter says; yours if you set `id`.
+const ownId = useId()
+const boxId = computed(() => (attrs.id as string | undefined) ?? ownId)
 
 /** Panel size in pixels along `direction`. Overshoots `min` or `max` elastically mid-drag, then settles within them. */
 const modelValue = defineModel<number>('size', { required: true })

@@ -1,13 +1,11 @@
-import { onMounted, onScopeDispose, shallowRef, toValue, watch } from 'vue'
+import { onMounted, onScopeDispose, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
 import type { Side } from '@floating-ui/dom'
 import { isComposing, useLayer } from './useLayerStack'
 import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
 import { focusTargetIn, getFocusable } from './dom'
 import type { ElRef } from './dom'
-import { ssrDocument } from '../ssr'
 import { useCloseGuard } from './useCloseGuard'
 import type { BeforeClose } from '../motion/types'
 
@@ -101,7 +99,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     content: options.positionerEl,
     anchor: options.triggerEl,
   })
-  const isOpen = shallowRef(false)
+  let isOpen = false
 
   function onDocumentKeydown(event: KeyboardEvent) {
     // A layer above already handled this Escape and popped itself; without
@@ -154,37 +152,6 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     if (isOutside(event.target)) requestClose('outside', event)
   }
 
-  useEventListener(
-    () => (isOpen.value ? ssrDocument() : undefined),
-    'keydown',
-    onDocumentKeydown,
-    true,
-  )
-  useEventListener(
-    () => (isOpen.value ? ssrDocument() : undefined),
-    'pointerdown',
-    onDocumentPointerdown,
-    true,
-  )
-  useEventListener(
-    () => (isOpen.value ? ssrDocument() : undefined),
-    'pointerup',
-    onDocumentPointerup,
-    true,
-  )
-  useEventListener(
-    () => (isOpen.value ? ssrDocument() : undefined),
-    'pointercancel',
-    onDocumentPointercancel,
-    true,
-  )
-  useEventListener(
-    () => (isOpen.value ? ssrDocument() : undefined),
-    'focusin',
-    onDocumentFocusin,
-    true,
-  )
-
   // The panel is teleported, so it isn't next to its trigger in tab order.
   // Tab from the trigger steps into the panel; Tab past either end of the
   // panel closes it and carries on from the trigger, instead of dropping
@@ -220,11 +187,19 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     else focusAfter(triggerTarget, panel)
     if (toValue(options.closeOnOutside ?? true)) requestClose('outside', event)
   }
-  useEventListener(
-    () => (isOpen.value && options.tabIntoPanel ? ssrDocument() : undefined),
-    'keydown',
-    onDocumentTab,
-  )
+
+  // Bound only while open, so a closed popover adds nothing to the document.
+  function listen(on: boolean) {
+    const method = on ? 'addEventListener' : 'removeEventListener'
+    const bind = (type: string, fn: (event: never) => void, capture?: boolean) =>
+      document[method](type, fn as EventListener, capture)
+    bind('keydown', onDocumentKeydown, true)
+    bind('pointerdown', onDocumentPointerdown, true)
+    bind('pointerup', onDocumentPointerup, true)
+    bind('pointercancel', onDocumentPointercancel, true)
+    bind('focusin', onDocumentFocusin, true)
+    if (options.tabIntoPanel) bind('keydown', onDocumentTab)
+  }
 
   function focusAfter(el: HTMLElement, panel: HTMLElement) {
     const next = getFocusable(document.body).find(
@@ -272,15 +247,17 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
 
   function activate() {
     layer.push()
-    isOpen.value = true
+    isOpen = true
+    listen(true)
     rememberFocus()
   }
 
   function deactivate() {
     pendingTouch = undefined
-    const wasOpen = isOpen.value
+    const wasOpen = isOpen
     layer.pop()
-    isOpen.value = false
+    isOpen = false
+    listen(false)
     if (wasOpen) restoreFocus()
     // Clear pending close on raw model writes mid-close.
     cancelClose()

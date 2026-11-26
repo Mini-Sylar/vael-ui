@@ -1,11 +1,10 @@
-import { onScopeDispose, toValue, watch } from 'vue'
+import { effectScope, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { MaybeRefOrGetter } from 'vue'
-import { useTabIndicator } from './useTabIndicator'
 import type { IndicatorMode, UseTabIndicatorReturn } from './useTabIndicator'
 import type { ElRef } from './dom'
-import { loadHoverHandoff } from './lazyParts'
-import { injectDefaults } from '../config'
+import { loadHoverHandoff, loadTabIndicator } from './lazyParts'
+import { injectDefaults, runOutside } from '../config'
 
 export interface UseHoverIndicatorOptions {
   /** The rows the indicator moves between, matched inside `listEl`. */
@@ -56,18 +55,38 @@ export function useHoverIndicator(
   // so a quick sweep chases the cursor instead of teleporting between the rows it skipped.
   let fromKeyboard = false
 
-  const indicator = useTabIndicator(() => listEl.value, {
-    listEl,
-    orientation: options.orientation ?? 'vertical',
-    selector: `[${MARK}="${id}"]`,
-    scroller: options.scroller,
-    matchCross: options.matchCross ?? true,
-    maxGlide: () => (fromKeyboard ? (options.maxGlide ?? 3) : Number.POSITIVE_INFINITY),
-    motion: () => toValue(options.motion) ?? provided?.value.motion,
-    indicator: options.indicator,
-    indicatorEl: options.indicatorEl,
-    position: 'translate',
-  })
+  // The highlight's code loads apart, fetched as this sets up: it shows only on a hover or a key.
+  // It starts in this scope with the provider's defaults, writing into the refs handed out now.
+  const into = {
+    style: shallowRef<Record<string, string | undefined>>({}),
+    placed: shallowRef(false),
+  }
+  let moved: UseTabIndicatorReturn | undefined
+  const indicator: UseTabIndicatorReturn = { ...into, update: () => moved?.update() }
+  const later = effectScope()
+  let gone = false
+  if (typeof window !== 'undefined') {
+    void loadTabIndicator().then(({ useTabIndicator }) => {
+      if (gone) return
+      later.run(() => {
+        moved = runOutside(provided, () =>
+          useTabIndicator(() => listEl.value, {
+            listEl,
+            into,
+            orientation: options.orientation ?? 'vertical',
+            selector: `[${MARK}="${id}"]`,
+            scroller: options.scroller,
+            matchCross: options.matchCross ?? true,
+            maxGlide: () => (fromKeyboard ? (options.maxGlide ?? 3) : Number.POSITIVE_INFINITY),
+            motion: () => toValue(options.motion) ?? provided?.value.motion,
+            indicator: options.indicator,
+            indicatorEl: options.indicatorEl,
+            position: 'translate',
+          }),
+        )
+      })
+    })
+  }
   function mark(el: HTMLElement | null, keyboard = false) {
     if (el === current) return
     current?.removeAttribute(MARK)
@@ -106,51 +125,54 @@ export function useHoverIndicator(
   // Rows a drag is moving (a Sortable inside the list) aren't hovered: the highlight stands down.
   const dragging = () =>
     !!listEl.value?.querySelector('[data-dragging], [data-grabbed], [data-settling]')
-  function onPointerOver(event: PointerEvent) {
-    if (event.pointerType === 'touch' || toValue(options.enabled) === false) return
-    pointerInside = true
-    if (dragging()) return mark(null)
-    const row = rowOf(event.target)
-    if (row) {
-      const arriving = !current
-      mark(row)
-      if (arriving && listEl.value)
-        handoff?.receive(options, provided?.value, listEl.value, row, indicatorOf)
-      return
-    }
-    // Between rows (a gap, a group label, a separator) it keeps the last one and glides on from
-    // there; a row it can't take (disabled, or a nested list's) clears it.
-    if (event.target instanceof Element && event.target.closest(options.itemSelector)) mark(null)
+  // One listener for the four events, named by type: a closed popup's list sets up one watcher.
+  const on = {
+    pointerover(event: PointerEvent) {
+      if (event.pointerType === 'touch' || toValue(options.enabled) === false) return
+      pointerInside = true
+      if (dragging()) return mark(null)
+      const row = rowOf(event.target)
+      if (row) {
+        const arriving = !current
+        mark(row)
+        if (arriving && listEl.value)
+          handoff?.receive(options, provided?.value, listEl.value, row, indicatorOf)
+        return
+      }
+      // Between rows (a gap, a group label, a separator) it keeps the last one and glides on from
+      // there; a row it can't take (disabled, or a nested list's) clears it.
+      if (event.target instanceof Element && event.target.closest(options.itemSelector)) mark(null)
+    },
+    pointerleave(event: PointerEvent) {
+      if (event.pointerType === 'touch') return
+      pointerInside = false
+      const shown = current && indicatorOf()
+      if (shown && listEl.value) handoff?.release(options.group!, listEl.value, shown)
+      mark(focusedRow())
+    },
+    // Keyboard focus always wins, even with the pointer resting in the list: arrow keys move the
+    // highlight with them. Pointer focus isn't :focus-visible, so a click leaves the hover alone.
+    focusin() {
+      if (toValue(options.enabled) === false) return
+      const row = focusedRow()
+      if (row || !pointerInside) mark(row, true)
+    },
+    focusout(event: FocusEvent) {
+      if (!pointerInside && !listEl.value?.contains(event.relatedTarget as Node | null)) mark(null)
+    },
   }
-  function onPointerLeave(event: PointerEvent) {
-    if (event.pointerType === 'touch') return
-    pointerInside = false
-    const shown = current && indicatorOf()
-    if (shown && listEl.value) handoff?.release(options.group!, listEl.value, shown)
-    mark(focusedRow())
-  }
-  // Keyboard focus always wins, even with the pointer resting in the list: arrow keys move the
-  // highlight with them. Pointer focus isn't :focus-visible, so a click leaves the hover alone.
-  function onFocusIn() {
-    if (toValue(options.enabled) === false) return
-    const row = focusedRow()
-    if (row || !pointerInside) mark(row, true)
-  }
-  function onFocusOut(event: FocusEvent) {
-    if (!pointerInside && !listEl.value?.contains(event.relatedTarget as Node | null)) mark(null)
-  }
-
   // VueUse re-binds when the list element changes and unbinds with the scope.
-  useEventListener(listEl, 'pointerover', onPointerOver)
-  useEventListener(listEl, 'pointerleave', onPointerLeave)
-  useEventListener(listEl, 'focusin', onFocusIn)
-  useEventListener(listEl, 'focusout', onFocusOut)
+  useEventListener(listEl, Object.keys(on), (event: Event) =>
+    on[event.type as keyof typeof on](event as never),
+  )
   // A removed list lets go of its last row.
   watch(listEl, () => {
     current = null
   })
   onScopeDispose(() => {
     current = null
+    gone = true
+    later.stop()
   })
   watch(
     () => toValue(options.enabled),

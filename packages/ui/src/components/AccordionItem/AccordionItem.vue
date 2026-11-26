@@ -1,21 +1,20 @@
 <template>
   <div
     ref="item"
-    :class="itemPart.class"
-    :style="itemPart.style"
+    :class="parts.item.class"
+    :style="parts.item.style"
     :data-motion="ctx.motion() ? undefined : 'off'"
     v-bind="attrs"
   >
-    <component :is="headingTag" ref="header" :class="headerPart.class" :style="headerPart.style">
+    <component :is="headingTag()" :class="parts.header.class" :style="parts.header.style">
       <button
-        ref="trigger"
         :id="triggerId"
         type="button"
-        :class="triggerPart.class"
-        :style="triggerPart.style"
+        :class="parts.trigger.class"
+        :style="parts.trigger.style"
         :aria-expanded="isOpenValue"
         :aria-controls="panelId"
-        :aria-disabled="isLockedValue || undefined"
+        :aria-disabled="isLocked() || undefined"
         :disabled="disabled"
         data-accordion-trigger
         @click="onToggle"
@@ -24,8 +23,8 @@
           <span class="ui-accordion-trigger-title">{{ title }}</span>
           <svg
             ref="chevron"
-            :class="chevronPart.class"
-            :style="chevronPart.style"
+            :class="parts.chevron.class"
+            :style="parts.chevron.style"
             viewBox="0 0 16 16"
             width="14"
             height="14"
@@ -48,13 +47,13 @@
       :id="panelId"
       role="region"
       :aria-labelledby="triggerId"
-      :class="panelPart.class"
-      :style="[collapseStyle, panelPart.style]"
+      :class="parts.panel.class"
+      :style="[collapseStyle, parts.panel.style]"
       :data-state="collapseState"
       :aria-hidden="collapseState === 'closed' && !findable ? 'true' : undefined"
       :inert="collapseState === 'closed' && !findable"
     >
-      <div ref="body" :class="bodyPart.class" :style="bodyPart.style">
+      <div :class="parts.body.class" :style="parts.body.style">
         <slot :open="isOpenValue" :toggle="onToggle" />
       </div>
     </div>
@@ -115,13 +114,13 @@ const ctx = injectedCtx
 
 const isOpenValue = computed(() => ctx.isOpen(props.value))
 // APG: an open panel that can't collapse marks its trigger aria-disabled, still focusable.
-const isLockedValue = computed(() => !props.disabled && ctx.isLocked(props.value))
+const isLocked = () => !props.disabled && ctx.isLocked(props.value)
 function onToggle() {
   if (props.disabled) return
   ctx.toggle(props.value)
 }
 
-const headingTag = computed(() => nativeTag(`h${props.headingLevel ?? ctx.headingLevel()}`))
+const headingTag = () => nativeTag(`h${props.headingLevel ?? ctx.headingLevel()}`)
 
 const triggerId = useId()
 const panelId = useId()
@@ -143,24 +142,25 @@ const {
 })
 
 const item = useTemplateRef<HTMLElement>('item')
-const header = useTemplateRef<HTMLElement>('header')
-const trigger = useTemplateRef<HTMLElement>('trigger')
 const chevron = useTemplateRef<SVGSVGElement>('chevron')
-const body = useTemplateRef<HTMLElement>('body')
 useStateMotion({
   key: 'accordion',
   mainPart: 'trigger',
   motion: ctx.states,
   // Your timing reaches the whole item: the panel's height as well as the chevron.
   root: () => item.value,
-  parts: () => ({
-    item: item.value,
-    header: header.value,
-    trigger: trigger.value,
-    chevron: chevron.value,
-    panel: panel.value,
-    body: body.value,
-  }),
+  // Found from the item and the panel: fewer template refs to set on every mount.
+  parts: () => {
+    const header = item.value?.firstElementChild
+    return {
+      item: item.value,
+      header,
+      trigger: header?.firstElementChild,
+      chevron: chevron.value,
+      panel: panel.value,
+      body: panel.value?.firstElementChild,
+    }
+  },
   states: () => ({ open: isOpenValue.value, disabled: !!props.disabled }),
 })
 
@@ -169,19 +169,23 @@ const themedUi = useThemedUi(
   (theme) => theme.accordionItem,
   () => props.ui,
 )
-const itemPart = computed(() =>
-  resolveUiPart(
-    cx,
-    themedUi()?.item,
-    'ui-accordion-item',
-    props.disabled && 'ui-accordion-item--disabled',
-  ),
-)
-const headerPart = computed(() => resolveUiPart(cx, themedUi()?.header, 'ui-accordion-header'))
-const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-accordion-trigger'))
-const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-accordion-panel'))
-const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-accordion-body'))
-const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-accordion-chevron'))
+// One computed for every part: each item on a long page sets up one instead of six.
+const parts = computed(() => {
+  const ui = themedUi()
+  return {
+    item: resolveUiPart(
+      cx,
+      ui?.item,
+      'ui-accordion-item',
+      props.disabled && 'ui-accordion-item--disabled',
+    ),
+    header: resolveUiPart(cx, ui?.header, 'ui-accordion-header'),
+    trigger: resolveUiPart(cx, ui?.trigger, 'ui-accordion-trigger'),
+    panel: resolveUiPart(cx, ui?.panel, 'ui-accordion-panel'),
+    body: resolveUiPart(cx, ui?.body, 'ui-accordion-body'),
+    chevron: resolveUiPart(cx, ui?.chevron, 'ui-accordion-chevron'),
+  }
+})
 
 defineExpose({
   /** Root element. */
