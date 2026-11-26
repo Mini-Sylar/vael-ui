@@ -18,7 +18,7 @@ test('SSR renders the theme <style> in place, with nothing teleported to <head>'
   const ctx: SSRContext = {}
   const html = await renderToString(createSSRApp(Root), ctx)
 
-  expect(html).toMatch(/<style>\[data-ui-theme='[^']+'\] \{ --ui-primary: #6366f1;/)
+  expect(html).toMatch(/<style>\[data-ui-theme~='[^']+'\] \{ --ui-primary: #6366f1;/)
   // The style sits before the scope wrapper, inside the app's own markup.
   expect(html.indexOf('<style>')).toBeLessThan(html.indexOf('data-ui-theme='))
   expect(ctx.teleports ?? {}).toEqual({})
