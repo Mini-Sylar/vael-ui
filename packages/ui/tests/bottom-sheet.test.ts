@@ -449,6 +449,35 @@ test('container: the sheet fills the container and snaps to fractions of its hei
   )
 })
 
+test('container: opening is left to the slide in; only a real resize of the container moves the sheet', async () => {
+  const box = shallowRef<HTMLElement | null>(null)
+  const open = shallowRef(false)
+  await render({
+    render: () => [
+      h('div', {
+        ref: (el: unknown) => (box.value = el as HTMLElement | null),
+        style: 'position: relative; height: 400px; overflow: hidden',
+      }),
+      box.value &&
+        h(BottomSheet, {
+          open: open.value,
+          'onUpdate:open': (v: boolean) => (open.value = v),
+          container: box.value,
+          title: 'Contained',
+        }),
+    ],
+  })
+  await vi.waitFor(() => expect(box.value).not.toBeNull())
+  open.value = true
+  await vi.waitFor(() => expect(document.querySelector('.ui-bottom-sheet-panel')).not.toBeNull())
+  for (let i = 0; i < 5; i++) await new Promise(requestAnimationFrame)
+  // The container's size observer reports once as it starts: not a resize, so no settle of its own
+  // replaces the opening's transition.
+  expect(panel().style.transition).not.toMatch(/^transform /)
+  box.value!.style.height = '300px'
+  await vi.waitFor(() => expect(panel().style.transition).toMatch(/^transform /))
+})
+
 // The body's height cap re-lays out the whole sheet when it changes, so a drag
 // must not change it per frame: that was the jitter on phones.
 test('a drag never resizes the body per frame; a settle lower trims it once the panel stops', async () => {

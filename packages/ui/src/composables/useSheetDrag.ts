@@ -213,6 +213,7 @@ export function useSheetDrag(
   // Opening: rest at the first snap point at once. The rise from below is the motion engine's
   // (on `translate`), so the drag's `transform` never animates in or out.
   function reset() {
+    area = areaSize()
     const list = points()
     if (list.length === 0) return
     const initial = list.find((point) => point.id === toValue(options.initialSnap)) ?? list[0]
@@ -436,8 +437,13 @@ export function useSheetDrag(
   // them on scroll), the keyboard opened, or the container resized. Refit the panel and glide back
   // to the same snap point, so the sheet doesn't drift off it or leave a toolbar-tall strip with
   // no content at the bottom. Mid-drag the finger owns the position; the release settles it.
+  // The area's size as the sheet opened: an observer's first report, the same size, isn't a resize
+  // and mustn't cut the opening slide short.
+  let area = ''
+  const areaSize = () => `${areaWidth()}x${areaHeight()}`
   function onAreaResize() {
-    if (!active.value) return
+    if (!active.value || areaSize() === area) return
+    area = areaSize()
     applyFixedHeight()
     if (isDragging.value) return
     const point = currentPoint()
