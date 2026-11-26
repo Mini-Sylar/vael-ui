@@ -39,6 +39,12 @@ export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => 
     app.use(vaporInteropPlugin)
     // The app replaces the prerendered page: its code renders highlighted from the first frame.
     adoptPrerendered(document)
+    // Just before the app replaces the prerendered page: the home dashboard's rise carries on.
+    void router.isReady().then(() => {
+      const rise = document.querySelector('.hero-showcase')?.getAnimations()[0]?.currentTime
+      if (typeof rise === 'number')
+        document.documentElement.style.setProperty('--showcase-elapsed', `${rise}ms`)
+    })
 
     // Route components are lazy-loaded (`() => import('./pages/X.vue')`) by
     // their build hash. After a redeploy, a tab still holding the old

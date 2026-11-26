@@ -282,13 +282,12 @@ function onWorkspaceSelect(item: MenuItemData) {
 // Watches the shell's own width (the aside's parent), not the page viewport.
 const asideEl = useTemplateRef<HTMLElement>('asideEl')
 const { width: shellWidth } = useElementSize(() => asideEl.value?.parentElement ?? null)
-// Too narrow for an open sidebar at all: always icons only. Narrower than the
-// pages' full two-column layout: starts collapsed, but can still be opened.
+// Too narrow for an open sidebar at all: always icons only. Otherwise it starts collapsed, as the
+// prerendered page does (the server can't measure), and opens with a click.
 const isNarrow = computed(() => shellWidth.value > 0 && shellWidth.value < 560)
-const prefersCollapsed = computed(() => shellWidth.value > 0 && shellWidth.value < 900)
 const manualCollapsed = shallowRef<boolean | null>(null)
 const collapsed = computed({
-  get: () => isNarrow.value || (manualCollapsed.value ?? prefersCollapsed.value),
+  get: () => isNarrow.value || (manualCollapsed.value ?? true),
   set: (v: boolean) => (manualCollapsed.value = v),
 })
 

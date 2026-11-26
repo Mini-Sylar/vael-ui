@@ -29,12 +29,7 @@
         </div>
       </div>
 
-      <div
-        class="hero-showcase"
-        role="region"
-        :aria-label="t('home.showcaseLabel')"
-        :data-prerendered="prerendered || undefined"
-      >
+      <div class="hero-showcase" role="region" :aria-label="t('home.showcaseLabel')">
         <div class="showcase-backdrop" aria-hidden="true"><DitherBackground /></div>
         <ShowcaseStage />
       </div>
@@ -148,8 +143,6 @@ import TerminalVisual from '../components/home/TerminalVisual.vue'
 const ThemeSwatches = defineAsyncComponent(() => import('../components/ThemeSwatches.vue'))
 
 const { t } = useI18n()
-// Only the server's render: the app's own copy of the page has no mark.
-const prerendered = import.meta.env.SSR
 
 // The last "Vapor" in the headline gets the steam treatment; in every locale
 // that's the one about compiling straight to it.
@@ -324,12 +317,6 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   mask-image: radial-gradient(ellipse 72% 70% at 50% 50%, black 58%, transparent 100%);
 }
 
-/* The app replaces the prerendered page, and the dashboard's layout is measured in the browser:
-   the prerendered copy stays hidden, so only the app's own copy shows, rising in once. */
-.hero-showcase[data-prerendered] {
-  visibility: hidden;
-}
-
 /* The dashboard rises in once on first load; later visits and reduced
    motion show it in place. */
 @media (prefers-reduced-motion: no-preference) {
@@ -337,7 +324,8 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
     /* backwards, not both: a kept end frame leaves an identity transform that
        re-anchors every position: fixed inside the dashboard. */
     animation: showcase-in 700ms var(--ui-ease-out) backwards;
-    animation-delay: 120ms;
+    /* The app replaces the prerendered page mid-rise: its copy carries on from there (main.ts). */
+    animation-delay: calc(120ms - var(--showcase-elapsed, 0ms));
   }
 }
 
