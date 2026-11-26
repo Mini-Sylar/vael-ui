@@ -33,8 +33,14 @@
         :key="section.label ?? (windowed ? 'window' : `loose-${section.start}`)"
         :role="section.label ? 'group' : undefined"
         :aria-labelledby="section.label ? `${listboxId}-group-${si}` : undefined"
-        :class="section.label ? groupPart.class : undefined"
-        :style="windowed ? listStyle : section.label ? groupPart.style : undefined"
+        :class="section.label ? groupPart.class : windowed ? undefined : 'ui-select-run'"
+        :style="
+          windowed
+            ? listStyle
+            : section.label
+              ? groupPart.style
+              : { containIntrinsicBlockSize: `auto ${(section.end - section.start) * 2.25}rem` }
+        "
       >
         <div
           v-if="section.label"
@@ -267,7 +273,12 @@ const windowed = computed(() => !!props.windowed && !props.sections)
 // The groups, or one run: every option, or while windowed the rows in view.
 const runs = computed<readonly SelectListSection<T>[]>(() => {
   if (props.sections) return props.sections
-  if (!windowed.value) return [{ start: 0, end: props.items.length }]
+  // Plain rows come in blocks of 50: the browser skips each block out of view (select-list.css).
+  if (!windowed.value)
+    return Array.from({ length: Math.ceil(props.items.length / 50) }, (_, i) => ({
+      start: i * 50,
+      end: Math.min(props.items.length, i * 50 + 50),
+    }))
   const rows = virtualRows.value
   return [{ start: rows[0]?.index ?? 0, end: rows.length ? rows[rows.length - 1]!.index + 1 : 0 }]
 })

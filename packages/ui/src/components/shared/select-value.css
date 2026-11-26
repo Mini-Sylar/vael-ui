@@ -140,6 +140,11 @@
   .ui-select-trigger[data-state='open'] .ui-select-chevron {
     transform: rotate(180deg);
   }
+  /* `motion: false`: it turns at once, like the rest. */
+  .ui-select-chevron[data-motion='off'],
+  .ui-combobox-chevron[data-motion='off'] {
+    transition: none;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-select-chevron,

@@ -98,14 +98,12 @@
   .ui-select-body {
     --ui-anchor-inline-size: initial;
   }
-  /* Rows out of view skip style, layout and paint until they scroll near, still found by find in
-     page and read by screen readers. Default rows only: a custom row may draw outside itself. The
-     first 30 render at once, since a list opens at its top: drawn a frame later, they would land
-     on the first key press. */
-  .ui-select-body:not([data-custom-rows])
-    .ui-select-option:not([data-virtual-index]):nth-child(n + 31) {
+  /* Blocks of 50 rows after the first skip style, layout and paint while out of view, held at
+     their rows' height (2.25rem each); still found by find in page and read by screen readers.
+     The first block renders at once, since a list opens at its top. Default rows only: a custom
+     row may be another height or draw outside itself. */
+  .ui-select-body:not([data-custom-rows]) .ui-select-run + .ui-select-run {
     content-visibility: auto;
-    contain-intrinsic-block-size: auto 2.25rem;
   }
   /* Current value gets quiet permanent tint. */
   .ui-select-option[data-selected] {

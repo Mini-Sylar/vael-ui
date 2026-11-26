@@ -108,7 +108,12 @@
         </svg>
       </button>
     </Transition>
-    <span :class="chevronPart.class" :style="chevronPart.style" aria-hidden="true">
+    <span
+      :class="chevronPart.class"
+      :style="chevronPart.style"
+      :data-motion="props.motion ? undefined : 'off'"
+      aria-hidden="true"
+    >
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
         <path
           d="M4 6l4 4 4-4"

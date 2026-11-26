@@ -2,6 +2,7 @@
 // once however often the panel around it re-renders, and nothing for the panel while it's closed.
 import '../src/style.css'
 import { beforeEach, expect, test, vi } from 'vitest'
+import { userEvent } from 'vitest/browser'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef } from 'vue'
 import Select from '../src/components/Select/Select.vue'
@@ -82,6 +83,41 @@ for (const [name, Component] of [
   })
 }
 
+test('a long plain list comes in blocks the browser skips out of view, and keys still reach any row', async () => {
+  const screen = await render(() =>
+    h(Select as never, { items, virtualize: false, 'aria-label': 'x' }),
+  )
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(options()).toHaveLength(300))
+  const blocks = [...document.querySelectorAll<HTMLElement>('.ui-select-run')]
+  expect(blocks).toHaveLength(6)
+  expect(blocks.map((block) => getComputedStyle(block).contentVisibility)).toEqual([
+    'visible',
+    'auto',
+    'auto',
+    'auto',
+    'auto',
+    'auto',
+  ])
+  // Held at their rows' height: the list scrolls as far as before any block renders.
+  const list = document.querySelector<HTMLElement>('[role="listbox"]')!
+  expect(list.scrollHeight).toBeGreaterThan(options()[0]!.offsetHeight * 299)
+  const inView = (row: Element) => {
+    const box = list.getBoundingClientRect()
+    const rect = row.getBoundingClientRect()
+    return rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1
+  }
+  await userEvent.keyboard('{End}')
+  const last = document.getElementById(list.querySelector('[data-active]')!.id)!
+  expect(last.id.endsWith('-opt-299')).toBe(true)
+  await vi.waitFor(() => expect(inView(last)).toBe(true))
+  await userEvent.keyboard('{ArrowDown}')
+  await vi.waitFor(() =>
+    expect(list.querySelector('[data-active]')!.id.endsWith('-opt-0')).toBe(true),
+  )
+  await vi.waitFor(() => expect(inView(options()[0]!)).toBe(true))
+})
+
 test('each row renders once as the panel opens and is placed', async () => {
   let calls = 0
   const screen = await render(() =>
@@ -146,3 +182,14 @@ test('a tick shows at once on open, draws in on a pick, and fades on an unpick',
   expect(tick(4)!.classList.contains('ui-tick-leave-active')).toBe(true)
   await vi.waitFor(() => expect(tick(4)).toBeNull())
 })
+
+for (const [name, Component, selector] of [
+  ['Select', Select, '.ui-select-chevron'],
+  ['Combobox', Combobox, '.ui-combobox-chevron'],
+] as const) {
+  test(`${name}: with motion off the chevron turns at once`, async () => {
+    await render(() => h(Component as never, { items, motion: false, 'aria-label': 'x' }))
+    const chevron = document.querySelector<HTMLElement>(selector)!
+    expect(getComputedStyle(chevron).transitionDuration).toBe('0s')
+  })
+}

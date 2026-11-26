@@ -92,6 +92,7 @@
         type="button"
         :class="chevronPart.class"
         :style="chevronPart.style"
+        :data-motion="props.motion ? undefined : 'off'"
         :aria-label="messages.combobox.toggle"
         :aria-expanded="open"
         :disabled="isDisabled"
